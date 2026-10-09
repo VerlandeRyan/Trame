@@ -1,0 +1,43 @@
+# --- Secrets et configuration locale (jamais dans le dépôt public) ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# --- Stratégie / notes privées (sauvegardées hors dépôt) ---
+private/
+
+# --- Données réelles du catalogue et sauvegardes ---
+*.dump
+*.backup
+backups/
+db/real-*.sql
+data/
+imports/
+
+# --- Images du catalogue (stockage objet, pas git) ---
+uploads/
+covers/
+photos/
+
+# --- Exports de documentation générés ---
+docs/export/
+
+# --- Dépendances et builds ---
+node_modules/
+dist/
+.output/
+.nuxt/
+coverage/
+*.log
+
+# --- Éditeurs / OS ---
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# --- Claude Code : réglages locaux personnels ---
+.claude/settings.local.json

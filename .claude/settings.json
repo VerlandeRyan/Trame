@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./**/.env)",
+      "Read(./**/.env.*)"
+    ],
+    "ask": [
+      "Read(./private/docs/**)",
+      "Read(./private/catalogue-depart/**)",
+      "Read(./private/audit-*)"
+    ]
+  }
+}
