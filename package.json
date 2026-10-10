@@ -3,7 +3,7 @@
   "private": true,
   "description": "Plateforme de suivi de lecture et de découverte pour la création francophone alternative.",
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24.11.0"
   },
   "scripts": {
     "prepare": "lefthook install",
