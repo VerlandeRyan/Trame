@@ -130,7 +130,18 @@ PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inve
 PK (`user_id`, `work_id`). **Aucune contrainte de cohérence entre `chapters_read` et `volumes_read`** (choix assumé : les deux unités ne sont jamais mappées).
 
 ### `reading_event`
-`id` PK, `user_id`, `work_id`, `kind` (`chapters` \| `volumes` \| `status` \| `rating`), `delta` ou `value`, `at` timestamptz. Table en ajout seul, alimentée côté API ; sert à l'historique et au bilan annuel.
+| Colonne | Type | Règle |
+|---|---|---|
+| id | bigint identity | PK |
+| user_id / work_id | bigint FK | NOT NULL |
+| kind | text | NOT NULL, `chapters` \| `volumes` \| `status` \| `rating` — ce qui a changé |
+| chapters_added | integer | chapitres lus en plus ; renseigné seulement si `kind = chapters` |
+| volumes_added | integer | tomes lus en plus ; renseigné seulement si `kind = volumes` |
+| new_status | text | statut de lecture atteint (mêmes valeurs que `library_entry.status`) ; seulement si `kind = status` |
+| new_rating | smallint | note donnée, 1 à 10 ; seulement si `kind = rating` |
+| occurred_at | timestamptz | NOT NULL, défaut `now()` |
+
+Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui correspond au `kind`. Table en ajout seul, alimentée côté API ; sert à l'historique et au bilan annuel (somme de `chapters_added` / `volumes_added`).
 
 ### `submission`
 `id` PK, `payload` jsonb NOT NULL (champs proposés), `status` (`en_attente` \| `acceptee` \| `refusee`), `submitted_by` FK, `reviewed_by` FK nullable, `dedupe_candidates` jsonb nullable, `created_at`, `reviewed_at`.
