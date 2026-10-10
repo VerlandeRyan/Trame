@@ -153,6 +153,7 @@ Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui co
 - **Statistiques** : ne jamais additionner chapitres et tomes.
 - **Recherche** : `pg_trgm` + `unaccent` sur `work.title`, `work_title.title`, `person.name`, `publisher.name`.
 - **Erreurs API** : codes stables (ex. `WORK_NOT_FOUND`, `ADMIN_REQUIRED`, `HANDLE_TAKEN`).
+- **Jeu de démonstration** : `db/demo-data.sql` reproduit les cas structurels de la section 7 avec des données **entièrement fictives** (titres, auteurs, comptes en `@exemple.test`) ; il se charge avec `npm run db:seed` depuis `api/`. Les données réelles du catalogue ne vont jamais dans git.
 
 ## 5. Hors MVP mais compatible
 votes, listes personnalisées, ISBN, table d'éditions. **Volontairement hors Trame** : calendrier des sorties à venir (rôle de MangaCollec) ; chapitres intermédiaires (10.5) et postfaces.

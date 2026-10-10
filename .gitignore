@@ -33,6 +33,9 @@ dist/
 coverage/
 *.log
 
+# --- Requêtes SQL locales (SQLTools) ---
+*.session.sql
+
 # --- Éditeurs / OS ---
 .idea/
 .vscode/

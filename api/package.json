@@ -8,6 +8,7 @@
   "scripts": {
     "migrate:up": "node-pg-migrate up --migrations-dir migrations",
     "migrate:down": "node-pg-migrate down --migrations-dir migrations",
+    "db:seed": "node scripts/seed.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
