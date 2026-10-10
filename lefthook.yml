@@ -1,0 +1,21 @@
+# Hooks locaux — voir docs/conventions-projet.md §4.
+# Lint et format (ESLint/Prettier) seront ajoutés au pre-commit avec le code.
+pre-commit:
+  commands:
+    secrets:
+      run: gitleaks git --pre-commit --staged --redact
+
+commit-msg:
+  commands:
+    format:
+      run: npx --no-install commitlint --edit {1}
+    branche:
+      run: |
+        b=$(git rev-parse --abbrev-ref HEAD)
+        case "$b" in
+          main|HEAD) exit 0 ;;
+        esac
+        if ! printf '%s' "$b" | grep -Eq '^(feat|fix|docs|chore|refactor|hotfix)/[0-9]+-[a-z0-9-]+$'; then
+          echo "Branche '$b' invalide : attendu type/12-slug (feat, fix, docs, chore, refactor, hotfix)." >&2
+          exit 1
+        fi

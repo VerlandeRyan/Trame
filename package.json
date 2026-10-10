@@ -1,0 +1,18 @@
+{
+  "name": "trame",
+  "private": true,
+  "description": "Plateforme de suivi de lecture et de découverte pour la création francophone alternative.",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "prepare": "lefthook install",
+    "commitlint": "commitlint --edit",
+    "secrets": "gitleaks git --redact"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "21.2.3",
+    "@commitlint/config-conventional": "21.2.3",
+    "lefthook": "2.2.1"
+  }
+}
