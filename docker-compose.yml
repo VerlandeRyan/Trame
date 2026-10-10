@@ -1,5 +1,5 @@
 # Environnement de développement local.
-# Les services api et web seront ajoutés quand leurs dossiers existeront.
+# Le service web sera ajouté quand son dossier existera.
 # Configuration : copier .env.example en .env (ignoré par git).
 services:
   db:
@@ -19,6 +19,19 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build: ./api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      PORT: "3000"
+    ports:
+      # Exposé uniquement sur la machine locale.
+      - "127.0.0.1:${API_PORT:-3000}:3000"
 
 volumes:
   trame-db:
