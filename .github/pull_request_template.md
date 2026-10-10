@@ -1,11 +1,32 @@
 Closes #
 
+## Description
+Quel est le contexte de ces changements ?
+
+## Type de changement
+- [ ] Feature
+- [ ] Fix
+- [ ] Hotfix
+- [ ] Autre
+
+## Périmètre
+- [ ] API
+- [ ] Web
+- [ ] Base de données
+- [ ] Autre
+
 ## Changements
+Que change cette PR ?
 
--
+## Captures d'écran
 
-## Vérifications
 
-- [ ] Tests nouveaux ou modifiés passent
-- [ ] Documentation concernée mise à jour (spécifications, modèle de données, ADR)
-- [ ] Aucun secret, donnée réelle du catalogue ni image
+## Tests
+Comment cela a-t-il été testé ?
+
+- [ ] Manuellement
+- [ ] Tests E2E
+- [ ] Autre
+
+## Informations complémentaires
+Toute autre information utile.
