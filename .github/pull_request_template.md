@@ -1,7 +1,6 @@
-Closes #
 
 ## Description
-Quel est le contexte de ces changements ?
+Closes #
 
 ## Type de changement
 - [ ] Feature
@@ -19,7 +18,7 @@ Quel est le contexte de ces changements ?
 Que change cette PR ?
 
 ## Captures d'écran
-
+(à supprimer si rien à montrer)
 
 ## Tests
 Comment cela a-t-il été testé ?
