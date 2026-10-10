@@ -31,6 +31,13 @@ Une requête traverse toujours `route → contrôleur → service → dépôt (r
 - **services** : règles métier, sans HTTP ni SQL ; **dépôts** : seule couche qui écrit du SQL ;
 - **middleware** : authentification, rôles, limitation de débit, gestion d'erreurs uniforme (codes stables).
 
+### Routes du catalogue (`/api/v1`)
+JSON en `camelCase`. Les valeurs d'énumération (`type`, `status`, `role`, `relation`…) sont des **codes stables** que le front traduit ; le front s'appuie sur `code` d'erreur, jamais sur `message`. Les œuvres archivées n'apparaissent jamais (liste ni fiche).
+- `GET /works?q=&type=&status=&genre=&page=&pageSize=` : liste paginée `{ items, page, pageSize, total }` (`page` ≥ 1, `pageSize` 1–50, défaut 20). `q` : 2 à 100 caractères, insensible à la casse et aux accents, tolère une faute légère, porte sur titre, titres alternatifs, auteurs et éditeurs/plateformes. `genre` : libellé exact. Chaque élément : `id`, `title`, `type`, `status`, `coverPath`, `mainAuthor`.
+- `GET /works/:id` : fiche complète (totaux `chapters`/`volumes` bruts, dates `YYYY-MM-DD`, titres alternatifs, crédits, éditeurs, genres, liens, relations). Les crédits sont regroupés par personne (`roles` : tableau ordonné scénario, dessin, couleur, autre ; personnes triées par rôle le plus important puis par nom). Les relations ne sont stockées que dans un sens : `direction` vaut `outgoing` (cette œuvre est la source) ou `incoming` (elle est la cible) ; le front déduit le libellé inverse.
+- `coverPath` est `null` tant que l'accord de l'auteur n'est pas enregistré (`cover_consent`).
+- Erreurs : `VALIDATION_ERROR` (400), `NOT_FOUND` (404).
+
 ## 4. Flux principaux
 - **Page de fiche** : le visiteur demande `/oeuvre/42-ripper` → Nuxt appelle l'API → HTML rendu côté serveur → hydratation côté navigateur.
 - **Mise à jour de progression** : navigateur → API (`PUT` sur l'entrée de bibliothèque) → vérification de session → base ; le journal de lecture est alimenté si activé.
