@@ -4,7 +4,8 @@ Plateforme de suivi de lecture et de découverte pour la **création francophone
 
 ## Démarrage de session
 1. Lire ce fichier puis `private/etat-courant.md` (privé, ignoré par git). N'ouvrir d'autres documents que si la tâche l'exige.
-2. Mettre à jour `private/etat-courant.md` **une seule fois, en fin de session ou si Ryan le demande**, jamais après chaque décision (coût en tokens). Décision technique structurante : un ADR. Réflexions et décisions stratégiques : `private/docs/genese.md`, seulement si Ryan le demande.
+2. Dès que le sujet est connu (demandé par Ryan, ou déduit de `private/etat-courant.md` § Prochaine tâche), nommer la conversation d'un titre court et explicite (≤ 6 mots, ex. « Issues et GitHub Project ») avec l'outil de titre de session, puis le réajuster si le sujet change.
+3. Mettre à jour `private/etat-courant.md` **une seule fois, en fin de session ou si Ryan le demande**, jamais après chaque décision (coût en tokens). Décision technique structurante : un ADR. Réflexions et décisions stratégiques : `private/docs/genese.md`, seulement si Ryan le demande.
 
 ## Décisions clés (détail dans `docs/` et `docs/adr/`)
 - Création francophone uniquement ; **une œuvre = une fiche** ; modèle calqué sur MyAnimeList.
@@ -29,6 +30,7 @@ Plateforme de suivi de lecture et de découverte pour la **création francophone
 - Tout changement de comportement ⇒ test E2E ; toute évolution de schéma ⇒ migration + `docs/modele-de-donnees.md`.
 - Tests E2E : lancer seulement les nouveaux/modifiés en local ; la CI exécute la suite complète.
 - **Git : Ryan garde la main complète.** Ne jamais exécuter de commande git qui écrit (`add`, `commit`, `push`, `merge`, `rebase`, `reset`, `tag`, config du dépôt…). Seule la lecture (`status`, `diff`, `log`) est permise. En fin de tâche, proposer un message de commit prêt à copier. Commits : `type(scope): message (#n)` ; branches `feat/12-slug`.
+- **Tickets** : pas de travail sans ticket (le hook exige `type/n-slug`). Créer ou proposer tout ticket avec `gh issue create --repo VerlandeRyan/Trame --assignee "@me" --project Trame` + labels `type:*` et `area:*` ; pas de milestone si le sujet n'est pas lié à une phase. Au démarrage du travail sur un ticket, le passer en **In progress** dans le Project (`gh project field-list 1 --owner VerlandeRyan` pour les identifiants, puis `gh project item-edit`) ; Done est automatique à la fusion de la PR (`Closes #n`). Changement de sujet : si le ticket existe, donner à Ryan le nom de branche `type/n-slug` (il la crée) ; sinon créer le ticket d'abord, puis donner la branche.
 - Technologies durables : Node LTS, TypeScript stable, aucune version préliminaire.
 
 ## Structure cible
