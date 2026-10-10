@@ -1,0 +1,19 @@
+name: Ticket
+description: Tâche, évolution ou correction
+assignees:
+  - VerlandeRyan
+projects:
+  - VerlandeRyan/1
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Ce qu'il faut faire, et pourquoi.
+    validations:
+      required: true
+  - type: textarea
+    id: criteres
+    attributes:
+      label: Critères de fin
+      description: Comment savoir que c'est terminé (facultatif).

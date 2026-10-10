@@ -1,0 +1,27 @@
+name: Lien ticket
+
+on:
+  pull_request:
+    types: [opened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  closes:
+    name: Renseigne « Closes #n »
+    runs-on: ubuntu-latest
+    steps:
+      - name: Déduire le ticket du nom de branche (type/n-slug)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref }}
+          BODY: ${{ github.event.pull_request.body }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          num=$(printf '%s' "$BRANCH" | sed -nE 's#^[a-z]+/([0-9]+)-.*#\1#p')
+          [ -n "$num" ] || { echo "Pas de numéro de ticket dans '$BRANCH'."; exit 0; }
+          printf '%s\n' "$BODY" | grep -Eq '^Closes #[[:space:]]*$' || { echo "Ligne « Closes # » absente ou déjà remplie."; exit 0; }
+          printf '%s\n' "$BODY" | sed -E "s/^Closes #[[:space:]]*$/Closes #${num}/" > body.md
+          gh pr edit "$PR" --repo "$REPO" --body-file body.md
