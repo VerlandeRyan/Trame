@@ -38,6 +38,11 @@ JSON en `camelCase`. Les valeurs d'énumération (`type`, `status`, `role`, `rel
 - `coverPath` est `null` tant que l'accord de l'auteur n'est pas enregistré (`cover_consent`).
 - Erreurs : `VALIDATION_ERROR` (400), `NOT_FOUND` (404).
 
+### Évolution prévue (ADR 0007, tickets #50 à #53)
+- Paramètre `lang` sur `GET /works` et `GET /works/:id` ; la fiche renvoie `displayTitle`, `titles[]`, `synopsisLanguage` et `synopsisSource`.
+- `genre` filtré et renvoyé par code ; `GET /genres` renvoie des codes ; valeurs d'énumération en anglais.
+- Erreurs de validation : `details[]` porte `path`, `code` et paramètres, sans message ; le front lit `code`, jamais `message`.
+
 ## 4. Flux principaux
 - **Page de fiche** : le visiteur demande `/oeuvre/42-ripper` → Nuxt appelle l'API → HTML rendu côté serveur → hydratation côté navigateur.
 - **Mise à jour de progression** : navigateur → API (`PUT` sur l'entrée de bibliothèque) → vérification de session → base ; le journal de lecture est alimenté si activé.
