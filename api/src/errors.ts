@@ -1,9 +1,12 @@
-/** Codes d'erreur stables exposés par l'API : ne jamais en improviser en dehors de cette liste. */
+/**
+ * Codes d'erreur stables exposés par l'API : ne jamais en improviser en dehors de cette liste.
+ * Le `message` est un texte technique en anglais, jamais affiché : le front traduit à partir de `code`.
+ */
 export const ERROR_CODES = {
-  NOT_FOUND: { status: 404, message: 'Ressource introuvable.' },
-  VALIDATION_ERROR: { status: 400, message: 'Requête invalide.' },
-  INVALID_JSON: { status: 400, message: 'Corps JSON invalide.' },
-  INTERNAL_ERROR: { status: 500, message: 'Erreur interne.' },
+  NOT_FOUND: { status: 404, message: 'Resource not found.' },
+  VALIDATION_ERROR: { status: 400, message: 'Invalid request.' },
+  INVALID_JSON: { status: 400, message: 'Invalid JSON body.' },
+  INTERNAL_ERROR: { status: 500, message: 'Internal error.' },
 } as const;
 
 export type ErrorCode = keyof typeof ERROR_CODES;
