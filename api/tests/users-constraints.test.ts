@@ -36,7 +36,7 @@ async function user(extra: Record<string, unknown> = {}): Promise<number> {
 
 async function work(): Promise<number> {
   const res = await client.query(
-    "INSERT INTO work (title, type, status) VALUES ('Œuvre fictive', 'serie', 'en_cours') RETURNING id",
+    "INSERT INTO work (title, type, status) VALUES ('Œuvre fictive', 'series', 'ongoing') RETURNING id",
   );
   return Number(res.rows[0].id);
 }
@@ -72,11 +72,11 @@ describe('app_user', () => {
 describe('work.deleted_by', () => {
   it('doit référencer un utilisateur existant', async () => {
     await expect(
-      client.query("INSERT INTO work (title, type, status, deleted_by) VALUES ('X', 'serie', 'en_cours', 999999)"),
+      client.query("INSERT INTO work (title, type, status, deleted_by) VALUES ('X', 'series', 'ongoing', 999999)"),
     ).rejects.toThrow();
     const admin = await user({ role: 'admin' });
     await client.query(
-      "INSERT INTO work (title, type, status, deleted_at, deleted_by) VALUES ('X', 'serie', 'en_cours', now(), $1)",
+      "INSERT INTO work (title, type, status, deleted_at, deleted_by) VALUES ('X', 'series', 'ongoing', now(), $1)",
       [admin],
     );
   });
@@ -86,9 +86,9 @@ describe('library_entry', () => {
   it('refuse un second suivi de la même œuvre par le même utilisateur', async () => {
     const u = await user();
     const w = await work();
-    await client.query("INSERT INTO library_entry (user_id, work_id, status) VALUES ($1, $2, 'en_cours')", [u, w]);
+    await client.query("INSERT INTO library_entry (user_id, work_id, status) VALUES ($1, $2, 'reading')", [u, w]);
     await expect(
-      client.query("INSERT INTO library_entry (user_id, work_id, status) VALUES ($1, $2, 'termine')", [u, w]),
+      client.query("INSERT INTO library_entry (user_id, work_id, status) VALUES ($1, $2, 'completed')", [u, w]),
     ).rejects.toThrow();
   });
 
@@ -101,17 +101,17 @@ describe('library_entry', () => {
         [u, w, status, chapters, volumes, rating],
       );
     await expect(insert('lu', 0, 0, null)).rejects.toThrow();
-    await expect(insert('en_cours', -1, 0, null)).rejects.toThrow();
-    await expect(insert('en_cours', 0, -1, null)).rejects.toThrow();
-    await expect(insert('en_cours', 0, 0, 0)).rejects.toThrow();
-    await expect(insert('en_cours', 0, 0, 11)).rejects.toThrow();
+    await expect(insert('reading', -1, 0, null)).rejects.toThrow();
+    await expect(insert('reading', 0, -1, null)).rejects.toThrow();
+    await expect(insert('reading', 0, 0, 0)).rejects.toThrow();
+    await expect(insert('reading', 0, 0, 11)).rejects.toThrow();
   });
 
   it('accepte des chapitres lus et des tomes lus indépendants', async () => {
     const u = await user();
     const w = await work();
     await client.query(
-      "INSERT INTO library_entry (user_id, work_id, status, chapters_read, volumes_read) VALUES ($1, $2, 'en_cours', 100, 2)",
+      "INSERT INTO library_entry (user_id, work_id, status, chapters_read, volumes_read) VALUES ($1, $2, 'reading', 100, 2)",
       [u, w],
     );
   });
@@ -132,7 +132,7 @@ describe('reading_event', () => {
     const w = await work();
     await insert(u, w, 'chapters', { chapters_added: 5 });
     await insert(u, w, 'volumes', { volumes_added: 1 });
-    await insert(u, w, 'status', { new_status: 'termine' });
+    await insert(u, w, 'status', { new_status: 'completed' });
     await insert(u, w, 'rating', { new_rating: 8 });
   });
 
@@ -160,7 +160,7 @@ describe('submission', () => {
       "INSERT INTO submission (payload, submitted_by) VALUES ('{\"title\": \"Titre proposé\"}', $1) RETURNING status",
       [u],
     );
-    expect(res.rows[0].status).toBe('en_attente');
+    expect(res.rows[0].status).toBe('pending');
     await expect(
       client.query("INSERT INTO submission (payload, status, submitted_by) VALUES ('{}', 'perdue', $1)", [u]),
     ).rejects.toThrow();

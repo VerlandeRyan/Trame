@@ -60,8 +60,8 @@ describe('GET /api/v1/works', () => {
   });
 
   it('filtre par type, statut et genre', async () => {
-    expect(await titles('?type=recueil')).toEqual(['Basalte – Le Recueil des Braises']);
-    expect(await titles('?status=termine')).toHaveLength(4);
+    expect(await titles('?type=collection')).toEqual(['Basalte – Le Recueil des Braises']);
+    expect(await titles('?status=completed')).toHaveLength(4);
     expect((await titles('?genre=BD')).sort()).toEqual(['Cap sur les Archipels', 'Carnet de Colportage']);
   });
 
@@ -132,8 +132,8 @@ describe('GET /api/v1/works/:id', () => {
     expect(res.body).toMatchObject({
       id,
       title: 'Chroniques de Basalte',
-      type: 'serie',
-      status: 'en_cours',
+      type: 'series',
+      status: 'ongoing',
       chapters: null,
       volumes: null,
       startedOn: '2021-01-15',
@@ -142,33 +142,33 @@ describe('GET /api/v1/works/:id', () => {
       genres: ['fantasy', 'manga'],
     });
     expect(res.body.credits).toEqual([
-      { personId: expect.any(Number), name: 'Théo Marchand', kind: 'personne', roles: ['scenario', 'dessin'] },
+      { personId: expect.any(Number), name: 'Théo Marchand', kind: 'person', roles: ['story', 'art'] },
     ]);
     expect(res.body.publishers).toEqual([
-      { id: expect.any(Number), name: 'Éditions Marais Bleu (fictives)', kind: 'editeur', url: expect.stringContaining('https://') },
+      { id: expect.any(Number), name: 'Éditions Marais Bleu (fictives)', kind: 'publisher', url: expect.stringContaining('https://') },
     ]);
     // Relations stockées dans un seul sens : ici, uniquement des relations entrantes.
     expect(res.body.relations).toHaveLength(2);
     for (const r of res.body.relations) expect(r.direction).toBe('incoming');
-    expect(res.body.relations.map((r: { relation: string }) => r.relation).sort()).toEqual(['meme_univers', 'spin_off']);
+    expect(res.body.relations.map((r: { relation: string }) => r.relation).sort()).toEqual(['shared_universe', 'spin_off']);
   });
 
   it('renvoie les totaux, les liens et les relations sortantes', async () => {
     const lanternes = await request(app).get(`/api/v1/works/${await idOf('Les Lanternes de Brume')}`);
     expect(lanternes.body).toMatchObject({ chapters: 120, volumes: 3, endedOn: '2023-06-30' });
-    expect(lanternes.body.links.map((l: { kind: string }) => l.kind)).toEqual(['acheter', 'lire']);
+    expect(lanternes.body.links.map((l: { kind: string }) => l.kind)).toEqual(['buy', 'read']);
 
     const recueil = await request(app).get(`/api/v1/works/${await idOf('Basalte – Le Recueil des Braises')}`);
     const outgoing = recueil.body.relations.filter((r: { direction: string }) => r.direction === 'outgoing');
-    expect(outgoing.map((r: { relation: string }) => r.relation).sort()).toEqual(['contient', 'meme_univers']);
+    expect(outgoing.map((r: { relation: string }) => r.relation).sort()).toEqual(['contains', 'shared_universe']);
   });
 
   it('trie les personnes crédités par rôle le plus important, puis par nom', async () => {
     const res = await request(app).get(`/api/v1/works/${await idOf('Basalte – Histoires de Cendre')}`);
     // Par nom seul, Léa Fontaine passerait avant Théo Marchand : l'ordre vient du rôle.
     expect(res.body.credits.map((c: { name: string; roles: string[] }) => [c.name, c.roles])).toEqual([
-      ['Théo Marchand', ['scenario']],
-      ['Léa Fontaine', ['dessin']],
+      ['Théo Marchand', ['story']],
+      ['Léa Fontaine', ['art']],
     ]);
   });
 

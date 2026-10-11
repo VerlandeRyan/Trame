@@ -17,7 +17,7 @@ beforeEach(async () => {
 });
 
 async function work(title = 'Œuvre fictive', extra: Record<string, unknown> = {}): Promise<number> {
-  const row = { title, type: 'serie', status: 'en_cours', ...extra };
+  const row = { title, type: 'series', status: 'ongoing', ...extra };
   const keys = Object.keys(row);
   const res = await client.query(
     `INSERT INTO work (${keys.join(', ')}) VALUES (${keys.map((_, i) => `$${i + 1}`).join(', ')}) RETURNING id`,
@@ -88,10 +88,10 @@ describe('work_credit', () => {
   it('accepte une même personne créditée en scénario et dessin', async () => {
     const w = await work();
     const p = await person();
-    await client.query("INSERT INTO work_credit VALUES ($1, $2, 'scenario')", [w, p]);
-    await client.query("INSERT INTO work_credit VALUES ($1, $2, 'dessin')", [w, p]);
+    await client.query("INSERT INTO work_credit VALUES ($1, $2, 'story')", [w, p]);
+    await client.query("INSERT INTO work_credit VALUES ($1, $2, 'art')", [w, p]);
     await expect(
-      client.query("INSERT INTO work_credit VALUES ($1, $2, 'dessin')", [w, p]),
+      client.query("INSERT INTO work_credit VALUES ($1, $2, 'art')", [w, p]),
     ).rejects.toThrow();
   });
 
@@ -109,16 +109,16 @@ describe('external_link', () => {
     const w = await work();
     const p = await person();
     await expect(
-      client.query("INSERT INTO external_link (kind, url) VALUES ('site', 'https://exemple.test')"),
+      client.query("INSERT INTO external_link (kind, url) VALUES ('website', 'https://exemple.test')"),
     ).rejects.toThrow();
     await expect(
       client.query(
-        "INSERT INTO external_link (work_id, person_id, kind, url) VALUES ($1, $2, 'site', 'https://exemple.test')",
+        "INSERT INTO external_link (work_id, person_id, kind, url) VALUES ($1, $2, 'website', 'https://exemple.test')",
         [w, p],
       ),
     ).rejects.toThrow();
     await client.query(
-      "INSERT INTO external_link (work_id, kind, url) VALUES ($1, 'lire', 'https://exemple.test')",
+      "INSERT INTO external_link (work_id, kind, url) VALUES ($1, 'read', 'https://exemple.test')",
       [w],
     );
   });
@@ -126,7 +126,7 @@ describe('external_link', () => {
   it('refuse une URL non https', async () => {
     const w = await work();
     await expect(
-      client.query("INSERT INTO external_link (work_id, kind, url) VALUES ($1, 'site', 'http://exemple.test')", [w]),
+      client.query("INSERT INTO external_link (work_id, kind, url) VALUES ($1, 'website', 'http://exemple.test')", [w]),
     ).rejects.toThrow();
   });
 });
@@ -134,7 +134,7 @@ describe('external_link', () => {
 describe('éditeurs et genres', () => {
   it('refuse un type d’éditeur inconnu et un genre en double', async () => {
     await expect(
-      client.query("INSERT INTO publisher (name, kind) VALUES ('X', 'autre')"),
+      client.query("INSERT INTO publisher (name, kind) VALUES ('X', 'other')"),
     ).rejects.toThrow();
     await client.query("INSERT INTO genre (label) VALUES ('manga')");
     await expect(client.query("INSERT INTO genre (label) VALUES ('manga')")).rejects.toThrow();

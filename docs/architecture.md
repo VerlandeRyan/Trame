@@ -34,13 +34,13 @@ Une requête traverse toujours `route → contrôleur → service → dépôt (r
 ### Routes du catalogue (`/api/v1`)
 JSON en `camelCase`. Les valeurs d'énumération (`type`, `status`, `role`, `relation`…) sont des **codes stables** que le front traduit ; le front s'appuie sur `code` d'erreur, jamais sur `message`. Les œuvres archivées n'apparaissent jamais (liste ni fiche).
 - `GET /works?q=&type=&status=&genre=&page=&pageSize=` : liste paginée `{ items, page, pageSize, total }` (`page` ≥ 1, `pageSize` 1–50, défaut 20). `q` : 2 à 100 caractères, insensible à la casse et aux accents, tolère une faute légère, porte sur titre, titres alternatifs, auteurs et éditeurs/plateformes. `genre` : libellé exact. Chaque élément : `id`, `title`, `type`, `status`, `coverPath`, `mainAuthor`.
-- `GET /works/:id` : fiche complète (totaux `chapters`/`volumes` bruts, dates `YYYY-MM-DD`, titres alternatifs, crédits, éditeurs, genres, liens, relations). Les crédits sont regroupés par personne (`roles` : tableau ordonné scénario, dessin, couleur, autre ; personnes triées par rôle le plus important puis par nom). Les relations ne sont stockées que dans un sens : `direction` vaut `outgoing` (cette œuvre est la source) ou `incoming` (elle est la cible) ; le front déduit le libellé inverse.
+- `GET /works/:id` : fiche complète (totaux `chapters`/`volumes` bruts, dates `YYYY-MM-DD`, titres alternatifs, crédits, éditeurs, genres, liens, relations). Les crédits sont regroupés par personne (`roles` : tableau ordonné `story`, `art`, `colors`, `other` ; personnes triées par rôle le plus important puis par nom). Les relations ne sont stockées que dans un sens : `direction` vaut `outgoing` (cette œuvre est la source) ou `incoming` (elle est la cible) ; le front déduit le libellé inverse.
 - `coverPath` est `null` tant que l'accord de l'auteur n'est pas enregistré (`cover_consent`).
 - Erreurs : `VALIDATION_ERROR` (400), `NOT_FOUND` (404).
 
 ### Évolution prévue (ADR 0007, tickets #50 à #53)
 - Paramètre `lang` sur `GET /works` et `GET /works/:id` ; la fiche renvoie `displayTitle`, `titles[]`, `synopsisLanguage` et `synopsisSource`.
-- `genre` filtré et renvoyé par code ; `GET /genres` renvoie des codes ; valeurs d'énumération en anglais.
+- `genre` filtré et renvoyé par code ; `GET /genres` renvoie des codes. Les valeurs d'énumération sont déjà en anglais (#50).
 - Erreurs de validation : `details[]` porte `path`, `code` et paramètres, sans message ; le front lit `code`, jamais `message`.
 
 ## 4. Flux principaux

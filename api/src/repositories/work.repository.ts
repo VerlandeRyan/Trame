@@ -5,6 +5,7 @@ import {
   type Database,
   type Db,
   type ExternalLinkKind,
+  type PersonKind,
   type PublisherKind,
   type RelationKind,
   type WorkStatus,
@@ -49,7 +50,7 @@ export interface WorkRecord {
   endedOn: string | null;
   coverPath: string | null;
   alternativeTitles: string[];
-  credits: { personId: number; name: string; kind: 'personne' | 'collectif'; role: CreditRole }[];
+  credits: { personId: number; name: string; kind: PersonKind; role: CreditRole }[];
   publishers: { id: number; name: string; kind: PublisherKind; url: string | null }[];
   genres: string[];
   links: { kind: ExternalLinkKind; url: string; label: string | null }[];

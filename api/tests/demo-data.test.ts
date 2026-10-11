@@ -41,9 +41,9 @@ describe('jeu de démonstration', () => {
 
   it('laisse les totaux vides pour les œuvres en cours et les renseigne pour les terminées', async () => {
     expect(
-      await count("SELECT count(*) AS n FROM work WHERE status = 'en_cours' AND (chapters IS NOT NULL OR volumes IS NOT NULL)"),
+      await count("SELECT count(*) AS n FROM work WHERE status = 'ongoing' AND (chapters IS NOT NULL OR volumes IS NOT NULL)"),
     ).toBe(0);
-    expect(await count("SELECT count(*) AS n FROM work WHERE type = 'webcomic' AND status = 'termine' AND chapters IS NOT NULL AND volumes IS NOT NULL")).toBe(1);
+    expect(await count("SELECT count(*) AS n FROM work WHERE type = 'webcomic' AND status = 'completed' AND chapters IS NOT NULL AND volumes IS NOT NULL")).toBe(1);
   });
 
   it('couvre une personne créditée deux fois sur la même œuvre', async () => {
@@ -61,11 +61,11 @@ describe('jeu de démonstration', () => {
     ).toBeGreaterThan(0);
   });
 
-  it('couvre spin_off (deux sur une même série), contient et meme_univers', async () => {
+  it('couvre spin_off (deux sur une même série), contains et shared_universe', async () => {
     expect(
       await count("SELECT count(*) AS n FROM (SELECT 1 FROM work_relation WHERE relation = 'spin_off' GROUP BY related_work_id HAVING count(*) = 2) t"),
     ).toBeGreaterThan(0);
-    expect(await count("SELECT count(*) AS n FROM work_relation WHERE relation IN ('contient', 'meme_univers')")).toBe(2);
+    expect(await count("SELECT count(*) AS n FROM work_relation WHERE relation IN ('contains', 'shared_universe')")).toBe(2);
   });
 
   it('garde chapitres lus et tomes lus indépendants', async () => {
@@ -78,7 +78,7 @@ describe('jeu de démonstration', () => {
   });
 
   it('contient une soumission en attente et aucune œuvre archivée', async () => {
-    expect(await count("SELECT count(*) AS n FROM submission WHERE status = 'en_attente'")).toBe(1);
+    expect(await count("SELECT count(*) AS n FROM submission WHERE status = 'pending'")).toBe(1);
     expect(await count('SELECT count(*) AS n FROM work WHERE deleted_at IS NOT NULL')).toBe(0);
   });
 });
