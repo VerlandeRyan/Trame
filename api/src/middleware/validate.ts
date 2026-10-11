@@ -4,12 +4,32 @@ import { AppError } from '../errors.js';
 
 type Source = 'body' | 'query' | 'params';
 
+/** Paramètres d'une issue Zod utiles au front pour son propre message ; jamais la valeur saisie. */
+const ISSUE_PARAMS = ['expected', 'origin', 'minimum', 'maximum', 'format', 'values'] as const;
+
+type ParamValue = string | number | boolean | (string | number)[];
+
+function isParamValue(value: unknown): value is ParamValue {
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return true;
+  return Array.isArray(value) && value.every((v) => typeof v === 'string' || typeof v === 'number');
+}
+
+/** Une erreur de champ : `path` + `code` Zod + paramètres, sans message (le front traduit). */
+function toDetail(issue: { path: PropertyKey[]; code: string }) {
+  const params: Record<string, ParamValue> = {};
+  for (const key of ISSUE_PARAMS) {
+    const value = (issue as Record<string, unknown>)[key];
+    if (isParamValue(value)) params[key] = value;
+  }
+  return { path: issue.path, code: issue.code, ...params };
+}
+
 /** Valide `req.body`, `req.query` ou `req.params` avec un schéma Zod ; remplace la valeur par la version analysée. */
 export function validate(source: Source, schema: ZodType): RequestHandler {
   return (req, _res, next) => {
     const result = schema.safeParse(req[source]);
     if (!result.success) {
-      const details = result.error.issues.map((i) => ({ path: i.path, message: i.message }));
+      const details = result.error.issues.map(toDetail);
       next(new AppError('VALIDATION_ERROR', details));
       return;
     }

@@ -36,11 +36,19 @@ describe("format d'erreur uniforme", () => {
     expect(res.body.code).toBe('NOT_FOUND');
   });
 
-  it('corps invalide : 400 VALIDATION_ERROR avec le détail des champs', async () => {
+  it('corps invalide : 400 VALIDATION_ERROR avec champ, code et paramètres, sans message ni valeur saisie', async () => {
     const res = await request(probeApp()).post('/echo').send({ title: '' });
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('VALIDATION_ERROR');
-    expect(res.body.details[0].path).toEqual(['title']);
+    expect(res.body.details).toEqual([
+      { path: ['title'], code: 'too_small', origin: 'string', minimum: 1 },
+    ]);
+  });
+
+  it('type incorrect : code invalid_type avec le type attendu', async () => {
+    const res = await request(probeApp()).post('/echo').send({ title: 42 });
+    expect(res.status).toBe(400);
+    expect(res.body.details).toEqual([{ path: ['title'], code: 'invalid_type', expected: 'string' }]);
   });
 
   it('corps valide : transmis tel quel', async () => {
