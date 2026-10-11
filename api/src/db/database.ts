@@ -1,23 +1,24 @@
 import { Kysely, PostgresDialect, type Generated } from 'kysely';
 import pg from 'pg';
 
-export type WorkType = 'serie' | 'oneshot' | 'webcomic' | 'recueil';
-export type WorkStatus = 'a_venir' | 'en_cours' | 'termine' | 'en_pause' | 'abandonne';
-export type CreditRole = 'scenario' | 'dessin' | 'couleur' | 'autre';
+export type WorkType = 'series' | 'oneshot' | 'webcomic' | 'collection';
+export type WorkStatus = 'upcoming' | 'ongoing' | 'completed' | 'hiatus' | 'abandoned';
+export type CreditRole = 'story' | 'art' | 'colors' | 'other';
 /** Importance d'un rôle pour l'affichage (0 = en premier). Exhaustif : ajouter un rôle ici est imposé par le compilateur. */
-export const CREDIT_ROLE_RANK: Record<CreditRole, number> = { scenario: 0, dessin: 1, couleur: 2, autre: 3 };
+export const CREDIT_ROLE_RANK: Record<CreditRole, number> = { story: 0, art: 1, colors: 2, other: 3 };
 export type RelationKind =
-  | 'suite'
-  | 'prequelle'
+  | 'sequel'
+  | 'prequel'
   | 'spin_off'
-  | 'histoire_annexe'
+  | 'side_story'
   | 'adaptation'
-  | 'version_alternative'
-  | 'meme_univers'
-  | 'contient'
-  | 'autre';
-export type PublisherKind = 'editeur' | 'plateforme' | 'auto';
-export type ExternalLinkKind = 'lire' | 'acheter' | 'site' | 'reseau';
+  | 'alternate_version'
+  | 'shared_universe'
+  | 'contains'
+  | 'other';
+export type PublisherKind = 'publisher' | 'platform' | 'self_published';
+export type ExternalLinkKind = 'read' | 'buy' | 'website' | 'social';
+export type PersonKind = 'person' | 'collective';
 
 export interface WorkTable {
   id: Generated<number>;
@@ -50,7 +51,7 @@ export interface WorkRelationTable {
 export interface PersonTable {
   id: Generated<number>;
   name: string;
-  kind: 'personne' | 'collectif';
+  kind: PersonKind;
   deleted_at: Date | null;
 }
 

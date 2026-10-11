@@ -1,4 +1,10 @@
-import { CREDIT_ROLE_RANK, type CreditRole, type WorkStatus, type WorkType } from '../db/database.js';
+import {
+  CREDIT_ROLE_RANK,
+  type CreditRole,
+  type PersonKind,
+  type WorkStatus,
+  type WorkType,
+} from '../db/database.js';
 import { AppError } from '../errors.js';
 import type { WorkRecord, WorkRepository, WorkSummary } from '../repositories/work.repository.js';
 
@@ -22,7 +28,7 @@ export interface WorkPage {
 export interface Credit {
   personId: number;
   name: string;
-  kind: 'personne' | 'collectif';
+  kind: PersonKind;
   roles: CreditRole[];
 }
 

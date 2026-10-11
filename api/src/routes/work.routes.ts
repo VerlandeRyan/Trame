@@ -6,8 +6,8 @@ import type { WorkService } from '../services/work.service.js';
 
 const listWorksQuery = z.object({
   q: z.string().trim().min(2).max(100).optional(),
-  type: z.enum(['serie', 'oneshot', 'webcomic', 'recueil']).optional(),
-  status: z.enum(['a_venir', 'en_cours', 'termine', 'en_pause', 'abandonne']).optional(),
+  type: z.enum(['series', 'oneshot', 'webcomic', 'collection']).optional(),
+  status: z.enum(['upcoming', 'ongoing', 'completed', 'hiatus', 'abandoned']).optional(),
   genre: z.string().trim().min(1).max(50).optional(),
   page: z.coerce.number().int().min(1).max(100_000).default(1),
   pageSize: z.coerce.number().int().min(1).max(50).default(20),

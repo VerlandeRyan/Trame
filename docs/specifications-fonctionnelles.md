@@ -74,7 +74,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 | RG-03 | Aucune statistique n'additionne chapitres et tomes. |
 | RG-04 | La note est un entier de 1 à 10, facultatif. La note moyenne d'une œuvre n'est affichée qu'à partir de **10 notes** pour éviter les moyennes non significatives ; en dessous, seul le nombre de notes est indiqué. |
 | RG-05 | Une « saison 2 » d'un webcomic reste la **même fiche** (les chapitres continuent). Une série clairement distincte reçoit sa propre fiche, reliée par une relation. |
-| RG-06 | Un recueil est une fiche de type `recueil` reliée aux œuvres incluses par la relation `contient`. |
+| RG-06 | Un recueil est une fiche de type `collection` reliée aux œuvres incluses par la relation `contains`. |
 | RG-07 | Une œuvre publiée en ligne puis éditée en papier reste **une seule fiche** (ex. BICLY) : `chapters` pour la partie en ligne, `volumes` pour le papier. |
 | RG-08 | Dédoublonnage sans ISBN : titre normalisé + recherche floue, proposé à l'utilisateur et vérifié par l'administrateur. |
 | RG-09 | Toute suppression est un archivage, réservé à l'administrateur ; une fiche archivée disparaît des listes et de la recherche publique mais reste restaurable. |
@@ -83,7 +83,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 | RG-12 | Les œuvres pour adultes ne sont **pas référencées** dans le MVP (hors périmètre) ; l'administrateur refuse leur soumission. Pas de champ « public » ni de gestion d'âge. |
 | RG-14 | Chapitres et tomes sont des **entiers**. Les chapitres intermédiaires (10.5), postfaces et bonus ne sont pas comptés (ex. BICLY = 158 épisodes, postface exclue). |
 | RG-15 | Seules les parutions **déjà sorties** sont renseignées ; Trame n'est pas un calendrier de sorties (voir MangaCollec). |
-| RG-16 | Un hors-série qui paraît aussi dans un recueil reste **une seule fiche**, reliée au recueil (`contient`) et à la série d'origine (`spin_off`). |
+| RG-16 | Un hors-série qui paraît aussi dans un recueil reste **une seule fiche**, reliée au recueil (`contains`) et à la série d'origine (`spin_off`). |
 | RG-17 | Deux œuvres sont reliées par **une seule relation principale** (ex. `spin_off` pour Fabula Fantasia, même s'il est aussi une préquelle) ; la chronologie se précise dans le synopsis. |
 | RG-18 | Tant qu'une œuvre est **en cours**, ses totaux (`chapters`, `volumes`) restent **vides** et s'affichent « ? » (ex. « chapitres 100/? · tomes 12/? »). Ils sont renseignés quand l'œuvre est terminée. Aucun avertissement de dépassement n'est affiché quand le total est inconnu. |
 | RG-13 | La couverture n'est affichée que si `cover_consent` est vrai ou si l'administrateur l'a explicitement validée. |
@@ -115,7 +115,7 @@ Vocabulaire fonctionnel en français ; noms techniques (tables, colonnes) en ang
 | Terme | Définition | Nom technique |
 |---|---|---|
 | **Œuvre / fiche** | Un titre du catalogue ; une œuvre = une fiche, quel que soit le nombre de supports | `work` |
-| **Type** | Format d'origine : **série**, **one-shot**, **webcomic/webtoon**, **recueil** | `work.type` |
+| **Type** | Format d'origine : **série**, **one-shot**, **webcomic/webtoon**, **recueil** | `work.type` (`series`, `oneshot`, `webcomic`, `collection`) |
 | **Chapitre / épisode** | Unité de lecture en ligne ou en prépublication | `work.chapters`, `library_entry.chapters_read` |
 | **Tome / volume** | Unité de lecture papier reliée | `work.volumes`, `library_entry.volumes_read` |
 | **Statut de publication** | À venir, en cours, terminée, en pause, abandonnée | `work.status` |

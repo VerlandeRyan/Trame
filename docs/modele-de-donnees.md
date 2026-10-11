@@ -65,8 +65,8 @@ erDiagram
 |---|---|---|
 | id | bigint identity | PK — identifiant interne (`trame_id`), fait foi dans l'URL |
 | title | text | NOT NULL |
-| type | text | NOT NULL, `serie` \| `oneshot` \| `webcomic` \| `recueil` |
-| status | text | NOT NULL, `a_venir` \| `en_cours` \| `termine` \| `en_pause` \| `abandonne` |
+| type | text | NOT NULL, `series` \| `oneshot` \| `webcomic` \| `collection` |
+| status | text | NOT NULL, `upcoming` \| `ongoing` \| `completed` \| `hiatus` \| `abandoned` |
 | synopsis | text | nullable |
 | chapters | integer | nullable, ≥ 0 — nombre **total** de chapitres/épisodes ; **renseigné seulement quand l'œuvre est terminée** (NULL = inconnu / en cours, affiché « ? » comme sur MAL) |
 | volumes | integer | nullable, ≥ 0 — nombre **total** de tomes ; même règle : NULL tant que l'œuvre est en cours, affiché « ? » |
@@ -88,17 +88,17 @@ Index : GIN trigram sur `title` (`pg_trgm` + `unaccent`) ; index sur `type`, `st
 |---|---|---|
 | work_id | bigint FK `work` | NOT NULL — œuvre source |
 | related_work_id | bigint FK `work` | NOT NULL, ≠ work_id |
-| relation | text | NOT NULL, `suite` \| `prequelle` \| `spin_off` \| `histoire_annexe` \| `adaptation` \| `version_alternative` \| `meme_univers` \| `contient` \| `autre` |
-PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inverse (suite ↔ préquelle, contient ↔ fait partie de, spin_off ↔ a pour spin-off) est déduit à l'affichage. **Lecture : « `work_id` — relation — `related_work_id` »**, par exemple « Fabula Fantasia — `spin_off` — Radiant » ou « Dreamland Le Mook — `contient` — Tokyo Trip ». Par défaut, une seule relation principale par paire d'œuvres.
+| relation | text | NOT NULL, `sequel` \| `prequel` \| `spin_off` \| `side_story` \| `adaptation` \| `alternate_version` \| `shared_universe` \| `contains` \| `other` |
+PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inverse (sequel ↔ prequel, contains ↔ fait partie de, spin_off ↔ a pour spin-off) est déduit à l'affichage. **Lecture : « `work_id` — relation — `related_work_id` »**, par exemple « Fabula Fantasia — `spin_off` — Radiant » ou « Dreamland Le Mook — `contains` — Tokyo Trip ». Par défaut, une seule relation principale par paire d'œuvres.
 
 ### `person`
-`id` PK, `name` text NOT NULL (pseudonyme ou nom d'usage), `kind` text `personne` \| `collectif` (défaut `personne`), `deleted_at`. Pas d'e-mail ni de donnée privée.
+`id` PK, `name` text NOT NULL (pseudonyme ou nom d'usage), `kind` text `person` \| `collective` (défaut `person`), `deleted_at`. Pas d'e-mail ni de donnée privée.
 
 ### `work_credit`
-`work_id`, `person_id`, `role` (`scenario` \| `dessin` \| `couleur` \| `autre`). PK (`work_id`, `person_id`, `role`).
+`work_id`, `person_id`, `role` (`story` \| `art` \| `colors` \| `other`). PK (`work_id`, `person_id`, `role`).
 
 ### `publisher`
-`id` PK, `name` text NOT NULL, `kind` text `editeur` \| `plateforme` \| `auto`, `url` nullable, `deleted_at`.
+`id` PK, `name` text NOT NULL, `kind` text `publisher` \| `platform` \| `self_published`, `url` nullable, `deleted_at`.
 
 ### `work_publisher`
 `work_id`, `publisher_id`. PK composite. Facultatif : une œuvre peut n'avoir aucun éditeur (auto-édition sans structure).
@@ -112,7 +112,7 @@ PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inve
 | id | bigint identity | PK |
 | work_id | bigint FK nullable | exactement l'un de `work_id` / `person_id` est renseigné (`CHECK`) |
 | person_id | bigint FK nullable | idem |
-| kind | text | `lire` \| `acheter` \| `site` \| `reseau` |
+| kind | text | `read` \| `buy` \| `website` \| `social` |
 | url | text | NOT NULL, `https://` uniquement (`CHECK`) |
 | label | text | nullable |
 
@@ -121,7 +121,7 @@ PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inve
 |---|---|---|
 | user_id | bigint FK `app_user` | NOT NULL |
 | work_id | bigint FK `work` | NOT NULL |
-| status | text | NOT NULL, `en_cours` \| `termine` \| `a_lire` \| `en_pause` \| `abandonne` |
+| status | text | NOT NULL, `reading` \| `completed` \| `plan_to_read` \| `on_hold` \| `dropped` |
 | chapters_read | integer | NOT NULL, défaut 0, `CHECK >= 0` |
 | volumes_read | integer | NOT NULL, défaut 0, `CHECK >= 0` |
 | rating | smallint | nullable, `CHECK BETWEEN 1 AND 10` |
@@ -144,15 +144,16 @@ PK (`user_id`, `work_id`). **Aucune contrainte de cohérence entre `chapters_rea
 Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui correspond au `kind`. Table en ajout seul, alimentée côté API ; sert à l'historique et au bilan annuel (somme de `chapters_added` / `volumes_added`).
 
 ### `submission`
-`id` PK, `payload` jsonb NOT NULL (champs proposés), `status` (`en_attente` \| `acceptee` \| `refusee`), `submitted_by` FK, `reviewed_by` FK nullable, `dedupe_candidates` jsonb nullable, `created_at`, `reviewed_at`.
+`id` PK, `payload` jsonb NOT NULL (champs proposés), `status` (`pending` \| `accepted` \| `rejected`), `submitted_by` FK, `reviewed_by` FK nullable, `dedupe_candidates` jsonb nullable, `created_at`, `reviewed_at`.
 
-### Évolution prévue (ADR 0007, tickets #50, #52, #53)
+Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce sont des identifiants techniques, indépendants de la langue de l'œuvre ; le front affiche le libellé traduit.
+
+### Évolution prévue (ADR 0007, tickets #52, #53)
 Le schéma ci-dessus décrit l'état courant ; ces évolutions seront appliquées par migration, puis ce document sera aligné.
 - `work.original_language` : code ISO 639 (2 lettres, sinon 3), obligatoire, sans défaut.
 - `work_title` : ajout de `language` et `kind` (`translated` \| `international` \| `former` \| `short`) ; clé (`work_id`, `language`, `title`). `work.title` reste le titre original.
 - `work_synopsis` (`work_id`, `language`, `text`, `source` = `official` \| `human` \| `machine`) remplace `work.synopsis` ; clé (`work_id`, `language`).
 - `genre` : `code` (slug anglais, unique) remplace `label` ; libellés dans les fichiers de langue du front.
-- Valeurs d'énumération en anglais (`type`, `status`, `relation`, rôles, `kind`).
 
 ## 4. Règles transverses
 - **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/oeuvre/{id}-{slug}` et seul `{id}` est lu.
@@ -174,23 +175,23 @@ Chaque cas doit entrer proprement dans le modèle, sans contournement. Les infor
 
 | Cas | Ce qu'il teste |
 |---|---|
-| **BICLY** (*Because I Can't Love You*) — Lief | `type = webcomic` ; statut `termine`, donc totaux renseignés : `chapters = 158` (épisodes) ; **postface** : voir note ci-dessous ; édition papier chez Vega, `volumes = 4` ; **deux** `work_publisher` (plateforme **Webtoon** + éditeur Vega) ; lien « lire » (Webtoon) et lien « acheter » (Vega) ; crédit Lief ; genre `manga`/webtoon |
-| **Dreamland** — Reno Lemaire | `type = serie` ; en cours : `volumes` et `chapters` non renseignés (affichés « ? » ; 24 tomes parus, non saisis) ; éditeur **Pika Édition** (`kind = editeur`) ; une seule personne créditée **deux fois** (rôles `scenario` et `dessin`, clé (`work_id`, `person_id`, `role`)) ; statut `en_cours` ; genre `manga` |
-| **Ripper** — Jeronimo Cejudo | `type = serie` ; en cours : `volumes` non renseigné (« ? ») ; éditeur **Ankama** ; **6ᵉ tome annoncé pour fin novembre 2026** (voir note ci-dessous) ; genre `manga` |
-| **Space Punch** — Zd. | `type = serie` ; en cours : `volumes` non renseigné (« ? ») ; éditeur **Ankama** (même `publisher` que Ripper : vérifie le partage d'un éditeur entre plusieurs œuvres et la page éditeur) ; statut `en_cours` ; auteur crédité en `scenario` et `dessin` ; genre `manga` |
-| **Akimbo** — Djiguito | `type = oneshot` ; `volumes = 1` ; **auto-édition** (`publisher` de `kind = auto` ou aucun éditeur) ; statut `termine` ; pas d'ISBN ; lien de la boutique ou du site de l'auteur ; genre `manga` |
-| **Dreamland – Tokyo Trip** — Reno Lemaire | `type = oneshot` (hors-série d'environ 40 pages) ; `volumes = 1` ; relation **`spin_off`** vers Dreamland (et affichage de l'inverse sur la fiche Dreamland) ; **auto-édition** (`publisher` de `kind = auto`) alors que Dreamland est chez Pika Édition : un même auteur peut donc avoir des œuvres à éditeurs différents ; une fiche unique même s'il paraît aussi dans le Mook |
-| **Dreamland Le Mook** — Reno Lemaire + artistes invités | `type = recueil` ; `volumes = 1` ; éditeur **Pika Édition** ; relation **`contient`** vers *Tokyo Trip* et relation **`meme_univers`** vers Dreamland (confirmé : bonus « coulisses de Dreamland » avec quelques one-shots) ; plusieurs crédits (Reno Lemaire + artistes invités, rôle `autre` ou `dessin`) ; histoires inédites et one-shots **sans fiche propre** tant qu'ils ne sont pas publiés seuls ; sortie annoncée en septembre 2026 → fiche créée une fois paru (RG-15) |
-| Une œuvre **auto-éditée** sans éditeur | `kind = auto` ou aucun `work_publisher`, pas de ISBN |
-| **Radiant** — Tony Valente | `type = serie` ; statut `en_cours`, donc `volumes` et `chapters` non renseignés (« ? ») ; éditeur **Ankama** ; fiche d'origine de la famille Radiant : la liste de ses spin-offs s'affiche par déduction de l'inverse |
-| **Fabula Fantasia** (spin-off de Radiant) | `type = serie` ; statut `en_cours`, `volumes` non renseigné (« ? ») ; éditeur **Ankama** (même `publisher` que Radiant, Ripper et Space Punch) ; relation **`spin_off`** vers Radiant (se situe avant Radiant et se lit indépendamment : précisé dans le synopsis) |
-| **Radiant – Cyfandir Chronicles** (spin-off de Radiant) | `type = serie` ; statut `en_cours`, `volumes` non renseigné (« ? ») ; éditeur **Ankama** ; relation **`spin_off`** vers Radiant (se situe après l'arc de Cyfandir : précisé dans le synopsis) ; **deux personnes créditées** : Tony Valente (`scenario`, aussi crédité sur Radiant) et Naokuren (`dessin`) ; Radiant a désormais deux spin-offs (liste déduite de l'inverse) |
+| **BICLY** (*Because I Can't Love You*) — Lief | `type = webcomic` ; statut `completed`, donc totaux renseignés : `chapters = 158` (épisodes) ; **postface** : voir note ci-dessous ; édition papier chez Vega, `volumes = 4` ; **deux** `work_publisher` (plateforme **Webtoon** + éditeur Vega) ; lien « lire » (Webtoon) et lien « acheter » (Vega) ; crédit Lief ; genre `manga`/webtoon |
+| **Dreamland** — Reno Lemaire | `type = series` ; en cours : `volumes` et `chapters` non renseignés (affichés « ? » ; 24 tomes parus, non saisis) ; éditeur **Pika Édition** (`kind = publisher`) ; une seule personne créditée **deux fois** (rôles `story` et `art`, clé (`work_id`, `person_id`, `role`)) ; statut `ongoing` ; genre `manga` |
+| **Ripper** — Jeronimo Cejudo | `type = series` ; en cours : `volumes` non renseigné (« ? ») ; éditeur **Ankama** ; **6ᵉ tome annoncé pour fin novembre 2026** (voir note ci-dessous) ; genre `manga` |
+| **Space Punch** — Zd. | `type = series` ; en cours : `volumes` non renseigné (« ? ») ; éditeur **Ankama** (même `publisher` que Ripper : vérifie le partage d'un éditeur entre plusieurs œuvres et la page éditeur) ; statut `ongoing` ; auteur crédité en `story` et `art` ; genre `manga` |
+| **Akimbo** — Djiguito | `type = oneshot` ; `volumes = 1` ; **auto-édition** (`publisher` de `kind = self_published` ou aucun éditeur) ; statut `completed` ; pas d'ISBN ; lien de la boutique ou du site de l'auteur ; genre `manga` |
+| **Dreamland – Tokyo Trip** — Reno Lemaire | `type = oneshot` (hors-série d'environ 40 pages) ; `volumes = 1` ; relation **`spin_off`** vers Dreamland (et affichage de l'inverse sur la fiche Dreamland) ; **auto-édition** (`publisher` de `kind = self_published`) alors que Dreamland est chez Pika Édition : un même auteur peut donc avoir des œuvres à éditeurs différents ; une fiche unique même s'il paraît aussi dans le Mook |
+| **Dreamland Le Mook** — Reno Lemaire + artistes invités | `type = collection` ; `volumes = 1` ; éditeur **Pika Édition** ; relation **`contains`** vers *Tokyo Trip* et relation **`shared_universe`** vers Dreamland (confirmé : bonus « coulisses de Dreamland » avec quelques one-shots) ; plusieurs crédits (Reno Lemaire + artistes invités, rôle `autre` ou `dessin`) ; histoires inédites et one-shots **sans fiche propre** tant qu'ils ne sont pas publiés seuls ; sortie annoncée en septembre 2026 → fiche créée une fois paru (RG-15) |
+| Une œuvre **auto-éditée** sans éditeur | `kind = self_published` ou aucun `work_publisher`, pas de ISBN |
+| **Radiant** — Tony Valente | `type = series` ; statut `ongoing`, donc `volumes` et `chapters` non renseignés (« ? ») ; éditeur **Ankama** ; fiche d'origine de la famille Radiant : la liste de ses spin-offs s'affiche par déduction de l'inverse |
+| **Fabula Fantasia** (spin-off de Radiant) | `type = series` ; statut `ongoing`, `volumes` non renseigné (« ? ») ; éditeur **Ankama** (même `publisher` que Radiant, Ripper et Space Punch) ; relation **`spin_off`** vers Radiant (se situe avant Radiant et se lit indépendamment : précisé dans le synopsis) |
+| **Radiant – Cyfandir Chronicles** (spin-off de Radiant) | `type = series` ; statut `ongoing`, `volumes` non renseigné (« ? ») ; éditeur **Ankama** ; relation **`spin_off`** vers Radiant (se situe après l'arc de Cyfandir : précisé dans le synopsis) ; **deux personnes créditées** : Tony Valente (`story`, aussi crédité sur Radiant) et Naokuren (`art`) ; Radiant a désormais deux spin-offs (liste déduite de l'inverse) |
 
 **Constat : les dix cas entrent dans le modèle sans contournement.** Aucun exemple réel de suite ou de préquelle n'existe dans le périmètre actuel : ces types de relation sont conservés (standard MAL, coût nul) sans jeu d'acceptation. Règles de saisie confirmées par Ryan (2026-10-09) :
 1. **BICLY** : `chapters = 158` ; la **postface n'est pas comptée** (elle peut être mentionnée dans le synopsis ou une note).
 2. **Chapitres intermédiaires** (ex. 10.5), postfaces, bonus : **non comptés** ; `chapters` et `chapters_read` restent des entiers.
 3. **Parutions à venir** (ex. tome 6 de Ripper, annoncé fin novembre 2026) : **non modélisées** — le modèle ne décrit que ce qui est paru. C'est le rôle d'outils de calendrier de sorties comme MangaCollec, pas de Trame. Ripper étant en cours, `volumes` reste vide.
-7. **Totaux des œuvres en cours** : `chapters` et `volumes` ne sont **pas saisis** tant que l'œuvre est en cours (affichés « ? », ex. « chapitres 100/? · tomes 12/? »). On les renseigne quand l'œuvre passe à `termine`. Cela évite des fiches périmées à chaque nouvelle parution.
-4. **Un hors-série qui paraît aussi dans un recueil** (Tokyo Trip dans le Mook) = **une seule fiche**, liée au recueil par `contient` et à la série d'origine par `spin_off`.
+7. **Totaux des œuvres en cours** : `chapters` et `volumes` ne sont **pas saisis** tant que l'œuvre est en cours (affichés « ? », ex. « chapitres 100/? · tomes 12/? »). On les renseigne quand l'œuvre passe à `completed`. Cela évite des fiches périmées à chaque nouvelle parution.
+4. **Un hors-série qui paraît aussi dans un recueil** (Tokyo Trip dans le Mook) = **une seule fiche**, liée au recueil par `contains` et à la série d'origine par `spin_off`.
 5. **Récits inédits d'un recueil** : pas de fiche tant qu'ils ne sont pas publiés seuls ; ils sont décrits dans le synopsis et crédités sur le recueil.
 6. **Une seule relation principale par paire d'œuvres** (ex. `spin_off` pour Fabula Fantasia, même s'il est aussi une préquelle). La chronologie se précise dans le synopsis. Le modèle autorise techniquement une seconde relation, à n'utiliser qu'exceptionnellement.
