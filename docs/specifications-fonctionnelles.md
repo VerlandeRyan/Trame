@@ -87,6 +87,9 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 | RG-17 | Deux œuvres sont reliées par **une seule relation principale** (ex. `spin_off` pour Fabula Fantasia, même s'il est aussi une préquelle) ; la chronologie se précise dans le synopsis. |
 | RG-18 | Tant qu'une œuvre est **en cours**, ses totaux (`chapters`, `volumes`) restent **vides** et s'affichent « ? » (ex. « chapitres 100/? · tomes 12/? »). Ils sont renseignés quand l'œuvre est terminée. Aucun avertissement de dépassement n'est affiché quand le total est inconnu. |
 | RG-13 | La couverture n'est affichée que si `cover_consent` est vrai ou si l'administrateur l'a explicitement validée. |
+| RG-19 | Une œuvre a une **langue originale** obligatoire. Elle est visible et suivable par tout utilisateur, quelle que soit la langue de l'interface ; aucune disponibilité par pays n'est calculée (ADR 0007). |
+| RG-20 | Le **titre** affiché est celui de la langue de l'interface s'il existe, sinon le titre original. Les autres titres (traduit, international, ancien, court) restent recherchables. |
+| RG-21 | Le **synopsis** affiché est celui de la langue de l'interface (officiel de préférence, puis saisi, puis automatique), sinon celui de la langue originale. Un synopsis traduit automatiquement est signalé comme tel. |
 
 ## 3. Cas limites
 - **BICLY** : webtoon en ligne puis tomes papier chez Vega → une fiche, deux éditeurs/plateformes, deux liens, `chapters` et `volumes`.

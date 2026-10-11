@@ -146,6 +146,14 @@ Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui co
 ### `submission`
 `id` PK, `payload` jsonb NOT NULL (champs proposés), `status` (`en_attente` \| `acceptee` \| `refusee`), `submitted_by` FK, `reviewed_by` FK nullable, `dedupe_candidates` jsonb nullable, `created_at`, `reviewed_at`.
 
+### Évolution prévue (ADR 0007, tickets #50, #52, #53)
+Le schéma ci-dessus décrit l'état courant ; ces évolutions seront appliquées par migration, puis ce document sera aligné.
+- `work.original_language` : code ISO 639 (2 lettres, sinon 3), obligatoire, sans défaut.
+- `work_title` : ajout de `language` et `kind` (`translated` \| `international` \| `former` \| `short`) ; clé (`work_id`, `language`, `title`). `work.title` reste le titre original.
+- `work_synopsis` (`work_id`, `language`, `text`, `source` = `official` \| `human` \| `machine`) remplace `work.synopsis` ; clé (`work_id`, `language`).
+- `genre` : `code` (slug anglais, unique) remplace `label` ; libellés dans les fichiers de langue du front.
+- Valeurs d'énumération en anglais (`type`, `status`, `relation`, rôles, `kind`).
+
 ## 4. Règles transverses
 - **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/oeuvre/{id}-{slug}` et seul `{id}` est lu.
 - **Archivage** : toute suppression est une suppression douce, réservée à l'administrateur ; les listes publiques excluent `deleted_at IS NOT NULL`.
