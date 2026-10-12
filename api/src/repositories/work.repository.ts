@@ -5,6 +5,7 @@ import {
   type Database,
   type Db,
   type ExternalLinkKind,
+  type GenreCategory,
   type PersonKind,
   type PublisherKind,
   type RelationKind,
@@ -17,7 +18,9 @@ export interface WorkSearchCriteria {
   q?: string;
   type?: WorkType;
   status?: WorkStatus;
-  /** Libellé exact du genre. */
+  /** Code d'un format (ex. `manga`). */
+  format?: string;
+  /** Code d'un genre thématique (ex. `fantasy`). */
   genre?: string;
   limit: number;
   offset: number;
@@ -52,6 +55,9 @@ export interface WorkRecord {
   alternativeTitles: string[];
   credits: { personId: number; name: string; kind: PersonKind; role: CreditRole }[];
   publishers: { id: number; name: string; kind: PublisherKind; url: string | null }[];
+  /** Codes des formats (catégorie `format`), triés. */
+  formats: string[];
+  /** Codes des genres thématiques (catégorie `theme`), triés. */
   genres: string[];
   links: { kind: ExternalLinkKind; url: string; label: string | null }[];
   /** Un seul sens est stocké : `outgoing` = cette œuvre est la source, `incoming` = elle est la cible. */
@@ -113,17 +119,21 @@ function searchCondition(q: string): RawBuilder<boolean> {
   )`;
 }
 
+/** L'œuvre porte l'étiquette `code`, à condition qu'elle soit de la catégorie donnée. */
+function hasGenre(code: string, category: GenreCategory): RawBuilder<boolean> {
+  return sql<boolean>`EXISTS (
+    SELECT 1 FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
+    WHERE wg.work_id = work.id AND g.code = ${code} AND g.category = ${category}
+  )`;
+}
+
 function filters(criteria: WorkSearchCriteria) {
   return (eb: ExpressionBuilder<Database, 'work'>): Expression<SqlBool> => {
     const conditions: Expression<SqlBool>[] = [eb('work.deleted_at', 'is', null)];
     if (criteria.type !== undefined) conditions.push(eb('work.type', '=', criteria.type));
     if (criteria.status !== undefined) conditions.push(eb('work.status', '=', criteria.status));
-    if (criteria.genre !== undefined) {
-      conditions.push(sql<boolean>`EXISTS (
-        SELECT 1 FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
-        WHERE wg.work_id = work.id AND g.label = ${criteria.genre}
-      )`);
-    }
+    if (criteria.format !== undefined) conditions.push(hasGenre(criteria.format, 'format'));
+    if (criteria.genre !== undefined) conditions.push(hasGenre(criteria.genre, 'theme'));
     if (criteria.q !== undefined) conditions.push(searchCondition(criteria.q));
     return eb.and(conditions);
   };
@@ -208,9 +218,9 @@ export function createWorkRepository(db: Db): WorkRepository {
         db
           .selectFrom('work_genre as wg')
           .innerJoin('genre as g', 'g.id', 'wg.genre_id')
-          .select('g.label')
+          .select(['g.code', 'g.category'])
           .where('wg.work_id', '=', id)
-          .orderBy('g.label')
+          .orderBy('g.code')
           .execute(),
         db
           .selectFrom('external_link')
@@ -250,7 +260,8 @@ export function createWorkRepository(db: Db): WorkRepository {
         alternativeTitles: titles.map((t) => t.title),
         credits,
         publishers,
-        genres: genres.map((g) => g.label),
+        formats: genres.filter((g) => g.category === 'format').map((g) => g.code),
+        genres: genres.filter((g) => g.category === 'theme').map((g) => g.code),
         links,
         relations: [...outgoing.map(toRelation('outgoing')), ...incoming.map(toRelation('incoming'))],
       };

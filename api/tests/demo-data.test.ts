@@ -43,7 +43,7 @@ describe('jeu de démonstration', () => {
     expect(
       await count("SELECT count(*) AS n FROM work WHERE status = 'ongoing' AND (chapters IS NOT NULL OR volumes IS NOT NULL)"),
     ).toBe(0);
-    expect(await count("SELECT count(*) AS n FROM work WHERE type = 'webcomic' AND status = 'completed' AND chapters IS NOT NULL AND volumes IS NOT NULL")).toBe(1);
+    expect(await count("SELECT count(*) AS n FROM work WHERE type = 'series' AND status = 'completed' AND chapters IS NOT NULL AND volumes IS NOT NULL")).toBe(1);
   });
 
   it('couvre une personne créditée deux fois sur la même œuvre', async () => {

@@ -17,13 +17,13 @@ INSERT INTO app_user (email, google_sub, handle, display_name, role, profile_vis
 -- Œuvres ---------------------------------------------------------------------
 -- Les totaux chapters/volumes ne sont renseignés que pour les œuvres terminées.
 INSERT INTO work (title, type, status, synopsis, chapters, volumes, started_on, ended_on) VALUES
-  ('Les Lanternes de Brume',        'webcomic', 'completed', 'Une apprentie allumeuse de lanternes découvre ce qui vit dans la brume.', 120, 3, '2019-03-01', '2023-06-30'),
+  ('Les Lanternes de Brume',        'series',   'completed','Une apprentie allumeuse de lanternes découvre ce qui vit dans la brume.', 120, 3, '2019-03-01', '2023-06-30'),
   ('Chroniques de Basalte',         'series',   'ongoing',   'Un cartographe suit une faille qui dévore les routes.',                  NULL, NULL, '2021-01-15', NULL),
   ('Cap sur les Archipels',         'series',   'ongoing',   'Un équipage de fortune et ses îles qui changent de place.',              NULL, NULL, '2022-09-01', NULL),
   ('Le Gardien des Sables',         'series',   'ongoing',   'Un veilleur de dunes et le désert qui se souvient.',                     NULL, NULL, '2023-02-10', NULL),
   ('Carnet de Colportage',          'oneshot',  'completed', 'Les étapes d''une vendeuse ambulante sur une route qui n''existe pas.',  NULL, 1,    '2020-05-01', '2020-05-01'),
   ('Basalte – Histoires de Cendre', 'oneshot',  'completed', 'Hors-série sur les villages abandonnés de la faille.',                   NULL, 1,    '2023-11-01', '2023-11-01'),
-  ('Basalte – Le Recueil des Braises', 'collection', 'completed', 'Histoires courtes d''auteurs invités autour de Basalte.',           NULL, 1,    '2024-04-01', '2024-04-01'),
+  ('Basalte – Le Recueil des Braises', 'anthology', 'completed', 'Histoires courtes d''auteurs invités autour de Basalte.',           NULL, 1,    '2024-04-01', '2024-04-01'),
   ('Étoile Vagabonde',              'series',   'ongoing',   'Une comète habitée traverse le ciel d''un monde qui l''ignore.',        NULL, NULL, '2020-10-01', NULL),
   ('Étoile Vagabonde – Aube',       'series',   'ongoing',   'Avant la comète : les premiers observateurs.',                          NULL, NULL, '2023-05-01', NULL),
   ('Étoile Vagabonde – Crépuscule', 'series',   'ongoing',   'Après la comète : ce qu''elle a laissé derrière elle.',                 NULL, NULL, '2024-01-10', NULL);
@@ -96,26 +96,31 @@ SELECT w.id, p.id FROM (VALUES
   JOIN publisher p ON p.name = c.publisher_name;
 
 -- Genres -----------------------------------------------------------------------
-INSERT INTO genre (label) VALUES ('manga'), ('BD'), ('webtoon'), ('fantasy'), ('humour');
+-- `format` : tradition / mode de publication ; `theme` : genre thématique. Plusieurs de chaque par œuvre.
+INSERT INTO genre (code, category) VALUES
+  ('manga', 'format'), ('manhwa', 'format'), ('bd', 'format'), ('webtoon', 'format'), ('webcomic', 'format'),
+  ('fantasy', 'theme'), ('humor', 'theme'), ('science_fiction', 'theme');
 
 INSERT INTO work_genre (work_id, genre_id)
 SELECT w.id, g.id FROM (VALUES
+  ('Les Lanternes de Brume',           'manhwa'),
   ('Les Lanternes de Brume',           'webtoon'),
   ('Les Lanternes de Brume',           'fantasy'),
   ('Chroniques de Basalte',            'manga'),
   ('Chroniques de Basalte',            'fantasy'),
-  ('Cap sur les Archipels',            'BD'),
-  ('Cap sur les Archipels',            'humour'),
+  ('Cap sur les Archipels',            'bd'),
+  ('Cap sur les Archipels',            'humor'),
   ('Le Gardien des Sables',            'manga'),
-  ('Carnet de Colportage',             'BD'),
+  ('Carnet de Colportage',             'bd'),
   ('Basalte – Histoires de Cendre',    'manga'),
   ('Basalte – Le Recueil des Braises', 'manga'),
   ('Étoile Vagabonde',                 'manga'),
+  ('Étoile Vagabonde',                 'science_fiction'),
   ('Étoile Vagabonde – Aube',          'manga'),
   ('Étoile Vagabonde – Crépuscule',    'manga')
-) AS c(work_title, label)
+) AS c(work_title, code)
   JOIN work w ON w.title = c.work_title
-  JOIN genre g ON g.label = c.label;
+  JOIN genre g ON g.code = c.code;
 
 -- Relations entre œuvres (un seul sens stocké) ------------------------------------
 INSERT INTO work_relation (work_id, related_work_id, relation)

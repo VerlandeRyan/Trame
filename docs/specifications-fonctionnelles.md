@@ -74,7 +74,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 | RG-03 | Aucune statistique n'additionne chapitres et tomes. |
 | RG-04 | La note est un entier de 1 à 10, facultatif. La note moyenne d'une œuvre n'est affichée qu'à partir de **10 notes** pour éviter les moyennes non significatives ; en dessous, seul le nombre de notes est indiqué. |
 | RG-05 | Une « saison 2 » d'un webcomic reste la **même fiche** (les chapitres continuent). Une série clairement distincte reçoit sa propre fiche, reliée par une relation. |
-| RG-06 | Un recueil est une fiche de type `collection` reliée aux œuvres incluses par la relation `contains`. |
+| RG-06 | Un recueil est une fiche de type `anthology` reliée aux œuvres incluses par la relation `contains`. |
 | RG-07 | Une œuvre publiée en ligne puis éditée en papier reste **une seule fiche** (ex. BICLY) : `chapters` pour la partie en ligne, `volumes` pour le papier. |
 | RG-08 | Dédoublonnage sans ISBN : titre normalisé + recherche floue, proposé à l'utilisateur et vérifié par l'administrateur. |
 | RG-09 | Toute suppression est un archivage, réservé à l'administrateur ; une fiche archivée disparaît des listes et de la recherche publique mais reste restaurable. |
@@ -115,7 +115,9 @@ Vocabulaire fonctionnel en français ; noms techniques (tables, colonnes) en ang
 | Terme | Définition | Nom technique |
 |---|---|---|
 | **Œuvre / fiche** | Un titre du catalogue ; une œuvre = une fiche, quel que soit le nombre de supports | `work` |
-| **Type** | Format d'origine : **série**, **one-shot**, **webcomic/webtoon**, **recueil** | `work.type` (`series`, `oneshot`, `webcomic`, `collection`) |
+| **Type** | Structure de l'histoire : **série**, **one-shot**, **anthologie** (recueil d'histoires, d'un ou plusieurs auteurs). Indépendant du format et du genre | `work.type` (`series`, `oneshot`, `anthology`) |
+| **Format** | Tradition ou mode de publication et de lecture : manga, manhwa, BD, webtoon (défilement vertical), webcomic… Plusieurs par œuvre | `genre` (`category = format`), `work_genre` |
+| **Genre** | Thème de l'œuvre : fantasy, humour, science-fiction… Plusieurs par œuvre | `genre` (`category = theme`), `work_genre` |
 | **Chapitre / épisode** | Unité de lecture en ligne ou en prépublication | `work.chapters`, `library_entry.chapters_read` |
 | **Tome / volume** | Unité de lecture papier reliée | `work.volumes`, `library_entry.volumes_read` |
 | **Statut de publication** | À venir, en cours, terminée, en pause, abandonnée | `work.status` |

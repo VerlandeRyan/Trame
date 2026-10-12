@@ -132,11 +132,19 @@ describe('external_link', () => {
 });
 
 describe('éditeurs et genres', () => {
-  it('refuse un type d’éditeur inconnu et un genre en double', async () => {
+  it('refuse un type d’éditeur inconnu, un genre en double, un code ou une catégorie invalide', async () => {
     await expect(
       client.query("INSERT INTO publisher (name, kind) VALUES ('X', 'other')"),
     ).rejects.toThrow();
-    await client.query("INSERT INTO genre (label) VALUES ('manga')");
-    await expect(client.query("INSERT INTO genre (label) VALUES ('manga')")).rejects.toThrow();
+    await client.query("INSERT INTO genre (code, category) VALUES ('manga', 'format')");
+    await expect(
+      client.query("INSERT INTO genre (code, category) VALUES ('manga', 'format')"),
+    ).rejects.toThrow();
+    await expect(
+      client.query("INSERT INTO genre (code, category) VALUES ('Sci Fi', 'theme')"),
+    ).rejects.toThrow();
+    await expect(
+      client.query("INSERT INTO genre (code, category) VALUES ('fantasy', 'autre')"),
+    ).rejects.toThrow();
   });
 });

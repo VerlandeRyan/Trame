@@ -29,9 +29,9 @@ erDiagram
 | Table | Définition (à quoi elle sert) | Clé | Qui l'alimente |
 |---|---|---|---|
 | `app_user` | Un compte utilisateur, créé à la première connexion Google. Porte l'identité publique (handle), le rôle (`user` / `admin`) et la visibilité du profil | `id` | L'utilisateur (connexion) ; l'admin pour le rôle |
-| `work` | **Table centrale** : une œuvre du catalogue (série, one-shot, webcomic ou recueil), quel que soit le nombre de supports. Contient les informations de la fiche et la couverture | `id` | Admin (ou soumission acceptée) |
+| `work` | **Table centrale** : une œuvre du catalogue (série, one-shot ou anthologie), quel que soit le nombre de supports. Contient les informations de la fiche et la couverture | `id` | Admin (ou soumission acceptée) |
 | `work_title` | Titres alternatifs d'une œuvre (ancien titre, traduction, titre court) pour retrouver l'œuvre en recherche | (`work_id`, `title`) | Admin |
-| `work_relation` | Lien orienté entre deux œuvres : suite, préquelle, spin-off, histoire annexe, adaptation, version alternative, même univers, contient (recueil), autre | (`work_id`, `related_work_id`, `relation`) | Admin |
+| `work_relation` | Lien orienté entre deux œuvres : suite, préquelle, spin-off, histoire annexe, adaptation, version alternative, même univers, contient (anthologie), autre | (`work_id`, `related_work_id`, `relation`) | Admin |
 | `person` | Un auteur ou un collectif (scénariste, dessinateur, coloriste…) sous le nom sous lequel il est crédité | `id` | Admin |
 | `work_credit` | Association œuvre ↔ personne avec un **rôle** (scénario, dessin, couleur, autre). Une œuvre peut avoir plusieurs auteurs, une personne plusieurs œuvres | (`work_id`, `person_id`, `role`) | Admin |
 | `publisher` | Une structure qui publie : maison d'édition (Pika Édition, Ankama…), plateforme de lecture (Webtoon, Mangadraft) ou entrée « auto-édition » | `id` | Admin |
@@ -65,7 +65,7 @@ erDiagram
 |---|---|---|
 | id | bigint identity | PK — identifiant interne (`trame_id`), fait foi dans l'URL |
 | title | text | NOT NULL |
-| type | text | NOT NULL, `series` \| `oneshot` \| `webcomic` \| `collection` |
+| type | text | NOT NULL, `series` \| `oneshot` \| `anthology` — structure de l'histoire ; le format (manga, webtoon, webcomic…) est dans `genre` |
 | status | text | NOT NULL, `upcoming` \| `ongoing` \| `completed` \| `hiatus` \| `abandoned` |
 | synopsis | text | nullable |
 | chapters | integer | nullable, ≥ 0 — nombre **total** de chapitres/épisodes ; **renseigné seulement quand l'œuvre est terminée** (NULL = inconnu / en cours, affiché « ? » comme sur MAL) |
@@ -104,7 +104,7 @@ PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inve
 `work_id`, `publisher_id`. PK composite. Facultatif : une œuvre peut n'avoir aucun éditeur (auto-édition sans structure).
 
 ### `genre` / `work_genre`
-`genre(id, label unique)` ; `work_genre(work_id, genre_id)`. Les étiquettes « manga » et « BD » vivent ici.
+`genre(id, code unique, category)` : la liste des étiquettes qui existent. `code` est un slug stable en anglais (`manhwa`, `fantasy`…), jamais un texte traduit ; `category` vaut `format` (tradition ou mode de publication : manga, manhwa, bd, webtoon, webcomic) ou `theme` (fantasy, humor, science_fiction…). `work_genre(work_id, genre_id)` : quelles étiquettes porte chaque œuvre, plusieurs de chaque catégorie. Ajouter une valeur (ex. `manhua`) est une ligne de données, sans migration.
 
 ### `external_link`
 | Colonne | Type | Règle |
@@ -148,12 +148,11 @@ Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui co
 
 Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce sont des identifiants techniques, indépendants de la langue de l'œuvre ; le front affiche le libellé traduit.
 
-### Évolution prévue (ADR 0007, tickets #52, #53)
+### Évolution prévue (ADR 0007, ticket #53)
 Le schéma ci-dessus décrit l'état courant ; ces évolutions seront appliquées par migration, puis ce document sera aligné.
 - `work.original_language` : code ISO 639 (2 lettres, sinon 3), obligatoire, sans défaut.
 - `work_title` : ajout de `language` et `kind` (`translated` \| `international` \| `former` \| `short`) ; clé (`work_id`, `language`, `title`). `work.title` reste le titre original.
 - `work_synopsis` (`work_id`, `language`, `text`, `source` = `official` \| `human` \| `machine`) remplace `work.synopsis` ; clé (`work_id`, `language`).
-- `genre` : `code` (slug anglais, unique) remplace `label` ; libellés dans les fichiers de langue du front.
 
 ## 4. Règles transverses
 - **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/oeuvre/{id}-{slug}` et seul `{id}` est lu.
@@ -175,13 +174,13 @@ Chaque cas doit entrer proprement dans le modèle, sans contournement. Les infor
 
 | Cas | Ce qu'il teste |
 |---|---|
-| **BICLY** (*Because I Can't Love You*) — Lief | `type = webcomic` ; statut `completed`, donc totaux renseignés : `chapters = 158` (épisodes) ; **postface** : voir note ci-dessous ; édition papier chez Vega, `volumes = 4` ; **deux** `work_publisher` (plateforme **Webtoon** + éditeur Vega) ; lien « lire » (Webtoon) et lien « acheter » (Vega) ; crédit Lief ; genre `manga`/webtoon |
-| **Dreamland** — Reno Lemaire | `type = series` ; en cours : `volumes` et `chapters` non renseignés (affichés « ? » ; 24 tomes parus, non saisis) ; éditeur **Pika Édition** (`kind = publisher`) ; une seule personne créditée **deux fois** (rôles `story` et `art`, clé (`work_id`, `person_id`, `role`)) ; statut `ongoing` ; genre `manga` |
-| **Ripper** — Jeronimo Cejudo | `type = series` ; en cours : `volumes` non renseigné (« ? ») ; éditeur **Ankama** ; **6ᵉ tome annoncé pour fin novembre 2026** (voir note ci-dessous) ; genre `manga` |
-| **Space Punch** — Zd. | `type = series` ; en cours : `volumes` non renseigné (« ? ») ; éditeur **Ankama** (même `publisher` que Ripper : vérifie le partage d'un éditeur entre plusieurs œuvres et la page éditeur) ; statut `ongoing` ; auteur crédité en `story` et `art` ; genre `manga` |
-| **Akimbo** — Djiguito | `type = oneshot` ; `volumes = 1` ; **auto-édition** (`publisher` de `kind = self_published` ou aucun éditeur) ; statut `completed` ; pas d'ISBN ; lien de la boutique ou du site de l'auteur ; genre `manga` |
+| **BICLY** (*Because I Can't Love You*) — Lief | `type = series` ; statut `completed`, donc totaux renseignés : `chapters = 158` (épisodes) ; **postface** : voir note ci-dessous ; édition papier chez Vega, `volumes = 4` ; **deux** `work_publisher` (plateforme **Webtoon** + éditeur Vega) ; lien « lire » (Webtoon) et lien « acheter » (Vega) ; crédit Lief ; formats `manhwa` et `webtoon` (plusieurs formats sur une même fiche) |
+| **Dreamland** — Reno Lemaire | `type = series` ; en cours : `volumes` et `chapters` non renseignés (affichés « ? » ; 24 tomes parus, non saisis) ; éditeur **Pika Édition** (`kind = publisher`) ; une seule personne créditée **deux fois** (rôles `story` et `art`, clé (`work_id`, `person_id`, `role`)) ; statut `ongoing` ; format `manga` |
+| **Ripper** — Jeronimo Cejudo | `type = series` ; en cours : `volumes` non renseigné (« ? ») ; éditeur **Ankama** ; **6ᵉ tome annoncé pour fin novembre 2026** (voir note ci-dessous) ; format `manga` |
+| **Space Punch** — Zd. | `type = series` ; en cours : `volumes` non renseigné (« ? ») ; éditeur **Ankama** (même `publisher` que Ripper : vérifie le partage d'un éditeur entre plusieurs œuvres et la page éditeur) ; statut `ongoing` ; auteur crédité en `story` et `art` ; format `manga` |
+| **Akimbo** — Djiguito | `type = oneshot` ; `volumes = 1` ; **auto-édition** (`publisher` de `kind = self_published` ou aucun éditeur) ; statut `completed` ; pas d'ISBN ; lien de la boutique ou du site de l'auteur ; format `manga` |
 | **Dreamland – Tokyo Trip** — Reno Lemaire | `type = oneshot` (hors-série d'environ 40 pages) ; `volumes = 1` ; relation **`spin_off`** vers Dreamland (et affichage de l'inverse sur la fiche Dreamland) ; **auto-édition** (`publisher` de `kind = self_published`) alors que Dreamland est chez Pika Édition : un même auteur peut donc avoir des œuvres à éditeurs différents ; une fiche unique même s'il paraît aussi dans le Mook |
-| **Dreamland Le Mook** — Reno Lemaire + artistes invités | `type = collection` ; `volumes = 1` ; éditeur **Pika Édition** ; relation **`contains`** vers *Tokyo Trip* et relation **`shared_universe`** vers Dreamland (confirmé : bonus « coulisses de Dreamland » avec quelques one-shots) ; plusieurs crédits (Reno Lemaire + artistes invités, rôle `autre` ou `dessin`) ; histoires inédites et one-shots **sans fiche propre** tant qu'ils ne sont pas publiés seuls ; sortie annoncée en septembre 2026 → fiche créée une fois paru (RG-15) |
+| **Dreamland Le Mook** — Reno Lemaire + artistes invités | `type = anthology` ; `volumes = 1` ; éditeur **Pika Édition** ; relation **`contains`** vers *Tokyo Trip* et relation **`shared_universe`** vers Dreamland (confirmé : bonus « coulisses de Dreamland » avec quelques one-shots) ; plusieurs crédits (Reno Lemaire + artistes invités, rôle `autre` ou `dessin`) ; histoires inédites et one-shots **sans fiche propre** tant qu'ils ne sont pas publiés seuls ; sortie annoncée en septembre 2026 → fiche créée une fois paru (RG-15) |
 | Une œuvre **auto-éditée** sans éditeur | `kind = self_published` ou aucun `work_publisher`, pas de ISBN |
 | **Radiant** — Tony Valente | `type = series` ; statut `ongoing`, donc `volumes` et `chapters` non renseignés (« ? ») ; éditeur **Ankama** ; fiche d'origine de la famille Radiant : la liste de ses spin-offs s'affiche par déduction de l'inverse |
 | **Fabula Fantasia** (spin-off de Radiant) | `type = series` ; statut `ongoing`, `volumes` non renseigné (« ? ») ; éditeur **Ankama** (même `publisher` que Radiant, Ripper et Space Punch) ; relation **`spin_off`** vers Radiant (se situe avant Radiant et se lit indépendamment : précisé dans le synopsis) |

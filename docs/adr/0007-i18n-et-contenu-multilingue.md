@@ -15,6 +15,7 @@ Le périmètre « création francophone uniquement » est trop étroit : la scè
 - **Langue originale** : `work.original_language`, obligatoire, sans valeur par défaut.
 - **Disponibilité** : aucun filtre par pays ou par langue ; la fiche liste les liens « lire » et « acheter », sans dire « disponible chez vous ».
 - **Codes en anglais** : valeurs d'énumération et codes de genre (`genre.code`) en anglais, libellés traduits côté front. Les codes `manga` et `bd` sont conservés.
+- **Formats et genres** : table `genre` (`code` stable, `category` = `format` ou `theme`). Le format (manga, manhwa, bd, webtoon, webcomic) dit comment l'œuvre est publiée et lue ; le genre dit de quoi elle parle ; les deux sont multiples par œuvre et distincts de `work.type`, qui dit la structure de l'histoire (`series`, `oneshot`, `anthology`) ; `webcomic` est un format, pas un type.
 - **Erreurs d'API** : `code` + champ + paramètres, sans message traduit ; le `message` de premier niveau est un texte technique en anglais. Le front lit `code`, jamais `message`.
 - **URL** : contenu identique quelle que soit la langue (`/works/12`, `?genre=adventure`) ; langue d'interface en préfixe de chemin, français sans préfixe (`/en/works/12`) ; profils sous `/u/{handle}`. À confirmer au ticket du squelette Nuxt.
 - **Traduction automatique** : outil et chaîne reportés ; au MVP, traductions saisies à la main uniquement. La colonne `source` prépare l'affichage « traduit automatiquement » et son remplacement par une saisie humaine.
