@@ -13,6 +13,7 @@ erDiagram
   work ||--o{ reading_event : concerne
   app_user ||--o{ submission : propose
   work ||--o{ work_title : "titres alternatifs"
+  work ||--o{ work_synopsis : "synopsis par langue"
   work ||--o{ work_credit : "est créditée"
   person ||--o{ work_credit : réalise
   work ||--o{ work_publisher : "publiée par"
@@ -30,7 +31,8 @@ erDiagram
 |---|---|---|---|
 | `app_user` | Un compte utilisateur, créé à la première connexion Google. Porte l'identité publique (handle), le rôle (`user` / `admin`) et la visibilité du profil | `id` | L'utilisateur (connexion) ; l'admin pour le rôle |
 | `work` | **Table centrale** : une œuvre du catalogue (série, one-shot ou anthologie), quel que soit le nombre de supports. Contient les informations de la fiche et la couverture | `id` | Admin (ou soumission acceptée) |
-| `work_title` | Titres alternatifs d'une œuvre (ancien titre, traduction, titre court) pour retrouver l'œuvre en recherche | (`work_id`, `title`) | Admin |
+| `work_title` | Titres alternatifs d'une œuvre par langue (traduction, titre international, ancien titre, titre court) : affichage localisé et recherche | (`work_id`, `language`, `title`) | Admin |
+| `work_synopsis` | Synopsis d'une œuvre dans une langue, avec sa source (officielle, humaine, automatique) | (`work_id`, `language`) | Admin |
 | `work_relation` | Lien orienté entre deux œuvres : suite, préquelle, spin-off, histoire annexe, adaptation, version alternative, même univers, contient (anthologie), autre | (`work_id`, `related_work_id`, `relation`) | Admin |
 | `person` | Un auteur ou un collectif (scénariste, dessinateur, coloriste…) sous le nom sous lequel il est crédité | `id` | Admin |
 | `work_credit` | Association œuvre ↔ personne avec un **rôle** (scénario, dessin, couleur, autre). Une œuvre peut avoir plusieurs auteurs, une personne plusieurs œuvres | (`work_id`, `person_id`, `role`) | Admin |
@@ -64,10 +66,10 @@ erDiagram
 | Colonne | Type | Contraintes / règle |
 |---|---|---|
 | id | bigint identity | PK — identifiant interne (`trame_id`), fait foi dans l'URL |
-| title | text | NOT NULL |
+| title | text | NOT NULL — titre dans la langue originale (`original_language`) |
+| original_language | text | NOT NULL, **sans défaut**, code ISO 639 en minuscules (2 ou 3 lettres) — langue de repli du titre et du synopsis |
 | type | text | NOT NULL, `series` \| `oneshot` \| `anthology` — structure de l'histoire ; le format (manga, webtoon, webcomic…) est dans `genre` |
 | status | text | NOT NULL, `upcoming` \| `ongoing` \| `completed` \| `hiatus` \| `abandoned` |
-| synopsis | text | nullable |
 | chapters | integer | nullable, ≥ 0 — nombre **total** de chapitres/épisodes ; **renseigné seulement quand l'œuvre est terminée** (NULL = inconnu / en cours, affiché « ? » comme sur MAL) |
 | volumes | integer | nullable, ≥ 0 — nombre **total** de tomes ; même règle : NULL tant que l'œuvre est en cours, affiché « ? » |
 | started_on | date | nullable |
@@ -81,7 +83,24 @@ erDiagram
 Index : GIN trigram sur `title` (`pg_trgm` + `unaccent`) ; index sur `type`, `status`, `deleted_at`.
 
 ### `work_title`
-`work_id` FK, `title` text NOT NULL. Titres alternatifs (traductions, anciens titres). PK (`work_id`, `title`).
+| Colonne | Type | Règle |
+|---|---|---|
+| work_id | bigint FK `work` | NOT NULL, `ON DELETE CASCADE` |
+| language | text | NOT NULL, code ISO 639 en minuscules |
+| kind | text | NOT NULL, `translated` \| `international` \| `former` \| `short` |
+| title | text | NOT NULL |
+
+PK (`work_id`, `language`, `title`). Titres autres que `work.title`. Titre affiché pour une langue `L` : `translated`, sinon `international`, de langue `L` ; sinon `work.title` (`former` et `short` ne servent qu'à la recherche et à l'affichage de la fiche). Index GIN trigram sur `title`.
+
+### `work_synopsis`
+| Colonne | Type | Règle |
+|---|---|---|
+| work_id | bigint FK `work` | NOT NULL, `ON DELETE CASCADE` |
+| language | text | NOT NULL, code ISO 639 en minuscules |
+| text | text | NOT NULL, non vide |
+| source | text | NOT NULL, `official` \| `human` \| `machine` |
+
+PK (`work_id`, `language`). Lecture : langue demandée, sinon langue originale de l'œuvre, sinon aucun synopsis. Pas de synopsis traduit automatiquement tant que cet outil n'est pas décidé : `machine` est prévu, non produit.
 
 ### `work_relation`
 | Colonne | Type | Règle |
@@ -148,18 +167,12 @@ Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui co
 
 Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce sont des identifiants techniques, indépendants de la langue de l'œuvre ; le front affiche le libellé traduit.
 
-### Évolution prévue (ADR 0007, ticket #53)
-Le schéma ci-dessus décrit l'état courant ; ces évolutions seront appliquées par migration, puis ce document sera aligné.
-- `work.original_language` : code ISO 639 (2 lettres, sinon 3), obligatoire, sans défaut.
-- `work_title` : ajout de `language` et `kind` (`translated` \| `international` \| `former` \| `short`) ; clé (`work_id`, `language`, `title`). `work.title` reste le titre original.
-- `work_synopsis` (`work_id`, `language`, `text`, `source` = `official` \| `human` \| `machine`) remplace `work.synopsis` ; clé (`work_id`, `language`).
-
 ## 4. Règles transverses
 - **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/oeuvre/{id}-{slug}` et seul `{id}` est lu.
 - **Archivage** : toute suppression est une suppression douce, réservée à l'administrateur ; les listes publiques excluent `deleted_at IS NOT NULL`.
 - **Pas d'ISBN, pas d'édition** dans le MVP.
 - **Statistiques** : ne jamais additionner chapitres et tomes.
-- **Recherche** : `pg_trgm` + `unaccent` sur `work.title`, `work_title.title`, `person.name`, `publisher.name`.
+- **Recherche** : `pg_trgm` + `unaccent` sur `work.title`, `work_title.title` (toutes langues, quelle que soit la langue demandée), `person.name`, `publisher.name`.
 - **Erreurs API** : codes stables (ex. `WORK_NOT_FOUND`, `ADMIN_REQUIRED`, `HANDLE_TAKEN`).
 - **Jeu de démonstration** : `db/demo-data.sql` reproduit les cas structurels de la section 7 avec des données **entièrement fictives** (titres, auteurs, comptes en `@exemple.test`) ; il se charge avec `npm run db:seed` depuis `api/`. Les données réelles du catalogue ne vont jamais dans git.
 

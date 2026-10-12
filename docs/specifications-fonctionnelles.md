@@ -16,7 +16,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 
 **US-02 — Consulter une fiche œuvre**
 - L'URL est `/oeuvre/{id}-{slug}` ; seul `{id}` est lu ; un slug erroné redirige vers l'URL canonique.
-- La fiche affiche : couverture, titre, titres alternatifs, type, statut de publication, synopsis, nombre de chapitres et de tomes (« ? » tant que l'œuvre est en cours), auteurs (avec rôle), éditeurs/plateformes, genres, liens « lire » et « acheter », œuvres liées regroupées par type de relation.
+- La fiche affiche : couverture, titre (dans la langue de l'interface si disponible, sinon le titre original), titres alternatifs avec leur langue, langue originale, type, statut de publication, synopsis (avec sa langue et sa source, un synopsis traduit automatiquement est signalé), nombre de chapitres et de tomes (« ? » tant que l'œuvre est en cours), auteurs (avec rôle), éditeurs/plateformes, genres, liens « lire » et « acheter », œuvres liées regroupées par type de relation.
 - Connecté, la fiche montre mon entrée de bibliothèque et permet de l'ajouter ou la modifier.
 - La page est rendue côté serveur avec titre, description, balisage structuré et balises de partage.
 
@@ -52,7 +52,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 
 ### Contribution
 **US-09 — Proposer une œuvre manquante** (utilisateur)
-- Formulaire : titre, type, auteur(s), éditeur/plateforme (facultatif), au moins un lien **ou** une couverture, synopsis (facultatif).
+- Formulaire : titre, type, auteur(s), éditeur/plateforme (facultatif), langue originale, au moins un lien **ou** une couverture, synopsis (facultatif, dans la langue originale).
 - À la saisie du titre, une liste « c'est l'une de ces œuvres ? » évite les doublons.
 - La soumission est créée en attente ; l'utilisateur voit son état (en attente / acceptée / refusée).
 - Limite de fréquence pour les nouveaux comptes.
@@ -105,6 +105,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - **Pas d'œuvres pour adultes** dans le MVP : pas de champ « public », pas de floutage ni de confirmation d'âge. Priorité à la facilité d'accès des œuvres populaires et indépendantes.
 - Journal de lecture (`reading_event`) **dans le MVP**.
 - Pseudonymes : une `person` par nom d'usage ; alias plus tard si besoin.
+- Contenu multilingue (2026-10-12, ADR 0007, #53) : l'API accepte `lang` (liste de langues dans la configuration de l'API) ; sans `lang`, titre et synopsis sont dans la langue originale. Un titre `short` ou `former` n'est jamais choisi comme titre affiché mais reste recherchable.
 
 ## 5. Points encore ouverts
 Aucun point produit. Restent des choix techniques, traités en ADR au démarrage du code.

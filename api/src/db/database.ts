@@ -22,13 +22,17 @@ export type ExternalLinkKind = 'read' | 'buy' | 'website' | 'social';
 export type PersonKind = 'person' | 'collective';
 /** `format` : manga, manhwa, bd, webtoon, webcomic… ; `theme` : fantasy, humor… */
 export type GenreCategory = 'format' | 'theme';
+export type TitleKind = 'translated' | 'international' | 'former' | 'short';
+/** `official` (éditeur, auteur) > `human` (contributeur) > `machine` (traduction automatique). */
+export type SynopsisSource = 'official' | 'human' | 'machine';
 
 export interface WorkTable {
   id: Generated<number>;
   title: string;
   type: WorkType;
   status: WorkStatus;
-  synopsis: string | null;
+  /** Langue originale (ISO 639) ; `title` est le titre dans cette langue. */
+  original_language: string;
   chapters: number | null;
   volumes: number | null;
   /** Date calendaire `YYYY-MM-DD` (voir `createDb`). */
@@ -42,7 +46,16 @@ export interface WorkTable {
 
 export interface WorkTitleTable {
   work_id: number;
+  language: string;
+  kind: TitleKind;
   title: string;
+}
+
+export interface WorkSynopsisTable {
+  work_id: number;
+  language: string;
+  text: string;
+  source: SynopsisSource;
 }
 
 export interface WorkRelationTable {
@@ -105,6 +118,7 @@ export interface ExternalLinkTable {
 export interface Database {
   work: WorkTable;
   work_title: WorkTitleTable;
+  work_synopsis: WorkSynopsisTable;
   work_relation: WorkRelationTable;
   person: PersonTable;
   work_credit: WorkCreditTable;
