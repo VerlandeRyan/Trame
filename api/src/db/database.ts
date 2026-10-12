@@ -1,7 +1,8 @@
 import { Kysely, PostgresDialect, type Generated } from 'kysely';
 import pg from 'pg';
 
-export type WorkType = 'series' | 'oneshot' | 'webcomic' | 'collection';
+/** Structure de l'histoire ; le format (manga, webtoon…) est dans la table `genre`. */
+export type WorkType = 'series' | 'oneshot' | 'anthology';
 export type WorkStatus = 'upcoming' | 'ongoing' | 'completed' | 'hiatus' | 'abandoned';
 export type CreditRole = 'story' | 'art' | 'colors' | 'other';
 /** Importance d'un rôle pour l'affichage (0 = en premier). Exhaustif : ajouter un rôle ici est imposé par le compilateur. */

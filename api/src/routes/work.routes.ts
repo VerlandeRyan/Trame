@@ -13,7 +13,7 @@ const genreCode = z
 
 const listWorksQuery = z.object({
   q: z.string().trim().min(2).max(100).optional(),
-  type: z.enum(['series', 'oneshot', 'webcomic', 'collection']).optional(),
+  type: z.enum(['series', 'oneshot', 'anthology']).optional(),
   status: z.enum(['upcoming', 'ongoing', 'completed', 'hiatus', 'abandoned']).optional(),
   format: genreCode.optional(),
   genre: genreCode.optional(),

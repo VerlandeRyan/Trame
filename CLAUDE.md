@@ -11,7 +11,7 @@ Plateforme de suivi de lecture et de découverte pour la **création alternative
 - Création indépendante européenne, FR d'abord ; **une œuvre = une fiche** ; modèle calqué sur MyAnimeList.
 - i18n (ADR 0007) : interface FR au MVP, prête pour d'autres langues ; titres et synopsis par langue (`work_title`, `work_synopsis`), repli sur la langue originale ; pas de filtre de disponibilité ; codes d'énumération et de genre en anglais, libellés côté front.
 - Compteurs **chapitres lus** et **tomes lus** indépendants : jamais mappés ni additionnés. Note /10. Pas d'édition, pas d'ISBN.
-- `work.type` ∈ `series | oneshot | webcomic | collection` ; manga/manhwa/BD/webtoon/webcomic = **formats** et fantasy/humor… = **genres**, deux catégories de la table `genre`, multiples par œuvre et distinctes du type.
+- `work.type` ∈ `series | oneshot | anthology` ; manga/manhwa/BD/webtoon/webcomic = **formats** et fantasy/humor… = **genres**, deux catégories de la table `genre`, multiples par œuvre et distinctes du type.
 - Stack : **PostgreSQL + API Node/TypeScript (REST) + Nuxt (Vue 3)**. Supabase écarté. Mobile : **web + PWA d'abord**.
 - Connexion Google uniquement. Rôles `user` / `admin`. Suppression = archivage admin (`deleted_at`/`deleted_by`).
 - Les données du catalogue sont **en base, pas dans git**. Images hors git. Le dépôt ne contient qu'un jeu de démo fictif.

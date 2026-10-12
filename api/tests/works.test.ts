@@ -60,7 +60,7 @@ describe('GET /api/v1/works', () => {
   });
 
   it('filtre par type, statut, format et genre', async () => {
-    expect(await titles('?type=collection')).toEqual(['Basalte – Le Recueil des Braises']);
+    expect(await titles('?type=anthology')).toEqual(['Basalte – Le Recueil des Braises']);
     expect(await titles('?status=completed')).toHaveLength(4);
     expect((await titles('?format=bd')).sort()).toEqual(['Cap sur les Archipels', 'Carnet de Colportage']);
     expect((await titles('?format=webtoon')).sort()).toEqual(['Les Lanternes de Brume']);
@@ -108,7 +108,7 @@ describe('GET /api/v1/works', () => {
   });
 
   it('refuse les paramètres invalides', async () => {
-    for (const query of ['?q=a', '?pageSize=51', '?page=0', '?type=inconnu', '?status=lu', '?genre=BD', '?format=Manga', '?q=ab&q=cd']) {
+    for (const query of ['?q=a', '?pageSize=51', '?page=0', '?type=inconnu', '?type=webcomic', '?status=lu', '?genre=BD', '?format=Manga', '?q=ab&q=cd']) {
       const res = await request(app).get(`/api/v1/works${query}`);
       expect(res.status, query).toBe(400);
       expect(res.body.code).toBe('VALIDATION_ERROR');
