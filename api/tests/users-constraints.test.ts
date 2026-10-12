@@ -36,7 +36,7 @@ async function user(extra: Record<string, unknown> = {}): Promise<number> {
 
 async function work(): Promise<number> {
   const res = await client.query(
-    "INSERT INTO work (title, type, status) VALUES ('Œuvre fictive', 'series', 'ongoing') RETURNING id",
+    "INSERT INTO work (title, type, status, original_language) VALUES ('Œuvre fictive', 'series', 'ongoing', 'fr') RETURNING id",
   );
   return Number(res.rows[0].id);
 }
@@ -72,11 +72,11 @@ describe('app_user', () => {
 describe('work.deleted_by', () => {
   it('doit référencer un utilisateur existant', async () => {
     await expect(
-      client.query("INSERT INTO work (title, type, status, deleted_by) VALUES ('X', 'series', 'ongoing', 999999)"),
+      client.query("INSERT INTO work (title, type, status, original_language, deleted_by) VALUES ('X', 'series', 'ongoing', 'fr', 999999)"),
     ).rejects.toThrow();
     const admin = await user({ role: 'admin' });
     await client.query(
-      "INSERT INTO work (title, type, status, deleted_at, deleted_by) VALUES ('X', 'series', 'ongoing', now(), $1)",
+      "INSERT INTO work (title, type, status, original_language, deleted_at, deleted_by) VALUES ('X', 'series', 'ongoing', 'fr', now(), $1)",
       [admin],
     );
   });

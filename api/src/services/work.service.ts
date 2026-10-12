@@ -14,6 +14,7 @@ export interface ListWorksInput {
   status?: WorkStatus;
   format?: string;
   genre?: string;
+  lang?: string;
   page: number;
   pageSize: number;
 }
@@ -37,8 +38,8 @@ export type WorkDetail = Omit<WorkRecord, 'credits'> & { credits: Credit[] };
 
 export interface WorkService {
   list(input: ListWorksInput): Promise<WorkPage>;
-  /** Lève `NOT_FOUND` si l'œuvre n'existe pas ou est archivée. */
-  get(id: number): Promise<WorkDetail>;
+  /** Lève `NOT_FOUND` si l'œuvre n'existe pas ou est archivée. `lang` : langue de l'application. */
+  get(id: number, lang?: string): Promise<WorkDetail>;
 }
 
 const roleRank = (role: CreditRole): number => CREDIT_ROLE_RANK[role];
@@ -65,7 +66,7 @@ function groupCredits(rows: WorkRecord['credits']): Credit[] {
 
 export function createWorkService(repository: WorkRepository): WorkService {
   return {
-    async list({ q, type, status, format, genre, page, pageSize }) {
+    async list({ q, type, status, format, genre, lang, page, pageSize }) {
       const normalizedQuery = q?.replace(/\s+/g, ' ').trim();
       const { items, total } = await repository.search({
         q: normalizedQuery ? normalizedQuery : undefined,
@@ -73,14 +74,15 @@ export function createWorkService(repository: WorkRepository): WorkService {
         status,
         format,
         genre,
+        lang,
         limit: pageSize,
         offset: (page - 1) * pageSize,
       });
       return { items, page, pageSize, total };
     },
 
-    async get(id) {
-      const record = await repository.findById(id);
+    async get(id, lang) {
+      const record = await repository.findById(id, lang);
       if (record === undefined) throw new AppError('NOT_FOUND');
       return { ...record, credits: groupCredits(record.credits) };
     },

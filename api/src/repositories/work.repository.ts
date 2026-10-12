@@ -9,6 +9,8 @@ import {
   type PersonKind,
   type PublisherKind,
   type RelationKind,
+  type SynopsisSource,
+  type TitleKind,
   type WorkStatus,
   type WorkType,
 } from '../db/database.js';
@@ -22,6 +24,8 @@ export interface WorkSearchCriteria {
   format?: string;
   /** Code d'un genre thématique (ex. `fantasy`). */
   genre?: string;
+  /** Langue de l'application : sert à choisir le titre affiché (repli sur le titre original). */
+  lang?: string;
   limit: number;
   offset: number;
 }
@@ -43,16 +47,23 @@ export interface WorkSearchResult {
 /** Fiche telle que lue en base : un crédit par (personne, rôle). Le service les regroupe par personne. */
 export interface WorkRecord {
   id: number;
+  /** Titre affiché : titre localisé dans la langue demandée, sinon titre original. */
   title: string;
+  originalTitle: string;
+  originalLanguage: string;
   type: WorkType;
   status: WorkStatus;
+  /** Synopsis dans la langue demandée, sinon dans la langue originale ; `null` si aucun. */
   synopsis: string | null;
+  synopsisLanguage: string | null;
+  synopsisSource: SynopsisSource | null;
   chapters: number | null;
   volumes: number | null;
   startedOn: string | null;
   endedOn: string | null;
   coverPath: string | null;
-  alternativeTitles: string[];
+  /** Titres alternatifs, toutes langues, triés par langue, nature puis titre. */
+  titles: { language: string; kind: TitleKind; title: string }[];
   credits: { personId: number; name: string; kind: PersonKind; role: CreditRole }[];
   publishers: { id: number; name: string; kind: PublisherKind; url: string | null }[];
   /** Codes des formats (catégorie `format`), triés. */
@@ -71,7 +82,25 @@ export interface WorkRecord {
 export interface WorkRepository {
   search(criteria: WorkSearchCriteria): Promise<WorkSearchResult>;
   /** Renvoie `undefined` si l'œuvre n'existe pas ou est archivée. */
-  findById(id: number): Promise<WorkRecord | undefined>;
+  findById(id: number, lang?: string): Promise<WorkRecord | undefined>;
+}
+
+/**
+ * Titre à afficher pour la langue `lang` : titre `translated` puis `international` de cette langue,
+ * sinon titre original (aussi quand `lang` est la langue originale). `alias` : table `work`.
+ */
+function displayTitle(alias: string, lang: string | undefined): RawBuilder<string> {
+  const title = sql.ref(`${alias}.title`);
+  if (lang === undefined) return sql<string>`${title}`;
+  const id = sql.ref(`${alias}.id`);
+  const original = sql.ref(`${alias}.original_language`);
+  return sql<string>`COALESCE((
+    SELECT wt.title FROM work_title wt
+    WHERE wt.work_id = ${id} AND wt.language = ${lang} AND ${original} <> ${lang}
+      AND wt.kind IN ('translated', 'international')
+    ORDER BY CASE wt.kind WHEN 'translated' THEN 0 ELSE 1 END, wt.title
+    LIMIT 1
+  ), ${title})`;
 }
 
 /** La couverture n'est exposée qu'avec l'accord enregistré (`cover_consent`). */
@@ -142,11 +171,12 @@ function filters(criteria: WorkSearchCriteria) {
 export function createWorkRepository(db: Db): WorkRepository {
   return {
     async search(criteria) {
+      const shownTitle = displayTitle('work', criteria.lang);
       let listQuery = db
         .selectFrom('work')
         .select([
           'work.id',
-          'work.title',
+          shownTitle.as('title'),
           'work.type',
           'work.status',
           COVER_PATH.as('coverPath'),
@@ -162,7 +192,7 @@ export function createWorkRepository(db: Db): WorkRepository {
 
       const [items, count] = await Promise.all([
         listQuery
-          .orderBy('work.title')
+          .orderBy(shownTitle)
           .orderBy('work.id')
           .limit(criteria.limit)
           .offset(criteria.offset)
@@ -176,15 +206,16 @@ export function createWorkRepository(db: Db): WorkRepository {
       return { items, total: count.total };
     },
 
-    async findById(id) {
+    async findById(id, lang) {
       const work = await db
         .selectFrom('work')
         .select([
           'work.id',
-          'work.title',
+          displayTitle('work', lang).as('title'),
+          'work.title as originalTitle',
+          'work.original_language as originalLanguage',
           'work.type',
           'work.status',
-          'work.synopsis',
           'work.chapters',
           'work.volumes',
           'work.started_on as startedOn',
@@ -196,8 +227,22 @@ export function createWorkRepository(db: Db): WorkRepository {
         .executeTakeFirst();
       if (work === undefined) return undefined;
 
-      const [titles, credits, publishers, genres, links, outgoing, incoming] = await Promise.all([
-        db.selectFrom('work_title').select('title').where('work_id', '=', id).orderBy('title').execute(),
+      const relatedTitle = displayTitle('w', lang).as('title');
+      const [titles, synopses, credits, publishers, genres, links, outgoing, incoming] = await Promise.all([
+        db
+          .selectFrom('work_title')
+          .select(['language', 'kind', 'title'])
+          .where('work_id', '=', id)
+          .orderBy('language')
+          .orderBy('kind')
+          .orderBy('title')
+          .execute(),
+        db
+          .selectFrom('work_synopsis')
+          .select(['language', 'text', 'source'])
+          .where('work_id', '=', id)
+          .where('language', 'in', lang === undefined ? [work.originalLanguage] : [lang, work.originalLanguage])
+          .execute(),
         db
           .selectFrom('work_credit as wc')
           .innerJoin('person as p', 'p.id', 'wc.person_id')
@@ -232,7 +277,7 @@ export function createWorkRepository(db: Db): WorkRepository {
         db
           .selectFrom('work_relation as wr')
           .innerJoin('work as w', 'w.id', 'wr.related_work_id')
-          .select(['wr.relation', 'w.id', 'w.title', 'w.type'])
+          .select(['wr.relation', 'w.id', relatedTitle, 'w.type'])
           .where('wr.work_id', '=', id)
           .where('w.deleted_at', 'is', null)
           .orderBy('w.title')
@@ -240,7 +285,7 @@ export function createWorkRepository(db: Db): WorkRepository {
         db
           .selectFrom('work_relation as wr')
           .innerJoin('work as w', 'w.id', 'wr.work_id')
-          .select(['wr.relation', 'w.id', 'w.title', 'w.type'])
+          .select(['wr.relation', 'w.id', relatedTitle, 'w.type'])
           .where('wr.related_work_id', '=', id)
           .where('w.deleted_at', 'is', null)
           .orderBy('w.title')
@@ -255,9 +300,15 @@ export function createWorkRepository(db: Db): WorkRepository {
           work: { id: r.id, title: r.title, type: r.type },
         });
 
+      // Langue demandée d'abord, sinon langue originale (repli ADR 0007).
+      const synopsis = synopses.find((s) => s.language === lang) ?? synopses[0];
+
       return {
         ...work,
-        alternativeTitles: titles.map((t) => t.title),
+        synopsis: synopsis?.text ?? null,
+        synopsisLanguage: synopsis?.language ?? null,
+        synopsisSource: synopsis?.source ?? null,
+        titles,
         credits,
         publishers,
         formats: genres.filter((g) => g.category === 'format').map((g) => g.code),

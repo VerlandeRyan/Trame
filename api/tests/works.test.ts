@@ -47,16 +47,16 @@ describe('GET /api/v1/works', () => {
   it('liste les œuvres non archivées avec pagination par défaut', async () => {
     const res = await request(app).get('/api/v1/works');
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ page: 1, pageSize: 20, total: 10 });
-    expect(res.body.items).toHaveLength(10);
+    expect(res.body).toMatchObject({ page: 1, pageSize: 20, total: 11 });
+    expect(res.body.items).toHaveLength(11);
   });
 
   it('pagine et renvoie le total complet', async () => {
     const page2 = await request(app).get('/api/v1/works?page=2&pageSize=3');
-    expect(page2.body).toMatchObject({ page: 2, pageSize: 3, total: 10 });
+    expect(page2.body).toMatchObject({ page: 2, pageSize: 3, total: 11 });
     expect(page2.body.items).toHaveLength(3);
     const page4 = await request(app).get('/api/v1/works?page=4&pageSize=3');
-    expect(page4.body.items).toHaveLength(1);
+    expect(page4.body.items).toHaveLength(2);
   });
 
   it('filtre par type, statut, format et genre', async () => {
@@ -104,11 +104,28 @@ describe('GET /api/v1/works', () => {
     const hostile = "'); DROP TABLE work; --";
     expect(await titles(`?q=${encodeURIComponent(hostile)}`)).toEqual([]);
     const res = await client.query('SELECT count(*) AS n FROM work');
-    expect(Number(res.rows[0].n)).toBe(10);
+    expect(Number(res.rows[0].n)).toBe(11);
+  });
+
+  it('affiche le titre dans la langue demandée, avec repli sur le titre original', async () => {
+    // `Hollow Tide` (originale en) a un titre traduit en fr ; sans `lang` ou en `en`, on garde l'original.
+    expect(await titles('?q=hollow')).toEqual(['Hollow Tide']);
+    expect(await titles('?q=hollow&lang=en')).toEqual(['Hollow Tide']);
+    expect(await titles('?q=hollow&lang=fr')).toEqual(['Marée creuse']);
+    // Pas de titre `fr` traduit pour cette œuvre française : le titre original est conservé.
+    expect(await titles('?q=lanternes&lang=fr')).toEqual(['Les Lanternes de Brume']);
+    // Un titre international en `en` s'affiche pour une œuvre française.
+    expect(await titles('?q=lanternes&lang=en')).toEqual(['The Fog Lanterns']);
+    // Un titre `short` n'est jamais choisi comme titre affiché.
+    expect(await titles('?q=chroniques&lang=fr')).toEqual(['Chroniques de Basalte']);
+  });
+
+  it('cherche dans les titres de toutes les langues, quelle que soit `lang`', async () => {
+    expect(await titles('?q=maree%20creuse&lang=en')).toEqual(['Hollow Tide']);
   });
 
   it('refuse les paramètres invalides', async () => {
-    for (const query of ['?q=a', '?pageSize=51', '?page=0', '?type=inconnu', '?type=webcomic', '?status=lu', '?genre=BD', '?format=Manga', '?q=ab&q=cd']) {
+    for (const query of ['?lang=de', '?lang=FR', '?lang=', '?q=a','?pageSize=51', '?page=0', '?type=inconnu', '?type=webcomic', '?status=lu', '?genre=BD', '?format=Manga', '?q=ab&q=cd']) {
       const res = await request(app).get(`/api/v1/works${query}`);
       expect(res.status, query).toBe(400);
       expect(res.body.code).toBe('VALIDATION_ERROR');
@@ -143,7 +160,12 @@ describe('GET /api/v1/works/:id', () => {
       volumes: null,
       startedOn: '2021-01-15',
       endedOn: null,
-      alternativeTitles: ['Basalte'],
+      originalTitle: 'Chroniques de Basalte',
+      originalLanguage: 'fr',
+      titles: [{ language: 'fr', kind: 'short', title: 'Basalte' }],
+      synopsis: 'Un cartographe suit une faille qui dévore les routes.',
+      synopsisLanguage: 'fr',
+      synopsisSource: 'official',
       formats: ['manga'],
       genres: ['fantasy'],
     });
@@ -167,6 +189,60 @@ describe('GET /api/v1/works/:id', () => {
     const recueil = await request(app).get(`/api/v1/works/${await idOf('Basalte – Le Recueil des Braises')}`);
     const outgoing = recueil.body.relations.filter((r: { direction: string }) => r.direction === 'outgoing');
     expect(outgoing.map((r: { relation: string }) => r.relation).sort()).toEqual(['contains', 'shared_universe']);
+  });
+
+  it('renvoie le synopsis dans la langue demandée, sinon dans la langue originale', async () => {
+    const lanternes = await idOf('Les Lanternes de Brume');
+    const en = await request(app).get(`/api/v1/works/${lanternes}?lang=en`);
+    expect(en.body).toMatchObject({
+      title: 'The Fog Lanterns',
+      originalTitle: 'Les Lanternes de Brume',
+      synopsis: 'An apprentice lamplighter discovers what lives in the fog.',
+      synopsisLanguage: 'en',
+      synopsisSource: 'human',
+    });
+    // Sans `lang` : langue originale.
+    const none = await request(app).get(`/api/v1/works/${lanternes}`);
+    expect(none.body).toMatchObject({ title: 'Les Lanternes de Brume', synopsisLanguage: 'fr', synopsisSource: 'official' });
+
+    // Œuvre anglophone : synopsis `fr` automatique, repli sur l'original en l'absence de `lang`.
+    const tide = await idOf('Hollow Tide');
+    const fr = await request(app).get(`/api/v1/works/${tide}?lang=fr`);
+    expect(fr.body).toMatchObject({ title: 'Marée creuse', originalLanguage: 'en', synopsisLanguage: 'fr', synopsisSource: 'machine' });
+    const original = await request(app).get(`/api/v1/works/${tide}`);
+    expect(original.body).toMatchObject({ title: 'Hollow Tide', synopsisLanguage: 'en', synopsisSource: 'official' });
+  });
+
+  it('replie le synopsis sur la langue originale et accepte une œuvre sans synopsis', async () => {
+    const id = await idOf('Cap sur les Archipels');
+    const en = await request(app).get(`/api/v1/works/${id}?lang=en`);
+    expect(en.body).toMatchObject({ synopsisLanguage: 'fr', synopsisSource: 'official' });
+    await client.query('DELETE FROM work_synopsis WHERE work_id = $1', [id]);
+    try {
+      const res = await request(app).get(`/api/v1/works/${id}?lang=en`);
+      expect(res.body).toMatchObject({ synopsis: null, synopsisLanguage: null, synopsisSource: null });
+    } finally {
+      await client.query("INSERT INTO work_synopsis VALUES ($1, 'fr', 'Un équipage de fortune et ses îles qui changent de place.', 'official')", [id]);
+    }
+  });
+
+  it('refuse une langue inconnue sur la fiche', async () => {
+    const res = await request(app).get(`/api/v1/works/${await idOf('Hollow Tide')}?lang=de`);
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+
+  it('localise le titre des œuvres liées', async () => {
+    const [a, b] = [await idOf('Hollow Tide'), await idOf('Le Gardien des Sables')];
+    await client.query("INSERT INTO work_relation VALUES ($1, $2, 'shared_universe')", [b, a]);
+    try {
+      const fr = await request(app).get(`/api/v1/works/${b}?lang=fr`);
+      expect(fr.body.relations[0].work).toMatchObject({ id: a, title: 'Marée creuse' });
+      const none = await request(app).get(`/api/v1/works/${b}`);
+      expect(none.body.relations[0].work).toMatchObject({ id: a, title: 'Hollow Tide' });
+    } finally {
+      await client.query('DELETE FROM work_relation WHERE work_id = $1 AND related_work_id = $2', [b, a]);
+    }
   });
 
   it('trie les personnes crédités par rôle le plus important, puis par nom', async () => {
@@ -197,7 +273,7 @@ describe('GET /api/v1/works/:id', () => {
     await client.query('UPDATE work SET deleted_at = now() WHERE id = $1', [id]);
     try {
       expect(await titles('?q=gardien')).toEqual([]);
-      expect((await request(app).get('/api/v1/works')).body.total).toBe(9);
+      expect((await request(app).get('/api/v1/works')).body.total).toBe(10);
       expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(404);
     } finally {
       await client.query('UPDATE work SET deleted_at = NULL WHERE id = $1', [id]);

@@ -26,7 +26,21 @@ describe('jeu de démonstration', () => {
     const before = await count('SELECT count(*) AS n FROM work');
     await client.query(seed);
     expect(await count('SELECT count(*) AS n FROM work')).toBe(before);
-    expect(before).toBe(10);
+    expect(before).toBe(11);
+  });
+
+  it('couvre une langue originale non française et des synopsis de plusieurs sources', async () => {
+    expect(await count("SELECT count(*) AS n FROM work WHERE original_language <> 'fr'")).toBeGreaterThan(0);
+    expect(await count('SELECT count(DISTINCT source) AS n FROM work_synopsis')).toBe(3);
+    expect(await count("SELECT count(*) AS n FROM work_title WHERE language <> 'fr'")).toBeGreaterThan(0);
+  });
+
+  it('a un synopsis dans la langue originale de chaque œuvre', async () => {
+    expect(
+      await count(
+        'SELECT count(*) AS n FROM work w WHERE NOT EXISTS (SELECT 1 FROM work_synopsis s WHERE s.work_id = w.id AND s.language = w.original_language)',
+      ),
+    ).toBe(0);
   });
 
   it('ne contient que des adresses e-mail fictives', async () => {

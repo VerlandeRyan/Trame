@@ -5,7 +5,7 @@
 -- Chargement : `npm run db:seed` depuis api/.
 
 TRUNCATE submission, reading_event, library_entry, external_link, work_genre, genre,
-  work_publisher, publisher, work_credit, person, work_relation, work_title, work, app_user
+  work_publisher, publisher, work_credit, person, work_relation, work_synopsis, work_title, work, app_user
   RESTART IDENTITY CASCADE;
 
 -- Utilisateurs fictifs -------------------------------------------------------
@@ -16,23 +16,45 @@ INSERT INTO app_user (email, google_sub, handle, display_name, role, profile_vis
 
 -- Œuvres ---------------------------------------------------------------------
 -- Les totaux chapters/volumes ne sont renseignés que pour les œuvres terminées.
-INSERT INTO work (title, type, status, synopsis, chapters, volumes, started_on, ended_on) VALUES
-  ('Les Lanternes de Brume',        'series',   'completed','Une apprentie allumeuse de lanternes découvre ce qui vit dans la brume.', 120, 3, '2019-03-01', '2023-06-30'),
-  ('Chroniques de Basalte',         'series',   'ongoing',   'Un cartographe suit une faille qui dévore les routes.',                  NULL, NULL, '2021-01-15', NULL),
-  ('Cap sur les Archipels',         'series',   'ongoing',   'Un équipage de fortune et ses îles qui changent de place.',              NULL, NULL, '2022-09-01', NULL),
-  ('Le Gardien des Sables',         'series',   'ongoing',   'Un veilleur de dunes et le désert qui se souvient.',                     NULL, NULL, '2023-02-10', NULL),
-  ('Carnet de Colportage',          'oneshot',  'completed', 'Les étapes d''une vendeuse ambulante sur une route qui n''existe pas.',  NULL, 1,    '2020-05-01', '2020-05-01'),
-  ('Basalte – Histoires de Cendre', 'oneshot',  'completed', 'Hors-série sur les villages abandonnés de la faille.',                   NULL, 1,    '2023-11-01', '2023-11-01'),
-  ('Basalte – Le Recueil des Braises', 'anthology', 'completed', 'Histoires courtes d''auteurs invités autour de Basalte.',           NULL, 1,    '2024-04-01', '2024-04-01'),
-  ('Étoile Vagabonde',              'series',   'ongoing',   'Une comète habitée traverse le ciel d''un monde qui l''ignore.',        NULL, NULL, '2020-10-01', NULL),
-  ('Étoile Vagabonde – Aube',       'series',   'ongoing',   'Avant la comète : les premiers observateurs.',                          NULL, NULL, '2023-05-01', NULL),
-  ('Étoile Vagabonde – Crépuscule', 'series',   'ongoing',   'Après la comète : ce qu''elle a laissé derrière elle.',                 NULL, NULL, '2024-01-10', NULL);
+-- `title` est le titre dans la langue originale (`original_language`) ; les autres sont dans work_title.
+INSERT INTO work (title, type, status, original_language, chapters, volumes, started_on, ended_on) VALUES
+  ('Les Lanternes de Brume',        'series',   'completed', 'fr', 120, 3, '2019-03-01', '2023-06-30'),
+  ('Chroniques de Basalte',         'series',   'ongoing',   'fr', NULL, NULL, '2021-01-15', NULL),
+  ('Cap sur les Archipels',         'series',   'ongoing',   'fr', NULL, NULL, '2022-09-01', NULL),
+  ('Le Gardien des Sables',         'series',   'ongoing',   'fr', NULL, NULL, '2023-02-10', NULL),
+  ('Carnet de Colportage',          'oneshot',  'completed', 'fr', NULL, 1,    '2020-05-01', '2020-05-01'),
+  ('Basalte – Histoires de Cendre', 'oneshot',  'completed', 'fr', NULL, 1,    '2023-11-01', '2023-11-01'),
+  ('Basalte – Le Recueil des Braises', 'anthology', 'completed', 'fr', NULL, 1, '2024-04-01', '2024-04-01'),
+  ('Étoile Vagabonde',              'series',   'ongoing',   'fr', NULL, NULL, '2020-10-01', NULL),
+  ('Étoile Vagabonde – Aube',       'series',   'ongoing',   'fr', NULL, NULL, '2023-05-01', NULL),
+  ('Étoile Vagabonde – Crépuscule', 'series',   'ongoing',   'fr', NULL, NULL, '2024-01-10', NULL),
+  -- Œuvre non francophone : couvre le repli sur la langue originale et la traduction du titre.
+  ('Hollow Tide',                   'series',   'ongoing',   'en', NULL, NULL, '2024-06-01', NULL);
 
-INSERT INTO work_title (work_id, title)
-SELECT w.id, t.title FROM (VALUES
-  ('Les Lanternes de Brume', 'The Fog Lanterns'),
-  ('Chroniques de Basalte',  'Basalte')
-) AS t(work_title, title) JOIN work w ON w.title = t.work_title;
+-- Synopsis par langue ; `source` : official, human ou machine (traduction automatique).
+INSERT INTO work_synopsis (work_id, language, text, source)
+SELECT w.id, s.language, s.text, s.source FROM (VALUES
+  ('Les Lanternes de Brume',           'fr', 'Une apprentie allumeuse de lanternes découvre ce qui vit dans la brume.', 'official'),
+  ('Chroniques de Basalte',            'fr', 'Un cartographe suit une faille qui dévore les routes.',                  'official'),
+  ('Cap sur les Archipels',            'fr', 'Un équipage de fortune et ses îles qui changent de place.',              'official'),
+  ('Le Gardien des Sables',            'fr', 'Un veilleur de dunes et le désert qui se souvient.',                     'official'),
+  ('Carnet de Colportage',             'fr', 'Les étapes d''une vendeuse ambulante sur une route qui n''existe pas.',  'official'),
+  ('Basalte – Histoires de Cendre',    'fr', 'Hors-série sur les villages abandonnés de la faille.',                   'official'),
+  ('Basalte – Le Recueil des Braises', 'fr', 'Histoires courtes d''auteurs invités autour de Basalte.',                'official'),
+  ('Étoile Vagabonde',                 'fr', 'Une comète habitée traverse le ciel d''un monde qui l''ignore.',         'official'),
+  ('Étoile Vagabonde – Aube',          'fr', 'Avant la comète : les premiers observateurs.',                           'official'),
+  ('Étoile Vagabonde – Crépuscule',    'fr', 'Après la comète : ce qu''elle a laissé derrière elle.',                  'official'),
+  ('Les Lanternes de Brume',           'en', 'An apprentice lamplighter discovers what lives in the fog.',             'human'),
+  ('Hollow Tide',                      'en', 'A salvager follows a tide that empties harbours overnight.',             'official'),
+  ('Hollow Tide',                      'fr', 'Une récupératrice suit une marée qui vide les ports en une nuit.',       'machine')
+) AS s(work_title, language, text, source) JOIN work w ON w.title = s.work_title;
+
+INSERT INTO work_title (work_id, language, kind, title)
+SELECT w.id, t.language, t.kind, t.title FROM (VALUES
+  ('Les Lanternes de Brume', 'en', 'international', 'The Fog Lanterns'),
+  ('Chroniques de Basalte',  'fr', 'short',         'Basalte'),
+  ('Hollow Tide',            'fr', 'translated',    'Marée creuse')
+) AS t(work_title, language, kind, title) JOIN work w ON w.title = t.work_title;
 
 -- Personnes ------------------------------------------------------------------
 INSERT INTO person (name, kind) VALUES

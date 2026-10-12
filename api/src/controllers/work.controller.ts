@@ -11,7 +11,8 @@ export function createWorkController(service: WorkService): { list: RequestHandl
 
     async get(req, res) {
       const { id } = req.params as unknown as { id: number };
-      res.json(await service.get(id));
+      const { lang } = req.query as unknown as { lang?: string };
+      res.json(await service.get(id, lang));
     },
   };
 }
