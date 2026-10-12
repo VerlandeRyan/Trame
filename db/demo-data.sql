@@ -96,26 +96,31 @@ SELECT w.id, p.id FROM (VALUES
   JOIN publisher p ON p.name = c.publisher_name;
 
 -- Genres -----------------------------------------------------------------------
-INSERT INTO genre (label) VALUES ('manga'), ('BD'), ('webtoon'), ('fantasy'), ('humour');
+-- `format` : tradition / mode de publication ; `theme` : genre thématique. Plusieurs de chaque par œuvre.
+INSERT INTO genre (code, category) VALUES
+  ('manga', 'format'), ('manhwa', 'format'), ('bd', 'format'), ('webtoon', 'format'), ('webcomic', 'format'),
+  ('fantasy', 'theme'), ('humor', 'theme'), ('science_fiction', 'theme');
 
 INSERT INTO work_genre (work_id, genre_id)
 SELECT w.id, g.id FROM (VALUES
+  ('Les Lanternes de Brume',           'manhwa'),
   ('Les Lanternes de Brume',           'webtoon'),
   ('Les Lanternes de Brume',           'fantasy'),
   ('Chroniques de Basalte',            'manga'),
   ('Chroniques de Basalte',            'fantasy'),
-  ('Cap sur les Archipels',            'BD'),
-  ('Cap sur les Archipels',            'humour'),
+  ('Cap sur les Archipels',            'bd'),
+  ('Cap sur les Archipels',            'humor'),
   ('Le Gardien des Sables',            'manga'),
-  ('Carnet de Colportage',             'BD'),
+  ('Carnet de Colportage',             'bd'),
   ('Basalte – Histoires de Cendre',    'manga'),
   ('Basalte – Le Recueil des Braises', 'manga'),
   ('Étoile Vagabonde',                 'manga'),
+  ('Étoile Vagabonde',                 'science_fiction'),
   ('Étoile Vagabonde – Aube',          'manga'),
   ('Étoile Vagabonde – Crépuscule',    'manga')
-) AS c(work_title, label)
+) AS c(work_title, code)
   JOIN work w ON w.title = c.work_title
-  JOIN genre g ON g.label = c.label;
+  JOIN genre g ON g.code = c.code;
 
 -- Relations entre œuvres (un seul sens stocké) ------------------------------------
 INSERT INTO work_relation (work_id, related_work_id, relation)

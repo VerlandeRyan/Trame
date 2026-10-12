@@ -19,6 +19,8 @@ export type RelationKind =
 export type PublisherKind = 'publisher' | 'platform' | 'self_published';
 export type ExternalLinkKind = 'read' | 'buy' | 'website' | 'social';
 export type PersonKind = 'person' | 'collective';
+/** `format` : manga, manhwa, bd, webtoon, webcomic… ; `theme` : fantasy, humor… */
+export type GenreCategory = 'format' | 'theme';
 
 export interface WorkTable {
   id: Generated<number>;
@@ -76,7 +78,9 @@ export interface WorkPublisherTable {
 
 export interface GenreTable {
   id: Generated<number>;
-  label: string;
+  /** Slug stable en anglais ; le libellé est traduit côté front. */
+  code: string;
+  category: GenreCategory;
 }
 
 export interface WorkGenreTable {

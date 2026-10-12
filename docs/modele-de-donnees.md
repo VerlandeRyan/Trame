@@ -104,7 +104,7 @@ PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inve
 `work_id`, `publisher_id`. PK composite. Facultatif : une œuvre peut n'avoir aucun éditeur (auto-édition sans structure).
 
 ### `genre` / `work_genre`
-`genre(id, label unique)` ; `work_genre(work_id, genre_id)`. Les étiquettes « manga » et « BD » vivent ici.
+`genre(id, code unique, category)` : la liste des étiquettes qui existent. `code` est un slug stable en anglais (`manhwa`, `fantasy`…), jamais un texte traduit ; `category` vaut `format` (tradition ou mode de publication : manga, manhwa, bd, webtoon, webcomic) ou `theme` (fantasy, humor, science_fiction…). `work_genre(work_id, genre_id)` : quelles étiquettes porte chaque œuvre, plusieurs de chaque catégorie. Ajouter une valeur (ex. `manhua`) est une ligne de données, sans migration.
 
 ### `external_link`
 | Colonne | Type | Règle |
@@ -148,12 +148,11 @@ Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui co
 
 Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce sont des identifiants techniques, indépendants de la langue de l'œuvre ; le front affiche le libellé traduit.
 
-### Évolution prévue (ADR 0007, tickets #52, #53)
+### Évolution prévue (ADR 0007, ticket #53)
 Le schéma ci-dessus décrit l'état courant ; ces évolutions seront appliquées par migration, puis ce document sera aligné.
 - `work.original_language` : code ISO 639 (2 lettres, sinon 3), obligatoire, sans défaut.
 - `work_title` : ajout de `language` et `kind` (`translated` \| `international` \| `former` \| `short`) ; clé (`work_id`, `language`, `title`). `work.title` reste le titre original.
 - `work_synopsis` (`work_id`, `language`, `text`, `source` = `official` \| `human` \| `machine`) remplace `work.synopsis` ; clé (`work_id`, `language`).
-- `genre` : `code` (slug anglais, unique) remplace `label` ; libellés dans les fichiers de langue du front.
 
 ## 4. Règles transverses
 - **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/oeuvre/{id}-{slug}` et seul `{id}` est lu.

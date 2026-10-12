@@ -59,10 +59,15 @@ describe('GET /api/v1/works', () => {
     expect(page4.body.items).toHaveLength(1);
   });
 
-  it('filtre par type, statut et genre', async () => {
+  it('filtre par type, statut, format et genre', async () => {
     expect(await titles('?type=collection')).toEqual(['Basalte – Le Recueil des Braises']);
     expect(await titles('?status=completed')).toHaveLength(4);
-    expect((await titles('?genre=BD')).sort()).toEqual(['Cap sur les Archipels', 'Carnet de Colportage']);
+    expect((await titles('?format=bd')).sort()).toEqual(['Cap sur les Archipels', 'Carnet de Colportage']);
+    expect((await titles('?format=webtoon')).sort()).toEqual(['Les Lanternes de Brume']);
+    expect((await titles('?genre=fantasy')).sort()).toEqual(['Chroniques de Basalte', 'Les Lanternes de Brume']);
+    // Un format n'est pas un genre thématique, et inversement.
+    expect(await titles('?genre=manga')).toEqual([]);
+    expect(await titles('?format=fantasy')).toEqual([]);
   });
 
   it('cherche sans tenir compte de la casse ni des accents', async () => {
@@ -103,7 +108,7 @@ describe('GET /api/v1/works', () => {
   });
 
   it('refuse les paramètres invalides', async () => {
-    for (const query of ['?q=a', '?pageSize=51', '?page=0', '?type=inconnu', '?status=lu', '?q=ab&q=cd']) {
+    for (const query of ['?q=a', '?pageSize=51', '?page=0', '?type=inconnu', '?status=lu', '?genre=BD', '?format=Manga', '?q=ab&q=cd']) {
       const res = await request(app).get(`/api/v1/works${query}`);
       expect(res.status, query).toBe(400);
       expect(res.body.code).toBe('VALIDATION_ERROR');
@@ -139,7 +144,8 @@ describe('GET /api/v1/works/:id', () => {
       startedOn: '2021-01-15',
       endedOn: null,
       alternativeTitles: ['Basalte'],
-      genres: ['fantasy', 'manga'],
+      formats: ['manga'],
+      genres: ['fantasy'],
     });
     expect(res.body.credits).toEqual([
       { personId: expect.any(Number), name: 'Théo Marchand', kind: 'person', roles: ['story', 'art'] },

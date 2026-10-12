@@ -12,6 +12,7 @@ export interface ListWorksInput {
   q?: string;
   type?: WorkType;
   status?: WorkStatus;
+  format?: string;
   genre?: string;
   page: number;
   pageSize: number;
@@ -64,12 +65,13 @@ function groupCredits(rows: WorkRecord['credits']): Credit[] {
 
 export function createWorkService(repository: WorkRepository): WorkService {
   return {
-    async list({ q, type, status, genre, page, pageSize }) {
+    async list({ q, type, status, format, genre, page, pageSize }) {
       const normalizedQuery = q?.replace(/\s+/g, ' ').trim();
       const { items, total } = await repository.search({
         q: normalizedQuery ? normalizedQuery : undefined,
         type,
         status,
+        format,
         genre,
         limit: pageSize,
         offset: (page - 1) * pageSize,
