@@ -1,11 +1,7 @@
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { CREDIT_ROLE_RANK } from '../src/db/database.js';
-
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error('DATABASE_URL manquante (voir .env.example)');
-}
+import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
 
 const client = new pg.Client({ connectionString });
 

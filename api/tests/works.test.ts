@@ -4,11 +4,7 @@ import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createApp } from '../src/app.js';
 import { createDb } from '../src/db/database.js';
-
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error('DATABASE_URL manquante (voir .env.example)');
-}
+import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
 
 const seed = readFileSync(new URL('../../db/demo-data.sql', import.meta.url), 'utf8');
 const client = new pg.Client({ connectionString });
