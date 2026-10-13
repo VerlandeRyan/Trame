@@ -1,4 +1,12 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+
+// `.env` racine pour le développement local (sans écraser une variable déjà définie, ex. en CI).
+try {
+  process.loadEnvFile(fileURLToPath(new URL('../.env', import.meta.url)));
+} catch {
+  // Pas de .env : les variables viennent de l'environnement.
+}
 
 export default defineConfig({
   test: {

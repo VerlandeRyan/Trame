@@ -14,6 +14,7 @@ Express 5 + Kysely sur `pg`, Zod, node-pg-migrate (voir `docs/adr/0006-choix-tec
 Réponse unique `{ code, message, details? }` ; `message` est un texte technique en anglais, non affiché (le front lit `code`). `details[]` d'une validation : `path`, `code` Zod et paramètres, jamais de message ni de valeur saisie. Les codes vivent dans `src/errors.ts` (`ERROR_CODES`) : en ajouter un là, jamais de JSON d'erreur improvisé. Les erreurs inattendues donnent `INTERNAL_ERROR` sans détail.
 
 ## Commandes
+- Les scripts npm et Vitest lisent le `.env` racine (variables déjà définies prioritaires, ex. en CI) : rien à exporter à la main.
 - `npm run dev` : serveur avec rechargement (`DATABASE_URL` requise).
 - `npm run build` / `npm start` : compilation vers `dist/` puis exécution.
 - `npm run typecheck`, `npm test` (base migrée requise, tests en série).
