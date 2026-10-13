@@ -130,7 +130,8 @@ function textMatch(column: string, q: string, pattern: string): RawBuilder<boole
 
 /** Œuvre dont le titre, un titre alternatif, un auteur ou un éditeur correspond à `q`. */
 function searchCondition(q: string): RawBuilder<boolean> {
-  const pattern = `%${q.replace(/[\\%_]/g, '\\$&')}%`;
+  const escaped = q.replace(/[\\%_]/g, String.raw`\$&`);
+  const pattern = `%${escaped}%`;
   return sql<boolean>`(
     ${textMatch('work.title', q, pattern)}
     OR EXISTS (
