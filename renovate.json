@@ -1,0 +1,39 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests",
+    "docker:pinDigests",
+    ":semanticCommitTypeAll(chore)",
+    ":semanticCommitScope(deps)"
+  ],
+  "timezone": "Europe/Paris",
+  "schedule": ["before 7am on monday"],
+  "prConcurrentLimit": 3,
+  "rangeStrategy": "pin",
+  "labels": ["type:chore", "area:ci"],
+  "lockFileMaintenance": { "enabled": true },
+  "packageRules": [
+    {
+      "description": "Mises à jour mineures et correctifs npm regroupés",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "dépendances npm (mineures et correctifs)"
+    },
+    {
+      "description": "Actions GitHub regroupées",
+      "matchManagers": ["github-actions"],
+      "groupName": "actions GitHub"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Versions et digest épinglés dans les variables d'environnement des workflows",
+      "managerFilePatterns": ["/^\\.github/workflows/.+\\.ya?ml$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)(?: extractVersion=(?<extractVersion>\\S+))?\\n\\s+\\w+_VERSION: (?<currentValue>\\S+)(?:\\n\\s+\\w+_DIGEST: (?<currentDigest>sha256:[a-f0-9]+))?"
+      ]
+    }
+  ]
+}
