@@ -168,7 +168,7 @@ describe('GET /api/v1/works/:id', () => {
       endedOn: null,
       originalTitle: 'Chroniques de Basalte',
       originalLanguage: 'fr',
-      titles: [{ language: 'fr', kind: 'short', title: 'Basalte' }],
+      alternativeTitles: [{ language: 'fr', kind: 'short', title: 'Basalte' }],
       synopsis: 'Un cartographe suit une faille qui dévore les routes.',
       synopsisLanguage: 'fr',
       synopsisSource: 'official',

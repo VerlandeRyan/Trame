@@ -63,7 +63,7 @@ export interface WorkRecord {
   endedOn: string | null;
   coverPath: string | null;
   /** Titres alternatifs, toutes langues, triés par langue, nature puis titre. */
-  titles: { language: string; kind: TitleKind; title: string }[];
+  alternativeTitles: { language: string; kind: TitleKind; title: string }[];
   credits: { personId: number; name: string; kind: PersonKind; role: CreditRole }[];
   publishers: { id: number; name: string; kind: PublisherKind; url: string | null }[];
   /** Codes des formats (catégorie `format`), triés. */
@@ -229,7 +229,7 @@ export function createWorkRepository(db: Db): WorkRepository {
       if (work === undefined) return undefined;
 
       const relatedTitle = displayTitle('w', lang).as('title');
-      const [titles, synopses, credits, publishers, genres, links, outgoing, incoming] = await Promise.all([
+      const [alternativeTitles, synopses, credits, publishers, genres, links, outgoing, incoming] = await Promise.all([
         db
           .selectFrom('work_title')
           .select(['language', 'kind', 'title'])
@@ -309,7 +309,7 @@ export function createWorkRepository(db: Db): WorkRepository {
         synopsis: synopsis?.text ?? null,
         synopsisLanguage: synopsis?.language ?? null,
         synopsisSource: synopsis?.source ?? null,
-        titles,
+        alternativeTitles,
         credits,
         publishers,
         formats: genres.filter((g) => g.category === 'format').map((g) => g.code),
