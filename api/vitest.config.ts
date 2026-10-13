@@ -8,6 +8,9 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
+      // Amorçage du processus (écoute, signaux) : aucune logique métier, exclu du calcul.
+      exclude: ['src/server.ts'],
+      thresholds: { statements: 80, branches: 80, functions: 80, lines: 80 },
       reporter: ['text-summary', 'lcov'],
       reportsDirectory: 'coverage',
     },
