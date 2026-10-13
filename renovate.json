@@ -10,6 +10,7 @@
   "timezone": "Europe/Paris",
   "schedule": ["before 7am on monday"],
   "prConcurrentLimit": 3,
+  "dependencyDashboardApproval": false,
   "rangeStrategy": "pin",
   "labels": ["type:chore", "area:ci"],
   "lockFileMaintenance": { "enabled": true },
