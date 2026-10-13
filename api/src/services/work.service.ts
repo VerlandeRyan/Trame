@@ -69,7 +69,7 @@ export function createWorkService(repository: WorkRepository): WorkService {
     async list({ q, type, status, format, genre, lang, page, pageSize }) {
       const normalizedQuery = q?.replace(/\s+/g, ' ').trim();
       const { items, total } = await repository.search({
-        q: normalizedQuery ? normalizedQuery : undefined,
+        q: normalizedQuery || undefined,
         type,
         status,
         format,

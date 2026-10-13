@@ -26,8 +26,8 @@ async function shutdown(): Promise<void> {
 }
 
 process.on('SIGTERM', () => {
-  shutdown();
+  void shutdown();
 });
 process.on('SIGINT', () => {
-  shutdown();
+  void shutdown();
 });

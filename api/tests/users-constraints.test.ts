@@ -110,10 +110,11 @@ describe('library_entry', () => {
   it('accepte des chapitres lus et des tomes lus indépendants', async () => {
     const u = await user();
     const w = await work();
-    await client.query(
+    const result = await client.query(
       "INSERT INTO library_entry (user_id, work_id, status, chapters_read, volumes_read) VALUES ($1, $2, 'reading', 100, 2)",
       [u, w],
     );
+    expect(result.rowCount).toBe(1);
   });
 });
 
@@ -130,10 +131,13 @@ describe('reading_event', () => {
   it('accepte un événement par type avec la bonne colonne', async () => {
     const u = await user();
     const w = await work();
-    await insert(u, w, 'chapters', { chapters_added: 5 });
-    await insert(u, w, 'volumes', { volumes_added: 1 });
-    await insert(u, w, 'status', { new_status: 'completed' });
-    await insert(u, w, 'rating', { new_rating: 8 });
+    const results = [
+      await insert(u, w, 'chapters', { chapters_added: 5 }),
+      await insert(u, w, 'volumes', { volumes_added: 1 }),
+      await insert(u, w, 'status', { new_status: 'completed' }),
+      await insert(u, w, 'rating', { new_rating: 8 }),
+    ];
+    expect(results.map((r) => r.rowCount)).toEqual([1, 1, 1, 1]);
   });
 
   it('refuse la mauvaise colonne, plusieurs colonnes ou aucune', async () => {

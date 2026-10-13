@@ -139,7 +139,7 @@ export function createDb(connectionString: string): Db {
     types: {
       getTypeParser: ((oid: number, format?: 'text' | 'binary') => {
         // Identifiants et compteurs bigint : des nombres (bien en deçà de 2^53).
-        if (oid === INT8) return (value: string) => Number(value);
+        if (oid === INT8) return Number;
         // Dates calendaires : conservées en `YYYY-MM-DD`, sans décalage de fuseau.
         if (oid === DATE) return (value: string) => value;
         return pg.types.getTypeParser(oid, format);
