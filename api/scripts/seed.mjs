@@ -1,12 +1,12 @@
-// Charge db/demo-data.sql (jeu de démonstration fictif) dans la base locale.
+// Charge db/demo-data.sql (jeu de démonstration fictif) dans la base de TEST (TEST_DATABASE_URL).
 // Le fichier vide d'abord les tables : refus sur tout ce qui n'est pas une base locale.
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 
-const connectionString = process.env.DATABASE_URL;
+const connectionString = process.env.TEST_DATABASE_URL;
 if (!connectionString) {
-  console.error('DATABASE_URL manquante (voir .env.example).');
+  console.error('TEST_DATABASE_URL manquante (voir .env.example).');
   process.exit(1);
 }
 if (process.env.NODE_ENV === 'production') {

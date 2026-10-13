@@ -80,7 +80,7 @@ jobs:
           --health-timeout 3s
           --health-retries 10
     env:
-      DATABASE_URL: postgres://trame:ci-only@localhost:5432/trame
+      TEST_DATABASE_URL: postgres://trame:ci-only@localhost:5432/trame
     defaults:
       run:
         working-directory: api
@@ -95,7 +95,7 @@ jobs:
           cache-dependency-path: api/package-lock.json
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
-      - run: npm run migrate:up
+      - run: npm run migrate:test
       - run: npm run test:coverage
       - name: Secret Sonar disponible ?
         id: sonar-token

@@ -6,11 +6,8 @@ import { createApp } from '../src/app.js';
 import { createDb } from '../src/db/database.js';
 import { errorHandler, notFoundHandler } from '../src/middleware/error-handler.js';
 import { validate } from '../src/middleware/validate.js';
+import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
 
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error('DATABASE_URL manquante (voir .env.example)');
-}
 const db = createDb(connectionString);
 afterAll(() => db.destroy());
 

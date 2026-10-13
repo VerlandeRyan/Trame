@@ -27,8 +27,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      # API_DB (facultatif) : autre base du même serveur, par exemple un catalogue personnel.
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${API_DB:-${POSTGRES_DB}}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       PORT: "3000"
     ports:
       # Exposé uniquement sur la machine locale.

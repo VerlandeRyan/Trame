@@ -15,10 +15,11 @@ Réponse unique `{ code, message, details? }` ; `message` est un texte technique
 
 ## Commandes
 - Les scripts npm et Vitest lisent le `.env` racine (variables déjà définies prioritaires, ex. en CI) : rien à exporter à la main.
+- Deux bases, deux variables : `DATABASE_URL` = base de travail (serveur, `dev`, `migrate:up`, jamais vidée par un script) ; `TEST_DATABASE_URL` = base de test jetable (tests, `db:seed`, `migrate:test`), vidée et rechargée librement. Les tests n'ont aucun repli sur `DATABASE_URL`.
 - `npm run dev` : serveur avec rechargement (`DATABASE_URL` requise).
 - `npm run build` / `npm start` : compilation vers `dist/` puis exécution.
-- `npm run typecheck`, `npm test` (base migrée requise, tests en série).
-- `npm run migrate:up`, `npm run db:seed`.
+- `npm run typecheck`, `npm test` (`TEST_DATABASE_URL` requise, base migrée par `migrate:test`, tests en série).
+- `npm run migrate:up` (base de travail), `npm run migrate:test` (base de test), `npm run db:seed` (démo dans la base de test).
 
 ## Règles
 - Migration fusionnée dans `main` : on n'y touche plus, on en ajoute une.
