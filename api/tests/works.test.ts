@@ -124,6 +124,12 @@ describe('GET /api/v1/works', () => {
     expect(await titles('?q=maree%20creuse&lang=en')).toEqual(['Hollow Tide']);
   });
 
+  it('retrouve une œuvre par un ancien titre ou un titre court, sans jamais les afficher', async () => {
+    expect(await titles('?q=allumeuses')).toEqual(['Les Lanternes de Brume']);
+    expect(await titles('?q=cap%20vers%20les%20iles&lang=fr')).toEqual(['Cap sur les Archipels']);
+    expect(await titles('?q=archipels&lang=en')).toEqual(['Course for the Archipelagos']);
+  });
+
   it('refuse les paramètres invalides', async () => {
     for (const query of ['?lang=de', '?lang=FR', '?lang=', '?q=a','?pageSize=51', '?page=0', '?type=inconnu', '?type=webcomic', '?status=lu', '?genre=BD', '?format=Manga', '?q=ab&q=cd']) {
       const res = await request(app).get(`/api/v1/works${query}`);

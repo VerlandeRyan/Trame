@@ -49,11 +49,22 @@ SELECT w.id, s.language, s.text, s.source FROM (VALUES
   ('Hollow Tide',                      'fr', 'Une récupératrice suit une marée qui vide les ports en une nuit.',       'machine')
 ) AS s(work_title, language, text, source) JOIN work w ON w.title = s.work_title;
 
+-- Titres alternatifs : les quatre `kind` et plusieurs langues. Une seule ligne `translated` ou
+-- `international` par œuvre et par langue (le choix du titre affiché reste sinon arbitraire) ;
+-- `former` et `short` ne sont jamais affichés mais restent cherchables.
 INSERT INTO work_title (work_id, language, kind, title)
 SELECT w.id, t.language, t.kind, t.title FROM (VALUES
   ('Les Lanternes de Brume', 'en', 'international', 'The Fog Lanterns'),
+  ('Les Lanternes de Brume', 'fr', 'former',        'Les Allumeuses de Brume'),
+  ('Les Lanternes de Brume', 'ja', 'international', 'Kiri no Tomoshibi'),
   ('Chroniques de Basalte',  'fr', 'short',         'Basalte'),
-  ('Hollow Tide',            'fr', 'translated',    'Marée creuse')
+  ('Cap sur les Archipels',  'fr', 'short',         'Archipels'),
+  ('Cap sur les Archipels',  'fr', 'former',        'Cap vers les Îles'),
+  ('Cap sur les Archipels',  'en', 'international', 'Course for the Archipelagos'),
+  ('Hollow Tide',            'fr', 'translated',    'Marée creuse'),
+  ('Hollow Tide',            'fr', 'short',         'Marée'),
+  ('Hollow Tide',            'en', 'former',        'Hollow Tides'),
+  ('Hollow Tide',            'de', 'translated',    'Hohle Flut')
 ) AS t(work_title, language, kind, title) JOIN work w ON w.title = t.work_title;
 
 -- Personnes ------------------------------------------------------------------
