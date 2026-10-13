@@ -94,4 +94,4 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
       - run: npm run migrate:up
-      - run: npm test
+      - run: npm run test:coverage
