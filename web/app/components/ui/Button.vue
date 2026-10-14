@@ -34,7 +34,11 @@ withDefaults(
   color: var(--color-ink);
   font-weight: 700;
   cursor: pointer;
-  transition: transform 0.08s;
+
+  // Mouvement réservé aux personnes qui n'ont pas demandé de réduire les animations.
+  @media (prefers-reduced-motion: no-preference) {
+    transition: transform 0.08s;
+  }
 
   &:active {
     transform: translate(2px, 2px);
