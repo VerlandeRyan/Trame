@@ -17,7 +17,7 @@ Tout tourne en local avec `docker compose up` (base, API, web). L'hébergement s
 ## 2. Briques et responsabilités
 | Brique | Rôle | Choix |
 |---|---|---|
-| Base de données | Source de vérité du catalogue et des bibliothèques | PostgreSQL, migrations SQL versionnées, `pg_trgm` + `unaccent` pour la recherche |
+| Base de données | Source de vérité du catalogue et des listes de lecture | PostgreSQL, migrations SQL versionnées, `pg_trgm` + `unaccent` pour la recherche |
 | API | Règles métier, contrôle d'accès, validation, accès aux données | Node.js LTS + TypeScript, REST + OpenAPI, accès SQL typé |
 | Web | Pages publiques indexables, zone connectée, administration | Nuxt (Vue 3), PWA |
 | Stockage d'images | Couvertures redimensionnées | Disque local en développement, stockage objet compatible S3 en ligne |
@@ -42,7 +42,7 @@ JSON en `camelCase`. Les valeurs d'énumération (`type`, `status`, `role`, `rel
 
 ## 4. Flux principaux
 - **Page de fiche** : le visiteur demande `/oeuvre/42-ripper` → Nuxt appelle l'API → HTML rendu côté serveur → hydratation côté navigateur.
-- **Mise à jour de progression** : navigateur → API (`PUT` sur l'entrée de bibliothèque) → vérification de session → base ; le journal de lecture est alimenté si activé.
+- **Mise à jour de progression** : navigateur → API (`PUT` sur l'entrée de liste) → vérification de session → base ; le journal de lecture est alimenté si activé.
 - **Soumission** : formulaire → API → table `submission` → revue par l'administrateur → création de la fiche.
 - **Image** : upload par l'administrateur → génération de 2–3 tailles WebP → stockage ; la base ne garde que le chemin.
 
