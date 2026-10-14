@@ -78,6 +78,7 @@ erDiagram
 | cover_source_url | text | nullable — provenance de la couverture |
 | cover_consent | boolean | NOT NULL, défaut false — accord de l'auteur/éditeur |
 | created_at / updated_at | timestamptz | NOT NULL |
+| published_at | timestamptz | nullable — NULL = brouillon (créé à l'acceptation d'une soumission), invisible du public ; distinct de `deleted_at` |
 | deleted_at / deleted_by | timestamptz / bigint FK `app_user` | nullable — archivage |
 
 Index : GIN trigram sur `title` (`pg_trgm` + `unaccent`) ; index sur `type`, `status`, `deleted_at`.
@@ -165,11 +166,14 @@ Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui co
 ### `submission`
 `id` PK, `payload` jsonb NOT NULL (champs proposés), `status` (`pending` \| `accepted` \| `rejected`), `submitted_by` FK, `reviewed_by` FK nullable, `dedupe_candidates` jsonb nullable, `created_at`, `reviewed_at`.
 
+### `submission_revision`
+`id` PK, `submission_id` FK `submission` (`ON DELETE CASCADE`), `revised_by` FK `app_user`, `revised_at` timestamptz NOT NULL, `before` jsonb NOT NULL, `after` jsonb NOT NULL. Table en ajout seul : historique des corrections d'une soumission avant décision.
+
 Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce sont des identifiants techniques, indépendants de la langue de l'œuvre ; le front affiche le libellé traduit.
 
 ## 4. Règles transverses
 - **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/oeuvre/{id}-{slug}` et seul `{id}` est lu.
-- **Archivage** : toute suppression est une suppression douce, réservée à l'administrateur ; les listes publiques excluent `deleted_at IS NOT NULL`.
+- **Archivage** : toute suppression est une suppression douce, réservée à l'administrateur ; les listes publiques excluent `deleted_at IS NOT NULL` (et, pour `work`, `published_at IS NULL`). Les entrées `library_entry` d'une œuvre archivée sont conservées, masquées avec l'œuvre.
 - **Pas d'ISBN, pas d'édition** dans le MVP.
 - **Statistiques** : ne jamais additionner chapitres et tomes.
 - **Recherche** : `pg_trgm` + `unaccent` sur `work.title`, `work_title.title` (toutes langues, quelle que soit la langue demandée), `person.name`, `publisher.name`.

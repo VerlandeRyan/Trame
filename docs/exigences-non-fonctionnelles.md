@@ -33,7 +33,7 @@
 - Dépôt public : voir les garde-fous dans [conventions-projet.md](conventions-projet.md).
 
 ## 5. Données personnelles (RGPD) et juridique
-- Données collectées : e-mail, identifiant Google, handle, nom affiché, bibliothèque, notes. Rien d'autre.
+- Données collectées : e-mail, identifiant Google, handle, nom affiché, liste de lecture, notes. Rien d'autre.
 - Base légale : exécution du service (compte) ; consentement pour tout traceur non essentiel ; mesure d'audience respectueuse de la vie privée, sans cookie, si utilisée.
 - Droits : accès, rectification, **suppression du compte** (US-12), export des données sur demande.
 - Pages obligatoires : mentions légales, politique de confidentialité, conditions d'utilisation, page de contact/retrait de contenu.

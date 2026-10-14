@@ -9,7 +9,7 @@ La cible initiale mentionnait web, iOS et Android. Un wrapper (Capacitor) expose
 ## Décision
 1. **Web + PWA** (installable sur l'écran d'accueil), gratuit : on commence ici.
 2. Éventuellement **Android** (Play Store).
-3. Éventuellement **iOS via Capacitor**, seulement après un moment d'usage de la PWA et avec de vraies fonctions natives (partage, notifications, liens profonds, bibliothèque hors ligne). Ne jamais faire pointer l'application vers le site distant.
+3. Éventuellement **iOS via Capacitor**, seulement après un moment d'usage de la PWA et avec de vraies fonctions natives (partage, notifications, liens profonds, liste de lecture hors ligne). Ne jamais faire pointer l'application vers le site distant.
 4. Plan B si refus d'Apple : iPhone en PWA, ou application native (Expo/React Native) sur la **même API**.
 
 ## Alternatives

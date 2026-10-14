@@ -7,6 +7,12 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 ## 1. User stories et critères d'acceptation
 
 ### Découverte
+**US-15 — Consulter l'accueil** (visiteur, utilisateur)
+- Blocs : recherche ; « À la une » (carrousel de 3 œuvres « populaires cette semaine ») ; Explorer (formats puis genres, sans compteur) ; récemment ajoutées ; mieux notées (seuil RG-04) ; « Une œuvre manque à Trame ? » (lien vers US-09).
+- Connecté, un bloc « Ma liste de lecture » ajoute les compteurs par statut.
+- « Populaire cette semaine » : œuvres les plus ajoutées à une liste sur les 7 derniers jours, avec au moins 3 ajouts ; les 3 premières sont affichées.
+- Le carrousel n'a pas de défilement automatique et reste utilisable au clavier. Mise en avant éditoriale ou sponsorisée : hors MVP.
+
 **US-01 — Rechercher une œuvre** (visiteur, utilisateur)
 - Une zone de recherche est accessible depuis toutes les pages.
 - La recherche porte sur titre (et titres alternatifs), auteur, éditeur/plateforme ; elle est insensible à la casse et aux accents et tolère une faute de frappe légère.
@@ -16,12 +22,12 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 
 **US-02 — Consulter une fiche œuvre**
 - L'URL est `/oeuvre/{id}-{slug}` ; seul `{id}` est lu ; un slug erroné redirige vers l'URL canonique.
-- La fiche affiche : couverture, titre (dans la langue de l'interface si disponible, sinon le titre original), titres alternatifs avec leur langue, langue originale, type, statut de publication, synopsis (avec sa langue et sa source, un synopsis traduit automatiquement est signalé), nombre de chapitres et de tomes (« ? » tant que l'œuvre est en cours), auteurs (avec rôle), éditeurs/plateformes, genres, liens « lire » et « acheter », œuvres liées regroupées par type de relation.
-- Connecté, la fiche montre mon entrée de bibliothèque et permet de l'ajouter ou la modifier.
+- La fiche affiche : couverture, titre (dans la langue de l'interface si disponible, sinon le titre original), titres alternatifs avec leur langue, langue originale, type, statut de publication, synopsis (avec sa langue et sa source, un synopsis traduit automatiquement est signalé), nombre de chapitres et de tomes (« ? » tant que l'œuvre est en cours), auteurs (avec rôle), éditeurs/plateformes, genres, liens « lire » et « acheter », œuvres liées regroupées par type de relation, nombre de membres qui l'ont dans leur liste (profils privés inclus, affiché dès 1 membre ; décompte par statut hors MVP).
+- Connecté, la fiche montre mon entrée de liste (statut, compteurs, note, dates de début et de fin) et permet de l'ajouter ou la modifier.
 - La page est rendue côté serveur avec titre, description, balisage structuré et balises de partage.
 
 **US-03 — Consulter une page auteur et une page éditeur/plateforme**
-- Liste des œuvres liées, liens externes de l'auteur, nombre d'œuvres.
+- Liste des œuvres liées, liens externes de l'auteur (sites et réseaux, en icônes, repliés au-delà de 3 personnes sur une fiche œuvre), nombre d'œuvres.
 
 ### Compte
 **US-04 — Se connecter avec Google**
@@ -29,25 +35,30 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Aucun mot de passe stocké ; session en cookie `httpOnly`.
 
 **US-12 — Supprimer mon compte**
-- Bouton dans le profil avec confirmation ; supprime l'identité et la bibliothèque (voir exigences non fonctionnelles, RGPD).
+- Bouton dans le profil avec confirmation ; supprime l'identité et la liste de lecture (voir exigences non fonctionnelles, RGPD).
 
 ### Suivi
-**US-05 — Ajouter une œuvre à ma bibliothèque**
+**US-05 — Ajouter une œuvre à ma liste**
 - Depuis une fiche ou la recherche, choix du statut (En cours, Terminé, À lire, En pause, Abandonné).
 - Une seule entrée par couple (utilisateur, œuvre).
+- Chaque statut a une couleur propre, toujours accompagnée de son libellé.
 
 **US-06 — Mettre à jour ma progression**
 - Compteurs **chapitres lus** et **tomes lus** modifiables indépendamment (saisie directe et boutons +1 / −1).
 - Aucune validation croisée entre les deux compteurs ; un avertissement discret (non bloquant) si une valeur dépasse le nombre connu de chapitres/tomes parus.
 - Note de 1 à 10, facultative et retirable.
 - Les dates de début et de fin sont proposées automatiquement lors des changements de statut vers En cours / Terminé, et modifiables.
+- Un seul composant « fiche de lecture » (statut, chapitres lus, tomes lus, note, dates, retirer de ma liste), réutilisé sur la fiche œuvre et dans la liste.
 
-**US-07 — Consulter ma bibliothèque**
-- Filtre par statut, tri (dernière mise à jour, titre, note), recherche dans ma bibliothèque.
+**US-07 — Consulter ma liste de lecture**
+- Filtre par statut, tri (dernière mise à jour, titre, note), recherche dans ma liste ; bascule Liste / Grille.
+- Chargement continu par pages de 50 (`pageSize` ≤ 50).
 - Les totaux « chapitres lus » et « tomes lus » sont affichés séparément, jamais additionnés.
+- Une œuvre archivée disparaît de la liste mais l'entrée est conservée ; elle réapparaît si l'œuvre est restaurée.
 
 **US-08 — Profil public**
-- URL `/u/{handle}` ; affiche les entrées publiques, les statistiques séparées et les œuvres les mieux notées.
+- URL `/u/{handle}` ; affiche les statistiques séparées (œuvres suivies, note moyenne donnée, répartition par statut), les œuvres les mieux notées et les dernières mises à jour (journal de lecture).
+- Un lien mène à la page « Ma liste de lecture » : même page que US-07, en lecture seule pour un tiers et uniquement avec les entrées publiques.
 - Le profil est **public par défaut** ; l'utilisateur peut le passer en privé à tout moment.
 
 ### Contribution
@@ -55,21 +66,22 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Formulaire : titre, type, auteur(s), éditeur/plateforme (facultatif), langue originale, au moins un lien **ou** une couverture, synopsis (facultatif, dans la langue originale).
 - À la saisie du titre, une liste « c'est l'une de ces œuvres ? » évite les doublons.
 - La soumission est créée en attente ; l'utilisateur voit son état (en attente / acceptée / refusée).
+- Facultatif : un ou plusieurs liens avec une œuvre existante (type de relation : suite, préquelle, spin-off, même univers, contient ; RG-17).
 - Limite de fréquence pour les nouveaux comptes.
 
 **US-13 — Signaler un contenu** (utilisateur) : bouton « Signaler » sur une fiche ; le signalement est transmis à l'administrateur.
 
 ### Administration
-**US-10 — Traiter les soumissions** (administrateur) : liste triée par complétude, comparaison avec les doublons candidats, actions Accepter (crée la fiche, éditable avant publication) / Refuser (avec motif court).
+**US-10 — Traiter les soumissions** (administrateur) : liste triée par complétude, comparaison avec les doublons candidats, actions Corriger, Accepter (crée un **brouillon** de fiche, éditable avant publication) / Refuser (avec motif court ; pour un doublon, l'œuvre dupliquée est indiquée). Les corrections avant décision sont historisées (qui, quand, avant/après).
 
-**US-11 — Gérer le catalogue** (administrateur) : créer, modifier, archiver et restaurer une œuvre, une personne, un éditeur/plateforme ; gérer relations, genres, liens et couvertures ; consulter les archives.
+**US-11 — Gérer le catalogue** (administrateur) : créer, modifier, archiver et restaurer une œuvre, une personne, un éditeur/plateforme ; gérer relations, genres, liens et couvertures ; consulter les archives. Archiver une personne ou un éditeur/plateforme encore lié à des œuvres non archivées est refusé (`PERSON_HAS_WORKS`, `PUBLISHER_HAS_WORKS`) tant que les liens ne sont pas retirés.
 
 **US-14 — Demander le retrait d'un contenu** (auteur, éditeur ou tout visiteur) : page de contact dédiée ; objectif de traitement sous 48 h.
 
 ## 2. Règles de gestion
 | Réf | Règle |
 |---|---|
-| RG-01 | Une entrée de bibliothèque est unique par (utilisateur, œuvre). |
+| RG-01 | Une entrée de liste est unique par (utilisateur, œuvre). |
 | RG-02 | Les compteurs sont des entiers ≥ 0 et **indépendants** : aucune règle de cohérence entre chapitres et tomes. |
 | RG-03 | Aucune statistique n'additionne chapitres et tomes. |
 | RG-04 | La note est un entier de 1 à 10, facultatif. La note moyenne d'une œuvre n'est affichée qu'à partir de **10 notes** pour éviter les moyennes non significatives ; en dessous, seul le nombre de notes est indiqué. |
@@ -78,7 +90,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 | RG-07 | Une œuvre publiée en ligne puis éditée en papier reste **une seule fiche** (ex. BICLY) : `chapters` pour la partie en ligne, `volumes` pour le papier. |
 | RG-08 | Dédoublonnage sans ISBN : titre normalisé + recherche floue, proposé à l'utilisateur et vérifié par l'administrateur. |
 | RG-09 | Toute suppression est un archivage, réservé à l'administrateur ; une fiche archivée disparaît des listes et de la recherche publique mais reste restaurable. |
-| RG-10 | Un doublon accepté par erreur est archivé (pas de fusion dans le MVP). |
+| RG-10 | Un doublon accepté par erreur est archivé (pas de fusion dans le MVP) ; ses membres retrouvent l'œuvre conservée par la recherche. |
 | RG-11 | Les liens externes sont en `https://`. |
 | RG-12 | Les œuvres pour adultes ne sont **pas référencées** dans le MVP (hors périmètre) ; l'administrateur refuse leur soumission. Pas de champ « public » ni de gestion d'âge. |
 | RG-14 | Chapitres et tomes sont des **entiers**. Les chapitres intermédiaires (10.5), postfaces et bonus ne sont pas comptés (ex. BICLY = 158 épisodes, postface exclue). |
@@ -108,7 +120,15 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Contenu multilingue (2026-10-12, ADR 0007, #53) : l'API accepte `lang` (liste de langues dans la configuration de l'API) ; sans `lang`, titre et synopsis sont dans la langue originale. Un titre `short` ou `former` n'est jamais choisi comme titre affiché mais reste recherchable.
 
 ## 5. Points encore ouverts
-Aucun point produit. Restent des choix techniques, traités en ADR au démarrage du code.
+Décidés au démarrage du ticket concerné :
+- Pseudo : format, mots réservés, changement après la première connexion, reprise sans pseudo (#22).
+- Export des données et visibilité des notes d'un profil public (#34).
+- Soumission : règles de la limite de fréquence, motifs de refus et de signalement prédéfinis, preuve du retrait (#31, #32, #33).
+- Le proposant voit-il le motif de refus et peut-il le contester ? (#32).
+- Filtres et tris de la recherche (langue originale) (#21).
+- Textes légaux (#35).
+
+Le reste relève de choix techniques, traités en ADR au démarrage du code.
 
 ## 6. Glossaire
 Vocabulaire fonctionnel en français ; noms techniques (tables, colonnes) en anglais, détaillés dans le [modèle de données](modele-de-donnees.md).
@@ -126,7 +146,7 @@ Vocabulaire fonctionnel en français ; noms techniques (tables, colonnes) en ang
 | **Éditeur / plateforme** | Maison d'édition, plateforme de lecture (ex. Webtoon) ou auto-édition | `publisher` |
 | **Relation** | Lien entre deux œuvres (suite, préquelle, spin-off, même univers, contient…) | `work_relation` |
 | **Archiver** | Retirer une fiche des listes sans la détruire (admin) ; restaurable | `deleted_at`, `deleted_by` |
-| **Bibliothèque / entrée** | Le suivi d'une œuvre par un utilisateur : statut de lecture, compteurs, note, dates | `library_entry` |
+| **Liste / entrée** | « Ma liste » : l'ensemble des œuvres suivies par un utilisateur ; une entrée est le suivi d'une œuvre (statut de lecture, compteurs, note, dates) | `library_entry` |
 | **Compteurs** | « Chapitres lus » et « tomes lus », **indépendants** : jamais mappés ni additionnés | `chapters_read`, `volumes_read` |
 | **Journal de lecture** | Historique en ajout seul des progressions | `reading_event` |
 | **Soumission** | Proposition d'œuvre par un utilisateur, en attente de décision de l'administrateur | `submission` |
