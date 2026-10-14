@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Trame"
+  },
+  "nav": {
+    "search": "Rechercher",
+    "searchPlaceholder": "Rechercher une œuvre, un auteur…",
+    "languageLabel": "Langue de l'interface",
+    "skipToContent": "Aller au contenu",
+    "signIn": "Se connecter"
+  },
+  "home": {
+    "title": "Trame",
+    "intro": "Suis tes lectures et découvre les œuvres indépendantes.",
+    "componentsLink": "Voir les composants"
+  },
+  "gallery": {
+    "title": "Composants",
+    "buttons": "Boutons et statuts",
+    "tabsAndCounters": "Onglets, compteurs et champs",
+    "relatedWorks": "Œuvres liées",
+    "tabAll": "Toutes",
+    "chaptersRead": "Chapitres lus",
+    "volumesRead": "Tomes lus",
+    "emptyTitle": "Rien à afficher pour l'instant",
+    "emptyText": "Le catalogue apparaîtra ici.",
+    "modalText": "Contenu de la fenêtre."
+  },
+  "action": {
+    "addToList": "Ajouter à ma liste",
+    "add": "Ajouter",
+    "close": "Fermer"
+  },
+  "counter": {
+    "decrease": "Diminuer : {label}",
+    "increase": "Augmenter : {label}"
+  },
+  "workType": {
+    "series": "Série",
+    "oneshot": "One-shot",
+    "anthology": "Anthologie"
+  },
+  "readingStatus": {
+    "reading": "En cours",
+    "completed": "Terminé",
+    "plan_to_read": "À lire",
+    "on_hold": "En pause",
+    "dropped": "Abandonné"
+  },
+  "errorPage": {
+    "title": "Une erreur est survenue",
+    "text": "Réessaie dans un instant.",
+    "notFoundTitle": "Page introuvable",
+    "notFoundText": "Cette page n'existe pas ou n'est plus disponible.",
+    "backHome": "Retour à l'accueil"
+  },
+  "error": {
+    "INTERNAL_ERROR": "Une erreur est survenue. Réessaie dans un instant.",
+    "ADMIN_REQUIRED": "Cette action est réservée aux administrateurs."
+  }
+}

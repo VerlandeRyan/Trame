@@ -1,0 +1,61 @@
+{
+  "app": {
+    "name": "Trame"
+  },
+  "nav": {
+    "search": "Search",
+    "searchPlaceholder": "Search for a work or an author…",
+    "languageLabel": "Interface language",
+    "skipToContent": "Skip to content",
+    "signIn": "Sign in"
+  },
+  "home": {
+    "title": "Trame",
+    "intro": "Track your reading and discover independent works.",
+    "componentsLink": "See the components"
+  },
+  "gallery": {
+    "title": "Components",
+    "buttons": "Buttons and statuses",
+    "tabsAndCounters": "Tabs, counters and fields",
+    "relatedWorks": "Related works",
+    "tabAll": "All",
+    "chaptersRead": "Chapters read",
+    "volumesRead": "Volumes read",
+    "emptyTitle": "Nothing to show yet",
+    "emptyText": "The catalogue will appear here.",
+    "modalText": "Window content."
+  },
+  "action": {
+    "addToList": "Add to my list",
+    "add": "Add",
+    "close": "Close"
+  },
+  "counter": {
+    "decrease": "Decrease: {label}",
+    "increase": "Increase: {label}"
+  },
+  "workType": {
+    "series": "Series",
+    "oneshot": "One-shot",
+    "anthology": "Anthology"
+  },
+  "readingStatus": {
+    "reading": "Reading",
+    "completed": "Completed",
+    "plan_to_read": "Plan to read",
+    "on_hold": "On hold",
+    "dropped": "Dropped"
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "text": "Please try again in a moment.",
+    "notFoundTitle": "Page not found",
+    "notFoundText": "This page does not exist or is no longer available.",
+    "backHome": "Back to home"
+  },
+  "error": {
+    "INTERNAL_ERROR": "Something went wrong. Please try again in a moment.",
+    "ADMIN_REQUIRED": "This action is reserved for administrators."
+  }
+}

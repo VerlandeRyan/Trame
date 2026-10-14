@@ -1,5 +1,4 @@
 # Environnement de développement local.
-# Le service web sera ajouté quand son dossier existera.
 # Configuration : copier .env.example en .env (ignoré par git).
 services:
   db:
@@ -32,6 +31,19 @@ services:
     ports:
       # Exposé uniquement sur la machine locale.
       - "127.0.0.1:${API_PORT:-3000}:3000"
+
+  web:
+    build: ./web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      NUXT_API_BASE: http://api:3000
+      # Galerie de composants (/components) visible en local ; désactivée par défaut ailleurs.
+      NUXT_PUBLIC_COMPONENT_GALLERY: "true"
+    ports:
+      # Exposé uniquement sur la machine locale.
+      - "127.0.0.1:${WEB_PORT:-3001}:3000"
 
 volumes:
   trame-db:
