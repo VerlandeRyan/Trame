@@ -1,0 +1,48 @@
+// Jetons de design. Source unique : tout composant lit ces variables, jamais de valeur en dur.
+:root {
+  // Couleurs
+  --color-paper: #f7f4ef;
+  --color-surface: #fff;
+  --color-ink: #1b2a5c;
+  --color-ink-soft: #4d5a8a;
+  --color-blue: #2340b8;
+  --color-rose: #f07a9c;
+  --color-chip: #fde3ea;
+  --color-cover-empty: #cfd8ff;
+  --color-field: #e3e7ff;
+  --color-field-soft: #eef1ff;
+  --color-danger: #b3263e;
+  --color-rule: rgb(27 42 92 / 27%);
+
+  // Statuts de lecture (clés = codes de work_status de library_entry)
+  --status-reading: #4cc38a;
+  --status-completed: #7fa0ff;
+  --status-plan_to_read: #cfc2f5;
+  --status-on_hold: #f6d36b;
+  --status-dropped: #e8707c;
+
+  // Forme
+  --border: 2px solid var(--color-ink);
+  --radius: 4px;
+  --shadow: 3px 3px 0 var(--color-ink);
+  --shadow-small: 2px 2px 0 var(--color-ink);
+
+  // Typographie : pile système en attendant le choix de la police finale.
+  --font-sans: system-ui, -apple-system, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif;
+  --weight-title: 800;
+
+  // Espacement (échelle de 4 px)
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  // Zone tactile minimale (WCAG / maquettes)
+  --touch: 44px;
+  --content-width: 1120px;
+}
+
+// Points de rupture (media queries, valeurs non variabilisables en CSS) :
+// mobile < 768 px (maquettes à 390 px), tablette ≥ 768 px, bureau ≥ 1024 px (maquettes à 1280 px).

@@ -1,0 +1,13 @@
+// Trame (screentone) : points ronds en fondu, comme dans les maquettes.
+// À inclure dans un pseudo-élément ::before d'un parent `position: relative`.
+// $angle : direction depuis laquelle la trame est la plus dense (270deg = depuis la droite).
+@mixin screentone($color, $size, $angle, $fade-end: 100%) {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, $color 36%, transparent 42%);
+  background-size: #{$size} #{$size};
+  -webkit-mask-image: linear-gradient($angle, #000, transparent $fade-end);
+  mask-image: linear-gradient($angle, #000, transparent $fade-end);
+}

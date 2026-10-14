@@ -4,6 +4,10 @@ pre-commit:
   commands:
     secrets:
       run: gitleaks git --pre-commit --staged --redact
+    lint-web:
+      root: web/
+      glob: "*.{ts,vue,mjs}"
+      run: npx --no-install eslint {staged_files}
 
 commit-msg:
   commands:

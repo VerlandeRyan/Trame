@@ -31,6 +31,8 @@ dist/
 .output/
 .nuxt/
 coverage/
+test-results/
+playwright-report/
 *.log
 
 # --- Requêtes SQL locales (SQLTools) ---

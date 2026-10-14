@@ -8,7 +8,7 @@ Développeur solo, profil data (SQL, modélisation), Vue déjà pratiqué sur un
 
 ## Décision
 - Base : **PostgreSQL**, migrations SQL écrites à la main.
-- API : **Node.js (LTS) + TypeScript** stable, REST + OpenAPI, validation d'entrée par schéma ; détails (framework, accès à la base, authentification) dans l'[ADR 0006](0006-choix-techniques-api.md) ; langues et contenu multilingue dans l'[ADR 0007](0007-i18n-et-contenu-multilingue.md).
+- API : **Node.js (LTS) + TypeScript** stable, REST + OpenAPI, validation d'entrée par schéma ; détails (framework, accès à la base, authentification) dans l'[ADR 0006](0006-choix-techniques-api.md) ; langues et contenu multilingue dans l'[ADR 0007](0007-i18n-et-contenu-multilingue.md) ; front (UI, icônes, i18n) dans l'[ADR 0008](0008-choix-techniques-web.md).
 - Front : **Nuxt (Vue 3)** pour des pages rendues côté serveur.
 - Authentification : Google OAuth, librairie maintenue, session en cookie `httpOnly`.
 - Local : `docker compose up` (base, API, web).
