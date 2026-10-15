@@ -21,7 +21,8 @@ describe("page d'erreur", () => {
   it('propose le champ de recherche de la maquette sur la 404', async () => {
     const wrapper = await mountError(404)
 
-    expect(wrapper.text()).toContain('Rechercher une œuvre, un auteur…')
+    const field = wrapper.get('.not-found [role="combobox"]')
+    expect(field.attributes('placeholder')).toBe('Rechercher une œuvre, un auteur…')
     expect(wrapper.text()).toContain('Essaie une recherche.')
   })
 

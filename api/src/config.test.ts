@@ -8,7 +8,10 @@ describe('loadConfig', () => {
   });
 
   it('convertit le port en nombre', () => {
-    const config = loadConfig({ DATABASE_URL: 'postgres://u:p@127.0.0.1:5432/trame', PORT: '8080' });
+    const config = loadConfig({
+      DATABASE_URL: 'postgres://u:p@127.0.0.1:5432/trame',
+      PORT: '8080',
+    });
     expect(config.PORT).toBe(8080);
   });
 
@@ -21,8 +24,8 @@ describe('loadConfig', () => {
   });
 
   it.each(['0', '70000', 'abc', '80.5'])('refuse le port invalide %s', (port) => {
-    expect(() => loadConfig({ DATABASE_URL: 'postgres://u:p@127.0.0.1:5432/trame', PORT: port })).toThrow(
-      /PORT/,
-    );
+    expect(() =>
+      loadConfig({ DATABASE_URL: 'postgres://u:p@127.0.0.1:5432/trame', PORT: port }),
+    ).toThrow(/PORT/);
   });
 });

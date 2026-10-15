@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test'
 
 test('l\'en-tête présente la recherche et la connexion', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/')
   const header = page.getByRole('banner')
-  await expect(header).toContainText('Rechercher une œuvre, un auteur…')
+  await expect(header.getByRole('combobox')).toHaveAttribute(
+    'placeholder',
+    'Rechercher une œuvre, un auteur…',
+  )
   await expect(header.getByRole('button', { name: 'Se connecter' })).toBeVisible()
 })
 
@@ -35,7 +39,7 @@ test('mobile : recherche, langue et compte sont groupés à droite de l\'en-têt
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
 
-  const search = await page.locator('.layout-header__search').boundingBox()
+  const search = await page.locator('.layout-header__search-link').boundingBox()
   const signIn = await page.getByRole('button', { name: 'Se connecter' }).boundingBox()
   const logo = await page.locator('.layout-header__logo').boundingBox()
   expect(search && signIn && logo).toBeTruthy()

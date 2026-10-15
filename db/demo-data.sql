@@ -139,6 +139,7 @@ SELECT w.id, g.id FROM (VALUES
   ('Les Lanternes de Brume',           'manhwa'),
   ('Les Lanternes de Brume',           'webtoon'),
   ('Les Lanternes de Brume',           'fantasy'),
+  ('Les Lanternes de Brume',           'humor'),
   ('Chroniques de Basalte',            'manga'),
   ('Chroniques de Basalte',            'fantasy'),
   ('Cap sur les Archipels',            'bd'),

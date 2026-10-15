@@ -38,7 +38,12 @@ describe('errorHandler (unitaire)', () => {
     const status = vi.fn(() => ({ json }));
     const res = { headersSent: false, status };
 
-    errorHandler(new AppError('VALIDATION_ERROR', [{ path: ['title'] }]), req, res as unknown as Response, vi.fn());
+    errorHandler(
+      new AppError('VALIDATION_ERROR', [{ path: ['title'] }]),
+      req,
+      res as unknown as Response,
+      vi.fn(),
+    );
 
     expect(status).toHaveBeenCalledWith(400);
     expect(json).toHaveBeenCalledWith({

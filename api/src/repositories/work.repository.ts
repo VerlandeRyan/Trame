@@ -1,4 +1,10 @@
-import { sql, type Expression, type ExpressionBuilder, type RawBuilder, type SqlBool } from 'kysely';
+import {
+  sql,
+  type Expression,
+  type ExpressionBuilder,
+  type RawBuilder,
+  type SqlBool,
+} from 'kysely';
 import {
   CREDIT_ROLE_RANK,
   type CreditRole,
@@ -14,27 +20,47 @@ import {
   type WorkStatus,
   type WorkType,
 } from '../db/database.js';
+import { searchTerms } from '../search-terms.js';
 
 export interface WorkSearchCriteria {
   /** Texte déjà nettoyé (espaces) et d'au moins 2 caractères. */
   q?: string;
-  type?: WorkType;
-  status?: WorkStatus;
-  /** Code d'un format (ex. `manga`). */
-  format?: string;
-  /** Code d'un genre thématique (ex. `fantasy`). */
-  genre?: string;
+  /** `all` (défaut) : chaque mot doit correspondre ; `any` : un seul suffit. */
+  match?: MatchMode;
+  /** Valeurs multiples : OU, sauf `genre` (ET). Les filtres entre eux se combinent (ET). */
+  type?: WorkType[];
+  status?: WorkStatus[];
+  /** Codes de formats (ex. `manga`). */
+  format?: string[];
+  /** Codes de genres thématiques (ex. `fantasy`). */
+  genre?: string[];
+  /** Langues originales (codes ISO 639, ex. `ja`). */
+  originalLanguage?: string[];
   /** Langue de l'application : sert à choisir le titre affiché (repli sur le titre original). */
   lang?: string;
+  /** Ordre de la liste ; sans `q`, `relevance` retombe sur le titre. */
+  sort?: WorkSort;
   limit: number;
   offset: number;
 }
 
+export type MatchMode = 'all' | 'any';
+
+/** `relevance` : proximité avec `q` ; `title` : A→Z ; `recent` : dernières ajoutées d'abord. */
+export type WorkSort = 'relevance' | 'title' | 'recent';
+
+/** Filtres seuls : les compteurs ignorent la page, le tri et la langue. */
+export type WorkFacetCriteria = Omit<WorkSearchCriteria, 'lang' | 'sort' | 'limit' | 'offset'>;
+
 export interface WorkSummary {
   id: number;
   title: string;
+  originalTitle: string;
+  originalLanguage: string;
   type: WorkType;
   status: WorkStatus;
+  /** Codes des formats (catégorie `format`), triés. */
+  formats: string[];
   coverPath: string | null;
   mainAuthor: string | null;
 }
@@ -42,6 +68,20 @@ export interface WorkSummary {
 export interface WorkSearchResult {
   items: WorkSummary[];
   total: number;
+}
+
+export interface FacetCount {
+  code: string;
+  count: number;
+}
+
+/** Œuvres par valeur de filtre ; chaque groupe ignore son propre filtre (sauf `genre`, en ET). */
+export interface WorkFacets {
+  type: FacetCount[];
+  status: FacetCount[];
+  format: FacetCount[];
+  genre: FacetCount[];
+  originalLanguage: FacetCount[];
 }
 
 /** Fiche telle que lue en base : un crédit par (personne, rôle). Le service les regroupe par personne. */
@@ -88,6 +128,7 @@ export interface WorkRecord {
 
 export interface WorkRepository {
   search(criteria: WorkSearchCriteria): Promise<WorkSearchResult>;
+  facets(criteria: WorkFacetCriteria): Promise<WorkFacets>;
   /** Renvoie `undefined` si l'œuvre n'existe pas ou est archivée. */
   findById(id: number, lang?: string): Promise<WorkRecord | undefined>;
 }
@@ -135,43 +176,65 @@ function textMatch(column: string, q: string, pattern: string): RawBuilder<boole
   )`;
 }
 
-/** Œuvre dont le titre, un titre alternatif, un auteur ou un éditeur correspond à `q`. */
-function searchCondition(q: string): RawBuilder<boolean> {
-  const escaped = q.replace(/[\\%_]/g, String.raw`\$&`);
+/** Le mot est dans le titre, un titre alternatif, un auteur, un éditeur, un format ou un genre. */
+function termCondition(term: string): RawBuilder<boolean> {
+  const escaped = term.replace(/[\\%_]/g, String.raw`\$&`);
   const pattern = `%${escaped}%`;
   return sql<boolean>`(
-    ${textMatch('work.title', q, pattern)}
+    ${textMatch('work.title', term, pattern)}
     OR EXISTS (
       SELECT 1 FROM work_title wt
-      WHERE wt.work_id = work.id AND ${textMatch('wt.title', q, pattern)}
+      WHERE wt.work_id = work.id AND ${textMatch('wt.title', term, pattern)}
     )
     OR EXISTS (
       SELECT 1 FROM work_credit wc JOIN person p ON p.id = wc.person_id
-      WHERE wc.work_id = work.id AND p.deleted_at IS NULL AND ${textMatch('p.name', q, pattern)}
+      WHERE wc.work_id = work.id AND p.deleted_at IS NULL AND ${textMatch('p.name', term, pattern)}
     )
     OR EXISTS (
       SELECT 1 FROM work_publisher wp JOIN publisher pub ON pub.id = wp.publisher_id
-      WHERE wp.work_id = work.id AND pub.deleted_at IS NULL AND ${textMatch('pub.name', q, pattern)}
+      WHERE wp.work_id = work.id AND pub.deleted_at IS NULL AND ${textMatch('pub.name', term, pattern)}
+    )
+    OR EXISTS (
+      SELECT 1 FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
+      WHERE wg.work_id = work.id AND replace(g.code, '_', ' ') ILIKE ${pattern}
     )
   )`;
 }
 
-/** L'œuvre porte l'étiquette `code`, à condition qu'elle soit de la catégorie donnée. */
-function hasGenre(code: string, category: GenreCategory): RawBuilder<boolean> {
+/** `all` : chaque mot doit correspondre (« aube manga » : titre + format) ; `any` : un seul suffit. */
+function searchCondition(q: string, match: MatchMode): RawBuilder<boolean> {
+  const conditions = searchTerms(q).map(termCondition);
+  const separator = match === 'any' ? sql` OR ` : sql` AND `;
+  return sql<boolean>`(${sql.join(conditions, separator)})`;
+}
+
+/** L'œuvre porte l'une des étiquettes `codes` de la catégorie. */
+function hasGenre(codes: string[], category: GenreCategory): RawBuilder<boolean> {
   return sql<boolean>`EXISTS (
     SELECT 1 FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
-    WHERE wg.work_id = work.id AND g.code = ${code} AND g.category = ${category}
+    WHERE wg.work_id = work.id AND g.code IN (${sql.join(codes)}) AND g.category = ${category}
   )`;
 }
 
-function filters(criteria: WorkSearchCriteria) {
+const FORMATS = sql<string[]>`COALESCE((
+  SELECT array_agg(g.code ORDER BY g.code) FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
+  WHERE wg.work_id = work.id AND g.category = 'format'
+), '{}')`;
+
+function filters(criteria: WorkFacetCriteria) {
   return (eb: ExpressionBuilder<Database, 'work'>): Expression<SqlBool> => {
     const conditions: Expression<SqlBool>[] = [eb('work.deleted_at', 'is', null)];
-    if (criteria.type !== undefined) conditions.push(eb('work.type', '=', criteria.type));
-    if (criteria.status !== undefined) conditions.push(eb('work.status', '=', criteria.status));
+    if (criteria.type !== undefined) conditions.push(eb('work.type', 'in', criteria.type));
+    if (criteria.status !== undefined) conditions.push(eb('work.status', 'in', criteria.status));
+    if (criteria.originalLanguage !== undefined) {
+      conditions.push(eb('work.original_language', 'in', criteria.originalLanguage));
+    }
     if (criteria.format !== undefined) conditions.push(hasGenre(criteria.format, 'format'));
-    if (criteria.genre !== undefined) conditions.push(hasGenre(criteria.genre, 'theme'));
-    if (criteria.q !== undefined) conditions.push(searchCondition(criteria.q));
+    // Genres : ET, une condition par genre choisi.
+    for (const code of criteria.genre ?? []) conditions.push(hasGenre([code], 'theme'));
+    if (criteria.q !== undefined) {
+      conditions.push(searchCondition(criteria.q, criteria.match ?? 'all'));
+    }
     return eb.and(conditions);
   };
 }
@@ -185,13 +248,19 @@ export function createWorkRepository(db: Db): WorkRepository {
         .select([
           'work.id',
           shownTitle.as('title'),
+          'work.title as originalTitle',
+          'work.original_language as originalLanguage',
           'work.type',
           'work.status',
+          FORMATS.as('formats'),
           COVER_PATH.as('coverPath'),
           MAIN_AUTHOR.as('mainAuthor'),
         ])
         .where(filters(criteria));
-      if (criteria.q !== undefined) {
+      const sort = criteria.sort ?? 'relevance';
+      if (sort === 'recent') {
+        listQuery = listQuery.orderBy('work.created_at', 'desc');
+      } else if (sort === 'relevance' && criteria.q !== undefined) {
         listQuery = listQuery.orderBy(
           sql`word_similarity(immutable_unaccent(${criteria.q}), immutable_unaccent(work.title))`,
           'desc',
@@ -212,6 +281,56 @@ export function createWorkRepository(db: Db): WorkRepository {
           .executeTakeFirstOrThrow(),
       ]);
       return { items, total: count.total };
+    },
+
+    async facets(criteria) {
+      const without = (omitted: keyof WorkFacetCriteria): WorkFacetCriteria => ({
+        ...criteria,
+        [omitted]: undefined,
+      });
+      const countBy = (column: string, omitted: keyof WorkFacetCriteria): Promise<FacetCount[]> => {
+        const code = sql<string>`${sql.ref(column)}`;
+        return db
+          .selectFrom('work')
+          .select([code.as('code'), (eb) => eb.fn.countAll<number>().as('count')])
+          .where(filters(without(omitted)))
+          .groupBy(code)
+          .orderBy('count', 'desc')
+          .orderBy('code')
+          .execute();
+      };
+      // Formats (OU) : le groupe ignore son filtre. Genres (ET) : il le garde, et le compteur est
+      // ce que donnerait l'ajout de la valeur.
+      const countByGenre = (
+        category: GenreCategory,
+        omitted: 'format' | undefined,
+      ): Promise<FacetCount[]> =>
+        db
+          .selectFrom('work_genre as wg')
+          .innerJoin('genre as g', 'g.id', 'wg.genre_id')
+          .select(['g.code as code', (eb) => eb.fn.countAll<number>().as('count')])
+          .where('g.category', '=', category)
+          .where(
+            'wg.work_id',
+            'in',
+            db
+              .selectFrom('work')
+              .select('work.id')
+              .where(filters(omitted === undefined ? criteria : without(omitted))),
+          )
+          .groupBy('g.code')
+          .orderBy('count', 'desc')
+          .orderBy('g.code')
+          .execute();
+
+      const [type, status, originalLanguage, format, genre] = await Promise.all([
+        countBy('work.type', 'type'),
+        countBy('work.status', 'status'),
+        countBy('work.original_language', 'originalLanguage'),
+        countByGenre('format', 'format'),
+        countByGenre('theme', undefined),
+      ]);
+      return { type, status, format, genre, originalLanguage };
     },
 
     async findById(id, lang) {
@@ -236,7 +355,17 @@ export function createWorkRepository(db: Db): WorkRepository {
       if (work === undefined) return undefined;
 
       const relatedTitle = displayTitle('w', lang).as('title');
-      const [alternativeTitles, synopses, credits, publishers, genres, links, outgoing, incoming, tracking] = await Promise.all([
+      const [
+        alternativeTitles,
+        synopses,
+        credits,
+        publishers,
+        genres,
+        links,
+        outgoing,
+        incoming,
+        tracking,
+      ] = await Promise.all([
         db
           .selectFrom('work_title')
           .select(['language', 'kind', 'title'])
@@ -249,7 +378,11 @@ export function createWorkRepository(db: Db): WorkRepository {
           .selectFrom('work_synopsis')
           .select(['language', 'text', 'source'])
           .where('work_id', '=', id)
-          .where('language', 'in', lang === undefined ? [work.originalLanguage] : [lang, work.originalLanguage])
+          .where(
+            'language',
+            'in',
+            lang === undefined ? [work.originalLanguage] : [lang, work.originalLanguage],
+          )
           .execute(),
         db
           .selectFrom('work_credit as wc')
@@ -340,12 +473,17 @@ export function createWorkRepository(db: Db): WorkRepository {
         synopsisSource: synopsis?.source ?? null,
         alternativeTitles,
         credits,
-        personLinks: personLinks.flatMap((l) => (l.personId === null ? [] : [{ ...l, personId: l.personId }])),
+        personLinks: personLinks.flatMap((l) =>
+          l.personId === null ? [] : [{ ...l, personId: l.personId }],
+        ),
         publishers,
         formats: genres.filter((g) => g.category === 'format').map((g) => g.code),
         genres: genres.filter((g) => g.category === 'theme').map((g) => g.code),
         links,
-        relations: [...outgoing.map(toRelation('outgoing')), ...incoming.map(toRelation('incoming'))],
+        relations: [
+          ...outgoing.map(toRelation('outgoing')),
+          ...incoming.map(toRelation('incoming')),
+        ],
         memberCount: tracking.memberCount,
         ratingCount: tracking.ratingCount,
         ratingSum: tracking.ratingSum,

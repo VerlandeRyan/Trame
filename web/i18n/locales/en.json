@@ -4,10 +4,71 @@
   },
   "nav": {
     "search": "Search",
+    "openSearch": "Open search",
+    "closeSearch": "Close search",
     "searchPlaceholder": "Search for a work or an author…",
     "languageLabel": "Interface language",
     "skipToContent": "Skip to content",
     "signIn": "Sign in"
+  },
+  "search": {
+    "title": "Search",
+    "titleWithQuery": "Search: {query}",
+    "label": "Search for a work",
+    "suggestions": "Suggestions",
+    "suggestionCount": "{count} suggestion | {count} suggestions",
+    "seeAll": "See the result | See all {count} results",
+    "resultCount": "{count} result for “{query}” | {count} results for “{query}”",
+    "resultCountFiltered": "{count} result | {count} results",
+    "sortLabel": "Sort by",
+    "sort": {
+      "relevance": "Relevance",
+      "title": "Title (A → Z)",
+      "recent": "Recently added"
+    },
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
+    "selectedCount": "{count} selected | {count} selected",
+    "add": "Add",
+    "addTo": "Add “{title}” to my list",
+    "noResultTitle": "This work isn't on Trame yet",
+    "noResultText": "Check the spelling, or try another title, author or publisher name. You can also propose this work to the catalogue.",
+    "noResultFor": "No results for “{query}”",
+    "noResultFilters": "No results with these filters",
+    "proposeSignIn": "Sign in to propose this work",
+    "approximate": "No work contains every word: showing works that contain at least one.",
+    "loadError": "Search is unavailable right now. Try again in a moment.",
+    "retry": "Try again",
+    "filters": "Filters",
+    "filtersCount": "Filters ({count})",
+    "filterGenres": "Filter genres",
+    "showOthers": "Show {count} more",
+    "showFewer": "Show fewer",
+    "reset": "Reset",
+    "viewResults": "View {count} result | View {count} results",
+    "removeFilter": "Remove filter {label}",
+    "close": "Close",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page}",
+    "group": {
+      "type": "Type",
+      "format": "Format",
+      "genre": "Genre",
+      "status": "Publication status",
+      "originalLanguage": "Original language"
+    }
+  },
+  "language": {
+    "fr": "French",
+    "en": "English",
+    "ja": "Japanese",
+    "ko": "Korean",
+    "zh": "Chinese",
+    "es": "Spanish",
+    "de": "German",
+    "it": "Italian"
   },
   "home": {
     "title": "Trame",
@@ -70,7 +131,12 @@
     "webcomic": "Webcomic",
     "fantasy": "Fantasy",
     "humor": "Humor",
-    "science_fiction": "Science fiction"
+    "science_fiction": "Science fiction",
+    "adventure": "Adventure",
+    "drama": "Drama",
+    "romance": "Romance",
+    "thriller": "Thriller",
+    "slice_of_life": "Slice of life"
   },
   "relationGroup": {
     "sequel": "Sequel",
@@ -125,6 +191,7 @@
     "people": {
       "title": "Author on the web | Authors on the web",
       "more": "+ {count} more authors",
+      "showAll": "Show all",
       "collapse": "Show less"
     }
   },
@@ -133,7 +200,6 @@
     "text": "Please try again in a moment.",
     "notFoundTitle": "This page does not exist",
     "notFoundText": "The link may be wrong, or the page may have moved. Try a search.",
-    "searchShort": "Search…",
     "backHome": "Back to home"
   },
   "error": {

@@ -38,14 +38,17 @@ describe('WorkPeople', () => {
 
     expect(wrapper.findAll('li')).toHaveLength(3)
     expect(wrapper.get('h2').text()).toBe('Auteurs sur le web')
+    // Le nombre masqué est un texte ; l'action est « Voir tout », à droite de la même ligne.
+    expect(wrapper.get('.people__more-label').text()).toBe('+ 2 autres auteurs')
     const toggle = wrapper.get('button')
-    expect(toggle.text()).toBe('+ 2 autres auteurs')
+    expect(toggle.text()).toBe('Voir tout')
     expect(toggle.attributes('aria-expanded')).toBe('false')
 
     await toggle.trigger('click')
 
     expect(wrapper.findAll('li')).toHaveLength(5)
     expect(wrapper.get('button').text()).toBe('Réduire')
+    expect(wrapper.find('.people__more-label').exists()).toBe(false)
   })
 
   it("n'affiche rien sans personne", async () => {

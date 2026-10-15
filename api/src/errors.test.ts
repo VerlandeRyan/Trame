@@ -45,13 +45,15 @@ describe("format d'erreur uniforme", () => {
   it('type incorrect : code invalid_type avec le type attendu', async () => {
     const res = await request(probeApp()).post('/echo').send({ title: 42 });
     expect(res.status).toBe(400);
-    expect(res.body.details).toEqual([{ path: ['title'], code: 'invalid_type', expected: 'string' }]);
+    expect(res.body.details).toEqual([
+      { path: ['title'], code: 'invalid_type', expected: 'string' },
+    ]);
   });
 
   it('corps valide : transmis tel quel', async () => {
-    const res = await request(probeApp()).post('/echo').send({ title: 'Ripper' });
+    const res = await request(probeApp()).post('/echo').send({ title: 'Aube Fictive' });
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ title: 'Ripper' });
+    expect(res.body).toEqual({ title: 'Aube Fictive' });
   });
 
   it('JSON malformé : 400 INVALID_JSON', async () => {

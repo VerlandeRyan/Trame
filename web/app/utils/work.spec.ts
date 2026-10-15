@@ -18,8 +18,8 @@ import {
 
 const baseWork: WorkDetail = {
   id: 42,
-  title: 'Ripper',
-  originalTitle: 'Ripper',
+  title: 'Aube Fictive',
+  originalTitle: 'Aube Fictive',
   originalLanguage: 'fr',
   type: 'series',
   status: 'ongoing',
@@ -64,14 +64,14 @@ describe('slugify et workSlug', () => {
   })
 
   it("construit `{id}-{slug}`, ou l'identifiant seul sans caractère utile", () => {
-    expect(workSlug(42, 'Ripper')).toBe('42-ripper')
+    expect(workSlug(42, 'Aube Fictive')).toBe('42-aube-fictive')
     expect(workSlug(7, '???')).toBe('7')
   })
 })
 
 describe('parseWorkId', () => {
   it("lit l'identifiant et ignore le slug", () => {
-    expect(parseWorkId('42-ripper')).toBe(42)
+    expect(parseWorkId('42-aube-fictive')).toBe(42)
     expect(parseWorkId('42-nimporte-quoi')).toBe(42)
     expect(parseWorkId('42')).toBe(42)
   })
@@ -79,7 +79,7 @@ describe('parseWorkId', () => {
   it('refuse ce qui ne commence pas par un entier positif', () => {
     for (const bad of [
       '',
-      'ripper',
+      'aube-fictive',
       '0',
       '0-x',
       '-1',
@@ -214,11 +214,11 @@ describe('formatAlternativeTitles', () => {
 
 describe('buildJsonLd', () => {
   it('décrit une série minimale', () => {
-    expect(buildJsonLd(baseWork, 'https://trame.test/work/42-ripper', '')).toEqual({
+    expect(buildJsonLd(baseWork, 'https://trame.test/work/42-aube-fictive', '')).toEqual({
       '@context': 'https://schema.org',
       '@type': 'ComicSeries',
-      name: 'Ripper',
-      url: 'https://trame.test/work/42-ripper',
+      name: 'Aube Fictive',
+      url: 'https://trame.test/work/42-aube-fictive',
       inLanguage: 'fr',
     })
   })
@@ -233,7 +233,7 @@ describe('buildJsonLd', () => {
           { personId: 1, name: 'Léa', kind: 'person', roles: ['story'], links: [] },
           { personId: 2, name: 'Atelier', kind: 'collective', roles: ['art'], links: [] },
         ],
-        publishers: [{ id: 1, name: 'Ankama', kind: 'publisher', url: null }],
+        publishers: [{ id: 1, name: 'Éditions Fictives', kind: 'publisher', url: null }],
         formats: ['manga'],
         genres: ['fantasy'],
         links: [
@@ -243,7 +243,7 @@ describe('buildJsonLd', () => {
         ratingCount: 12,
         ratingAverage: 7.5,
       },
-      'https://trame.test/work/42-ripper',
+      'https://trame.test/work/42-aube-fictive',
       'Un récit.',
     )
     expect(json).toMatchObject({
@@ -253,7 +253,7 @@ describe('buildJsonLd', () => {
         { '@type': 'Person', name: 'Léa' },
         { '@type': 'Organization', name: 'Atelier' },
       ],
-      publisher: [{ '@type': 'Organization', name: 'Ankama' }],
+      publisher: [{ '@type': 'Organization', name: 'Éditions Fictives' }],
       genre: ['manga', 'fantasy'],
       datePublished: '2024-01-02',
       sameAs: ['https://lire.test/42'],

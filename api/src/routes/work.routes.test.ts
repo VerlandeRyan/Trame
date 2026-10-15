@@ -58,9 +58,15 @@ describe('GET /api/v1/works', () => {
   it('filtre par type, statut, format et genre', async () => {
     expect(await titles('?type=anthology')).toEqual(['Basalte – Le Recueil des Braises']);
     expect(await titles('?status=completed')).toHaveLength(4);
-    expect((await titles('?format=bd')).sort()).toEqual(['Cap sur les Archipels', 'Carnet de Colportage']);
+    expect((await titles('?format=bd')).sort()).toEqual([
+      'Cap sur les Archipels',
+      'Carnet de Colportage',
+    ]);
     expect((await titles('?format=webtoon')).sort()).toEqual(['Les Lanternes de Brume']);
-    expect((await titles('?genre=fantasy')).sort()).toEqual(['Chroniques de Basalte', 'Les Lanternes de Brume']);
+    expect((await titles('?genre=fantasy')).sort()).toEqual([
+      'Chroniques de Basalte',
+      'Les Lanternes de Brume',
+    ]);
     // Un format n'est pas un genre thématique, et inversement.
     expect(await titles('?genre=manga')).toEqual([]);
     expect(await titles('?format=fantasy')).toEqual([]);
@@ -84,6 +90,31 @@ describe('GET /api/v1/works', () => {
       mainAuthor: 'Mélodie Vasseur',
     });
     expect(await titles('?q=marais%20bleu')).toHaveLength(6);
+  });
+
+  it('cherche chaque mot séparément : titre, auteur, éditeur, format ou genre', async () => {
+    // « webtoon » est un format de la fiche, pas un mot de son titre.
+    expect(await titles('?q=lanternes%20webtoon')).toEqual(['Les Lanternes de Brume']);
+    expect(await titles('?q=vasseur%20lanternes')).toEqual(['Les Lanternes de Brume']);
+    // Un format seul trouve toutes les œuvres de ce format.
+    expect(await titles('?q=webtoon')).toEqual(['Les Lanternes de Brume']);
+    expect((await titles('?q=bd')).length).toBeGreaterThanOrEqual(2);
+    // Les mots dans le désordre donnent le même résultat.
+    expect(await titles('?q=webtoon%20lanternes')).toEqual(['Les Lanternes de Brume']);
+  });
+
+  it('propose des résultats approchants quand aucun résultat ne contient tous les mots', async () => {
+    const exact = await request(app).get('/api/v1/works?q=lanternes%20webtoon');
+    expect(exact.body.approximate).toBe(false);
+
+    const approximate = await request(app).get('/api/v1/works?q=lanternes%20bd');
+    expect(approximate.body.approximate).toBe(true);
+    const found = (approximate.body.items as Item[]).map((item) => item.title);
+    expect(found).toContain('Les Lanternes de Brume');
+    expect(found).toContain('Carnet de Colportage');
+
+    const none = await request(app).get('/api/v1/works?q=zzzzzz%20yyyyyy');
+    expect(none.body).toMatchObject({ total: 0, approximate: false });
   });
 
   it('classe d’abord les titres les plus proches', async () => {
@@ -126,17 +157,180 @@ describe('GET /api/v1/works', () => {
     expect(await titles('?q=archipels&lang=en')).toEqual(['Course for the Archipelagos']);
   });
 
+  it('accepte plusieurs valeurs par filtre (OU), les filtres entre eux se combinent (ET)', async () => {
+    expect(await titles('?status=completed,hiatus')).toHaveLength(4);
+    expect(await titles('?status=completed,ongoing')).toHaveLength(11);
+    expect((await titles('?type=anthology,oneshot')).sort()).toEqual([
+      'Basalte – Histoires de Cendre',
+      'Basalte – Le Recueil des Braises',
+      'Carnet de Colportage',
+    ]);
+    expect((await titles('?format=bd,webtoon')).sort()).toEqual([
+      'Cap sur les Archipels',
+      'Carnet de Colportage',
+      'Les Lanternes de Brume',
+    ]);
+    expect((await titles('?type=oneshot,anthology&format=bd,webtoon')).sort()).toEqual([
+      'Carnet de Colportage',
+    ]);
+    expect(await titles('?originalLanguage=en,fr')).toHaveLength(11);
+    // Doublons ignorés.
+    expect(await titles('?status=completed,completed')).toHaveLength(4);
+  });
+
+  it('combine plusieurs genres en ET : chaque genre choisi doit être présent', async () => {
+    // « fantasy » seul : deux œuvres ; avec « humor » (porté par la seule Lanternes) : une seule.
+    expect((await titles('?genre=fantasy')).sort()).toEqual([
+      'Chroniques de Basalte',
+      'Les Lanternes de Brume',
+    ]);
+    expect(await titles('?genre=fantasy,humor')).toEqual(['Les Lanternes de Brume']);
+    expect(await titles('?genre=humor,science_fiction')).toEqual([]);
+    // Plusieurs formats restent en OU.
+    expect((await titles('?format=bd,webtoon')).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('filtre par langue originale', async () => {
+    expect(await titles('?originalLanguage=en')).toEqual(['Hollow Tide']);
+    expect(await titles('?originalLanguage=ja')).toEqual([]);
+    expect(await titles('?originalLanguage=fr')).toHaveLength(10);
+  });
+
+  it('expose formats, titre original et langue originale dans la liste', async () => {
+    const res = await request(app).get('/api/v1/works?format=webtoon&lang=en');
+    expect(res.body.items[0]).toMatchObject({
+      title: 'The Fog Lanterns',
+      originalTitle: 'Les Lanternes de Brume',
+      originalLanguage: 'fr',
+      formats: ['manhwa', 'webtoon'],
+    });
+    const withoutFormat = await request(app).get('/api/v1/works?q=hollow');
+    expect(withoutFormat.body.items[0].formats).toEqual([]);
+  });
+
+  it('trie par titre ou par date d’ajout, et par pertinence seulement avec une recherche', async () => {
+    expect(await titles('?sort=title&pageSize=3')).toEqual([
+      'Basalte – Histoires de Cendre',
+      'Basalte – Le Recueil des Braises',
+      'Cap sur les Archipels',
+    ]);
+
+    const id = await idOf('Hollow Tide');
+    await client.query("UPDATE work SET created_at = now() + interval '1 day' WHERE id = $1", [id]);
+    expect((await titles('?sort=recent'))[0]).toBe('Hollow Tide');
+    await client.query('UPDATE work SET created_at = now() WHERE id = $1', [id]);
+
+    // Sans recherche, la pertinence se replie sur le titre ; avec, elle classe d'abord le plus proche.
+    expect(await titles('?sort=relevance&pageSize=2')).toEqual(
+      await titles('?sort=title&pageSize=2'),
+    );
+    expect((await titles('?sort=relevance&q=Etoile%20Vagabonde'))[0]).toBe('Étoile Vagabonde');
+  });
+
   it('refuse les paramètres invalides', async () => {
-    for (const query of ['?lang=de', '?lang=FR', '?lang=', '?q=a','?pageSize=51', '?page=0', '?type=inconnu', '?type=webcomic', '?status=lu', '?genre=BD', '?format=Manga', '?q=ab&q=cd']) {
+    for (const query of [
+      '?type=series,roman',
+      '?status=,ongoing',
+      '?type=series&type=oneshot',
+      `?format=${Array.from({ length: 11 }, (_, index) => `f${index}`).join(',')}`,
+      '?sort=note',
+      '?sort=',
+      '?originalLanguage=FR',
+      '?originalLanguage=francais',
+      '?lang=de',
+      '?lang=FR',
+      '?lang=',
+      '?q=a',
+      '?pageSize=51',
+      '?page=0',
+      '?type=inconnu',
+      '?type=webcomic',
+      '?status=lu',
+      '?genre=BD',
+      '?format=Manga',
+      '?q=ab&q=cd',
+    ]) {
       const res = await request(app).get(`/api/v1/works${query}`);
       expect(res.status, query).toBe(400);
       expect(res.body.code).toBe('VALIDATION_ERROR');
     }
   });
 
+  describe('GET /api/v1/works/facets', () => {
+    async function facets(query = ''): Promise<Record<string, { code: string; count: number }[]>> {
+      const res = await request(app).get(`/api/v1/works/facets${query}`);
+      expect(res.status).toBe(200);
+      return res.body;
+    }
+    const counts = (group: { code: string; count: number }[]) =>
+      Object.fromEntries(group.map(({ code, count }) => [code, count]));
+
+    it('compte les œuvres par type, statut et langue originale', async () => {
+      const all = await facets();
+      expect(counts(all.type)).toEqual({ series: 8, oneshot: 2, anthology: 1 });
+      expect(counts(all.status)).toEqual({ ongoing: 7, completed: 4 });
+      expect(counts(all.originalLanguage)).toEqual({ fr: 10, en: 1 });
+      expect(counts(all.format)).toMatchObject({ bd: 2, webtoon: 1 });
+      expect(counts(all.genre)).toMatchObject({ fantasy: 2 });
+      // Tri : nombre décroissant puis code.
+      expect(all.type.map((entry) => entry.code)).toEqual(['series', 'oneshot', 'anthology']);
+    });
+
+    it('applique la recherche et les autres filtres, mais pas le sien', async () => {
+      const filtered = await facets('?type=anthology');
+      // Le groupe « type » ignore le filtre de type : les autres choix restent comptés.
+      expect(counts(filtered.type)).toEqual({ series: 8, oneshot: 2, anthology: 1 });
+      expect(counts(filtered.status)).toEqual({ completed: 1 });
+      expect(counts(filtered.originalLanguage)).toEqual({ fr: 1 });
+
+      const searched = await facets('?q=etoile');
+      expect(counts(searched.type)).toEqual({ series: 3 });
+    });
+
+    it('compte les genres comme un ET : ce que donnerait l’ajout de chaque valeur', async () => {
+      const none = await facets();
+      expect(counts(none.genre)).toMatchObject({ fantasy: 2, humor: 2, science_fiction: 1 });
+
+      const withFantasy = await facets('?genre=fantasy');
+      // Avec « fantasy » choisi : « fantasy » reste à 2, « humor » tombe à 1 (Lanternes seule),
+      // « science_fiction » disparaît (aucune œuvre fantasy n'est aussi science-fiction).
+      expect(counts(withFantasy.genre)).toEqual({ fantasy: 2, humor: 1 });
+    });
+
+    it('suit les résultats approchants avec match=any', async () => {
+      const exact = await facets('?q=lanternes%20bd');
+      expect(exact.type).toEqual([]);
+
+      const approximate = await facets('?q=lanternes%20bd&match=any');
+      expect(approximate.type.length).toBeGreaterThan(0);
+
+      const invalid = await request(app).get('/api/v1/works/facets?match=tous');
+      expect(invalid.status).toBe(400);
+    });
+
+    it('ne dépend pas du tri', async () => {
+      expect(await facets('?sort=recent')).toEqual(await facets());
+    });
+
+    it('ignore les œuvres archivées et refuse les paramètres invalides', async () => {
+      const id = await idOf('Hollow Tide');
+      await client.query('UPDATE work SET deleted_at = now() WHERE id = $1', [id]);
+      expect(counts((await facets()).originalLanguage)).toEqual({ fr: 10 });
+      await client.query('UPDATE work SET deleted_at = NULL WHERE id = $1', [id]);
+
+      for (const query of ['?q=a', '?type=inconnu', '?originalLanguage=FR']) {
+        const res = await request(app).get(`/api/v1/works/facets${query}`);
+        expect(res.status, query).toBe(400);
+      }
+    });
+  });
+
   it('n’expose la couverture qu’avec l’accord enregistré', async () => {
     const id = await idOf('Carnet de Colportage');
-    await client.query("UPDATE work SET cover_path = 'covers/test.webp', cover_consent = false WHERE id = $1", [id]);
+    await client.query(
+      "UPDATE work SET cover_path = 'covers/test.webp', cover_consent = false WHERE id = $1",
+      [id],
+    );
     const without = await request(app).get('/api/v1/works?q=colportage');
     expect(without.body.items[0].coverPath).toBeNull();
     await client.query('UPDATE work SET cover_consent = true WHERE id = $1', [id]);
@@ -144,7 +338,9 @@ describe('GET /api/v1/works', () => {
     expect(withConsent.body.items[0].coverPath).toBe('covers/test.webp');
     const detail = await request(app).get(`/api/v1/works/${id}`);
     expect(detail.body.coverPath).toBe('covers/test.webp');
-    await client.query('UPDATE work SET cover_path = NULL, cover_consent = false WHERE id = $1', [id]);
+    await client.query('UPDATE work SET cover_path = NULL, cover_consent = false WHERE id = $1', [
+      id,
+    ]);
   });
 });
 
@@ -177,26 +373,49 @@ describe('GET /api/v1/works/:id', () => {
         name: 'Théo Marchand',
         kind: 'person',
         roles: ['story', 'art'],
-        links: [{ kind: 'social', url: 'https://reseau.exemple.test/theo-marchand', label: "Profil de l'auteur" }],
+        links: [
+          {
+            kind: 'social',
+            url: 'https://reseau.exemple.test/theo-marchand',
+            label: "Profil de l'auteur",
+          },
+        ],
       },
     ]);
     expect(res.body.publishers).toEqual([
-      { id: expect.any(Number), name: 'Éditions Marais Bleu (fictives)', kind: 'publisher', url: expect.stringContaining('https://') },
+      {
+        id: expect.any(Number),
+        name: 'Éditions Marais Bleu (fictives)',
+        kind: 'publisher',
+        url: expect.stringContaining('https://'),
+      },
     ]);
     // Relations stockées dans un seul sens : ici, uniquement des relations entrantes.
     expect(res.body.relations).toHaveLength(2);
     for (const r of res.body.relations) expect(r.direction).toBe('incoming');
-    expect(res.body.relations.map((r: { relation: string }) => r.relation).sort()).toEqual(['shared_universe', 'spin_off']);
+    expect(res.body.relations.map((r: { relation: string }) => r.relation).sort()).toEqual([
+      'shared_universe',
+      'spin_off',
+    ]);
   });
 
   it('renvoie les totaux, les liens et les relations sortantes', async () => {
-    const lanternes = await request(app).get(`/api/v1/works/${await idOf('Les Lanternes de Brume')}`);
+    const lanternes = await request(app).get(
+      `/api/v1/works/${await idOf('Les Lanternes de Brume')}`,
+    );
     expect(lanternes.body).toMatchObject({ chapters: 120, volumes: 3, endedOn: '2023-06-30' });
     expect(lanternes.body.links.map((l: { kind: string }) => l.kind)).toEqual(['buy', 'read']);
 
-    const recueil = await request(app).get(`/api/v1/works/${await idOf('Basalte – Le Recueil des Braises')}`);
-    const outgoing = recueil.body.relations.filter((r: { direction: string }) => r.direction === 'outgoing');
-    expect(outgoing.map((r: { relation: string }) => r.relation).sort()).toEqual(['contains', 'shared_universe']);
+    const recueil = await request(app).get(
+      `/api/v1/works/${await idOf('Basalte – Le Recueil des Braises')}`,
+    );
+    const outgoing = recueil.body.relations.filter(
+      (r: { direction: string }) => r.direction === 'outgoing',
+    );
+    expect(outgoing.map((r: { relation: string }) => r.relation).sort()).toEqual([
+      'contains',
+      'shared_universe',
+    ]);
   });
 
   it('compte les membres et les notes, sans moyenne sous 10 notes', async () => {
@@ -204,7 +423,9 @@ describe('GET /api/v1/works/:id', () => {
     expect(basalte.body).toMatchObject({ memberCount: 2, ratingCount: 1, ratingAverage: null });
     expect(basalte.body).not.toHaveProperty('ratingSum');
 
-    const sansMembre = await request(app).get(`/api/v1/works/${await idOf('Le Gardien des Sables')}`);
+    const sansMembre = await request(app).get(
+      `/api/v1/works/${await idOf('Le Gardien des Sables')}`,
+    );
     expect(sansMembre.body).toMatchObject({ memberCount: 0, ratingCount: 0, ratingAverage: null });
   });
 
@@ -225,7 +446,9 @@ describe('GET /api/v1/works/:id', () => {
       const res = await request(app).get(`/api/v1/works/${id}`);
       expect(res.body).toMatchObject({ memberCount: 10, ratingCount: 10, ratingAverage: 6.2 });
     } finally {
-      await client.query("DELETE FROM library_entry WHERE user_id IN (SELECT id FROM app_user WHERE handle LIKE 'prive%')");
+      await client.query(
+        "DELETE FROM library_entry WHERE user_id IN (SELECT id FROM app_user WHERE handle LIKE 'prive%')",
+      );
       await client.query("DELETE FROM app_user WHERE handle LIKE 'prive%'");
     }
   });
@@ -242,14 +465,27 @@ describe('GET /api/v1/works/:id', () => {
     });
     // Sans `lang` : langue originale.
     const none = await request(app).get(`/api/v1/works/${lanternes}`);
-    expect(none.body).toMatchObject({ title: 'Les Lanternes de Brume', synopsisLanguage: 'fr', synopsisSource: 'official' });
+    expect(none.body).toMatchObject({
+      title: 'Les Lanternes de Brume',
+      synopsisLanguage: 'fr',
+      synopsisSource: 'official',
+    });
 
     // Œuvre anglophone : synopsis `fr` automatique, repli sur l'original en l'absence de `lang`.
     const tide = await idOf('Hollow Tide');
     const fr = await request(app).get(`/api/v1/works/${tide}?lang=fr`);
-    expect(fr.body).toMatchObject({ title: 'Marée creuse', originalLanguage: 'en', synopsisLanguage: 'fr', synopsisSource: 'machine' });
+    expect(fr.body).toMatchObject({
+      title: 'Marée creuse',
+      originalLanguage: 'en',
+      synopsisLanguage: 'fr',
+      synopsisSource: 'machine',
+    });
     const original = await request(app).get(`/api/v1/works/${tide}`);
-    expect(original.body).toMatchObject({ title: 'Hollow Tide', synopsisLanguage: 'en', synopsisSource: 'official' });
+    expect(original.body).toMatchObject({
+      title: 'Hollow Tide',
+      synopsisLanguage: 'en',
+      synopsisSource: 'official',
+    });
   });
 
   it('replie le synopsis sur la langue originale et accepte une œuvre sans synopsis', async () => {
@@ -259,9 +495,16 @@ describe('GET /api/v1/works/:id', () => {
     await client.query('DELETE FROM work_synopsis WHERE work_id = $1', [id]);
     try {
       const res = await request(app).get(`/api/v1/works/${id}?lang=en`);
-      expect(res.body).toMatchObject({ synopsis: null, synopsisLanguage: null, synopsisSource: null });
+      expect(res.body).toMatchObject({
+        synopsis: null,
+        synopsisLanguage: null,
+        synopsisSource: null,
+      });
     } finally {
-      await client.query("INSERT INTO work_synopsis VALUES ($1, 'fr', 'Un équipage de fortune et ses îles qui changent de place.', 'official')", [id]);
+      await client.query(
+        "INSERT INTO work_synopsis VALUES ($1, 'fr', 'Un équipage de fortune et ses îles qui changent de place.', 'official')",
+        [id],
+      );
     }
   });
 
@@ -280,14 +523,21 @@ describe('GET /api/v1/works/:id', () => {
       const none = await request(app).get(`/api/v1/works/${b}`);
       expect(none.body.relations[0].work).toMatchObject({ id: a, title: 'Hollow Tide' });
     } finally {
-      await client.query('DELETE FROM work_relation WHERE work_id = $1 AND related_work_id = $2', [b, a]);
+      await client.query('DELETE FROM work_relation WHERE work_id = $1 AND related_work_id = $2', [
+        b,
+        a,
+      ]);
     }
   });
 
   it('trie les personnes crédités par rôle le plus important, puis par nom', async () => {
-    const res = await request(app).get(`/api/v1/works/${await idOf('Basalte – Histoires de Cendre')}`);
+    const res = await request(app).get(
+      `/api/v1/works/${await idOf('Basalte – Histoires de Cendre')}`,
+    );
     // Par nom seul, Léa Fontaine passerait avant Théo Marchand : l'ordre vient du rôle.
-    expect(res.body.credits.map((c: { name: string; roles: string[] }) => [c.name, c.roles])).toEqual([
+    expect(
+      res.body.credits.map((c: { name: string; roles: string[] }) => [c.name, c.roles]),
+    ).toEqual([
       ['Théo Marchand', ['story']],
       ['Léa Fontaine', ['art']],
     ]);

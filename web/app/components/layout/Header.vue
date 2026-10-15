@@ -1,16 +1,70 @@
 <script setup lang="ts">
 // En-tête du site, d'après les maquettes : logo, recherche, langue, connexion.
+// Au mobile, la recherche est une icône qui déploie le champ dans l'en-tête.
 const { t } = useI18n()
 const localePath = useLocalePath()
+const route = useRoute()
+const onSearchPage = computed(() => route.path === localePath('/search'))
+
+const searching = ref(false)
+const searchBox = ref<{ focus: () => void } | null>(null)
+const searchLink = ref<HTMLButtonElement | null>(null)
+
+async function openSearch() {
+  searching.value = true
+  await nextTick()
+  searchBox.value?.focus()
+}
+
+async function closeSearch() {
+  searching.value = false
+  await nextTick()
+  searchLink.value?.focus()
+}
+
+// Échap referme le champ (le menu de suggestions a priorité).
+function onEscape(event: KeyboardEvent) {
+  if (searching.value && !event.defaultPrevented) void closeSearch()
+}
+
+// Une navigation referme le champ.
+watch(
+  () => route.fullPath,
+  () => {
+    searching.value = false
+  },
+)
 </script>
 
 <template>
-  <header class="layout-header">
+  <header
+    class="layout-header"
+    :class="{ 'layout-header--searching': searching }"
+    @keydown.esc="onEscape"
+  >
     <NuxtLink :to="localePath('/')" class="layout-header__logo">{{ t('app.name') }}</NuxtLink>
-    <div class="layout-header__search">
-      <Icon name="tabler:search" size="16" aria-hidden="true" />
-      <span class="layout-header__search-label">{{ t('nav.searchPlaceholder') }}</span>
-    </div>
+    <LayoutSearchBox ref="searchBox" class="layout-header__search" />
+    <button
+      v-if="!onSearchPage"
+      ref="searchLink"
+      type="button"
+      class="layout-header__search-link"
+      :aria-label="t('nav.openSearch')"
+      :aria-expanded="searching"
+      data-testid="search-open"
+      @click="openSearch"
+    >
+      <Icon name="tabler:search" size="18" aria-hidden="true" />
+    </button>
+    <button
+      type="button"
+      class="layout-header__search-close"
+      :aria-label="t('nav.closeSearch')"
+      data-testid="search-close"
+      @click="closeSearch"
+    >
+      <Icon name="tabler:x" size="18" aria-hidden="true" />
+    </button>
     <LayoutLanguageSwitcher class="layout-header__language" />
     <UiButton variant="blue" size="small" class="layout-header__sign-in">
       <Icon
@@ -27,13 +81,19 @@ const localePath = useLocalePath()
 @use '~/assets/styles/mixins' as *;
 
 .layout-header {
-  position: relative;
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 12px 22px;
   background: var(--color-rose);
   border-bottom: var(--border);
+
+  @media (min-width: 768px) {
+    min-height: var(--header-height);
+  }
 
   // Trame d'encre dense à droite, qui s'estompe vers la gauche.
   &::before {
@@ -53,24 +113,26 @@ const localePath = useLocalePath()
 }
 
 .layout-header__search {
-  display: flex;
   flex: 1;
-  align-items: center;
-  gap: var(--space-2);
-  min-width: 0;
+}
+
+// Ouvrir / fermer la recherche : mobile seulement.
+.layout-header__search-link,
+.layout-header__search-close {
+  display: none;
+  place-items: center;
+  flex: 0 0 var(--touch);
   min-height: var(--touch);
-  padding: 0 12px;
+  padding: 0;
   border: var(--border);
   border-radius: var(--radius);
   background: var(--color-surface);
-  color: var(--color-ink-soft);
-  font-size: 0.8125rem;
+  color: var(--color-ink);
+  cursor: pointer;
 }
 
-.layout-header__search-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.layout-header__search-link {
+  margin-left: auto;
 }
 
 .layout-header__sign-in {
@@ -90,14 +152,36 @@ const localePath = useLocalePath()
 
   // Le logo garde sa largeur ; recherche (icône), langue et compte forment un groupe collé à droite.
   .layout-header__search {
-    flex: 0 0 var(--touch);
-    justify-content: center;
-    margin-left: auto;
-    padding: 0;
+    display: none;
   }
 
-  .layout-header__search-label {
-    display: none;
+  .layout-header__search-link {
+    display: grid;
+  }
+
+  .layout-header__language {
+    margin-left: auto;
+  }
+
+  .layout-header__search-link ~ .layout-header__language {
+    margin-left: 0;
+  }
+
+  .layout-header--searching {
+    .layout-header__logo,
+    .layout-header__search-link,
+    .layout-header__language,
+    .layout-header__sign-in {
+      display: none;
+    }
+
+    .layout-header__search {
+      display: block;
+    }
+
+    .layout-header__search-close {
+      display: grid;
+    }
   }
 
   // Petits écrans (320–399 px) : tout doit tenir sur une ligne sans défilement horizontal.
@@ -111,7 +195,7 @@ const localePath = useLocalePath()
       font-size: 1.25rem;
     }
 
-    .layout-header__search {
+    .layout-header__search-link {
       flex-basis: 40px;
     }
 

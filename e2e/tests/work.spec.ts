@@ -107,6 +107,30 @@ test("cliquer sur une œuvre liée ouvre sa fiche sans redirection d'erreur", as
   await expect(page.getByTestId('work-title')).toHaveText('Après la Brume')
 })
 
+test('beaucoup d’auteurs : trois visibles, « + N autres auteurs » et « Voir tout »', async ({
+  page,
+}) => {
+  await page.goto('/work/44-cinq-mains')
+  await page.waitForLoadState('networkidle')
+  const people = page.locator('.people')
+
+  await expect(people.locator('li')).toHaveCount(3)
+  // Le nombre masqué est un texte ; l'action est « Voir tout », sur la même ligne.
+  await expect(people.locator('.people__more-label')).toHaveText('+ 2 autres auteurs')
+  const toggle = people.getByRole('button', { name: 'Voir tout' })
+  await expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+  await toggle.click()
+
+  await expect(people.locator('li')).toHaveCount(5)
+  await expect(people.locator('.people__more-label')).toHaveCount(0)
+  const collapse = people.getByRole('button', { name: 'Réduire' })
+  await expect(collapse).toHaveAttribute('aria-expanded', 'true')
+
+  await collapse.click()
+  await expect(people.locator('li')).toHaveCount(3)
+})
+
 test("un slug erroné redirige en 301 vers l'URL canonique", async ({ page, request }) => {
   const response = await request.get('/work/42-nimporte-quoi', { maxRedirects: 0 })
   expect(response.status()).toBe(301)
@@ -117,7 +141,7 @@ test("un slug erroné redirige en 301 vers l'URL canonique", async ({ page, requ
 })
 
 test('une œuvre inconnue ou un segment invalide répondent 404', async ({ page }) => {
-  for (const path of ['/work/999-inconnue', '/work/ripper']) {
+  for (const path of ['/work/999-inconnue', '/work/aube-fictive']) {
     const response = await page.goto(path)
     expect(response?.status(), path).toBe(404)
     await expect(page.getByRole('heading', { name: "Cette page n'existe pas" })).toBeVisible()

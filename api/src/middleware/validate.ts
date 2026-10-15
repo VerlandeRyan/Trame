@@ -10,7 +10,8 @@ const ISSUE_PARAMS = ['expected', 'origin', 'minimum', 'maximum', 'format', 'val
 type ParamValue = string | number | boolean | (string | number)[];
 
 function isParamValue(value: unknown): value is ParamValue {
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return true;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
+    return true;
   return Array.isArray(value) && value.every((v) => typeof v === 'string' || typeof v === 'number');
 }
 

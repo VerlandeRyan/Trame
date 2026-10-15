@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '../errors.js';
-import type { WorkRecord, WorkRepository } from '../repositories/work.repository.js';
+import type {
+  WorkFacetCriteria,
+  WorkFacets,
+  WorkRecord,
+  WorkRepository,
+  WorkSearchCriteria,
+  WorkSummary,
+} from '../repositories/work.repository.js';
 import { createWorkService, MIN_RATINGS_FOR_AVERAGE } from './work.service.js';
 
 // Règles métier de la fiche, sans base ni HTTP : le dépôt est un faux en mémoire.
@@ -35,13 +42,111 @@ function record(overrides: Partial<WorkRecord> = {}): WorkRecord {
   };
 }
 
+const NO_FACETS: WorkFacets = { type: [], status: [], format: [], genre: [], originalLanguage: [] };
+
+// Données fictives : aucun titre réel du catalogue dans les tests.
+const summary: WorkSummary = {
+  id: 1,
+  title: 'Aube Fictive',
+  originalTitle: 'Aube Fictive',
+  originalLanguage: 'fr',
+  type: 'series',
+  status: 'ongoing',
+  formats: ['manga'],
+  coverPath: null,
+  mainAuthor: 'Autrice Inventée',
+};
+
 function serviceFor(found: WorkRecord | undefined) {
   const repository: WorkRepository = {
     search: () => Promise.resolve({ items: [], total: 0 }),
+    facets: () => Promise.resolve(NO_FACETS),
     findById: () => Promise.resolve(found),
   };
   return createWorkService(repository);
 }
+
+describe('WorkService.list et facets', () => {
+  function recordingRepository() {
+    const calls: { search?: WorkSearchCriteria; facets?: WorkFacetCriteria } = {};
+    const repository: WorkRepository = {
+      search: (criteria) => {
+        calls.search = criteria;
+        return Promise.resolve({ items: [], total: 0 });
+      },
+      facets: (criteria) => {
+        calls.facets = criteria;
+        return Promise.resolve(NO_FACETS);
+      },
+      findById: () => Promise.resolve(undefined),
+    };
+    return { calls, service: createWorkService(repository) };
+  }
+
+  it('nettoie la recherche et convertit la page en décalage', async () => {
+    const { calls, service } = recordingRepository();
+
+    const page = await service.list({
+      q: '  étoile   vagabonde ',
+      originalLanguage: ['ja', 'ko'],
+      sort: 'recent',
+      page: 3,
+      pageSize: 10,
+    });
+
+    expect(calls.search).toMatchObject({
+      q: 'étoile vagabonde',
+      originalLanguage: ['ja', 'ko'],
+      sort: 'recent',
+      limit: 10,
+      offset: 20,
+    });
+    expect(page).toEqual({ items: [], page: 3, pageSize: 10, total: 0, approximate: false });
+  });
+
+  it('propose des résultats approchants quand aucun résultat ne contient tous les mots', async () => {
+    const searches: (string | undefined)[] = [];
+    const service = createWorkService({
+      search: (criteria) => {
+        searches.push(criteria.match);
+        const found = criteria.match === 'any';
+        return Promise.resolve({ items: found ? [summary] : [], total: found ? 1 : 0 });
+      },
+      facets: () => Promise.resolve(NO_FACETS),
+      findById: () => Promise.resolve(undefined),
+    });
+
+    const page = await service.list({ q: 'aube inconnue', page: 1, pageSize: 20 });
+
+    expect(searches).toEqual([undefined, 'any']);
+    expect(page).toMatchObject({ total: 1, approximate: true });
+  });
+
+  it('ne passe pas aux approchants pour un seul mot ni quand la recherche aboutit', async () => {
+    const searches: (string | undefined)[] = [];
+    const service = createWorkService({
+      search: (criteria) => {
+        searches.push(criteria.match);
+        return Promise.resolve({ items: [], total: 0 });
+      },
+      facets: () => Promise.resolve(NO_FACETS),
+      findById: () => Promise.resolve(undefined),
+    });
+
+    const page = await service.list({ q: 'inconnu', page: 1, pageSize: 20 });
+
+    expect(searches).toEqual([undefined]);
+    expect(page.approximate).toBe(false);
+  });
+
+  it('ignore une recherche réduite à des espaces et transmet les filtres aux compteurs', async () => {
+    const { calls, service } = recordingRepository();
+
+    await service.facets({ q: '   ', type: ['series', 'oneshot'], format: ['manga'] });
+
+    expect(calls.facets).toEqual({ q: undefined, type: ['series', 'oneshot'], format: ['manga'] });
+  });
+});
 
 describe('WorkService.get', () => {
   it("lève NOT_FOUND quand l'œuvre n'existe pas ou est archivée", async () => {

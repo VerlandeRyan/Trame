@@ -13,7 +13,12 @@ export interface GenreRepository {
 export function createGenreRepository(db: Db): GenreRepository {
   return {
     async list() {
-      return db.selectFrom('genre').select(['code', 'category']).orderBy('category').orderBy('code').execute();
+      return db
+        .selectFrom('genre')
+        .select(['code', 'category'])
+        .orderBy('category')
+        .orderBy('code')
+        .execute();
     },
   };
 }
