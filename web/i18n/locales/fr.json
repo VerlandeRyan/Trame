@@ -47,11 +47,93 @@
     "on_hold": "En pause",
     "dropped": "Abandonné"
   },
+  "workStatus": {
+    "upcoming": "À venir",
+    "ongoing": "En cours",
+    "completed": "Terminé",
+    "hiatus": "En pause",
+    "abandoned": "Abandonné"
+  },
+  "creditRole": {
+    "story": "Scénario",
+    "art": "Dessin",
+    "colors": "Couleur",
+    "other": "Autre"
+  },
+  "genre": {
+    "manga": "Manga",
+    "manhwa": "Manhwa",
+    "manhua": "Manhua",
+    "bd": "BD",
+    "comics": "Comics",
+    "webtoon": "Webtoon",
+    "webcomic": "Webcomic",
+    "fantasy": "Fantasy",
+    "humor": "Humour",
+    "science_fiction": "Science-fiction"
+  },
+  "relationGroup": {
+    "sequel": "Suite",
+    "prequel": "Préquelle",
+    "spin_off": "Spin-off",
+    "spin_off_parent": "Œuvre d'origine",
+    "side_story": "Histoire annexe",
+    "side_story_parent": "Histoire principale",
+    "adaptation": "Adaptation",
+    "adaptation_source": "Œuvre adaptée",
+    "alternate_version": "Version alternative",
+    "shared_universe": "Même univers",
+    "contains": "Contient",
+    "part_of": "Fait partie de",
+    "other": "Autres liens"
+  },
+  "work": {
+    "seo": {
+      "fallback": "Fiche de {title} sur Trame : informations, auteurs et œuvres liées."
+    },
+    "actions": {
+      "read": "Lire",
+      "buy": "Acheter"
+    },
+    "info": {
+      "title": "Informations",
+      "type": "Type",
+      "format": "Format",
+      "chapters": "Chapitres",
+      "volumes": "Tomes",
+      "status": "Statut",
+      "publisher": "Éditeur",
+      "language": "Langue"
+    },
+    "rating": {
+      "label": "Note",
+      "count": "{count} note | {count} notes",
+      "members": "Membres",
+      "threshold": "Moyenne affichée dès {min} notes"
+    },
+    "synopsis": {
+      "empty": "Pas encore de synopsis.",
+      "source": {
+        "official": "synopsis officiel",
+        "human": "synopsis rédigé",
+        "machine": "traduit automatiquement"
+      }
+    },
+    "related": {
+      "title": "Œuvres liées"
+    },
+    "people": {
+      "title": "Auteur sur le web | Auteurs sur le web",
+      "more": "+ {count} autres auteurs",
+      "collapse": "Réduire"
+    }
+  },
   "errorPage": {
     "title": "Une erreur est survenue",
     "text": "Réessaie dans un instant.",
-    "notFoundTitle": "Page introuvable",
-    "notFoundText": "Cette page n'existe pas ou n'est plus disponible.",
+    "notFoundTitle": "Cette page n'existe pas",
+    "notFoundText": "Le lien est peut-être erroné, ou la fiche a changé d'adresse. Essaie une recherche.",
+    "searchShort": "Rechercher…",
     "backHome": "Retour à l'accueil"
   },
   "error": {

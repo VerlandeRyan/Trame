@@ -1,9 +1,9 @@
 import type { Request, Response } from 'express';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { AppError } from '../src/errors.js';
-import { errorHandler } from '../src/middleware/error-handler.js';
-import { validate } from '../src/middleware/validate.js';
+import { AppError } from '../errors.js';
+import { errorHandler } from './error-handler.js';
+import { validate } from './validate.js';
 
 const req = {} as Request;
 

@@ -6,6 +6,8 @@ const pages = [
   { name: 'accueil', path: '/' },
   { name: 'accueil en anglais', path: '/en' },
   { name: 'galerie de composants', path: '/components' },
+  { name: 'fiche œuvre', path: '/work/42-les-lanternes-de-brume' },
+  { name: 'fiche œuvre en anglais', path: '/en/work/42-the-mist-lanterns' },
   { name: 'page introuvable', path: '/cette-page-n-existe-pas' },
 ]
 

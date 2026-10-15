@@ -47,11 +47,93 @@
     "on_hold": "On hold",
     "dropped": "Dropped"
   },
+  "workStatus": {
+    "upcoming": "Upcoming",
+    "ongoing": "Ongoing",
+    "completed": "Completed",
+    "hiatus": "On hiatus",
+    "abandoned": "Abandoned"
+  },
+  "creditRole": {
+    "story": "Story",
+    "art": "Art",
+    "colors": "Colors",
+    "other": "Other"
+  },
+  "genre": {
+    "manga": "Manga",
+    "manhwa": "Manhwa",
+    "manhua": "Manhua",
+    "bd": "Franco-Belgian comic",
+    "comics": "Comics",
+    "webtoon": "Webtoon",
+    "webcomic": "Webcomic",
+    "fantasy": "Fantasy",
+    "humor": "Humor",
+    "science_fiction": "Science fiction"
+  },
+  "relationGroup": {
+    "sequel": "Sequel",
+    "prequel": "Prequel",
+    "spin_off": "Spin-off",
+    "spin_off_parent": "Original work",
+    "side_story": "Side story",
+    "side_story_parent": "Main story",
+    "adaptation": "Adaptation",
+    "adaptation_source": "Adapted work",
+    "alternate_version": "Alternate version",
+    "shared_universe": "Shared universe",
+    "contains": "Contains",
+    "part_of": "Part of",
+    "other": "Other links"
+  },
+  "work": {
+    "seo": {
+      "fallback": "{title} on Trame: details, authors and related works."
+    },
+    "actions": {
+      "read": "Read",
+      "buy": "Buy"
+    },
+    "info": {
+      "title": "Information",
+      "type": "Type",
+      "format": "Format",
+      "chapters": "Chapters",
+      "volumes": "Volumes",
+      "status": "Status",
+      "publisher": "Publisher",
+      "language": "Language"
+    },
+    "rating": {
+      "label": "Rating",
+      "count": "{count} rating | {count} ratings",
+      "members": "Members",
+      "threshold": "Average shown from {min} ratings"
+    },
+    "synopsis": {
+      "empty": "No synopsis yet.",
+      "source": {
+        "official": "official synopsis",
+        "human": "written synopsis",
+        "machine": "machine-translated"
+      }
+    },
+    "related": {
+      "title": "Related works"
+    },
+    "people": {
+      "title": "Author on the web | Authors on the web",
+      "more": "+ {count} more authors",
+      "collapse": "Show less"
+    }
+  },
   "errorPage": {
     "title": "Something went wrong",
     "text": "Please try again in a moment.",
-    "notFoundTitle": "Page not found",
-    "notFoundText": "This page does not exist or is no longer available.",
+    "notFoundTitle": "This page does not exist",
+    "notFoundText": "The link may be wrong, or the page may have moved. Try a search.",
+    "searchShort": "Search…",
     "backHome": "Back to home"
   },
   "error": {

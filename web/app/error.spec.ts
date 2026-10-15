@@ -13,8 +13,16 @@ describe("page d'erreur", () => {
   it('annonce une page introuvable pour une 404', async () => {
     const wrapper = await mountError(404)
 
-    expect(wrapper.get('h2').text()).toBe('Page introuvable')
+    expect(wrapper.get('h2').text()).toBe("Cette page n'existe pas")
+    expect(wrapper.get('[data-testid="not-found"]').text()).toContain('404')
     expect(wrapper.text()).toContain("Retour à l'accueil")
+  })
+
+  it('propose le champ de recherche de la maquette sur la 404', async () => {
+    const wrapper = await mountError(404)
+
+    expect(wrapper.text()).toContain('Rechercher une œuvre, un auteur…')
+    expect(wrapper.text()).toContain('Essaie une recherche.')
   })
 
   it('annonce une erreur générique pour les autres statuts', async () => {

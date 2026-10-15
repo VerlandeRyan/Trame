@@ -172,7 +172,7 @@ Une `CHECK` impose qu'une seule colonne de valeur soit renseignée, celle qui co
 Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce sont des identifiants techniques, indépendants de la langue de l'œuvre ; le front affiche le libellé traduit.
 
 ## 4. Règles transverses
-- **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/oeuvre/{id}-{slug}` et seul `{id}` est lu.
+- **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/work/{id}-{slug}` et seul `{id}` est lu.
 - **Archivage** : toute suppression est une suppression douce, réservée à l'administrateur ; les listes publiques excluent `deleted_at IS NOT NULL` (et, pour `work`, `published_at IS NULL`). Les entrées `library_entry` d'une œuvre archivée sont conservées, masquées avec l'œuvre.
 - **Pas d'ISBN, pas d'édition** dans le MVP.
 - **Statistiques** : ne jamais additionner chapitres et tomes.

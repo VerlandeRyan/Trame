@@ -15,9 +15,10 @@ test('accueil en anglais sous /en', async ({ page }) => {
 
 test('le sélecteur de langue bascule vers /en', async ({ page }) => {
   await page.goto('/')
-  // Attendre l'hydratation : sinon l'événement `change` peut précéder les écouteurs.
+  // Attendre l'hydratation : sinon le clic peut précéder les écouteurs.
   await page.waitForLoadState('networkidle')
-  await page.getByLabel('Langue de l\'interface').selectOption('en')
+  await page.getByRole('button', { name: "Langue de l'interface" }).click()
+  await page.getByRole('link', { name: /English/ }).click()
   await expect(page).toHaveURL(/\/en\/?$/)
   await expect(page.getByTestId('home-intro')).toContainText('Track your reading')
 })

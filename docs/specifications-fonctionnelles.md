@@ -21,8 +21,8 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Les œuvres archivées n'apparaissent jamais.
 
 **US-02 — Consulter une fiche œuvre**
-- L'URL est `/oeuvre/{id}-{slug}` ; seul `{id}` est lu ; un slug erroné redirige vers l'URL canonique.
-- La fiche affiche : couverture, titre (dans la langue de l'interface si disponible, sinon le titre original), titres alternatifs avec leur langue, langue originale, type, statut de publication, synopsis (avec sa langue et sa source, un synopsis traduit automatiquement est signalé), nombre de chapitres et de tomes (« ? » tant que l'œuvre est en cours), auteurs (avec rôle), éditeurs/plateformes, genres, liens « lire » et « acheter », œuvres liées regroupées par type de relation, nombre de membres qui l'ont dans leur liste (profils privés inclus, affiché dès 1 membre ; décompte par statut hors MVP).
+- L'URL est `/work/{id}-{slug}` (`/en/work/…` en anglais : le préfixe de langue seul change) ; seul `{id}` est lu ; un slug erroné redirige vers l'URL canonique.
+- La fiche affiche : couverture, titre (dans la langue de l'interface si disponible, sinon le titre original), titres alternatifs avec leur langue, langue originale, type, statut de publication, synopsis (avec sa langue et sa source, un synopsis traduit automatiquement est signalé), nombre de chapitres et de tomes (« ? » tant que l'œuvre est en cours), auteurs (avec rôle), éditeurs/plateformes, genres, liens « lire » et « acheter », œuvres liées regroupées par type de relation, nombre de membres qui l'ont dans leur liste (profils privés inclus, toujours affiché, « Membres 0 » compris ; décompte par statut hors MVP), note moyenne à partir de 10 notes (RG-04).
 - Connecté, la fiche montre mon entrée de liste (statut, compteurs, note, dates de début et de fin) et permet de l'ajouter ou la modifier.
 - La page est rendue côté serveur avec titre, description, balisage structuré et balises de partage.
 

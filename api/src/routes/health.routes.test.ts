@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createApp } from '../src/app.js';
-import { createDb } from '../src/db/database.js';
-import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
+import { createApp } from '../app.js';
+import { createDb } from '../db/database.js';
+import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
 
 const db = createDb(connectionString);
 // Port volontairement fermé : la base est injoignable.

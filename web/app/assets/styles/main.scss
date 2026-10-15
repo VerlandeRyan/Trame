@@ -23,6 +23,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+p,
+dl,
+dd,
+figure {
+  margin: 0;
+}
+
 h1,
 h2,
 h3 {
@@ -30,6 +37,14 @@ h3 {
   color: var(--color-blue);
   font-weight: var(--weight-title);
   line-height: 1.2;
+}
+
+// Listes : sans puces ni retrait ; chaque composant met en forme les siennes.
+ul,
+ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 a {

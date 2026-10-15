@@ -8,7 +8,7 @@ describe('LayoutHeader', () => {
 
     expect(wrapper.get('header a').text()).toBe('Trame')
     expect(wrapper.text()).toContain('Rechercher une œuvre, un auteur…')
-    expect(wrapper.find('select').exists()).toBe(true)
-    expect(wrapper.get('button').text()).toBe('Se connecter')
+    expect(wrapper.find('button[aria-haspopup]').text()).toBe('FR')
+    expect(wrapper.findAll('button').at(-1)?.text()).toBe('Se connecter')
   })
 })

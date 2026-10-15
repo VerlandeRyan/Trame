@@ -1,7 +1,7 @@
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { CREDIT_ROLE_RANK } from '../src/db/database.js';
-import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
+import { CREDIT_ROLE_RANK } from './database.js';
+import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
 
 const client = new pg.Client({ connectionString });
 
