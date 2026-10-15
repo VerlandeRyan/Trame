@@ -10,6 +10,9 @@ Express 5 + Kysely sur `pg`, Zod, node-pg-migrate (voir `docs/adr/0006-choix-tec
 - `repositories/` : seule couche qui écrit du SQL (Kysely, toujours paramétré). Types de tables dans `db/database.ts`, ajoutés au besoin.
 - Chaque brique est une fabrique (`createXxx(dépendance)`) ; `app.ts` assemble, `server.ts` démarre.
 
+## Tests
+Colocalisés comme côté web : `foo.ts` + `foo.test.ts` dans le même dossier de `src/` (`work.service.ts` ↔ `work.service.test.ts` avec un faux dépôt, `routes/work.routes.test.ts` pour le HTTP bout en bout sur la base de test). Les tests du schéma et du jeu de démo vivent dans `src/db/`. Le support commun (`src/testing/test-database.ts`) et les `*.test.ts` sont exclus du build (`tsconfig.build.json`), de la couverture (`vitest.config.ts`) et des sources Sonar. Pas de dossier `tests/` : n'y mettre aucun fichier ; ne jamais nommer un fichier de test dans `migrations/` (node-pg-migrate le lirait).
+
 ## Erreurs
 Réponse unique `{ code, message, details? }` ; `message` est un texte technique en anglais, non affiché (le front lit `code`). `details[]` d'une validation : `path`, `code` Zod et paramètres, jamais de message ni de valeur saisie. Les codes vivent dans `src/errors.ts` (`ERROR_CODES`) : en ajouter un là, jamais de JSON d'erreur improvisé. Les erreurs inattendues donnent `INTERNAL_ERROR` sans détail.
 

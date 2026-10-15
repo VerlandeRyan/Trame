@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import pg from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
+import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
 
-const seed = readFileSync(new URL('../../db/demo-data.sql', import.meta.url), 'utf8');
+const seed = readFileSync(new URL('../../../db/demo-data.sql', import.meta.url), 'utf8');
 const client = new pg.Client({ connectionString });
 
 async function count(sql: string): Promise<number> {

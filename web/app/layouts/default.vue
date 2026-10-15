@@ -22,10 +22,13 @@ useHead(() => ({
 </template>
 
 <style scoped lang="scss">
+// Pleine largeur, comme les maquettes : mêmes marges latérales que l'en-tête (22 px au bureau).
 .layout__main {
-  max-width: var(--content-width);
-  margin: 0 auto;
-  padding: var(--space-6) var(--space-4);
+  padding: var(--space-4) var(--space-3) var(--space-6);
+
+  @media (min-width: 768px) {
+    padding: 26px 22px 30px;
+  }
 }
 
 // Lien d'évitement : visible seulement au focus clavier.

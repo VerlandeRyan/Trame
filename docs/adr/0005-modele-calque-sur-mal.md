@@ -13,7 +13,7 @@ Une première analyse proposait des entités plus fines (édition, support, tome
 - Manga/BD = étiquette (`genre`), pas un type.
 - Éditeur/plateforme générique et facultatif (le « magazine de prépublication » de MAL ne s'applique pas à cette scène).
 - Relations entre œuvres via `work_relation` (suite, préquelle, spin-off, etc.).
-- Identifiant interne `id` ; URL `/oeuvre/{id}-{slug}` où seul l'`id` compte.
+- Identifiant interne `id` ; URL `/work/{id}-{slug}` où seul l'`id` compte.
 
 ## Alternatives
 Entités édition/support/tome ; clés naturelles par ISBN ; table de franchises dédiée (reportée).

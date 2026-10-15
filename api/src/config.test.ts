@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadConfig } from '../src/config.js';
+import { loadConfig } from './config.js';
 
 describe('loadConfig', () => {
   it('applique le port par défaut', () => {

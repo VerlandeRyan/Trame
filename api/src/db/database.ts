@@ -111,6 +111,13 @@ export interface ExternalLinkTable {
   label: string | null;
 }
 
+export interface LibraryEntryTable {
+  user_id: number;
+  work_id: number;
+  /** Note donnée par le lecteur, de 1 à 10 ; `null` tant qu'il n'a pas noté. */
+  rating: number | null;
+}
+
 /**
  * Types des tables, ajoutés au fur et à mesure des dépôts qui en ont besoin.
  * La base reste la référence : `docs/modele-de-donnees.md` et `migrations/`.
@@ -127,6 +134,7 @@ export interface Database {
   genre: GenreTable;
   work_genre: WorkGenreTable;
   external_link: ExternalLinkTable;
+  library_entry: LibraryEntryTable;
 }
 
 export type Db = Kysely<Database>;

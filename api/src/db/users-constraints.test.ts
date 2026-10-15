@@ -1,6 +1,6 @@
 import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
+import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
 
 const client = new pg.Client({ connectionString });
 

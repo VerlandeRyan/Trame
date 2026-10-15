@@ -4,7 +4,7 @@
 
 ## 1. SEO (obligatoire)
 - Pages publiques (fiches, auteurs, éditeurs, profils publics, accueil) **rendues côté serveur** : le contenu est dans le HTML initial.
-- URL stables `/oeuvre/{id}-{slug}`, balise `canonical`, redirection vers l'URL canonique si le slug est erroné.
+- URL stables `/work/{id}-{slug}`, balise `canonical`, redirection vers l'URL canonique si le slug est erroné.
 - `title` et `meta description` uniques par page ; balises Open Graph et Twitter pour le partage ; balisage structuré schema.org (`CreativeWork` / `ComicSeries` / `Person` selon le cas).
 - `sitemap.xml` généré, `robots.txt`, aucune indexation des zones privées ni des pages d'administration.
 - Cible : score Lighthouse SEO ≥ 95 sur les fiches.

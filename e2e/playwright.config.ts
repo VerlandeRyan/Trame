@@ -4,6 +4,9 @@ import { defineConfig, devices } from '@playwright/test'
 // (comme en production), pour vérifier qu'elle y répond 404.
 const PORT = 3200
 const PORT_GALLERY_OFF = 3201
+// Doublure de l'API (support/api-stub.mjs) : les parcours du front n'ont besoin d'aucune base.
+const PORT_API_STUB = 3202
+const API_STUB_URL = `http://127.0.0.1:${PORT_API_STUB}`
 
 // Le front doit être construit avant (npm run build dans web/) : on teste la sortie réelle de Nitro.
 export default defineConfig({
@@ -18,16 +21,28 @@ export default defineConfig({
   },
   webServer: [
     {
+      command: 'node support/api-stub.mjs',
+      url: `${API_STUB_URL}/health`,
+      env: { STUB_API_PORT: String(PORT_API_STUB) },
+      reuseExistingServer: !process.env.CI,
+      timeout: 30_000,
+    },
+    {
       command: 'node ../web/.output/server/index.mjs',
       url: `http://127.0.0.1:${PORT}`,
-      env: { PORT: String(PORT), NITRO_HOST: '127.0.0.1', NUXT_PUBLIC_COMPONENT_GALLERY: 'true' },
+      env: {
+        PORT: String(PORT),
+        NITRO_HOST: '127.0.0.1',
+        NUXT_PUBLIC_COMPONENT_GALLERY: 'true',
+        NUXT_API_BASE: API_STUB_URL,
+      },
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
     },
     {
       command: 'node ../web/.output/server/index.mjs',
       url: `http://127.0.0.1:${PORT_GALLERY_OFF}`,
-      env: { PORT: String(PORT_GALLERY_OFF), NITRO_HOST: '127.0.0.1' },
+      env: { PORT: String(PORT_GALLERY_OFF), NITRO_HOST: '127.0.0.1', NUXT_API_BASE: API_STUB_URL },
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,
     },

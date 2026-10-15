@@ -65,6 +65,8 @@ export interface WorkRecord {
   /** Titres alternatifs, toutes langues, triés par langue, nature puis titre. */
   alternativeTitles: { language: string; kind: TitleKind; title: string }[];
   credits: { personId: number; name: string; kind: PersonKind; role: CreditRole }[];
+  /** Liens externes des personnes créditées (sites, réseaux), triés par personne puis nature. */
+  personLinks: { personId: number; kind: ExternalLinkKind; url: string; label: string | null }[];
   publishers: { id: number; name: string; kind: PublisherKind; url: string | null }[];
   /** Codes des formats (catégorie `format`), triés. */
   formats: string[];
@@ -77,6 +79,11 @@ export interface WorkRecord {
     direction: 'outgoing' | 'incoming';
     work: { id: number; title: string; type: WorkType };
   }[];
+  /** Lecteurs qui ont l'œuvre dans leur liste (profils privés inclus). */
+  memberCount: number;
+  /** Nombre de notes données et leur somme ; la moyenne et son seuil relèvent du service. */
+  ratingCount: number;
+  ratingSum: number;
 }
 
 export interface WorkRepository {
@@ -229,7 +236,7 @@ export function createWorkRepository(db: Db): WorkRepository {
       if (work === undefined) return undefined;
 
       const relatedTitle = displayTitle('w', lang).as('title');
-      const [alternativeTitles, synopses, credits, publishers, genres, links, outgoing, incoming] = await Promise.all([
+      const [alternativeTitles, synopses, credits, publishers, genres, links, outgoing, incoming, tracking] = await Promise.all([
         db
           .selectFrom('work_title')
           .select(['language', 'kind', 'title'])
@@ -291,6 +298,15 @@ export function createWorkRepository(db: Db): WorkRepository {
           .where('w.deleted_at', 'is', null)
           .orderBy('w.title')
           .execute(),
+        db
+          .selectFrom('library_entry')
+          .select((eb) => [
+            eb.fn.countAll<number>().as('memberCount'),
+            eb.fn.count<number>('rating').as('ratingCount'),
+            sql<number>`COALESCE(SUM(rating), 0)::bigint`.as('ratingSum'),
+          ])
+          .where('work_id', '=', id)
+          .executeTakeFirstOrThrow(),
       ]);
 
       const toRelation =
@@ -300,6 +316,19 @@ export function createWorkRepository(db: Db): WorkRepository {
           direction,
           work: { id: r.id, title: r.title, type: r.type },
         });
+
+      const personIds = [...new Set(credits.map((c) => c.personId))];
+      const personLinks =
+        personIds.length === 0
+          ? []
+          : await db
+              .selectFrom('external_link')
+              .select(['person_id as personId', 'kind', 'url', 'label'])
+              .where('person_id', 'in', personIds)
+              .orderBy('person_id')
+              .orderBy('kind')
+              .orderBy('url')
+              .execute();
 
       // Langue demandée d'abord, sinon langue originale (repli ADR 0007).
       const synopsis = synopses.find((s) => s.language === lang) ?? synopses[0];
@@ -311,11 +340,15 @@ export function createWorkRepository(db: Db): WorkRepository {
         synopsisSource: synopsis?.source ?? null,
         alternativeTitles,
         credits,
+        personLinks: personLinks.flatMap((l) => (l.personId === null ? [] : [{ ...l, personId: l.personId }])),
         publishers,
         formats: genres.filter((g) => g.category === 'format').map((g) => g.code),
         genres: genres.filter((g) => g.category === 'theme').map((g) => g.code),
         links,
         relations: [...outgoing.map(toRelation('outgoing')), ...incoming.map(toRelation('incoming'))],
+        memberCount: tracking.memberCount,
+        ratingCount: tracking.ratingCount,
+        ratingSum: tracking.ratingSum,
       };
     },
   };

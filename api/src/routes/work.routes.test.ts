@@ -2,11 +2,11 @@ import { readFileSync } from 'node:fs';
 import pg from 'pg';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createApp } from '../src/app.js';
-import { createDb } from '../src/db/database.js';
-import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
+import { createApp } from '../app.js';
+import { createDb } from '../db/database.js';
+import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
 
-const seed = readFileSync(new URL('../../db/demo-data.sql', import.meta.url), 'utf8');
+const seed = readFileSync(new URL('../../../db/demo-data.sql', import.meta.url), 'utf8');
 const client = new pg.Client({ connectionString });
 const db = createDb(connectionString);
 const app = createApp({ db });
@@ -172,7 +172,13 @@ describe('GET /api/v1/works/:id', () => {
       genres: ['fantasy'],
     });
     expect(res.body.credits).toEqual([
-      { personId: expect.any(Number), name: 'Théo Marchand', kind: 'person', roles: ['story', 'art'] },
+      {
+        personId: expect.any(Number),
+        name: 'Théo Marchand',
+        kind: 'person',
+        roles: ['story', 'art'],
+        links: [{ kind: 'social', url: 'https://reseau.exemple.test/theo-marchand', label: "Profil de l'auteur" }],
+      },
     ]);
     expect(res.body.publishers).toEqual([
       { id: expect.any(Number), name: 'Éditions Marais Bleu (fictives)', kind: 'publisher', url: expect.stringContaining('https://') },
@@ -191,6 +197,37 @@ describe('GET /api/v1/works/:id', () => {
     const recueil = await request(app).get(`/api/v1/works/${await idOf('Basalte – Le Recueil des Braises')}`);
     const outgoing = recueil.body.relations.filter((r: { direction: string }) => r.direction === 'outgoing');
     expect(outgoing.map((r: { relation: string }) => r.relation).sort()).toEqual(['contains', 'shared_universe']);
+  });
+
+  it('compte les membres et les notes, sans moyenne sous 10 notes', async () => {
+    const basalte = await request(app).get(`/api/v1/works/${await idOf('Chroniques de Basalte')}`);
+    expect(basalte.body).toMatchObject({ memberCount: 2, ratingCount: 1, ratingAverage: null });
+    expect(basalte.body).not.toHaveProperty('ratingSum');
+
+    const sansMembre = await request(app).get(`/api/v1/works/${await idOf('Le Gardien des Sables')}`);
+    expect(sansMembre.body).toMatchObject({ memberCount: 0, ratingCount: 0, ratingAverage: null });
+  });
+
+  it('publie la moyenne dès 10 notes, profils privés inclus, arrondie à une décimale', async () => {
+    const id = await idOf('Les Lanternes de Brume');
+    // Une note de 8 existe déjà ; 9 lecteurs au profil privé notent 6 → moyenne 62 / 10 = 6,2.
+    await client.query(
+      `INSERT INTO app_user (email, google_sub, handle, profile_visibility)
+       SELECT 'prive' || n || '@exemple.test', 'sub-prive-' || n, 'prive' || n, 'private'
+       FROM generate_series(1, 9) AS n`,
+    );
+    await client.query(
+      `INSERT INTO library_entry (user_id, work_id, status, rating)
+       SELECT u.id, $1, 'reading', 6 FROM app_user u WHERE u.handle LIKE 'prive%'`,
+      [id],
+    );
+    try {
+      const res = await request(app).get(`/api/v1/works/${id}`);
+      expect(res.body).toMatchObject({ memberCount: 10, ratingCount: 10, ratingAverage: 6.2 });
+    } finally {
+      await client.query("DELETE FROM library_entry WHERE user_id IN (SELECT id FROM app_user WHERE handle LIKE 'prive%')");
+      await client.query("DELETE FROM app_user WHERE handle LIKE 'prive%'");
+    }
   });
 
   it('renvoie le synopsis dans la langue demandée, sinon dans la langue originale', async () => {

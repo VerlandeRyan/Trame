@@ -18,7 +18,8 @@ test.describe('galerie de composants désactivée (production)', () => {
 test('page introuvable : statut 404 et retour à l\'accueil', async ({ page }) => {
   const response = await page.goto('/cette-page-n-existe-pas')
   expect(response?.status()).toBe(404)
-  await expect(page.getByRole('heading', { name: 'Page introuvable' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: "Cette page n'existe pas" })).toBeVisible()
+  await expect(page.getByTestId('not-found')).toContainText('404')
 
   await page.getByRole('button', { name: 'Retour à l\'accueil' }).click()
   await expect(page).toHaveURL('/')

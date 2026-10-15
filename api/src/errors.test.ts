@@ -2,11 +2,11 @@ import express from 'express';
 import request from 'supertest';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { createApp } from '../src/app.js';
-import { createDb } from '../src/db/database.js';
-import { errorHandler, notFoundHandler } from '../src/middleware/error-handler.js';
-import { validate } from '../src/middleware/validate.js';
-import { testDatabaseUrl as connectionString } from './helpers/test-database.js';
+import { createApp } from './app.js';
+import { createDb } from './db/database.js';
+import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import { validate } from './middleware/validate.js';
+import { testDatabaseUrl as connectionString } from './testing/test-database.js';
 
 const db = createDb(connectionString);
 afterAll(() => db.destroy());

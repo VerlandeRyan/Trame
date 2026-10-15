@@ -9,7 +9,8 @@
 .rule {
   position: relative;
   height: 8px;
-  margin: 5px 0 10px;
+  // `--rule-gap` : espace sous la frise, réduit par les blocs de liste (Informations, Auteurs).
+  margin: 5px 0 var(--rule-gap, 10px);
 
   &::before {
     @include screentone(var(--color-ink), 6px, 90deg, 85%);

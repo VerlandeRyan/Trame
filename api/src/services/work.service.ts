@@ -1,6 +1,7 @@
 import {
   CREDIT_ROLE_RANK,
   type CreditRole,
+  type ExternalLinkKind,
   type PersonKind,
   type WorkStatus,
   type WorkType,
@@ -32,9 +33,18 @@ export interface Credit {
   name: string;
   kind: PersonKind;
   roles: CreditRole[];
+  /** Sites et réseaux de la personne. */
+  links: { kind: ExternalLinkKind; url: string; label: string | null }[];
 }
 
-export type WorkDetail = Omit<WorkRecord, 'credits'> & { credits: Credit[] };
+/** RG-04 : la note moyenne n'est publiée qu'à partir de ce nombre de notes. */
+export const MIN_RATINGS_FOR_AVERAGE = 10;
+
+export type WorkDetail = Omit<WorkRecord, 'credits' | 'personLinks' | 'ratingSum'> & {
+  credits: Credit[];
+  /** Moyenne sur une décimale ; `null` sous `MIN_RATINGS_FOR_AVERAGE` notes. */
+  ratingAverage: number | null;
+};
 
 export interface WorkService {
   list(input: ListWorksInput): Promise<WorkPage>;
@@ -48,14 +58,23 @@ const roleRank = (role: CreditRole): number => CREDIT_ROLE_RANK[role];
  * Regroupe les crédits par personne. Rôles dans l'ordre scénario, dessin, couleur, autre ;
  * personnes triées par rôle le plus important, puis par nom.
  */
-function groupCredits(rows: WorkRecord['credits']): Credit[] {
+function groupCredits(rows: WorkRecord['credits'], personLinks: WorkRecord['personLinks']): Credit[] {
   const byPerson = new Map<number, Credit>();
   for (const row of rows) {
     const existing = byPerson.get(row.personId);
     if (existing) {
       existing.roles.push(row.role);
     } else {
-      byPerson.set(row.personId, { personId: row.personId, name: row.name, kind: row.kind, roles: [row.role] });
+      const links = personLinks
+        .filter((link) => link.personId === row.personId)
+        .map(({ kind, url, label }) => ({ kind, url, label }));
+      byPerson.set(row.personId, {
+        personId: row.personId,
+        name: row.name,
+        kind: row.kind,
+        roles: [row.role],
+        links,
+      });
     }
   }
   const credits = [...byPerson.values()];
@@ -84,7 +103,12 @@ export function createWorkService(repository: WorkRepository): WorkService {
     async get(id, lang) {
       const record = await repository.findById(id, lang);
       if (record === undefined) throw new AppError('NOT_FOUND');
-      return { ...record, credits: groupCredits(record.credits) };
+      const { ratingSum, personLinks, ...rest } = record;
+      const ratingAverage =
+        record.ratingCount >= MIN_RATINGS_FOR_AVERAGE
+          ? Math.round((ratingSum / record.ratingCount) * 10) / 10
+          : null;
+      return { ...rest, credits: groupCredits(record.credits, personLinks), ratingAverage };
     },
   };
 }
