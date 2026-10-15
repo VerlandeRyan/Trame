@@ -20,7 +20,10 @@ if (!['localhost', '127.0.0.1', '[::1]', '::1'].includes(host)) {
   process.exit(1);
 }
 
-const sql = await readFile(fileURLToPath(new URL('../../db/demo-data.sql', import.meta.url)), 'utf8');
+const sql = await readFile(
+  fileURLToPath(new URL('../../db/demo-data.sql', import.meta.url)),
+  'utf8',
+);
 
 const client = new pg.Client({ connectionString });
 await client.connect();

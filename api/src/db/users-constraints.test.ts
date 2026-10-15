@@ -40,7 +40,9 @@ async function work(): Promise<number> {
 describe('app_user', () => {
   it('applique les valeurs par défaut (role user, profil public)', async () => {
     const id = await user();
-    const res = await client.query('SELECT role, profile_visibility FROM app_user WHERE id = $1', [id]);
+    const res = await client.query('SELECT role, profile_visibility FROM app_user WHERE id = $1', [
+      id,
+    ]);
     expect(res.rows[0]).toEqual({ role: 'user', profile_visibility: 'public' });
   });
 
@@ -68,7 +70,9 @@ describe('app_user', () => {
 describe('work.deleted_by', () => {
   it('doit référencer un utilisateur existant', async () => {
     await expect(
-      client.query("INSERT INTO work (title, type, status, original_language, deleted_by) VALUES ('X', 'series', 'ongoing', 'fr', 999999)"),
+      client.query(
+        "INSERT INTO work (title, type, status, original_language, deleted_by) VALUES ('X', 'series', 'ongoing', 'fr', 999999)",
+      ),
     ).rejects.toThrow();
     const admin = await user({ role: 'admin' });
     await client.query(
@@ -82,9 +86,15 @@ describe('library_entry', () => {
   it('refuse un second suivi de la même œuvre par le même utilisateur', async () => {
     const u = await user();
     const w = await work();
-    await client.query("INSERT INTO library_entry (user_id, work_id, status) VALUES ($1, $2, 'reading')", [u, w]);
+    await client.query(
+      "INSERT INTO library_entry (user_id, work_id, status) VALUES ($1, $2, 'reading')",
+      [u, w],
+    );
     await expect(
-      client.query("INSERT INTO library_entry (user_id, work_id, status) VALUES ($1, $2, 'completed')", [u, w]),
+      client.query(
+        "INSERT INTO library_entry (user_id, work_id, status) VALUES ($1, $2, 'completed')",
+        [u, w],
+      ),
     ).rejects.toThrow();
   });
 
@@ -157,17 +167,22 @@ describe('submission', () => {
   it('démarre en attente et exige un statut connu', async () => {
     const u = await user();
     const res = await client.query(
-      "INSERT INTO submission (payload, submitted_by) VALUES ('{\"title\": \"Titre proposé\"}', $1) RETURNING status",
+      'INSERT INTO submission (payload, submitted_by) VALUES (\'{"title": "Titre proposé"}\', $1) RETURNING status',
       [u],
     );
     expect(res.rows[0].status).toBe('pending');
     await expect(
-      client.query("INSERT INTO submission (payload, status, submitted_by) VALUES ('{}', 'perdue', $1)", [u]),
+      client.query(
+        "INSERT INTO submission (payload, status, submitted_by) VALUES ('{}', 'perdue', $1)",
+        [u],
+      ),
     ).rejects.toThrow();
   });
 
   it('exige une charge utile et un auteur existant', async () => {
-    await expect(client.query('INSERT INTO submission (payload, submitted_by) VALUES (NULL, 1)')).rejects.toThrow();
+    await expect(
+      client.query('INSERT INTO submission (payload, submitted_by) VALUES (NULL, 1)'),
+    ).rejects.toThrow();
     await expect(
       client.query("INSERT INTO submission (payload, submitted_by) VALUES ('{}', 999999)"),
     ).rejects.toThrow();

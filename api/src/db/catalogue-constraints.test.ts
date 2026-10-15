@@ -61,7 +61,7 @@ describe('work', () => {
   it('retrouve un titre sans tenir compte des accents', async () => {
     await work('Éclipse Ardente');
     const res = await client.query(
-      "SELECT id FROM work WHERE immutable_unaccent(title) ILIKE immutable_unaccent($1)",
+      'SELECT id FROM work WHERE immutable_unaccent(title) ILIKE immutable_unaccent($1)',
       ['%eclipse%'],
     );
     expect(res.rowCount).toBe(1);
@@ -71,7 +71,8 @@ describe('work', () => {
 describe('work_title', () => {
   it('exige une langue et une nature valides', async () => {
     const w = await work();
-    const insert = "INSERT INTO work_title (work_id, language, kind, title) VALUES ($1, $2, $3, $4)";
+    const insert =
+      'INSERT INTO work_title (work_id, language, kind, title) VALUES ($1, $2, $3, $4)';
     await client.query(insert, [w, 'en', 'international', 'Fictive']);
     await expect(client.query(insert, [w, 'EN', 'translated', 'X'])).rejects.toThrow();
     await expect(client.query(insert, [w, 'en', 'official', 'X'])).rejects.toThrow();
@@ -79,7 +80,8 @@ describe('work_title', () => {
 
   it('accepte un même titre dans deux langues, pas deux fois dans la même', async () => {
     const w = await work();
-    const insert = "INSERT INTO work_title (work_id, language, kind, title) VALUES ($1, $2, $3, $4)";
+    const insert =
+      'INSERT INTO work_title (work_id, language, kind, title) VALUES ($1, $2, $3, $4)';
     await client.query(insert, [w, 'fr', 'short', 'Nuit']);
     await client.query(insert, [w, 'en', 'international', 'Nuit']);
     await expect(client.query(insert, [w, 'fr', 'former', 'Nuit'])).rejects.toThrow();
@@ -164,7 +166,9 @@ describe('external_link', () => {
     const w = await work();
     const p = await person();
     await expect(
-      client.query("INSERT INTO external_link (kind, url) VALUES ('website', 'https://exemple.test')"),
+      client.query(
+        "INSERT INTO external_link (kind, url) VALUES ('website', 'https://exemple.test')",
+      ),
     ).rejects.toThrow();
     await expect(
       client.query(
@@ -181,7 +185,10 @@ describe('external_link', () => {
   it('refuse une URL non https', async () => {
     const w = await work();
     await expect(
-      client.query("INSERT INTO external_link (work_id, kind, url) VALUES ($1, 'website', 'http://exemple.test')", [w]),
+      client.query(
+        "INSERT INTO external_link (work_id, kind, url) VALUES ($1, 'website', 'http://exemple.test')",
+        [w],
+      ),
     ).rejects.toThrow();
   });
 });
