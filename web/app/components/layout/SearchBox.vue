@@ -222,9 +222,9 @@ watch(
         <Icon name="tabler:corner-down-left" size="14" aria-hidden="true" />
       </li>
     </ul>
-    <p class="search-box__status" role="status" aria-live="polite">
+    <output class="search-box__status" aria-live="polite">
       {{ expanded ? t('search.suggestionCount', items.length) : '' }}
-    </p>
+    </output>
   </div>
 </template>
 

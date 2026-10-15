@@ -64,15 +64,15 @@ export interface SearchState {
   filters: SearchFilters
 }
 
-const WORK_TYPES = ['series', 'oneshot', 'anthology']
-const WORK_STATUSES = ['upcoming', 'ongoing', 'completed', 'hiatus', 'abandoned']
+const WORK_TYPES = new Set(['series', 'oneshot', 'anthology'])
+const WORK_STATUSES = new Set(['upcoming', 'ongoing', 'completed', 'hiatus', 'abandoned'])
 const GENRE_CODE = /^[a-z0-9]+(_[a-z0-9]+)*$/
 const LANGUAGE_CODE = /^[a-z]{2,3}$/
 
 /** Valeurs acceptées par l'API ; le reste est ignoré plutôt que de provoquer une 400. */
 const FILTER_VALIDATORS: Record<FilterKey, (value: string) => boolean> = {
-  type: (value) => WORK_TYPES.includes(value),
-  status: (value) => WORK_STATUSES.includes(value),
+  type: (value) => WORK_TYPES.has(value),
+  status: (value) => WORK_STATUSES.has(value),
   format: (value) => value.length <= 50 && GENRE_CODE.test(value),
   genre: (value) => value.length <= 50 && GENRE_CODE.test(value),
   originalLanguage: (value) => LANGUAGE_CODE.test(value),

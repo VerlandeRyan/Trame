@@ -9,13 +9,13 @@ const props = withDefaults(
 const emit = defineEmits<{ toggle: [key: FilterKey, code: string]; reset: [] }>()
 const { t } = useI18n()
 
-const OPEN_BY_DEFAULT: FilterKey[] = ['type', 'format', 'genre']
+const OPEN_BY_DEFAULT = new Set<FilterKey>(['type', 'format', 'genre'])
 
 const openGroups = reactive<Record<FilterKey, boolean>>(
   Object.fromEntries(
     FILTER_KEYS.map((key) => [
       key,
-      props.sheet || OPEN_BY_DEFAULT.includes(key) || props.filters[key] !== undefined,
+      props.sheet || OPEN_BY_DEFAULT.has(key) || props.filters[key] !== undefined,
     ]),
   ) as Record<FilterKey, boolean>,
 )

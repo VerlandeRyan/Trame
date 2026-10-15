@@ -204,7 +204,8 @@ function termCondition(term: string): RawBuilder<boolean> {
 /** `all` : chaque mot doit correspondre (« aube manga » : titre + format) ; `any` : un seul suffit. */
 function searchCondition(q: string, match: MatchMode): RawBuilder<boolean> {
   const conditions = searchTerms(q).map(termCondition);
-  return sql<boolean>`(${sql.join(conditions, match === 'any' ? sql` OR ` : sql` AND `)})`;
+  const separator = match === 'any' ? sql` OR ` : sql` AND `;
+  return sql<boolean>`(${sql.join(conditions, separator)})`;
 }
 
 /** L'œuvre porte l'une des étiquettes `codes` de la catégorie. */
