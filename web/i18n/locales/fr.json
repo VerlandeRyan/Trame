@@ -4,10 +4,71 @@
   },
   "nav": {
     "search": "Rechercher",
+    "openSearch": "Ouvrir la recherche",
+    "closeSearch": "Fermer la recherche",
     "searchPlaceholder": "Rechercher une œuvre, un auteur…",
     "languageLabel": "Langue de l'interface",
     "skipToContent": "Aller au contenu",
     "signIn": "Se connecter"
+  },
+  "search": {
+    "title": "Recherche",
+    "titleWithQuery": "Recherche : {query}",
+    "label": "Rechercher une œuvre",
+    "suggestions": "Suggestions",
+    "suggestionCount": "{count} suggestion | {count} suggestions",
+    "seeAll": "Voir le résultat | Voir les {count} résultats",
+    "resultCount": "{count} résultat pour « {query} » | {count} résultats pour « {query} »",
+    "resultCountFiltered": "{count} résultat | {count} résultats",
+    "sortLabel": "Trier par",
+    "sort": {
+      "relevance": "Pertinence",
+      "title": "Titre (A → Z)",
+      "recent": "Ajoutées récemment"
+    },
+    "collapseAll": "Tout replier",
+    "expandAll": "Tout déplier",
+    "selectedCount": "{count} choix | {count} choix",
+    "add": "Ajouter",
+    "addTo": "Ajouter « {title} » à ma liste",
+    "noResultTitle": "Cette œuvre n'est pas encore dans Trame",
+    "noResultText": "Vérifie l'orthographe, ou essaie un autre titre, un nom d'auteur ou d'éditeur. Tu peux aussi proposer cette œuvre au catalogue.",
+    "noResultFor": "Aucun résultat pour « {query} »",
+    "noResultFilters": "Aucun résultat avec ces filtres",
+    "proposeSignIn": "Se connecter pour proposer cette œuvre",
+    "approximate": "Aucune œuvre ne contient tous les mots : voici celles qui en contiennent au moins un.",
+    "loadError": "La recherche est indisponible pour le moment. Réessaie dans un instant.",
+    "retry": "Réessayer",
+    "filters": "Filtres",
+    "filtersCount": "Filtres ({count})",
+    "filterGenres": "Filtrer les genres",
+    "showOthers": "Voir les {count} autres",
+    "showFewer": "Voir moins",
+    "reset": "Réinitialiser",
+    "viewResults": "Voir {count} résultat | Voir {count} résultats",
+    "removeFilter": "Retirer le filtre {label}",
+    "close": "Fermer",
+    "pagination": "Pagination",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {page}",
+    "group": {
+      "type": "Type",
+      "format": "Format",
+      "genre": "Genre",
+      "status": "Statut de publication",
+      "originalLanguage": "Langue originale"
+    }
+  },
+  "language": {
+    "fr": "Français",
+    "en": "Anglais",
+    "ja": "Japonais",
+    "ko": "Coréen",
+    "zh": "Chinois",
+    "es": "Espagnol",
+    "de": "Allemand",
+    "it": "Italien"
   },
   "home": {
     "title": "Trame",
@@ -70,7 +131,12 @@
     "webcomic": "Webcomic",
     "fantasy": "Fantasy",
     "humor": "Humour",
-    "science_fiction": "Science-fiction"
+    "science_fiction": "Science-fiction",
+    "adventure": "Aventure",
+    "drama": "Drame",
+    "romance": "Romance",
+    "thriller": "Thriller",
+    "slice_of_life": "Tranche de vie"
   },
   "relationGroup": {
     "sequel": "Suite",
@@ -125,6 +191,7 @@
     "people": {
       "title": "Auteur sur le web | Auteurs sur le web",
       "more": "+ {count} autres auteurs",
+      "showAll": "Voir tout",
       "collapse": "Réduire"
     }
   },
@@ -133,7 +200,6 @@
     "text": "Réessaie dans un instant.",
     "notFoundTitle": "Cette page n'existe pas",
     "notFoundText": "Le lien est peut-être erroné, ou la fiche a changé d'adresse. Essaie une recherche.",
-    "searchShort": "Rechercher…",
     "backHome": "Retour à l'accueil"
   },
   "error": {

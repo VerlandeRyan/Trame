@@ -20,6 +20,8 @@ test('page introuvable : statut 404 et retour à l\'accueil', async ({ page }) =
   expect(response?.status()).toBe(404)
   await expect(page.getByRole('heading', { name: "Cette page n'existe pas" })).toBeVisible()
   await expect(page.getByTestId('not-found')).toContainText('404')
+  // Le bouton est rendu côté serveur : on attend l'hydratation avant de cliquer.
+  await page.waitForLoadState('networkidle')
 
   await page.getByRole('button', { name: 'Retour à l\'accueil' }).click()
   await expect(page).toHaveURL('/')
