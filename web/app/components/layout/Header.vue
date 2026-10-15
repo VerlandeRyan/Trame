@@ -13,7 +13,12 @@ const localePath = useLocalePath()
     </div>
     <LayoutLanguageSwitcher class="layout-header__language" />
     <UiButton variant="blue" size="small" class="layout-header__sign-in">
-      {{ t('nav.signIn') }}
+      <Icon
+        name="tabler:user"
+        size="18"
+        aria-hidden="true"
+        class="layout-header__sign-in-icon"
+      /><span class="layout-header__sign-in-label">{{ t('nav.signIn') }}</span>
     </UiButton>
   </header>
 </template>
@@ -72,6 +77,10 @@ const localePath = useLocalePath()
   white-space: nowrap;
 }
 
+.layout-header__sign-in-icon {
+  display: none;
+}
+
 // Mobile : en-tête compact (logo, recherche en icône, langue, compte).
 @media (max-width: 767px) {
   .layout-header {
@@ -114,6 +123,23 @@ const localePath = useLocalePath()
     .layout-header__sign-in {
       padding-inline: 10px;
       font-size: 0.75rem;
+    }
+  }
+
+  // Très petits écrans (< 360 px) : le compte devient une icône ; le libellé reste lu par les
+  // lecteurs d'écran. Les polices varient selon les systèmes : on garde de la marge.
+  @media (max-width: 359px) {
+    .layout-header__sign-in-icon {
+      display: inline-block;
+    }
+
+    .layout-header__sign-in-label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
     }
   }
 }

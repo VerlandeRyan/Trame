@@ -63,16 +63,23 @@ export interface WorkDetail {
 
 const MAX_SLUG_LENGTH = 60
 
+/** Retire les tirets de début et de fin (sans expression rationnelle : pas de retour arrière). */
+function trimDashes(value: string): string {
+  let start = 0
+  let end = value.length
+  while (start < end && value[start] === '-') start++
+  while (end > start && value[end - 1] === '-') end--
+  return value.slice(start, end)
+}
+
 /** Texte → slug d'URL : minuscules, sans accents, tirets. */
 export function slugify(text: string): string {
-  return text
+  const dashed = text
     .normalize('NFD')
     .replace(/\p{M}+/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, MAX_SLUG_LENGTH)
-    .replace(/-+$/g, '')
+  return trimDashes(trimDashes(dashed).slice(0, MAX_SLUG_LENGTH))
 }
 
 /** Segment d'URL canonique d'une fiche : `42-ripper` (ou `42` si le titre n'a aucun caractère utile). */
@@ -220,7 +227,10 @@ export function metaDescription(
   const text = synopsis?.replace(/\s+/g, ' ').trim()
   if (!text) return fallback
   if (text.length <= maxLength) return text
-  return `${text.slice(0, maxLength - 1).replace(/\s+\S*$/, '')}…`
+  // Coupe au dernier espace pour ne pas finir au milieu d'un mot (espaces déjà normalisés).
+  const cut = text.slice(0, maxLength - 1)
+  const lastSpace = cut.lastIndexOf(' ')
+  return `${lastSpace > 0 ? cut.slice(0, lastSpace) : cut}…`
 }
 
 /** JSON-LD prêt à placer dans un `<script>` : `<` échappé pour qu'un titre ne puisse pas fermer la balise. */
