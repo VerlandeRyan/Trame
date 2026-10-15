@@ -7,15 +7,31 @@ import {
   type WorkType,
 } from '../db/database.js';
 import { AppError } from '../errors.js';
-import type { WorkRecord, WorkRepository, WorkSummary } from '../repositories/work.repository.js';
+import { searchTerms } from '../search-terms.js';
+import type {
+  MatchMode,
+  WorkFacets,
+  WorkRecord,
+  WorkRepository,
+  WorkSort,
+  WorkSummary,
+} from '../repositories/work.repository.js';
 
-export interface ListWorksInput {
+/** Recherche et filtres, partagés par la liste et les compteurs. */
+export interface WorkFilterInput {
   q?: string;
-  type?: WorkType;
-  status?: WorkStatus;
-  format?: string;
-  genre?: string;
+  /** La liste décide seule du mode ; les compteurs le reçoivent. */
+  match?: MatchMode;
+  type?: WorkType[];
+  status?: WorkStatus[];
+  format?: string[];
+  genre?: string[];
+  originalLanguage?: string[];
+}
+
+export interface ListWorksInput extends WorkFilterInput {
   lang?: string;
+  sort?: WorkSort;
   page: number;
   pageSize: number;
 }
@@ -25,6 +41,8 @@ export interface WorkPage {
   page: number;
   pageSize: number;
   total: number;
+  /** Aucune œuvre ne contient tous les mots : la liste donne celles qui en ont au moins un. */
+  approximate: boolean;
 }
 
 /** Une personne et l'ensemble de ses rôles sur l'œuvre. */
@@ -48,6 +66,7 @@ export type WorkDetail = Omit<WorkRecord, 'credits' | 'personLinks' | 'ratingSum
 
 export interface WorkService {
   list(input: ListWorksInput): Promise<WorkPage>;
+  facets(input: WorkFilterInput): Promise<WorkFacets>;
   /** Lève `NOT_FOUND` si l'œuvre n'existe pas ou est archivée. `lang` : langue de l'application. */
   get(id: number, lang?: string): Promise<WorkDetail>;
 }
@@ -58,7 +77,10 @@ const roleRank = (role: CreditRole): number => CREDIT_ROLE_RANK[role];
  * Regroupe les crédits par personne. Rôles dans l'ordre scénario, dessin, couleur, autre ;
  * personnes triées par rôle le plus important, puis par nom.
  */
-function groupCredits(rows: WorkRecord['credits'], personLinks: WorkRecord['personLinks']): Credit[] {
+function groupCredits(
+  rows: WorkRecord['credits'],
+  personLinks: WorkRecord['personLinks'],
+): Credit[] {
   const byPerson = new Map<number, Credit>();
   for (const row of rows) {
     const existing = byPerson.get(row.personId);
@@ -83,21 +105,33 @@ function groupCredits(rows: WorkRecord['credits'], personLinks: WorkRecord['pers
   return credits.sort((a, b) => bestRank(a) - bestRank(b) || a.name.localeCompare(b.name, 'fr'));
 }
 
+function normalizeFilters({ q, ...rest }: WorkFilterInput): WorkFilterInput {
+  const normalizedQuery = q?.replace(/\s+/g, ' ').trim();
+  return { ...rest, q: normalizedQuery || undefined };
+}
+
 export function createWorkService(repository: WorkRepository): WorkService {
   return {
-    async list({ q, type, status, format, genre, lang, page, pageSize }) {
-      const normalizedQuery = q?.replace(/\s+/g, ' ').trim();
-      const { items, total } = await repository.search({
-        q: normalizedQuery || undefined,
-        type,
-        status,
-        format,
-        genre,
+    async list({ lang, sort, page, pageSize, ...filters }) {
+      const criteria = {
+        ...normalizeFilters(filters),
         lang,
+        sort,
         limit: pageSize,
         offset: (page - 1) * pageSize,
-      });
-      return { items, page, pageSize, total };
+      };
+      let result = await repository.search(criteria);
+      let approximate = false;
+      // Aucune œuvre n'a tous les mots : repli sur celles qui en ont au moins un.
+      if (result.total === 0 && searchTerms(criteria.q ?? '').length > 1) {
+        result = await repository.search({ ...criteria, match: 'any' });
+        approximate = result.total > 0;
+      }
+      return { items: result.items, page, pageSize, total: result.total, approximate };
+    },
+
+    facets(input) {
+      return repository.facets(normalizeFilters(input));
     },
 
     async get(id, lang) {

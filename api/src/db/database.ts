@@ -6,7 +6,12 @@ export type WorkType = 'series' | 'oneshot' | 'anthology';
 export type WorkStatus = 'upcoming' | 'ongoing' | 'completed' | 'hiatus' | 'abandoned';
 export type CreditRole = 'story' | 'art' | 'colors' | 'other';
 /** Importance d'un rôle pour l'affichage (0 = en premier). Exhaustif : ajouter un rôle ici est imposé par le compilateur. */
-export const CREDIT_ROLE_RANK: Record<CreditRole, number> = { story: 0, art: 1, colors: 2, other: 3 };
+export const CREDIT_ROLE_RANK: Record<CreditRole, number> = {
+  story: 0,
+  art: 1,
+  colors: 2,
+  other: 3,
+};
 export type RelationKind =
   | 'sequel'
   | 'prequel'
@@ -41,6 +46,7 @@ export interface WorkTable {
   cover_path: string | null;
   cover_source_url: string | null;
   cover_consent: Generated<boolean>;
+  created_at: Generated<Date>;
   deleted_at: Date | null;
 }
 
