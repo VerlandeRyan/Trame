@@ -1,9 +1,18 @@
 <script setup lang="ts">
 // Modale simple basée sur <dialog> natif (focus, Échap, inertie du fond gérés par le navigateur).
+// `placement="bottom"` : feuille basse ; le slot `footer` reste visible sous le contenu défilant.
 // Les cas complexes (combobox, menus) passeront par des primitives headless, plus tard.
-defineProps<{ title: string; closeLabel: string }>()
+withDefaults(
+  defineProps<{ title: string; closeLabel: string; placement?: 'center' | 'bottom' }>(),
+  { placement: 'center' },
+)
 const open = defineModel<boolean>({ default: false })
 const dialog = ref<HTMLDialogElement | null>(null)
+
+// Le <dialog> ne reçoit un clic que sur son `::backdrop` : son contenu occupe toute la boîte.
+function onDialogClick(event: MouseEvent) {
+  if (event.target === dialog.value) open.value = false
+}
 
 // Le <dialog> existe dès le montage : ce watcher ne s'exécute qu'ensuite.
 watch(open, (isOpen) => {
@@ -14,14 +23,22 @@ watch(open, (isOpen) => {
 </script>
 
 <template>
-  <dialog ref="dialog" class="modal" @close="open = false">
+  <dialog
+    ref="dialog"
+    class="modal"
+    :class="`modal--${placement}`"
+    @close="open = false"
+    @click="onDialogClick"
+  >
     <header class="modal__head">
       <h2 class="modal__title">{{ title }}</h2>
+      <div v-if="$slots.actions" class="modal__actions"><slot name="actions" /></div>
       <button type="button" class="modal__close" :aria-label="closeLabel" @click="open = false">
         <Icon name="tabler:x" size="20" aria-hidden="true" />
       </button>
     </header>
     <div class="modal__body"><slot /></div>
+    <footer v-if="$slots.footer" class="modal__footer"><slot name="footer" /></footer>
   </dialog>
 </template>
 
@@ -40,6 +57,41 @@ watch(open, (isOpen) => {
   }
 }
 
+.modal--bottom {
+  width: 100%;
+  max-width: none;
+  max-height: 85dvh;
+  margin: auto 0 0;
+  border-width: 3px 0 0;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -4px 0 var(--color-ink);
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+  }
+
+  &::backdrop {
+    background: rgb(27 42 92 / 40%);
+  }
+
+  .modal__title {
+    color: var(--color-ink);
+  }
+
+  .modal__head {
+    border-bottom: 0;
+  }
+
+  .modal__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-top: 0;
+    overscroll-behavior: contain;
+  }
+}
+
 .modal__head {
   display: flex;
   align-items: center;
@@ -49,7 +101,13 @@ watch(open, (isOpen) => {
 }
 
 .modal__title {
+  margin-right: auto;
   font-size: 1.125rem;
+}
+
+.modal__actions {
+  display: flex;
+  align-items: center;
 }
 
 .modal__close {
@@ -64,5 +122,19 @@ watch(open, (isOpen) => {
 
 .modal__body {
   padding: var(--space-4);
+}
+
+.modal__footer {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px dashed var(--color-rule);
+}
+</style>
+
+<!-- Non scopé : la règle vise <html>. Safari iOS ignore `overscroll-behavior` sur certains défilements. -->
+<style lang="scss">
+html:has(dialog.modal--bottom[open]) {
+  overflow: hidden;
 }
 </style>

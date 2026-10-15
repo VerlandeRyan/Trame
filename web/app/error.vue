@@ -17,17 +17,12 @@ function goHome() {
 
 <template>
   <NuxtLayout>
-    <!-- 404 : maquettes 24 (bureau) et 25 (mobile). La recherche réelle arrive avec #21 : le champ
-         est visuel, comme celui de l'en-tête. -->
+    <!-- 404 : maquettes 24 (bureau) et 25 (mobile), avec la vraie recherche (#21). -->
     <section v-if="notFound" class="not-found" data-testid="not-found">
       <p class="not-found__code" aria-hidden="true">404</p>
       <h2 class="not-found__title">{{ t('errorPage.notFoundTitle') }}</h2>
       <p class="not-found__text">{{ t('errorPage.notFoundText') }}</p>
-      <div class="not-found__search" aria-hidden="true">
-        <Icon name="tabler:search" size="16" />
-        <span class="not-found__search-long">{{ t('nav.searchPlaceholder') }}</span>
-        <span class="not-found__search-short">{{ t('errorPage.searchShort') }}</span>
-      </div>
+      <LayoutSearchBox class="not-found__search" />
       <UiButton variant="primary" @click="goHome">{{ t('errorPage.backHome') }}</UiButton>
     </section>
 
@@ -77,35 +72,10 @@ function goHome() {
   font-size: 0.8125rem;
 }
 
-// Le texte d'aide est le même partout ; seul le champ de recherche a une version courte au mobile.
-.not-found__search-long {
-  display: none;
-
-  @media (min-width: 768px) {
-    display: initial;
-  }
-}
-
-.not-found__search-short {
-  @media (min-width: 768px) {
-    display: none;
-  }
-}
-
 .not-found__search {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
   width: 100%;
   max-width: 460px;
-  min-height: 40px;
   margin: var(--space-2) 0 var(--space-3);
-  padding: 0 10px;
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-ink-soft);
-  font-size: 0.875rem;
   text-align: left;
 }
 </style>

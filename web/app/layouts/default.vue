@@ -22,12 +22,26 @@ useHead(() => ({
 </template>
 
 <style scoped lang="scss">
+// Le contenu s'étire : le contour de focus de `<main>` entoure toute la page.
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 // Pleine largeur, comme les maquettes : mêmes marges latérales que l'en-tête (22 px au bureau).
 .layout__main {
+  flex: 1;
   padding: var(--space-4) var(--space-3) var(--space-6);
 
   @media (min-width: 768px) {
     padding: 26px 22px 30px;
+  }
+
+  // À l'intérieur : à l'extérieur, les bords de la fenêtre le rogneraient.
+  &:focus-visible {
+    outline-offset: -3px;
   }
 }
 

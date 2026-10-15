@@ -72,17 +72,21 @@ function trimDashes(value: string): string {
   return value.slice(start, end)
 }
 
-/** Texte → slug d'URL : minuscules, sans accents, tirets. */
-export function slugify(text: string): string {
-  const dashed = text
+/** Minuscules sans accents : pour comparer ou filtrer des libellés sans tenir compte de la saisie. */
+export function foldAccents(text: string): string {
+  return text
     .normalize('NFD')
     .replace(/\p{M}+/gu, '')
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
+}
+
+/** Texte → slug d'URL : minuscules, sans accents, tirets. */
+export function slugify(text: string): string {
+  const dashed = foldAccents(text).replace(/[^a-z0-9]+/g, '-')
   return trimDashes(trimDashes(dashed).slice(0, MAX_SLUG_LENGTH))
 }
 
-/** Segment d'URL canonique d'une fiche : `42-ripper` (ou `42` si le titre n'a aucun caractère utile). */
+/** Segment d'URL canonique d'une fiche : `42-aube-fictive` (ou `42` si le titre n'a aucun caractère utile). */
 export function workSlug(id: number, title: string): string {
   const slug = slugify(title)
   return slug === '' ? String(id) : `${id}-${slug}`
