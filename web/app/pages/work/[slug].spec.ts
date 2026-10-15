@@ -4,8 +4,8 @@ import WorkPage from './[slug].vue'
 
 const work = {
   id: 42,
-  title: 'Ripper',
-  originalTitle: 'Ripper',
+  title: 'Aube Fictive',
+  originalTitle: 'Aube Fictive',
   originalLanguage: 'fr',
   type: 'series',
   status: 'ongoing',
@@ -42,9 +42,9 @@ beforeEach(() => {
 
 describe('page de fiche', () => {
   it('affiche la fiche au slug canonique', async () => {
-    const wrapper = await mountSuspended(WorkPage, { route: '/work/42-ripper' })
+    const wrapper = await mountSuspended(WorkPage, { route: '/work/42-aube-fictive' })
 
-    expect(wrapper.get('[data-testid="work-title"]').text()).toBe('Ripper')
+    expect(wrapper.get('[data-testid="work-title"]').text()).toBe('Aube Fictive')
     expect(wrapper.get('[data-testid="work-alternatives"]').text()).toBe('EN : Work Title')
     expect(wrapper.get('[data-testid="work-tags"]').text()).toContain('Manga')
     expect(wrapper.get('[data-testid="work-tags"]').text()).toContain('Fantasy')
@@ -58,10 +58,10 @@ describe('page de fiche', () => {
   it("redirige un slug erroné vers l'URL canonique", async () => {
     await mountSuspended(WorkPage, { route: '/work/42-nimporte-quoi' })
 
-    await vi.waitFor(() => expect(useRoute().path).toBe('/work/42-ripper'))
+    await vi.waitFor(() => expect(useRoute().path).toBe('/work/42-aube-fictive'))
   })
 
-  it.each(['/work/404-inconnue', '/work/ripper'])(
+  it.each(['/work/404-inconnue', '/work/aube-fictive'])(
     'déclenche la page 404 pour %s (œuvre inconnue ou segment invalide)',
     async (route) => {
       clearError()

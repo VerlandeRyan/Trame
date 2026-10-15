@@ -64,15 +64,24 @@ const safeLinks = (links: ExternalLink[]) => links.filter((link) => isSafeLink(l
         </span>
       </li>
     </ul>
-    <button
-      v-if="hiddenCount > 0"
-      type="button"
-      class="people__toggle"
-      :aria-expanded="isExpanded"
-      @click="isExpanded = !isExpanded"
-    >
-      {{ isExpanded ? t('work.people.collapse') : t('work.people.more', { count: hiddenCount }) }}
-    </button>
+    <div v-if="hiddenCount > 0" class="people__more">
+      <span v-if="!isExpanded" class="people__more-label">
+        {{ t('work.people.more', { count: hiddenCount }) }}
+      </span>
+      <button
+        type="button"
+        class="people__toggle"
+        :aria-expanded="isExpanded"
+        @click="isExpanded = !isExpanded"
+      >
+        {{ isExpanded ? t('work.people.collapse') : t('work.people.showAll') }}
+        <Icon
+          :name="isExpanded ? 'tabler:caret-up-filled' : 'tabler:caret-down-filled'"
+          size="10"
+          aria-hidden="true"
+        />
+      </button>
+    </div>
   </section>
 </template>
 
@@ -134,13 +143,33 @@ const safeLinks = (links: ExternalLink[]) => links.filter((link) => isSafeLink(l
   color: var(--color-ink);
 }
 
+.people__more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 28px;
+  border-bottom: 1px dashed var(--color-rule);
+  font-size: 0.75rem;
+}
+
+.people__more-label {
+  color: var(--color-ink);
+  font-weight: 700;
+}
+
 .people__toggle {
-  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: var(--touch);
+  margin-block: -8px;
+  margin-left: auto;
   padding: 0;
   border: 0;
   background: none;
-  color: var(--color-blue);
-  font-weight: 700;
+  color: var(--color-ink-soft);
+  font-size: 0.75rem;
   cursor: pointer;
 }
 </style>

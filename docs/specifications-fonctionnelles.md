@@ -17,7 +17,14 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Une zone de recherche est accessible depuis toutes les pages.
 - La recherche porte sur titre (et titres alternatifs), auteur, éditeur/plateforme ; elle est insensible à la casse et aux accents et tolère une faute de frappe légère.
 - Les résultats apparaissent pendant la saisie à partir de 2 caractères, avec couverture, titre, type, auteur principal.
-- Sans résultat : message clair et lien « Proposer cette œuvre » (US-09).
+- Chaque mot saisi doit correspondre à un titre, un auteur, un éditeur, un format ou un genre (« aube manga » trouve Aube Fictive). Sans résultat complet, les œuvres qui contiennent au moins un mot sont proposées, avec une mention « résultats approchants ».
+- La page de résultats sans texte de recherche liste le catalogue, des plus récemment ajoutées aux plus anciennes.
+- Appuyer sur Entrée (ou « Voir les N résultats ») ouvre la page de résultats : liste paginée par 20, nombre total, filtres Type, Format, Genre, Statut de publication et Langue originale avec le nombre d'œuvres par valeur, tri (pertinence, titre A → Z, plus récentes).
+- Un filtre accepte plusieurs valeurs (« en cours » ou « en pause ») ; les valeurs d'un même filtre s'additionnent (OU), sauf les genres où chaque genre choisi doit être présent (ET : « fantasy » et « humour ») ; les filtres entre eux se combinent. Un groupe sans valeur pour la recherche en cours n'est pas affiché.
+- L'URL de la page porte la recherche, les filtres, le tri et la page : elle se partage et n'est pas indexée par les moteurs.
+- Chaque résultat indique la langue d'origine (« FR : titre ») quand elle diffère de la langue de l'interface.
+- Au mobile, les filtres s'ouvrent dans une feuille basse ; « Filtres (n) » reste à droite, les filtres actifs sont des pastilles retirables.
+- Sans résultat : message clair et lien « Proposer cette œuvre » (US-09) ; le lien est inactif tant que US-09 n'existe pas.
 - Les œuvres archivées n'apparaissent jamais.
 
 **US-02 — Consulter une fiche œuvre**
@@ -87,16 +94,16 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 | RG-04 | La note est un entier de 1 à 10, facultatif. La note moyenne d'une œuvre n'est affichée qu'à partir de **10 notes** pour éviter les moyennes non significatives ; en dessous, seul le nombre de notes est indiqué. |
 | RG-05 | Une « saison 2 » d'un webcomic reste la **même fiche** (les chapitres continuent). Une série clairement distincte reçoit sa propre fiche, reliée par une relation. |
 | RG-06 | Un recueil est une fiche de type `anthology` reliée aux œuvres incluses par la relation `contains`. |
-| RG-07 | Une œuvre publiée en ligne puis éditée en papier reste **une seule fiche** (ex. BICLY) : `chapters` pour la partie en ligne, `volumes` pour le papier. |
+| RG-07 | Une œuvre publiée en ligne puis éditée en papier reste **une seule fiche** (ex. Les Veilleurs du Phare) : `chapters` pour la partie en ligne, `volumes` pour le papier. |
 | RG-08 | Dédoublonnage sans ISBN : titre normalisé + recherche floue, proposé à l'utilisateur et vérifié par l'administrateur. |
 | RG-09 | Toute suppression est un archivage, réservé à l'administrateur ; une fiche archivée disparaît des listes et de la recherche publique mais reste restaurable. |
 | RG-10 | Un doublon accepté par erreur est archivé (pas de fusion dans le MVP) ; ses membres retrouvent l'œuvre conservée par la recherche. |
 | RG-11 | Les liens externes sont en `https://`. |
 | RG-12 | Les œuvres pour adultes ne sont **pas référencées** dans le MVP (hors périmètre) ; l'administrateur refuse leur soumission. Pas de champ « public » ni de gestion d'âge. |
-| RG-14 | Chapitres et tomes sont des **entiers**. Les chapitres intermédiaires (10.5), postfaces et bonus ne sont pas comptés (ex. BICLY = 158 épisodes, postface exclue). |
+| RG-14 | Chapitres et tomes sont des **entiers**. Les chapitres intermédiaires (10.5), postfaces et bonus ne sont pas comptés (ex. 92 épisodes, postface exclue). |
 | RG-15 | Seules les parutions **déjà sorties** sont renseignées ; Trame n'est pas un calendrier de sorties (voir MangaCollec). |
 | RG-16 | Un hors-série qui paraît aussi dans un recueil reste **une seule fiche**, reliée au recueil (`contains`) et à la série d'origine (`spin_off`). |
-| RG-17 | Deux œuvres sont reliées par **une seule relation principale** (ex. `spin_off` pour Fabula Fantasia, même s'il est aussi une préquelle) ; la chronologie se précise dans le synopsis. |
+| RG-17 | Deux œuvres sont reliées par **une seule relation principale** (ex. `spin_off` pour Marées Rouges – Avant la Digue, même s'il est aussi une préquelle) ; la chronologie se précise dans le synopsis. |
 | RG-18 | Tant qu'une œuvre est **en cours**, ses totaux (`chapters`, `volumes`) restent **vides** et s'affichent « ? » (ex. « chapitres 100/? · tomes 12/? »). Ils sont renseignés quand l'œuvre est terminée. Aucun avertissement de dépassement n'est affiché quand le total est inconnu. |
 | RG-13 | La couverture n'est affichée que si `cover_consent` est vrai ou si l'administrateur l'a explicitement validée. |
 | RG-19 | Une œuvre a une **langue originale** obligatoire. Elle est visible et suivable par tout utilisateur, quelle que soit la langue de l'interface ; aucune disponibilité par pays n'est calculée (ADR 0007). |
@@ -104,7 +111,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 | RG-21 | Le **synopsis** affiché est celui de la langue de l'interface (officiel de préférence, puis saisi, puis automatique), sinon celui de la langue originale. Un synopsis traduit automatiquement est signalé comme tel. |
 
 ## 3. Cas limites
-- **BICLY** : webtoon en ligne puis tomes papier chez Vega → une fiche, deux éditeurs/plateformes, deux liens, `chapters` et `volumes`.
+- **Les Veilleurs du Phare** : webtoon en ligne puis tomes papier chez Éditions du Phare → une fiche, deux éditeurs/plateformes, deux liens, `chapters` et `volumes`.
 - **Lecteur qui a lu la version en ligne puis acheté le tome 1** : `chapters_read = 40`, `volumes_read = 1` — aucune incohérence.
 - **Œuvre sans éditeur ni couverture** : valide si au moins un lien existe.
 - **Titre qui change** : l'URL reste valide (seul l'`id` compte).
@@ -125,7 +132,6 @@ Décidés au démarrage du ticket concerné :
 - Export des données et visibilité des notes d'un profil public (#34).
 - Soumission : règles de la limite de fréquence, motifs de refus et de signalement prédéfinis, preuve du retrait (#31, #32, #33).
 - Le proposant voit-il le motif de refus et peut-il le contester ? (#32).
-- Filtres et tris de la recherche (langue originale) (#21).
 - Textes légaux (#35).
 
 Le reste relève de choix techniques, traités en ADR au démarrage du code.

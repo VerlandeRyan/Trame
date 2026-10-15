@@ -9,7 +9,7 @@ Une première analyse proposait des entités plus fines (édition, support, tome
 ## Décision
 - Une œuvre = une fiche. `work.type` ∈ `serie`, `oneshot`, `webcomic`, `recueil` (format d'origine).
 - `work.chapters` et `work.volumes` indépendants ; côté utilisateur, `chapters_read` et `volumes_read` **jamais mappés ni additionnés** ni soumis à une règle de cohérence.
-- Pas d'ISBN, pas d'édition, pas d'entité « support » dans le MVP. Une œuvre en ligne puis éditée en papier (BICLY) reste une seule fiche.
+- Pas d'ISBN, pas d'édition, pas d'entité « support » dans le MVP. Une œuvre en ligne puis éditée en papier (par exemple une série en webtoon puis en tomes) reste une seule fiche.
 - Manga/BD = étiquette (`genre`), pas un type.
 - Éditeur/plateforme générique et facultatif (le « magazine de prépublication » de MAL ne s'applique pas à cette scène).
 - Relations entre œuvres via `work_relation` (suite, préquelle, spin-off, etc.).
