@@ -17,14 +17,14 @@ test.describe('suggestions', () => {
     const menu = page.getByTestId('search-suggestions').first()
     await expect(menu).toBeVisible()
     await expect(menu.getByRole('option').first()).toContainText('Les Lanternes de Brume')
-    await expect(menu.getByRole('option').first()).toContainText('Série · Manga · Autrice Inventée')
+    await expect(menu.getByRole('option').first()).toContainText('Série · Manhwa · Webtoon · Mélodie Vasseur')
 
     await menu.getByRole('option').first().click()
-    await expect(page).toHaveURL(/\/work\/42-les-lanternes-de-brume$/)
+    await expect(page).toHaveURL(/\/work\/1-les-lanternes-de-brume$/)
   })
 
   test('se rouvrent au clic dans le champ', async ({ page }) => {
-    await page.goto('/search?q=brume')
+    await page.goto('/search?q=basalte')
     await page.waitForLoadState('networkidle')
     const input = page.getByTestId('search-input').first()
     const menu = page.getByTestId('search-suggestions').first()
@@ -43,30 +43,32 @@ test.describe('suggestions', () => {
     await page.waitForLoadState('networkidle')
     const input = page.getByTestId('search-input').first()
 
-    await input.fill('brume')
+    await input.fill('basalte')
     await expect(page.getByTestId('search-suggestions').first()).toBeVisible()
     await input.press('Escape')
     await expect(page.getByTestId('search-suggestions').first()).toBeHidden()
 
     await input.press('Enter')
-    await expect(page).toHaveURL(/\/search\?q=brume$/)
-    await expect(page.getByTestId('search-count')).toHaveText('2 résultats pour « brume »')
+    await expect(page).toHaveURL(/\/search\?q=basalte$/)
+    await expect(page.getByTestId('search-count')).toHaveText('3 résultats pour « basalte »')
   })
 })
 
 test.describe('page de résultats', () => {
   test('liste les résultats, filtre par type et retire le filtre', async ({ page }) => {
-    await page.goto('/search?q=brume')
-    await expect(page.getByTestId('search-result')).toHaveCount(2)
+    await page.goto('/search?q=basalte')
+    // Hydratation terminée : sinon la case cochée trop tôt n'est pas prise en compte.
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByTestId('search-result')).toHaveCount(3)
 
     await page.getByTestId('filter-type-oneshot').first().check()
     await expect(page).toHaveURL(/type=oneshot/)
     await expect(page.getByTestId('search-result')).toHaveCount(1)
-    await expect(page.getByTestId('search-result')).toContainText('Après la Brume')
+    await expect(page.getByTestId('search-result')).toContainText('Basalte – Histoires de Cendre')
     await expect(page.getByTestId('filter-type-series').first()).toBeVisible()
 
     await page.getByRole('button', { name: 'Réinitialiser' }).first().click()
-    await expect(page.getByTestId('search-result')).toHaveCount(2)
+    await expect(page.getByTestId('search-result')).toHaveCount(3)
     await expect(page).not.toHaveURL(/type=/)
   })
 
@@ -74,7 +76,7 @@ test.describe('page de résultats', () => {
     page,
   }) => {
     await page.goto('/')
-    await page.goto('/search?q=brume')
+    await page.goto('/search?q=basalte')
     await page.waitForLoadState('networkidle')
 
     await page.getByTestId('filter-type-series').first().check()
@@ -88,10 +90,10 @@ test.describe('page de résultats', () => {
   })
 
   test('trie par titre ou par date d’ajout et garde le choix dans l’adresse', async ({ page }) => {
-    await page.goto('/search?q=brume')
+    await page.goto('/search?q=basalte')
     await page.waitForLoadState('networkidle')
     const titles = page.getByTestId('search-result').locator('h3')
-    await expect(titles).toHaveText(['Les Lanternes de Brume', 'Après la Brume'])
+    await expect(titles).toHaveCount(3)
 
     const sort = page.getByTestId('search-sort')
     await sort.click()
@@ -99,16 +101,22 @@ test.describe('page de résultats', () => {
     await page.getByRole('option', { name: 'Titre (A → Z)' }).click()
     await expect(page).toHaveURL(/sort=title/)
     await expect(sort).toHaveText('Titre (A → Z)')
-    await expect(titles).toHaveText(['Après la Brume', 'Les Lanternes de Brume'])
+    await expect(titles).toHaveText([
+      'Basalte – Histoires de Cendre',
+      'Basalte – Le Recueil des Braises',
+      'Chroniques de Basalte',
+    ])
 
+    // Le jeu de démo est chargé d'un coup (même date d'ajout) : l'ordre exact est couvert côté API.
     await sort.click()
     await page.getByRole('option', { name: 'Ajoutées récemment' }).click()
     await expect(page).toHaveURL(/sort=recent/)
-    await expect(titles).toHaveText(['Après la Brume', 'Les Lanternes de Brume'])
+    await expect(sort).toHaveText('Ajoutées récemment')
+    await expect(titles).toHaveCount(3)
   })
 
   test('« Tout replier » masque les valeurs, la pastille compte le choix', async ({ page }) => {
-    await page.goto('/search?q=brume&type=series')
+    await page.goto('/search?q=basalte&type=series')
     await page.waitForLoadState('networkidle')
     const aside = page.locator('aside')
 
@@ -122,7 +130,7 @@ test.describe('page de résultats', () => {
   })
 
   test('plusieurs valeurs par catégorie : elles s’additionnent', async ({ page }) => {
-    await page.goto('/search?q=brume&type=series')
+    await page.goto('/search?q=basalte&type=series')
     await page.waitForLoadState('networkidle')
     await expect(page.getByTestId('search-result')).toHaveCount(1)
 
@@ -136,7 +144,7 @@ test.describe('page de résultats', () => {
   })
 
   test('changer de langue garde la recherche et les filtres dans l’adresse', async ({ page }) => {
-    await page.goto('/search?q=brume&type=series,oneshot&sort=title')
+    await page.goto('/search?q=basalte&type=series,oneshot&sort=title')
     await page.waitForLoadState('networkidle')
 
     await page.getByRole('button', { name: "Langue de l'interface" }).click()
@@ -144,21 +152,18 @@ test.describe('page de résultats', () => {
 
     await expect(page).toHaveURL(/\/en\/search\?/)
     const url = new URL(page.url())
-    expect(url.searchParams.get('q')).toBe('brume')
+    expect(url.searchParams.get('q')).toBe('basalte')
     expect(url.searchParams.get('type')).toBe('series,oneshot')
     expect(url.searchParams.get('sort')).toBe('title')
-    await expect(page.getByTestId('search-count')).toHaveText('2 results for “brume”')
+    await expect(page.getByTestId('search-count')).toHaveText('2 results for “basalte”')
   })
 
   test('sans texte de recherche : le catalogue, du plus récemment ajouté', async ({ page }) => {
     await page.goto('/search')
     await page.waitForLoadState('networkidle')
 
-    await expect(page.getByTestId('search-count')).toHaveText('2 résultats')
-    await expect(page.getByTestId('search-result').locator('h3')).toHaveText([
-      'Après la Brume',
-      'Les Lanternes de Brume',
-    ])
+    await expect(page.getByTestId('search-count')).toHaveText('11 résultats')
+    await expect(page.getByTestId('search-result')).toHaveCount(11)
     await page.getByTestId('search-sort').click()
     await expect(page.getByRole('option', { name: 'Pertinence' })).toHaveCount(0)
   })
@@ -173,11 +178,11 @@ test.describe('page de résultats', () => {
     expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
 
     const input = page.getByTestId('search-input').first()
-    await input.fill('brume')
+    await input.fill('basalte')
     await input.press('Enter')
 
-    await expect(page).toHaveURL(/q=brume/)
-    await expect(page.getByTestId('search-count')).toHaveText('2 résultats pour « brume »')
+    await expect(page).toHaveURL(/q=basalte/)
+    await expect(page.getByTestId('search-count')).toHaveText('3 résultats pour « basalte »')
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
   })
 
@@ -185,7 +190,7 @@ test.describe('page de résultats', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 1280, height: 400 })
-    await page.goto('/search?q=brume')
+    await page.goto('/search?q=basalte')
     await page.waitForLoadState('networkidle')
     await page.evaluate(() => {
       const spacer = document.createElement('div')
@@ -212,13 +217,14 @@ test.describe('page de résultats', () => {
     await page.getByRole('button', { name: "Langue de l'interface" }).click()
     await page.getByRole('link', { name: /English/ }).click()
     await expect(page).toHaveURL(/\/en\/search/)
+    await page.waitForLoadState('networkidle')
 
     const input = page.getByTestId('search-input').first()
-    await input.fill('brume')
+    await input.fill('basalte')
     await input.press('Enter')
 
-    await expect(page).toHaveURL(/\/en\/search\?q=brume/)
-    await expect(page.getByTestId('search-count')).toHaveText('2 results for “brume”')
+    await expect(page).toHaveURL(/\/en\/search\?q=basalte/)
+    await expect(page.getByTestId('search-count')).toHaveText('3 results for “basalte”')
   })
 
   test('aucun résultat : carte centrée, sans colonne de filtres', async ({ page }) => {
@@ -250,7 +256,7 @@ test.describe('page de résultats', () => {
     await page.waitForLoadState('networkidle')
     await expect(page.getByRole('button', { name: /^Filtres/ })).toHaveCount(0)
 
-    await page.goto('/search?q=brume')
+    await page.goto('/search?q=basalte')
     await page.waitForLoadState('networkidle')
 
     await expect(page.getByTestId('search-open')).toHaveCount(0)
@@ -283,7 +289,7 @@ test.describe('page de résultats', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/search?q=brume&type=series')
+    await page.goto('/search?q=basalte&type=series')
     await page.waitForLoadState('networkidle')
     await page.getByRole('button', { name: /^Filtres/ }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
@@ -298,16 +304,16 @@ test.describe('page de résultats', () => {
     page,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 })
-    await page.goto('/work/42-les-lanternes-de-brume')
+    await page.goto('/work/1-les-lanternes-de-brume')
     await page.waitForLoadState('networkidle')
     const title = page.getByTestId('work-title')
 
     await page.getByTestId('search-open').click()
-    await expect(page).toHaveURL(/\/work\/42-/)
+    await expect(page).toHaveURL(/\/work\/1-/)
     await expect(page.getByTestId('search-close')).toBeVisible()
     await expect(page.locator('.layout-header__logo')).toBeHidden()
 
-    await page.getByTestId('search-input').first().fill('brume')
+    await page.getByTestId('search-input').first().fill('basalte')
     const menu = page.getByTestId('search-suggestions').first()
     await expect(menu).toBeVisible()
     await expect(title).toBeVisible()

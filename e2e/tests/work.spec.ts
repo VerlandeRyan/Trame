@@ -1,24 +1,29 @@
 import { expect, test } from '@playwright/test'
 
-const WORK_PATH = '/work/42-les-lanternes-de-brume'
+const WORK_PATH = '/work/1-les-lanternes-de-brume'
 
 test('la fiche affiche le contenu rendu côté serveur', async ({ page }) => {
   await page.goto(WORK_PATH)
 
   await expect(page.getByTestId('work-title')).toHaveText('Les Lanternes de Brume')
-  await expect(page.getByTestId('work-alternatives')).toHaveText('EN : The Mist Lanterns')
-  await expect(page.getByTestId('work-tags')).toContainText('Manga')
-  await expect(page.getByTestId('work-info-chapters')).toHaveText('?')
-  await expect(page.getByTestId('work-info-publisher')).toHaveText('Éditions Fictives')
-  await expect(page.getByTestId('work-synopsis')).toContainText('cartographe')
-  await expect(page.getByTestId('work-members')).toContainText('2')
+  await expect(page.getByTestId('work-alternatives')).toContainText('EN : The Fog Lanterns')
+  await expect(page.getByTestId('work-tags')).toContainText('Manhwa')
+  await expect(page.getByTestId('work-info-chapters')).toHaveText('120')
+  await expect(page.getByTestId('work-info-publisher')).toContainText('Planche Ouverte (fictive)')
+  await expect(page.getByTestId('work-synopsis')).toContainText('allumeuse')
+  await expect(page.getByTestId('work-members')).toContainText('1')
   await expect(page.getByTestId('work-read')).toHaveAttribute(
     'href',
-    'https://lire.exemple.test/lanternes',
+    'https://planche-ouverte.exemple.test/lanternes',
   )
-  await expect(page.getByRole('link', { name: /Après la Brume/ })).toHaveAttribute(
+})
+
+test('la fiche liste les œuvres liées avec leur adresse canonique', async ({ page }) => {
+  await page.goto('/work/2-chroniques-de-basalte')
+
+  await expect(page.getByRole('link', { name: /Histoires de Cendre/ })).toHaveAttribute(
     'href',
-    '/work/43-apres-la-brume',
+    '/work/6-basalte-histoires-de-cendre',
   )
 })
 
@@ -28,9 +33,9 @@ test('le HTML initial contient le titre, la description, le canonique et le bali
   const html = await (await request.get(WORK_PATH)).text()
 
   expect(html).toContain('<title>Les Lanternes de Brume · Trame</title>')
-  expect(html).toMatch(/<meta[^>]+name="description"[^>]+content="Une cartographe suit/)
+  expect(html).toMatch(/<meta[^>]+name="description"[^>]+content="Une apprentie allumeuse/)
   expect(html).toMatch(/<meta[^>]+property="og:title"[^>]+content="Les Lanternes de Brume"/)
-  expect(html).toMatch(/<link[^>]+rel="canonical"[^>]+href="[^"]*\/work\/42-les-lanternes-de-brume"/)
+  expect(html).toMatch(/<link[^>]+rel="canonical"[^>]+href="[^"]*\/work\/1-les-lanternes-de-brume"/)
 
   const jsonLd = /<script[^>]+type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/.exec(html)
   expect(jsonLd).not.toBeNull()
@@ -43,15 +48,15 @@ test('le HTML initial contient le titre, la description, le canonique et le bali
 test('la fiche en anglais vit sous /en/work et titre dans la langue demandée', async ({ page }) => {
   // Le slug français est corrigé vers le titre anglais (301 côté serveur).
   await page.goto(`/en${WORK_PATH}`)
-  await expect(page).toHaveURL('/en/work/42-the-mist-lanterns')
+  await expect(page).toHaveURL('/en/work/1-the-fog-lanterns')
 
   await expect(page.locator('html')).toHaveAttribute('lang', 'en-GB')
-  await expect(page.getByTestId('work-title')).toHaveText('The Mist Lanterns')
-  await expect(page.getByTestId('work-info-status')).toHaveText('Ongoing')
+  await expect(page.getByTestId('work-title')).toHaveText('The Fog Lanterns')
+  await expect(page.getByTestId('work-info-status')).toHaveText('Completed')
   // L'URL canonique porte le titre dans la langue de l'interface.
   await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
     'href',
-    /\/en\/work\/42-the-mist-lanterns$/,
+    /\/en\/work\/1-the-fog-lanterns$/,
   )
 })
 
@@ -77,13 +82,13 @@ test('fiche sur mobile : couverture à gauche du titre, blocs empilés, sans dé
   expect(overflows).toBe(false)
 })
 
-test('la fiche occupe toute la largeur et affiche « Membres 0 »', async ({ page }) => {
+test('la fiche occupe toute la largeur et affiche « Membres 1 »', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto(WORK_PATH)
 
   const main = await page.locator('main').boundingBox()
   expect(main!.width).toBeGreaterThanOrEqual(1270)
-  await expect(page.getByTestId('work-members')).toHaveText('Membres 2')
+  await expect(page.getByTestId('work-members')).toHaveText('Membres 1')
 })
 
 test('changer de langue sur une fiche recharge la fiche dans la nouvelle langue', async ({ page }) => {
@@ -93,24 +98,25 @@ test('changer de langue sur une fiche recharge la fiche dans la nouvelle langue'
   await page.getByRole('button', { name: "Langue de l'interface" }).click()
   await page.getByRole('link', { name: /English/ }).click()
 
-  await expect(page).toHaveURL('/en/work/42-the-mist-lanterns')
-  await expect(page.getByTestId('work-title')).toHaveText('The Mist Lanterns')
+  await expect(page).toHaveURL('/en/work/1-the-fog-lanterns')
+  await expect(page.getByTestId('work-title')).toHaveText('The Fog Lanterns')
 })
 
 test("cliquer sur une œuvre liée ouvre sa fiche sans redirection d'erreur", async ({ page }) => {
-  await page.goto(WORK_PATH)
+  await page.goto('/work/2-chroniques-de-basalte')
   await page.waitForLoadState('networkidle')
 
-  await page.getByRole('link', { name: 'Après la Brume' }).click()
+  await page.getByRole('link', { name: /Histoires de Cendre/ }).click()
 
-  await expect(page).toHaveURL('/work/43-apres-la-brume')
-  await expect(page.getByTestId('work-title')).toHaveText('Après la Brume')
+  await expect(page).toHaveURL('/work/6-basalte-histoires-de-cendre')
+  await expect(page.getByTestId('work-title')).toHaveText('Basalte – Histoires de Cendre')
 })
 
 test('beaucoup d’auteurs : trois visibles, « + N autres auteurs » et « Voir tout »', async ({
   page,
 }) => {
-  await page.goto('/work/44-cinq-mains')
+  // L'anthologie du jeu de démo crédite cinq personnes.
+  await page.goto('/work/7-basalte-le-recueil-des-braises')
   await page.waitForLoadState('networkidle')
   const people = page.locator('.people')
 
@@ -132,11 +138,11 @@ test('beaucoup d’auteurs : trois visibles, « + N autres auteurs » et « Voir
 })
 
 test("un slug erroné redirige en 301 vers l'URL canonique", async ({ page, request }) => {
-  const response = await request.get('/work/42-nimporte-quoi', { maxRedirects: 0 })
+  const response = await request.get('/work/1-nimporte-quoi', { maxRedirects: 0 })
   expect(response.status()).toBe(301)
   expect(response.headers()['location']).toBe(WORK_PATH)
 
-  await page.goto('/work/42')
+  await page.goto('/work/1')
   await expect(page).toHaveURL(WORK_PATH)
 })
 

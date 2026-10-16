@@ -96,6 +96,9 @@ SELECT w.id, p.id, c.role FROM (VALUES
   ('Basalte – Le Recueil des Braises', 'Théo Marchand',   'art'),
   ('Basalte – Le Recueil des Braises', 'Noé Lambert',     'other'),
   ('Basalte – Le Recueil des Braises', 'Collectif Étincelle', 'other'),
+  -- Anthologie : cinq personnes créditées, au-delà des trois affichées en entier sur la fiche.
+  ('Basalte – Le Recueil des Braises', 'Ambre Duval',     'other'),
+  ('Basalte – Le Recueil des Braises', 'Yanis Roux',      'other'),
   ('Étoile Vagabonde',                 'Ambre Duval',     'story'),
   ('Étoile Vagabonde',                 'Ambre Duval',     'art'),
   ('Étoile Vagabonde – Aube',          'Ambre Duval',     'story'),
