@@ -6,10 +6,10 @@ const pages = [
   { name: 'accueil', path: '/' },
   { name: 'accueil en anglais', path: '/en' },
   { name: 'galerie de composants', path: '/components' },
-  { name: 'fiche œuvre', path: '/work/42-les-lanternes-de-brume' },
-  { name: 'fiche œuvre en anglais', path: '/en/work/42-the-mist-lanterns' },
+  { name: 'fiche œuvre', path: '/work/1-les-lanternes-de-brume' },
+  { name: 'fiche œuvre en anglais', path: '/en/work/1-the-fog-lanterns' },
   { name: 'page introuvable', path: '/cette-page-n-existe-pas' },
-  { name: 'résultats de recherche', path: '/search?q=brume&type=series' },
+  { name: 'résultats de recherche', path: '/search?q=basalte&type=series' },
   { name: 'recherche sans résultat', path: '/search?q=xyzqw' },
 ]
 
@@ -25,7 +25,7 @@ async function expectNoViolation(page: import('@playwright/test').Page) {
 test("aucune violation d'accessibilité : suggestions ouvertes", async ({ page }) => {
   // Le champ de l'en-tête n'existe qu'au bureau (le mobile le déploie depuis une icône).
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/search?q=brume')
+  await page.goto('/search?q=basalte')
   await page.waitForLoadState('networkidle')
   await page.getByTestId('search-input').first().fill('lanternes')
   await expect(page.getByTestId('search-suggestions').first()).toBeVisible()
@@ -34,7 +34,7 @@ test("aucune violation d'accessibilité : suggestions ouvertes", async ({ page }
 })
 
 test("aucune violation d'accessibilité : menu de tri ouvert", async ({ page }) => {
-  await page.goto('/search?q=brume')
+  await page.goto('/search?q=basalte')
   await page.waitForLoadState('networkidle')
   await page.getByTestId('search-sort').click()
   await expect(page.getByRole('option', { name: 'Pertinence' })).toBeVisible()
@@ -44,7 +44,7 @@ test("aucune violation d'accessibilité : menu de tri ouvert", async ({ page }) 
 
 test("aucune violation d'accessibilité : feuille de filtres mobile ouverte", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/search?q=brume&type=series')
+  await page.goto('/search?q=basalte&type=series')
   await page.waitForLoadState('networkidle')
   await page.getByRole('button', { name: /^Filtres/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()

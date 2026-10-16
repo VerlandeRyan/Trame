@@ -65,6 +65,23 @@ jobs:
   web:
     name: Web (types, lint, build et E2E)
     runs-on: ubuntu-latest
+    # Les E2E lisent la vraie API sur une base de test jetable, rechargée avec le jeu de démo.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: trame
+          POSTGRES_USER: trame
+          POSTGRES_PASSWORD: ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U trame -d trame"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://trame:ci-only@localhost:5432/trame
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -75,6 +92,7 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: |
+            api/package-lock.json
             web/package-lock.json
             e2e/package-lock.json
       - run: npm ci --ignore-scripts
@@ -103,6 +121,12 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - run: npm run build
         working-directory: web
+      - name: API compilée et base de test migrée (les E2E chargent le jeu de démo)
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+          npm run migrate:test
+        working-directory: api
       - run: npm ci --ignore-scripts
         working-directory: e2e
       - run: npx playwright install --with-deps chromium webkit
