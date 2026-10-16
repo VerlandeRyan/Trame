@@ -21,6 +21,8 @@ withDefaults(
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -35,28 +37,37 @@ withDefaults(
   font-weight: 700;
   cursor: pointer;
 
-  // Mouvement réservé aux personnes qui n'ont pas demandé de réduire les animations.
-  @media (prefers-reduced-motion: no-preference) {
-    transition: transform 0.08s;
-  }
-
-  &:active {
+  // Seul retour au doigt ; l'emporte sur l'inclinaison du survol.
+  &:active:not(:disabled) {
     transform: translate(2px, 2px);
     box-shadow: 1px 1px 0 var(--color-ink);
   }
+
+  // Sans cela un bouton inactif a l'air actif.
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
 }
 
+// Survol : inclinaison et fond plus soutenu de la couleur d'origine.
 .btn--primary {
   background: var(--color-rose);
+
+  @include tilt-on-hover(var(--color-rose-strong));
 }
 
 .btn--secondary {
   background: var(--color-surface);
+
+  @include tilt-on-hover(var(--color-cover-empty));
 }
 
 .btn--blue {
   background: var(--color-blue);
   color: #fff;
+
+  @include tilt-on-hover(var(--color-blue-strong));
 }
 
 .btn--small {
@@ -65,14 +76,21 @@ withDefaults(
   font-size: 0.8125rem;
   font-weight: 800;
 
-  &:active {
+  &:active:not(:disabled) {
     box-shadow: none;
   }
 }
 
+// Statuts : leur couleur est une donnée, on l'assombrit.
 @each $status in (reading, completed, plan_to_read, on_hold, dropped) {
   .btn--status-#{$status} {
     background: var(--status-#{$status});
+
+    // Le fond du statut l'emporte sur le survol de la variante.
+    @include tilt-on-hover(var(--status-#{$status}));
+    @include on-hover {
+      filter: brightness(0.92);
+    }
   }
 }
 </style>

@@ -170,9 +170,15 @@ watch(
 
   // Survol et focus : seul signal de fond. La langue courante se reconnaît à la coche et au gras,
   // sans fond propre, pour ne pas être confondue avec la ligne survolée.
-  &:hover,
   &:focus-visible {
     background: var(--color-field);
+  }
+
+  // Le survol n'existe qu'à la souris : sur écran tactile il resterait collé après un toucher.
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      background: var(--color-field);
+    }
   }
 }
 

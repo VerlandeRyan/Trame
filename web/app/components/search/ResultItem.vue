@@ -94,8 +94,11 @@ const authorLine = computed(() =>
   color: var(--color-blue);
   text-decoration: none;
 
-  &:hover {
-    text-decoration: underline;
+  // À la souris seulement : sur écran tactile le survol resterait collé après un toucher.
+  @media (hover: hover) and (pointer: fine) {
+    &:hover {
+      text-decoration: underline;
+    }
   }
 }
 

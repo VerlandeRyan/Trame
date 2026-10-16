@@ -7,9 +7,21 @@
   --color-ink-soft: #4d5a8a;
   --color-blue: #2340b8;
   --color-rose: #f07a9c;
+  // Survols : le rose et le bleu se renforcent. `rose-strong` est le rose le plus foncé qui garde
+  // le texte d'encre au seuil AA (4,55:1) ; `contrast.spec.ts` le vérifie.
+  --color-rose-strong: #ea6a91;
+  --color-rose-soft: #f4a0b9;
+  --color-blue-strong: #16297d;
+  // Bleu des liens au survol, plus clair que le bleu du site (texte courant : 5,4:1 sur le papier).
+  --color-blue-light: #3558d9;
   --color-chip: #fde3ea;
   --color-cover-empty: #cfd8ff;
+  // Couverture sans image : fond bleu pâle et trame rose vif (`work/Cover.vue`).
+  --color-cover-blank: #bcc8ff;
+  --color-rose-vivid: #ff2f9e;
   --color-field: #e3e7ff;
+  // Trame décorative du bord droit (layouts/default.vue).
+  --color-trame-side: #7b4fe0;
   --color-field-soft: #eef1ff;
   --color-danger: #b3263e;
   --color-rule: rgb(27 42 92 / 27%);

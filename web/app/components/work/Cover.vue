@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Couverture : avec image (liseré blanc, filet d'encre), sans image (trame bleue en fondu, pastille).
-// Jamais de trame sur une image.
+// Avec image : liseré blanc et filet d'encre. Sans image : trame rose sur bleu pâle, jamais sur une image.
 withDefaults(defineProps<{ url?: string; size?: 'normal' | 'small' }>(), {
   url: undefined,
   size: 'normal',
@@ -51,10 +50,10 @@ withDefaults(defineProps<{ url?: string; size?: 'normal' | 'small' }>(), {
 }
 
 .cover--empty {
-  background-color: var(--color-cover-empty);
+  background-color: var(--color-cover-blank);
 
   &::before {
-    @include screentone(var(--color-blue), 9px, 150deg);
+    @include screentone(var(--color-rose-vivid), 9px, 150deg);
   }
 
   &.cover--small::before {
