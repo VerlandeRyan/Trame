@@ -18,4 +18,18 @@ describe('mise en page par défaut', () => {
 
     expect(skipLink.text()).toBe('Aller au contenu')
   })
+
+  it('pose une trame décorative au bord droit, cachée des lecteurs d’écran', async () => {
+    const wrapper = await mountSuspended(DefaultLayout, { route: '/search' })
+
+    const trame = wrapper.get('.layout__trame')
+    expect(trame.attributes('aria-hidden')).toBe('true')
+    expect(trame.text()).toBe('')
+  })
+
+  it('laisse l’accueil dessiner sa propre trame, coupée au filet du hero', async () => {
+    const wrapper = await mountSuspended(DefaultLayout, { route: '/' })
+
+    expect(wrapper.find('.layout__trame').exists()).toBe(false)
+  })
 })

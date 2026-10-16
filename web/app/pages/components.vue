@@ -13,6 +13,37 @@ const sampleWorks = [
   { id: 3, title: 'Œuvre fictive C', type: 'anthology' as const },
 ]
 
+// Accueil : mêmes données fictives que les autres exemples.
+const sampleSummary = {
+  originalLanguage: 'fr',
+  status: 'ongoing' as const,
+  formats: ['manga'],
+  coverPath: null,
+  mainAuthor: 'Autrice Inventée',
+}
+const sampleFeatured = [1, 2].map((id) => ({
+  ...sampleSummary,
+  id,
+  title: `Œuvre fictive ${id}`,
+  originalTitle: `Œuvre fictive ${id}`,
+  type: 'series' as const,
+  synopsis: 'Résumé fictif de l’œuvre mise en avant, sur deux ou trois lignes.',
+}))
+const sampleRated = [1, 2, 3].map((id) => ({
+  ...sampleSummary,
+  id,
+  title: `Œuvre fictive ${id}`,
+  originalTitle: `Œuvre fictive ${id}`,
+  type: 'series' as const,
+  ratingAverage: 9.1 - id / 10,
+  ratingCount: 100 + id,
+}))
+const sampleGenres = [
+  { code: 'manga', category: 'format' as const },
+  { code: 'webtoon', category: 'format' as const },
+  { code: 'fantasy', category: 'theme' as const },
+]
+
 const isModalOpen = ref(false)
 const searchText = ref('')
 const chaptersRead = ref(12)
@@ -64,6 +95,18 @@ const tabs = computed(() => [
           <WorkCard :title="work.title" :type="work.type" />
         </li>
       </ul>
+    </section>
+
+    <section class="gallery__section">
+      <h2>{{ t('gallery.home') }}</h2>
+      <HomeFeatured :works="sampleFeatured" />
+      <HomeExplore :genres="sampleGenres" />
+      <HomeShelf
+        test-id="gallery-shelf"
+        :title="t('home.topRated.title')"
+        :works="sampleRated"
+        see-all-to="/search"
+      />
     </section>
 
     <UiEmptyState :title="t('gallery.emptyTitle')" :text="t('gallery.emptyText')" />

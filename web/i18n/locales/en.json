@@ -71,15 +71,48 @@
     "it": "Italian"
   },
   "home": {
-    "title": "Trame",
-    "intro": "Track your reading and discover independent works.",
-    "componentsLink": "See the components"
+    "title": "European creation,",
+    "titleHighlight": "all in one place",
+    "intro": "Manga, comics, webtoons and webcomics from independent authors and publishers: look up a work, track your reading, find what to read next.",
+    "introShort": "Look up a work, track your reading, find what to read next.",
+    "searchPlaceholder": "Search for a work, an author, a publisher…",
+    "searchPlaceholderShort": "Search…",
+    "seeAll": "See all",
+    "seeAllOf": "See all: {section}",
+    "featured": {
+      "title": "Featured",
+      "badge": "Popular this week",
+      "open": "View the page",
+      "previous": "Previous work",
+      "next": "Next work",
+      "slide": "Work {current} of {total}",
+      "choose": "Show work {index}"
+    },
+    "explore": {
+      "title": "Explore",
+      "formats": "Formats",
+      "genres": "Genres",
+      "allFormats": "All formats",
+      "allGenres": "All genres"
+    },
+    "recent": {
+      "title": "Recently added"
+    },
+    "topRated": {
+      "title": "Top rated"
+    },
+    "missing": {
+      "title": "Is a work missing from Trame?",
+      "text": "Suggest it for the catalogue: an administrator checks it before publication.",
+      "signIn": "Sign in to suggest"
+    }
   },
   "gallery": {
     "title": "Components",
     "buttons": "Buttons and statuses",
     "tabsAndCounters": "Tabs, counters and fields",
     "relatedWorks": "Related works",
+    "home": "Home",
     "tabAll": "All",
     "chaptersRead": "Chapters read",
     "volumesRead": "Volumes read",

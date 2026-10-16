@@ -71,15 +71,48 @@
     "it": "Italien"
   },
   "home": {
-    "title": "Trame",
-    "intro": "Suis tes lectures et découvre les œuvres indépendantes.",
-    "componentsLink": "Voir les composants"
+    "title": "La création européenne, à suivre",
+    "titleHighlight": "en un seul endroit",
+    "intro": "Manga, BD, webtoons et webcomics d'auteurs et d'éditeurs indépendants : cherche une œuvre, suis ta lecture, découvre la suite.",
+    "introShort": "Cherche une œuvre, suis ta lecture, découvre la suite.",
+    "searchPlaceholder": "Rechercher une œuvre, un auteur, un éditeur…",
+    "searchPlaceholderShort": "Rechercher…",
+    "seeAll": "Tout voir",
+    "seeAllOf": "Tout voir : {section}",
+    "featured": {
+      "title": "À la une",
+      "badge": "Populaire cette semaine",
+      "open": "Voir la fiche",
+      "previous": "Œuvre précédente",
+      "next": "Œuvre suivante",
+      "slide": "Œuvre {current} sur {total}",
+      "choose": "Afficher l'œuvre {index}"
+    },
+    "explore": {
+      "title": "Explorer",
+      "formats": "Formats",
+      "genres": "Genres",
+      "allFormats": "Tous les formats",
+      "allGenres": "Tous les genres"
+    },
+    "recent": {
+      "title": "Récemment ajoutées"
+    },
+    "topRated": {
+      "title": "Les mieux notées"
+    },
+    "missing": {
+      "title": "Une œuvre manque à Trame ?",
+      "text": "Propose-la au catalogue : un administrateur la vérifie avant publication.",
+      "signIn": "Se connecter pour proposer"
+    }
   },
   "gallery": {
     "title": "Composants",
     "buttons": "Boutons et statuts",
     "tabsAndCounters": "Onglets, compteurs et champs",
     "relatedWorks": "Œuvres liées",
+    "home": "Accueil",
     "tabAll": "Toutes",
     "chaptersRead": "Chapitres lus",
     "volumesRead": "Tomes lus",

@@ -2,9 +2,12 @@ import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it, vi } from 'vitest'
 import LayoutHeader from './Header.vue'
 
+// Une page ordinaire : l'accueil et la recherche portent leur propre champ.
+const WORK_ROUTE = '/work/1-aube-fictive'
+
 describe('LayoutHeader', () => {
   it('présente le logo, la recherche, la langue et la connexion', async () => {
-    const wrapper = await mountSuspended(LayoutHeader)
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
 
     expect(wrapper.get('header a').text()).toBe('Trame')
     expect(wrapper.get('[role="combobox"]').attributes('placeholder')).toBe(
@@ -15,7 +18,7 @@ describe('LayoutHeader', () => {
   })
 
   it('propose au mobile une icône qui déploie le champ, sans quitter la page', async () => {
-    const wrapper = await mountSuspended(LayoutHeader, { route: '/' })
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
     const open = wrapper.get('[data-testid="search-open"]')
 
     expect(open.element.tagName).toBe('BUTTON')
@@ -27,11 +30,11 @@ describe('LayoutHeader', () => {
 
     expect(wrapper.get('header').classes()).toContain('layout-header--searching')
     expect(open.attributes('aria-expanded')).toBe('true')
-    expect(useRoute().path).toBe('/')
+    expect(useRoute().path).toBe(WORK_ROUTE)
   })
 
   it('referme le champ déployé avec la croix, avec Échap, ou en changeant de page', async () => {
-    const wrapper = await mountSuspended(LayoutHeader, { route: '/' })
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
     const searching = () => wrapper.get('header').classes().includes('layout-header--searching')
 
     await wrapper.get('[data-testid="search-open"]').trigger('click')
@@ -54,5 +57,16 @@ describe('LayoutHeader', () => {
     const wrapper = await mountSuspended(LayoutHeader, { route: '/search' })
 
     expect(wrapper.find('[data-testid="search-open"]').exists()).toBe(false)
+  })
+})
+
+describe("LayoutHeader sur l'accueil", () => {
+  it("n'a pas de champ de recherche : l'accueil porte le sien", async () => {
+    const wrapper = await mountSuspended(LayoutHeader, { route: '/' })
+
+    expect(wrapper.find('[role="combobox"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="search-open"]').exists()).toBe(false)
+    expect(wrapper.get('header').classes()).toContain('layout-header--plain')
+    expect(wrapper.find('button[aria-haspopup]').text()).toBe('FR')
   })
 })
