@@ -196,6 +196,42 @@ FROM (VALUES
   JOIN app_user u ON u.handle = c.handle
   JOIN work w ON w.title = c.work_title;
 
+-- Activité de l'accueil (« À la une », « Mieux notées ») ---------------------------------------
+-- Douze lecteurs fictifs ; les dates sont relatives à `now()` pour que « sur 7 jours » reste vrai
+-- à chaque rechargement du jeu.
+INSERT INTO app_user (email, google_sub, handle, display_name, role, profile_visibility)
+SELECT format('lecteur%s@exemple.test', lpad(n::text, 2, '0')),
+       format('demo-sub-%s', lpad(n::text, 2, '0')),
+       format('lecteur_%s', lpad(n::text, 2, '0')),
+       format('Lecteur %s', lpad(n::text, 2, '0')),
+       'user', 'public'
+FROM generate_series(1, 12) AS n;
+
+-- (œuvre, lecteurs 1 à `readers`, note de base ou NULL, ancienneté de l'ajout en jours) :
+--   - ajouts récents (≤ 7 jours) : Hollow Tide 12, Crépuscule 9 (9 notes : sous le seuil de 10),
+--     Aube 5, Histoires de Cendre 2 (sous le seuil de 3 ajouts) ;
+--   - ajouts anciens avec 12 notes : Étoile Vagabonde, Le Recueil des Braises (« Mieux notées »).
+-- La note vaut la note de base moins 0, 1 ou 2 selon le lecteur : moyennes distinctes par œuvre.
+INSERT INTO library_entry (user_id, work_id, status, rating, created_at, updated_at)
+SELECT u.id, w.id,
+       CASE WHEN c.base_rating IS NULL THEN 'reading' ELSE 'completed' END,
+       c.base_rating - (u.n % 3),
+       now() - make_interval(days => c.age_days),
+       now() - make_interval(days => c.age_days)
+FROM (VALUES
+  ('Hollow Tide',                      12, 8,    1),
+  ('Étoile Vagabonde – Crépuscule',     9, 8,    2),
+  ('Étoile Vagabonde – Aube',           5, NULL, 3),
+  ('Basalte – Histoires de Cendre',     2, NULL, 1),
+  ('Étoile Vagabonde',                 12, 10,  30),
+  ('Basalte – Le Recueil des Braises', 12, 9,   30)
+) AS c(work_title, readers, base_rating, age_days)
+  JOIN work w ON w.title = c.work_title
+  JOIN (
+    SELECT id, substr(handle::text, 9)::int AS n
+    FROM app_user WHERE handle::text ~ '^lecteur_[0-9]{2}$'
+  ) u ON u.n <= c.readers;
+
 -- Journal en ajout seul : un seul champ de valeur renseigné selon le kind ------------------
 INSERT INTO reading_event (user_id, work_id, kind, chapters_added, volumes_added, new_status, new_rating, occurred_at)
 SELECT u.id, w.id, c.kind, c.chapters_added, c.volumes_added, c.new_status, c.new_rating, c.occurred_at::timestamptz

@@ -56,6 +56,38 @@ describe('jeu de démonstration en volume', () => {
     expect(await count('person', "name LIKE '% (démo)'")).toBe(12);
   });
 
+  it('donne assez d’activité pour remplir « À la une » et « Mieux notées » de l’accueil', async () => {
+    await client.query(bulk);
+
+    const rated = await client.query(
+      `SELECT count(*)::int AS n FROM (
+         SELECT work_id FROM library_entry GROUP BY work_id HAVING count(rating) >= 10
+       ) t WHERE work_id IN (SELECT id FROM work WHERE title LIKE '[Démo] %')`,
+    );
+    const popular = await client.query(
+      `SELECT count(*)::int AS n FROM (
+         SELECT work_id FROM library_entry
+          WHERE created_at >= now() - interval '7 days'
+          GROUP BY work_id HAVING count(*) >= 3
+       ) t WHERE work_id IN (SELECT id FROM work WHERE title LIKE '[Démo] %')`,
+    );
+
+    // 12 œuvres notées au moins : une rangée « Mieux notées » pleine sur grand écran.
+    expect(rated.rows[0].n).toBeGreaterThanOrEqual(12);
+    expect(popular.rows[0].n).toBeGreaterThanOrEqual(3);
+  });
+
+  it('retire aussi les lecteurs fictifs et leurs entrées', async () => {
+    const entriesBefore = await count('library_entry');
+    await client.query(bulk);
+    expect(await count('library_entry')).toBeGreaterThan(entriesBefore);
+
+    await client.query(remove);
+
+    expect(await count('app_user', "email LIKE 'demo.%@exemple.test'")).toBe(0);
+    expect(await count('library_entry')).toBe(entriesBefore);
+  });
+
   it('ne retire que les lignes marquées', async () => {
     await client.query(
       "INSERT INTO work (title, type, status, original_language) VALUES ('Œuvre fictive', 'series', 'ongoing', 'fr')",

@@ -5,6 +5,10 @@
 -- Chargement : `npm run db:seed:bulk` (api/). Retrait : db/demo-bulk-remove.sql.
 
 -- Nettoyage d'un chargement précédent ------------------------------------------
+DELETE FROM library_entry
+ WHERE work_id IN (SELECT id FROM work WHERE title LIKE '[Démo] %')
+    OR user_id IN (SELECT id FROM app_user WHERE email LIKE 'demo.%@exemple.test');
+DELETE FROM app_user WHERE email LIKE 'demo.%@exemple.test';
 DELETE FROM work WHERE title LIKE '[Démo] %';
 DELETE FROM person WHERE name LIKE '% (démo)';
 DELETE FROM publisher WHERE name LIKE '% (démo)';
@@ -109,3 +113,31 @@ SELECT d.id, p.id FROM demo d
   JOIN publisher p ON p.name = (ARRAY['Éditions Démo (démo)', 'Plateforme Démo (démo)',
                                       'Atelier Démo (démo)'])[1 + d.n % 3]
 WHERE d.n % 4 <> 0;
+
+-- Activité des lecteurs : « À la une » et « Mieux notées » de l'accueil ------------------
+-- Douze lecteurs fictifs (e-mails demo.NN@exemple.test). Dates relatives à `now()` : « 7 jours »
+-- reste vrai à chaque rechargement.
+INSERT INTO app_user (email, google_sub, handle, display_name, role, profile_visibility)
+SELECT format('demo.%s@exemple.test', lpad(n::text, 2, '0')),
+       format('demo-bulk-sub-%s', lpad(n::text, 2, '0')),
+       format('demo_%s', lpad(n::text, 2, '0')),
+       format('Lecteur Démo %s', lpad(n::text, 2, '0')),
+       'user', 'public'
+FROM generate_series(1, 12) AS n;
+
+-- Œuvres 1 à 14 : notées par les douze lecteurs (≥ 10 notes), avec des moyennes différentes.
+-- Œuvres 15 à 19 : 3 à 7 ajouts récents (moins de 7 jours), sans note : populaires cette semaine.
+WITH demo AS (
+  SELECT id, substring(title FROM '(\d+)$')::int AS n FROM work WHERE title LIKE '[Démo] %'
+),
+readers AS (
+  SELECT id, substring(handle::text FROM '(\d+)$')::int AS u FROM app_user WHERE email LIKE 'demo.%@exemple.test'
+)
+INSERT INTO library_entry (user_id, work_id, status, rating, created_at, updated_at)
+SELECT r.id, d.id, 'completed', 10 - (d.n % 5) - (r.u % 3),
+       now() - interval '30 days', now() - interval '30 days'
+FROM demo d JOIN readers r ON d.n BETWEEN 1 AND 14
+UNION ALL
+SELECT r.id, d.id, 'reading', NULL,
+       now() - (r.u || ' hours')::interval, now() - (r.u || ' hours')::interval
+FROM demo d JOIN readers r ON d.n BETWEEN 15 AND 19 AND r.u <= 3 + (d.n % 5);

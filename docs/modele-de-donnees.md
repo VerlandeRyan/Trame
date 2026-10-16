@@ -146,6 +146,7 @@ PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inve
 | volumes_read | integer | NOT NULL, défaut 0, `CHECK >= 0` |
 | rating | smallint | nullable, `CHECK BETWEEN 1 AND 10` |
 | started_on / finished_on | date | nullable |
+| created_at | timestamptz | NOT NULL, défaut `now()` : date d'ajout à la liste, ne change plus (popularité de la semaine, « À la une ») ; index |
 | updated_at | timestamptz | NOT NULL |
 PK (`user_id`, `work_id`). **Aucune contrainte de cohérence entre `chapters_read` et `volumes_read`** (choix assumé : les deux unités ne sont jamais mappées).
 
