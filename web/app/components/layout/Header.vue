@@ -5,6 +5,8 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const onSearchPage = computed(() => route.path === localePath('/search'))
+// L'accueil porte son propre champ de recherche (maquettes 05 et 06) : pas de champ dans l'en-tête.
+const onHomePage = computed(() => route.path === localePath('/'))
 
 const searching = ref(false)
 const searchBox = ref<{ focus: () => void } | null>(null)
@@ -39,13 +41,13 @@ watch(
 <template>
   <header
     class="layout-header"
-    :class="{ 'layout-header--searching': searching }"
+    :class="{ 'layout-header--searching': searching, 'layout-header--plain': onHomePage }"
     @keydown.esc="onEscape"
   >
     <NuxtLink :to="localePath('/')" class="layout-header__logo">{{ t('app.name') }}</NuxtLink>
-    <LayoutSearchBox ref="searchBox" class="layout-header__search" />
+    <LayoutSearchBox v-if="!onHomePage" ref="searchBox" class="layout-header__search" />
     <button
-      v-if="!onSearchPage"
+      v-if="!onSearchPage && !onHomePage"
       ref="searchLink"
       type="button"
       class="layout-header__search-link"
@@ -114,6 +116,11 @@ watch(
 
 .layout-header__search {
   flex: 1;
+}
+
+// Sans champ de recherche (accueil), la langue et le compte restent à droite.
+.layout-header--plain .layout-header__language {
+  margin-left: auto;
 }
 
 // Ouvrir / fermer la recherche : mobile seulement.

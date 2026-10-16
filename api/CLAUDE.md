@@ -22,6 +22,10 @@ Contrat complet : `docs/architecture.md`. À retenir en lisant le code :
 - **Tri** `sort` : `relevance` (défaut ; titre si pas de `q`), `title`, `recent` (`work.created_at`). Toujours terminé par le titre puis l'`id`, pour une pagination stable.
 - Ne jamais interpoler une valeur de la requête dans le SQL : paramètres Kysely (`sql.join`), seul `sql.ref` reçoit des constantes écrites dans le code.
 
+## Accueil (`GET /works/featured`, `GET /works/top-rated`)
+- Seuils et tailles dans `services/work.service.ts` (`FEATURED_*`, `TOP_RATED_LIMIT`, `MIN_RATINGS_FOR_AVERAGE`), passés au dépôt en paramètres : le dépôt ne connaît pas les règles. Le dépôt joint un sous-ensemble agrégé de `library_entry` (ajouts récents, notes) à `work` ; la moyenne est calculée dans le service.
+- `library_entry.created_at` (migration `…_library_entry_created_at`) date l'ajout ; `updated_at` bouge à chaque progression. Le jeu de démo (`db/demo-data.sql`) pose des ajouts relatifs à `now()` pour que « 7 jours » reste vrai à chaque rechargement ; les tests de ces routes en dépendent.
+
 ## Erreurs
 Réponse unique `{ code, message, details? }` ; `message` est un texte technique en anglais, non affiché (le front lit `code`). `details[]` d'une validation : `path`, `code` Zod et paramètres, jamais de message ni de valeur saisie. Les codes vivent dans `src/errors.ts` (`ERROR_CODES`) : en ajouter un là, jamais de JSON d'erreur improvisé. Les erreurs inattendues donnent `INTERNAL_ERROR` sans détail.
 

@@ -84,6 +84,8 @@ export function createWorkRouter(service: WorkService): Router {
   router.get('/', validate('query', listWorksQuery), controller.list);
   // Avant `/:id`, sinon « facets » serait lu comme un identifiant.
   router.get('/facets', validate('query', facetsQuery), controller.facets);
+  router.get('/featured', validate('query', workQuery), controller.listFeaturedWorks);
+  router.get('/top-rated', validate('query', workQuery), controller.listTopRatedWorks);
   router.get('/:id', validate('params', workParams), validate('query', workQuery), controller.get);
   return router;
 }

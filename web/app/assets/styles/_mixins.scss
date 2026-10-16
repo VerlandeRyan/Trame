@@ -1,3 +1,36 @@
+// Survol à la souris seulement : sur écran tactile `:hover` reste collé après un toucher.
+// Jamais sur un élément désactivé.
+@mixin on-hover {
+  @media (hover: hover) and (pointer: fine) {
+    &:hover:not(:disabled, [aria-disabled='true']) {
+      @content;
+    }
+  }
+}
+
+// Inclinaison « autocollant » avec rebond et fond plus soutenu. Le mouvement disparaît si
+// l'animation est réduite, pas la couleur. `$angle` plus faible pour les éléments larges.
+@mixin tilt-on-hover($hover-background: null, $scale: 1.05, $angle: -2.5deg) {
+  @media (prefers-reduced-motion: no-preference) {
+    transition:
+      transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+      background-color 0.15s;
+  }
+
+  @include on-hover {
+    position: relative;
+    z-index: 1;
+
+    @if $hover-background != null {
+      background: $hover-background;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      transform: rotate($angle) scale($scale);
+    }
+  }
+}
+
 // Trame (screentone) : points ronds en fondu, comme dans les maquettes.
 // À inclure dans un pseudo-élément ::before d'un parent `position: relative`.
 // $angle : direction depuis laquelle la trame est la plus dense (270deg = depuis la droite).

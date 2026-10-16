@@ -122,6 +122,8 @@ export interface LibraryEntryTable {
   work_id: number;
   /** Note donnée par le lecteur, de 1 à 10 ; `null` tant qu'il n'a pas noté. */
   rating: number | null;
+  /** Date d'ajout à la liste. */
+  created_at: Generated<Date>;
 }
 
 /**

@@ -11,6 +11,12 @@ import { coverUrl, workSlug } from '~/utils/work'
 // Combobox ARIA : le focus reste dans le champ, la suggestion active est annoncée.
 const DEBOUNCE_MS = 200
 
+// `hero` : grand champ de l'accueil (maquettes 05 et 06), avec son propre texte d'aide.
+const props = withDefaults(defineProps<{ variant?: 'header' | 'hero'; placeholder?: string }>(), {
+  variant: 'header',
+  placeholder: undefined,
+})
+
 const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
@@ -136,7 +142,8 @@ function onPointerDown(event: PointerEvent) {
 
 const input = ref<HTMLInputElement | null>(null)
 
-defineExpose({ focus: () => input.value?.focus() })
+// `submit` : le bouton « Rechercher » de l'accueil, placé hors du champ, lance la même recherche.
+defineExpose({ focus: () => input.value?.focus(), submit })
 
 onMounted(() => document.addEventListener('pointerdown', onPointerDown))
 onBeforeUnmount(() => {
@@ -153,7 +160,7 @@ watch(
 </script>
 
 <template>
-  <div ref="root" class="search-box">
+  <div ref="root" class="search-box" :class="`search-box--${props.variant}`">
     <form class="search-box__form" role="search" @submit.prevent="submit">
       <Icon name="tabler:search" size="16" aria-hidden="true" class="search-box__icon" />
       <label :for="inputId" class="search-box__label">{{ t('search.label') }}</label>
@@ -168,7 +175,7 @@ watch(
         autocomplete="off"
         enterkeyhint="search"
         maxlength="100"
-        :placeholder="t('nav.searchPlaceholder')"
+        :placeholder="props.placeholder ?? t('nav.searchPlaceholder')"
         aria-autocomplete="list"
         :aria-expanded="expanded"
         :aria-controls="listboxId"
@@ -273,6 +280,24 @@ watch(
     min-height: 0;
     padding: 9px 12px 9px 34px;
     font-size: 0.9375rem;
+  }
+}
+
+// Accueil : champ plus haut, avec l'ombre d'encre des maquettes ; 16 px au mobile (zoom de Safari iOS).
+.search-box--hero {
+  .search-box__icon {
+    left: 14px;
+  }
+
+  .search-box__input {
+    min-height: 0;
+    padding: 12px 14px 12px 40px;
+    box-shadow: var(--shadow);
+    font-size: 1rem;
+
+    @media (min-width: 768px) {
+      font-size: 0.875rem;
+    }
   }
 }
 

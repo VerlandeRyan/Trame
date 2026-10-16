@@ -84,6 +84,30 @@ export interface WorkFacets {
   originalLanguage: FacetCount[];
 }
 
+export interface FeaturedWork extends WorkSummary {
+  synopsis: string | null;
+}
+
+/** Populaire : au moins `minAdditions` ajouts à une liste depuis `sinceDays` jours. */
+export interface FeaturedCriteria {
+  lang?: string;
+  minAdditions: number;
+  sinceDays: number;
+  limit: number;
+}
+
+/** Notes brutes : la moyenne est calculée par le service. */
+export interface RatedWork extends WorkSummary {
+  ratingCount: number;
+  ratingSum: number;
+}
+
+export interface RatedCriteria {
+  lang?: string;
+  minRatings: number;
+  limit: number;
+}
+
 /** Fiche telle que lue en base : un crédit par (personne, rôle). Le service les regroupe par personne. */
 export interface WorkRecord {
   id: number;
@@ -129,6 +153,10 @@ export interface WorkRecord {
 export interface WorkRepository {
   search(criteria: WorkSearchCriteria): Promise<WorkSearchResult>;
   facets(criteria: WorkFacetCriteria): Promise<WorkFacets>;
+  /** La plus ajoutée à une liste récemment d'abord. */
+  findFeaturedWorks(criteria: FeaturedCriteria): Promise<FeaturedWork[]>;
+  /** Triées par moyenne, puis par nombre de notes. */
+  findTopRatedWorks(criteria: RatedCriteria): Promise<RatedWork[]>;
   /** Renvoie `undefined` si l'œuvre n'existe pas ou est archivée. */
   findById(id: number, lang?: string): Promise<WorkRecord | undefined>;
 }
@@ -221,6 +249,30 @@ const FORMATS = sql<string[]>`COALESCE((
   WHERE wg.work_id = work.id AND g.category = 'format'
 ), '{}')`;
 
+function workSummaryColumns(shownTitle: RawBuilder<string>) {
+  return [
+    'work.id',
+    shownTitle.as('title'),
+    'work.title as originalTitle',
+    'work.original_language as originalLanguage',
+    'work.type',
+    'work.status',
+    FORMATS.as('formats'),
+    COVER_PATH.as('coverPath'),
+    MAIN_AUTHOR.as('mainAuthor'),
+  ] as const;
+}
+
+/** Synopsis dans la langue demandée, sinon dans la langue originale. `''` : aucune langue demandée. */
+function preferredSynopsis(lang = ''): RawBuilder<string | null> {
+  return sql<string | null>`(
+    SELECT s.text FROM work_synopsis s
+    WHERE s.work_id = work.id AND s.language IN (${lang}, work.original_language)
+    ORDER BY (s.language = ${lang}) DESC
+    LIMIT 1
+  )`;
+}
+
 function filters(criteria: WorkFacetCriteria) {
   return (eb: ExpressionBuilder<Database, 'work'>): Expression<SqlBool> => {
     const conditions: Expression<SqlBool>[] = [eb('work.deleted_at', 'is', null)];
@@ -245,17 +297,7 @@ export function createWorkRepository(db: Db): WorkRepository {
       const shownTitle = displayTitle('work', criteria.lang);
       let listQuery = db
         .selectFrom('work')
-        .select([
-          'work.id',
-          shownTitle.as('title'),
-          'work.title as originalTitle',
-          'work.original_language as originalLanguage',
-          'work.type',
-          'work.status',
-          FORMATS.as('formats'),
-          COVER_PATH.as('coverPath'),
-          MAIN_AUTHOR.as('mainAuthor'),
-        ])
+        .select(workSummaryColumns(shownTitle))
         .where(filters(criteria));
       const sort = criteria.sort ?? 'relevance';
       if (sort === 'recent') {
@@ -331,6 +373,53 @@ export function createWorkRepository(db: Db): WorkRepository {
         countByGenre('theme', undefined),
       ]);
       return { type, status, format, genre, originalLanguage };
+    },
+
+    async findFeaturedWorks({ lang, minAdditions, sinceDays, limit }) {
+      const shownTitle = displayTitle('work', lang);
+      const recent = db
+        .selectFrom('library_entry')
+        .select(['work_id', (eb) => eb.fn.countAll<number>().as('additions')])
+        .where('created_at', '>=', sql<Date>`now() - make_interval(days => ${sinceDays})`)
+        .groupBy('work_id')
+        .having((eb) => eb.fn.countAll(), '>=', minAdditions)
+        .as('recent');
+      return db
+        .selectFrom('work')
+        .innerJoin(recent, 'recent.work_id', 'work.id')
+        .select([...workSummaryColumns(shownTitle), preferredSynopsis(lang).as('synopsis')])
+        .where('work.deleted_at', 'is', null)
+        .orderBy('recent.additions', 'desc')
+        .orderBy(shownTitle)
+        .orderBy('work.id')
+        .limit(limit)
+        .execute();
+    },
+
+    async findTopRatedWorks({ lang, minRatings, limit }) {
+      const shownTitle = displayTitle('work', lang);
+      const rated = db
+        .selectFrom('library_entry')
+        .select([
+          'work_id',
+          (eb) => eb.fn.count<number>('rating').as('ratingCount'),
+          sql<number>`SUM(rating)::bigint`.as('ratingSum'),
+        ])
+        .where('rating', 'is not', null)
+        .groupBy('work_id')
+        .having((eb) => eb.fn.count('rating'), '>=', minRatings)
+        .as('rated');
+      return db
+        .selectFrom('work')
+        .innerJoin(rated, 'rated.work_id', 'work.id')
+        .select([...workSummaryColumns(shownTitle), 'rated.ratingCount', 'rated.ratingSum'])
+        .where('work.deleted_at', 'is', null)
+        .orderBy(sql`rated."ratingSum"::numeric / rated."ratingCount"`, 'desc')
+        .orderBy('rated.ratingCount', 'desc')
+        .orderBy(shownTitle)
+        .orderBy('work.id')
+        .limit(limit)
+        .execute();
     },
 
     async findById(id, lang) {

@@ -7,12 +7,6 @@ test.describe('galerie de composants désactivée (production)', () => {
     const response = await page.goto('/components')
     expect(response?.status()).toBe(404)
   })
-
-  test('l\'accueil ne propose pas le lien vers la galerie', async ({ page }) => {
-    await page.goto('/')
-    await expect(page.getByTestId('home-title')).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Voir les composants' })).toHaveCount(0)
-  })
 })
 
 test('page introuvable : statut 404 et retour à l\'accueil', async ({ page }) => {

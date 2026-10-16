@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AppError } from '../errors.js';
 import type {
+  FeaturedCriteria,
+  RatedCriteria,
   WorkFacetCriteria,
   WorkFacets,
   WorkRecord,
@@ -57,11 +59,25 @@ const summary: WorkSummary = {
   mainAuthor: 'Autrice Inventée',
 };
 
+const NO_HOME_WORKS = {
+  findFeaturedWorks: () => Promise.resolve([]),
+  findTopRatedWorks: () => Promise.resolve([]),
+};
+
+/** Dépôt qui ne trouve rien ; chaque test remplace la méthode qui l'intéresse. */
+const NO_REPOSITORY: WorkRepository = {
+  search: () => Promise.resolve({ items: [], total: 0 }),
+  facets: () => Promise.resolve(NO_FACETS),
+  findById: () => Promise.resolve(undefined),
+  ...NO_HOME_WORKS,
+};
+
 function serviceFor(found: WorkRecord | undefined) {
   const repository: WorkRepository = {
     search: () => Promise.resolve({ items: [], total: 0 }),
     facets: () => Promise.resolve(NO_FACETS),
     findById: () => Promise.resolve(found),
+    ...NO_HOME_WORKS,
   };
   return createWorkService(repository);
 }
@@ -79,6 +95,7 @@ describe('WorkService.list et facets', () => {
         return Promise.resolve(NO_FACETS);
       },
       findById: () => Promise.resolve(undefined),
+      ...NO_HOME_WORKS,
     };
     return { calls, service: createWorkService(repository) };
   }
@@ -114,6 +131,7 @@ describe('WorkService.list et facets', () => {
       },
       facets: () => Promise.resolve(NO_FACETS),
       findById: () => Promise.resolve(undefined),
+      ...NO_HOME_WORKS,
     });
 
     const page = await service.list({ q: 'aube inconnue', page: 1, pageSize: 20 });
@@ -131,6 +149,7 @@ describe('WorkService.list et facets', () => {
       },
       facets: () => Promise.resolve(NO_FACETS),
       findById: () => Promise.resolve(undefined),
+      ...NO_HOME_WORKS,
     });
 
     const page = await service.list({ q: 'inconnu', page: 1, pageSize: 20 });
@@ -194,5 +213,39 @@ describe('WorkService.get', () => {
       { personId: 1, name: 'Alex', kind: 'person', roles: ['colors'], links: [] },
     ]);
     expect(work).not.toHaveProperty('personLinks');
+  });
+});
+
+describe('WorkService.listFeaturedWorks et listTopRatedWorks', () => {
+  it('transmet la fenêtre de 7 jours, le seuil de 3 ajouts et la langue', async () => {
+    const calls: FeaturedCriteria[] = [];
+    const service = createWorkService({
+      ...NO_REPOSITORY,
+      findFeaturedWorks: (criteria) => {
+        calls.push(criteria);
+        return Promise.resolve([{ ...summary, synopsis: 'Texte fictif.' }]);
+      },
+    });
+
+    const result = await service.listFeaturedWorks('en');
+
+    expect(calls).toEqual([{ lang: 'en', minAdditions: 3, sinceDays: 7, limit: 3 }]);
+    expect(result.items).toEqual([{ ...summary, synopsis: 'Texte fictif.' }]);
+  });
+
+  it('calcule la moyenne sur une décimale et applique le seuil de notes du dépôt', async () => {
+    const calls: RatedCriteria[] = [];
+    const service = createWorkService({
+      ...NO_REPOSITORY,
+      findTopRatedWorks: (criteria) => {
+        calls.push(criteria);
+        return Promise.resolve([{ ...summary, ratingCount: 12, ratingSum: 85 }]);
+      },
+    });
+
+    const result = await service.listTopRatedWorks();
+
+    expect(calls).toEqual([{ lang: undefined, minRatings: MIN_RATINGS_FOR_AVERAGE, limit: 12 }]);
+    expect(result.items).toEqual([{ ...summary, ratingCount: 12, ratingAverage: 7.1 }]);
   });
 });

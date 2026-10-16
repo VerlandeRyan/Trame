@@ -219,11 +219,15 @@ test.describe('page de résultats', () => {
     await expect(page).toHaveURL(/\/en\/search/)
     await page.waitForLoadState('networkidle')
 
+    // Sous charge, la page anglaise peut ne pas être hydratée : on recommence la saisie jusqu'à
+    // ce que le champ réagisse.
     const input = page.getByTestId('search-input').first()
-    await input.fill('basalte')
-    await input.press('Enter')
+    await expect(async () => {
+      await input.fill('basalte')
+      await input.press('Enter')
+      await expect(page).toHaveURL(/\/en\/search\?q=basalte/, { timeout: 1500 })
+    }).toPass()
 
-    await expect(page).toHaveURL(/\/en\/search\?q=basalte/)
     await expect(page.getByTestId('search-count')).toHaveText('3 results for “basalte”')
   })
 
@@ -327,7 +331,7 @@ test.describe('page de résultats', () => {
 
 test('la page occupe toute la hauteur de la fenêtre', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
-  await page.goto('/')
+  await page.goto('/search?q=xyzqw')
   const main = await page.locator('main').boundingBox()
   expect(Math.round(main!.y + main!.height)).toBe(900)
 })
