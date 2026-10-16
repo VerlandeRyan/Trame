@@ -4,7 +4,14 @@ import { createDb } from './db/database.js';
 
 const config = loadConfig();
 const db = createDb(config.DATABASE_URL);
-const server = createApp({ db }).listen(config.PORT, () => {
+// Import dynamique : Scalar n'est chargé qu'hors production (le conteneur local passe `NODE_ENV`).
+const docs =
+  process.env.NODE_ENV === 'production'
+    ? undefined
+    : (await import('@scalar/express-api-reference')).apiReference({
+        url: '/api/v1/openapi.json',
+      });
+const server = createApp({ db, docs }).listen(config.PORT, () => {
   console.log(`API à l'écoute sur le port ${config.PORT}`);
 });
 
