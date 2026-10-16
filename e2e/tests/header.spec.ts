@@ -1,19 +1,22 @@
 import { expect, test } from '@playwright/test'
 
+// L'accueil porte son propre champ de recherche : ces contrôles de l'en-tête se font sur une fiche.
+const WORK_PATH = '/work/1-les-lanternes-de-brume'
+
 test('l\'en-tête présente la recherche et la connexion', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
-  await page.goto('/')
+  await page.goto(WORK_PATH)
   const header = page.getByRole('banner')
   await expect(header.getByRole('combobox')).toHaveAttribute(
     'placeholder',
     'Rechercher une œuvre, un auteur…',
   )
-  await expect(header.getByRole('button', { name: 'Se connecter' })).toBeVisible()
+  await expect(header.getByRole('button', { name: 'Se connecter', exact: true })).toBeVisible()
 })
 
 test('« Se connecter » est le bouton bleu de l\'en-tête', async ({ page }) => {
   await page.goto('/')
-  const signIn = page.getByRole('banner').getByRole('button', { name: 'Se connecter' })
+  const signIn = page.getByRole('banner').getByRole('button', { name: 'Se connecter', exact: true })
   await expect(signIn).toHaveCSS('background-color', 'rgb(35, 64, 184)')
   await expect(signIn).toHaveCSS('color', 'rgb(255, 255, 255)')
 })
@@ -37,10 +40,10 @@ test('pas de défilement horizontal de la page', async ({ page }) => {
 
 test('mobile : recherche, langue et compte sont groupés à droite de l\'en-tête', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
-  await page.goto('/')
+  await page.goto(WORK_PATH)
 
   const search = await page.locator('.layout-header__search-link').boundingBox()
-  const signIn = await page.getByRole('button', { name: 'Se connecter' }).boundingBox()
+  const signIn = await page.getByRole('button', { name: 'Se connecter', exact: true }).boundingBox()
   const logo = await page.locator('.layout-header__logo').boundingBox()
   expect(search && signIn && logo).toBeTruthy()
   // Le compte touche la marge droite (12 px) ; la recherche est à droite du logo, pas collée à lui.
@@ -101,6 +104,6 @@ test('petit mobile (320 px) : l\'en-tête tient sur une ligne, menu des langues 
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   )
   expect(overflow).toBeLessThanOrEqual(0)
-  const signIn = await page.getByRole('button', { name: 'Se connecter' }).boundingBox()
+  const signIn = await page.getByRole('button', { name: 'Se connecter', exact: true }).boundingBox()
   expect(signIn!.x + signIn!.width).toBeLessThanOrEqual(320)
 })
