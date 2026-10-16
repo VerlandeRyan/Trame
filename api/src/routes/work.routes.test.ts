@@ -570,3 +570,65 @@ describe('GET /api/v1/works/:id', () => {
     expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(200);
   });
 });
+
+describe('GET /api/v1/works/featured', () => {
+  it('renvoie les œuvres ajoutées au moins 3 fois cette semaine, la plus ajoutée d’abord', async () => {
+    const res = await request(app).get('/api/v1/works/featured');
+    expect(res.status).toBe(200);
+    // Histoires de Cendre n'a que 2 ajouts récents ; Étoile Vagabonde et le Recueil sont plus anciens.
+    expect((res.body.items as Item[]).map((i) => i.title)).toEqual([
+      'Hollow Tide',
+      'Étoile Vagabonde – Crépuscule',
+      'Étoile Vagabonde – Aube',
+    ]);
+  });
+
+  it('donne le synopsis et le titre dans la langue demandée, avec repli sur la langue originale', async () => {
+    const original = await request(app).get('/api/v1/works/featured');
+    expect(original.body.items[0]).toMatchObject({
+      title: 'Hollow Tide',
+      synopsis: 'A salvager follows a tide that empties harbours overnight.',
+    });
+
+    const french = await request(app).get('/api/v1/works/featured?lang=fr');
+    expect(french.body.items[0]).toMatchObject({
+      title: 'Marée creuse',
+      synopsis: 'Une récupératrice suit une marée qui vide les ports en une nuit.',
+    });
+    // Pas de synopsis anglais pour cette œuvre : le français d'origine sert de repli.
+    const crepuscule = await request(app).get('/api/v1/works/featured?lang=en');
+    expect(crepuscule.body.items[1].synopsis).toBe(
+      "Après la comète : ce qu'elle a laissé derrière elle.",
+    );
+  });
+
+  it('refuse une langue inconnue', async () => {
+    const res = await request(app).get('/api/v1/works/featured?lang=xx');
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+});
+
+describe('GET /api/v1/works/top-rated', () => {
+  it('renvoie les œuvres d’au moins 10 notes, les mieux notées d’abord, avec leur moyenne', async () => {
+    const res = await request(app).get('/api/v1/works/top-rated');
+    expect(res.status).toBe(200);
+    // Étoile Vagabonde – Crépuscule n'a que 9 notes : absente.
+    expect(
+      res.body.items.map((i: Item & { ratingAverage: number; ratingCount: number }) => [
+        i.title,
+        i.ratingAverage,
+        i.ratingCount,
+      ]),
+    ).toEqual([
+      ['Étoile Vagabonde', 9, 12],
+      ['Basalte – Le Recueil des Braises', 8, 12],
+      ['Hollow Tide', 7, 12],
+    ]);
+  });
+
+  it('refuse une langue inconnue', async () => {
+    const res = await request(app).get('/api/v1/works/top-rated?lang=xx');
+    expect(res.status).toBe(400);
+  });
+});

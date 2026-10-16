@@ -1,12 +1,12 @@
 import { z } from 'zod';
 import { ERROR_CODES, type ErrorBody } from '../errors.js';
 import type { GenreRecord } from '../repositories/genre.repository.js';
-import type { WorkFacets, WorkSummary } from '../repositories/work.repository.js';
+import type { FeaturedWork, WorkFacets, WorkSummary } from '../repositories/work.repository.js';
 import type { HealthStatus } from '../services/health.service.js';
-import type { WorkDetail, WorkPage } from '../services/work.service.js';
+import type { TopRatedWork, WorkDetail, WorkPage } from '../services/work.service.js';
 
-// Schémas des réponses. `satisfies z.ZodType<…>` les lie aux types réellement renvoyés par les
-// services ; `strictObject` fait échouer le test de contrat si une réponse gagne un champ non décrit.
+// `satisfies` lie chaque schéma au type du service ; `strictObject` fait échouer le test de contrat
+// si une réponse gagne un champ non décrit.
 
 const workType = z.enum(['series', 'oneshot', 'anthology']);
 const workStatus = z.enum(['upcoming', 'ongoing', 'completed', 'hiatus', 'abandoned']);
@@ -62,6 +62,32 @@ export const workFacetsSchema = z
   .describe(
     'Œuvres par valeur de filtre ; chaque groupe ignore son propre filtre (sauf `genre`, en ET).',
   ) satisfies z.ZodType<WorkFacets>;
+
+export const featuredListSchema = z
+  .strictObject({
+    items: z.array(
+      workSummary.extend({
+        synopsis: z
+          .string()
+          .nullable()
+          .describe('Synopsis dans la langue demandée, sinon dans la langue originale.'),
+      }) satisfies z.ZodType<FeaturedWork>,
+    ),
+  })
+  .describe('Jusqu’à 3 œuvres, la plus ajoutée à une liste récemment d’abord ; vide si aucune.');
+
+export const topRatedListSchema = z
+  .strictObject({
+    items: z.array(
+      workSummary.extend({
+        ratingCount: z.number().int(),
+        ratingAverage: z.number().describe('Moyenne sur une décimale.'),
+      }) satisfies z.ZodType<TopRatedWork>,
+    ),
+  })
+  .describe(
+    'Jusqu’à 12 œuvres ayant au moins 10 notes, les mieux notées d’abord ; vide si aucune.',
+  );
 
 const link = z.strictObject({
   kind: externalLinkKind,

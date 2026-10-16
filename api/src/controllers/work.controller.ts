@@ -4,9 +4,21 @@ import type { ListWorksInput, WorkFilterInput, WorkService } from '../services/w
 export function createWorkController(service: WorkService): {
   list: RequestHandler;
   facets: RequestHandler;
+  listFeaturedWorks: RequestHandler;
+  listTopRatedWorks: RequestHandler;
   get: RequestHandler;
 } {
   return {
+    async listFeaturedWorks(req, res) {
+      const { lang } = req.query as unknown as { lang?: string };
+      res.json(await service.listFeaturedWorks(lang));
+    },
+
+    async listTopRatedWorks(req, res) {
+      const { lang } = req.query as unknown as { lang?: string };
+      res.json(await service.listTopRatedWorks(lang));
+    },
+
     async list(req, res) {
       // Déjà validé et converti par `validate('query', …)` dans la route.
       const input = req.query as unknown as ListWorksInput;

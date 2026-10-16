@@ -3,8 +3,10 @@ import type { ErrorCode } from '../errors.js';
 import { facetsQuery, listWorksQuery, workParams, workQuery } from '../routes/work.routes.js';
 import {
   errorSchema,
+  featuredListSchema,
   genreListSchema,
   healthSchema,
+  topRatedListSchema,
   workDetailSchema,
   workFacetsSchema,
   workPageSchema,
@@ -15,15 +17,14 @@ export const API_PREFIX = '/api/v1';
 
 type JsonSchema = Record<string, unknown>;
 
-/** Schéma JSON d'un schéma Zod, sans le `$schema` que OpenAPI 3.1 n'attend pas. */
-function toSchema(schema: z.ZodType, io: 'input' | 'output'): JsonSchema {
+function toJsonSchema(schema: z.ZodType, io: 'input' | 'output'): JsonSchema {
   const { $schema: _ignored, ...rest } = z.toJSONSchema(schema, { io }) as JsonSchema;
   return rest;
 }
 
-/** Paramètres OpenAPI d'un schéma Zod d'objet : une entrée par propriété. */
+/** Une entrée de paramètre OpenAPI par propriété du schéma. */
 function toParameters(schema: z.ZodObject, location: 'query' | 'path') {
-  const { properties = {}, required = [] } = toSchema(schema, 'input') as {
+  const { properties = {}, required = [] } = toJsonSchema(schema, 'input') as {
     properties?: Record<string, JsonSchema>;
     required?: string[];
   };
@@ -36,16 +37,16 @@ function toParameters(schema: z.ZodObject, location: 'query' | 'path') {
   }));
 }
 
-const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` });
+const schemaRef = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 
-const json = (name: string, description: string) => ({
+const jsonResponse = (name: string, description: string) => ({
   description,
-  content: { 'application/json': { schema: ref(name) } },
+  content: { 'application/json': { schema: schemaRef(name) } },
 });
 
 const errorResponse = (code: ErrorCode, description: string) => ({
   description: `${description} Code : \`${code}\`.`,
-  content: { 'application/json': { schema: ref('Error') } },
+  content: { 'application/json': { schema: schemaRef('Error') } },
 });
 
 const internalError = errorResponse('INTERNAL_ERROR', 'Erreur inattendue, sans détail.');
@@ -70,8 +71,8 @@ export function buildOpenApiDocument() {
           operationId: 'getHealth',
           tags: ['health'],
           responses: {
-            '200': json('Health', 'Service et base opérationnels.'),
-            '503': json('Health', 'Base de données injoignable (`status: degraded`).'),
+            '200': jsonResponse('Health', 'Service et base opérationnels.'),
+            '503': jsonResponse('Health', 'Base de données injoignable (`status: degraded`).'),
           },
         },
       },
@@ -82,7 +83,7 @@ export function buildOpenApiDocument() {
           tags: ['works'],
           parameters: toParameters(listWorksQuery, 'query'),
           responses: {
-            '200': json('WorkPage', 'Une page d’œuvres.'),
+            '200': jsonResponse('WorkPage', 'Une page d’œuvres.'),
             '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
             '500': internalError,
           },
@@ -95,7 +96,36 @@ export function buildOpenApiDocument() {
           tags: ['works'],
           parameters: toParameters(facetsQuery, 'query'),
           responses: {
-            '200': json('WorkFacets', 'Compteurs par groupe de filtres.'),
+            '200': jsonResponse('WorkFacets', 'Compteurs par groupe de filtres.'),
+            '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/works/featured`]: {
+        get: {
+          summary: 'Œuvres « à la une » de l’accueil (populaires cette semaine)',
+          operationId: 'getFeaturedWorks',
+          tags: ['works'],
+          parameters: toParameters(workQuery, 'query'),
+          responses: {
+            '200': jsonResponse(
+              'FeaturedList',
+              'Au plus 3 œuvres ayant au moins 3 ajouts sur 7 jours.',
+            ),
+            '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/works/top-rated`]: {
+        get: {
+          summary: 'Œuvres les mieux notées',
+          operationId: 'getTopRatedWorks',
+          tags: ['works'],
+          parameters: toParameters(workQuery, 'query'),
+          responses: {
+            '200': jsonResponse('TopRatedList', 'Au plus 12 œuvres ayant au moins 10 notes.'),
             '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
             '500': internalError,
           },
@@ -108,7 +138,7 @@ export function buildOpenApiDocument() {
           tags: ['works'],
           parameters: [...toParameters(workParams, 'path'), ...toParameters(workQuery, 'query')],
           responses: {
-            '200': json('WorkDetail', 'La fiche.'),
+            '200': jsonResponse('WorkDetail', 'La fiche.'),
             '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
             '404': errorResponse('NOT_FOUND', 'Œuvre inconnue ou archivée.'),
             '500': internalError,
@@ -121,7 +151,7 @@ export function buildOpenApiDocument() {
           operationId: 'listGenres',
           tags: ['genres'],
           responses: {
-            '200': json('GenreList', 'Codes avec leur catégorie, sans libellé traduit.'),
+            '200': jsonResponse('GenreList', 'Codes avec leur catégorie, sans libellé traduit.'),
             '500': internalError,
           },
         },
@@ -129,12 +159,14 @@ export function buildOpenApiDocument() {
     },
     components: {
       schemas: {
-        Error: toSchema(errorSchema, 'output'),
-        GenreList: toSchema(genreListSchema, 'output'),
-        WorkDetail: toSchema(workDetailSchema, 'output'),
-        WorkFacets: toSchema(workFacetsSchema, 'output'),
-        WorkPage: toSchema(workPageSchema, 'output'),
-        Health: toSchema(healthSchema, 'output'),
+        Error: toJsonSchema(errorSchema, 'output'),
+        FeaturedList: toJsonSchema(featuredListSchema, 'output'),
+        TopRatedList: toJsonSchema(topRatedListSchema, 'output'),
+        GenreList: toJsonSchema(genreListSchema, 'output'),
+        WorkDetail: toJsonSchema(workDetailSchema, 'output'),
+        WorkFacets: toJsonSchema(workFacetsSchema, 'output'),
+        WorkPage: toJsonSchema(workPageSchema, 'output'),
+        Health: toJsonSchema(healthSchema, 'output'),
       },
     },
   };

@@ -9,7 +9,9 @@ import {
 import { AppError } from '../errors.js';
 import { searchTerms } from '../search-terms.js';
 import type {
+  FeaturedWork,
   MatchMode,
+  RatedWork,
   WorkFacets,
   WorkRecord,
   WorkRepository,
@@ -64,9 +66,23 @@ export type WorkDetail = Omit<WorkRecord, 'credits' | 'personLinks' | 'ratingSum
   ratingAverage: number | null;
 };
 
+/** « À la une » : 3 œuvres au plus, au moins 3 ajouts à une liste sur 7 jours. */
+export const FEATURED_MIN_ADDITIONS = 3;
+export const FEATURED_WINDOW_DAYS = 7;
+export const FEATURED_LIMIT = 3;
+/** « Mieux notées » : de quoi remplir une rangée sur grand écran. */
+export const TOP_RATED_LIMIT = 12;
+
+export interface TopRatedWork extends Omit<RatedWork, 'ratingSum'> {
+  /** Moyenne sur une décimale. */
+  ratingAverage: number;
+}
+
 export interface WorkService {
   list(input: ListWorksInput): Promise<WorkPage>;
   facets(input: WorkFilterInput): Promise<WorkFacets>;
+  listFeaturedWorks(lang?: string): Promise<{ items: FeaturedWork[] }>;
+  listTopRatedWorks(lang?: string): Promise<{ items: TopRatedWork[] }>;
   /** Lève `NOT_FOUND` si l'œuvre n'existe pas ou est archivée. `lang` : langue de l'application. */
   get(id: number, lang?: string): Promise<WorkDetail>;
 }
@@ -132,6 +148,30 @@ export function createWorkService(repository: WorkRepository): WorkService {
 
     facets(input) {
       return repository.facets(normalizeFilters(input));
+    },
+
+    async listFeaturedWorks(lang) {
+      const items = await repository.findFeaturedWorks({
+        lang,
+        minAdditions: FEATURED_MIN_ADDITIONS,
+        sinceDays: FEATURED_WINDOW_DAYS,
+        limit: FEATURED_LIMIT,
+      });
+      return { items };
+    },
+
+    async listTopRatedWorks(lang) {
+      const rated = await repository.findTopRatedWorks({
+        lang,
+        minRatings: MIN_RATINGS_FOR_AVERAGE,
+        limit: TOP_RATED_LIMIT,
+      });
+      return {
+        items: rated.map(({ ratingSum, ...work }) => ({
+          ...work,
+          ratingAverage: Math.round((ratingSum / work.ratingCount) * 10) / 10,
+        })),
+      };
     },
 
     async get(id, lang) {

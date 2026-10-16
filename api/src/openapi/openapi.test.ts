@@ -16,6 +16,8 @@ import {
   genreListSchema,
   healthSchema,
   workDetailSchema,
+  featuredListSchema,
+  topRatedListSchema,
   workFacetsSchema,
   workPageSchema,
 } from './schemas.js';
@@ -125,6 +127,20 @@ describe('contrat : réponses réelles et schémas', () => {
     expect(res.status).toBe(200);
     expect(res.body.items.length).toBeGreaterThan(0);
     expectMatches(workPageSchema, res.body);
+  });
+
+  it('GET /works/featured', async () => {
+    const res = await request(app).get('/api/v1/works/featured?lang=fr');
+    expect(res.status).toBe(200);
+    expect(res.body.items.length).toBeGreaterThan(0);
+    expectMatches(featuredListSchema, res.body);
+  });
+
+  it('GET /works/top-rated', async () => {
+    const res = await request(app).get('/api/v1/works/top-rated?lang=fr');
+    expect(res.status).toBe(200);
+    expect(res.body.items.length).toBeGreaterThan(0);
+    expectMatches(topRatedListSchema, res.body);
   });
 
   it('GET /works/facets', async () => {
