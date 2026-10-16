@@ -40,6 +40,7 @@ JSON en `camelCase`. Les valeurs d'énumération (`type`, `status`, `role`, `rel
 - `GET /genres` : `{ items: [{ code, category }] }` (`category` : `format` ou `theme`), triés par catégorie puis par code ; le front traduit les codes et groupe l'affichage.
 - `coverPath` est `null` tant que l'accord de l'auteur n'est pas enregistré (`cover_consent`).
 - Erreurs : `{ code, message, details? }`. `VALIDATION_ERROR` (400) porte `details[]`, une entrée par champ : `path`, `code` Zod (`too_small`, `too_big`, `invalid_type`, `invalid_format`, `invalid_value`…) et les paramètres utiles (`expected`, `origin`, `minimum`, `maximum`, `format`, `values`), sans message ni valeur saisie. `NOT_FOUND` (404), `INVALID_JSON` (400), `INTERNAL_ERROR` (500). Le `message` de premier niveau est un texte technique en anglais, non affiché.
+- Documentation OpenAPI 3.1 : `GET /api/v1/openapi.json`, générée depuis les schémas Zod des routes (entrées) et des réponses (`api/src/openapi/`). Une interface de lecture (Scalar) est servie sur `/docs` **hors production seulement**. Des tests de contrat vérifient que les routes montées et la spécification se correspondent, et que les réponses réelles respectent leurs schémas.
 
 ## 4. Flux principaux
 - **Page de fiche** : le visiteur demande `/work/42-aube-fictive` (ou `/en/work/42-aube-fictive`) → Nuxt appelle l'API → HTML rendu côté serveur → hydratation côté navigateur.

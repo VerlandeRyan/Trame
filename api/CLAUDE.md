@@ -25,6 +25,11 @@ Contrat complet : `docs/architecture.md`. À retenir en lisant le code :
 ## Erreurs
 Réponse unique `{ code, message, details? }` ; `message` est un texte technique en anglais, non affiché (le front lit `code`). `details[]` d'une validation : `path`, `code` Zod et paramètres, jamais de message ni de valeur saisie. Les codes vivent dans `src/errors.ts` (`ERROR_CODES`) : en ajouter un là, jamais de JSON d'erreur improvisé. Les erreurs inattendues donnent `INTERNAL_ERROR` sans détail.
 
+## Documentation OpenAPI (`src/openapi/`)
+- `document.ts` construit le document (`GET /api/v1/openapi.json`) : paramètres tirés des schémas Zod de `routes/` (`describe` = texte de la doc), réponses décrites dans `schemas.ts` (liés aux types des services par `satisfies`, `strictObject`).
+- **Nouvelle route ⇒ nouveau chemin dans `document.ts` + schéma de réponse** ; `openapi.test.ts` échoue si une route montée n'est pas documentée (ou l'inverse) ou si une réponse s'écarte de son schéma.
+- `/docs` (Scalar, chargé par import dynamique) n'est monté que si `server.ts` fournit `docs`, c'est-à-dire hors `NODE_ENV=production`. L'image Docker est en production ; `docker-compose.yml` (développement local) force `NODE_ENV: development` pour l'activer.
+
 ## Commandes
 - Les scripts npm et Vitest lisent le `.env` racine (variables déjà définies prioritaires, ex. en CI) : rien à exporter à la main.
 - Deux bases, deux variables : `DATABASE_URL` = base de travail (serveur, `dev`, `migrate:up`, jamais vidée par un script) ; `TEST_DATABASE_URL` = base de test jetable (tests, `db:seed`, `migrate:test`), vidée et rechargée librement. Les tests n'ont aucun repli sur `DATABASE_URL`.
