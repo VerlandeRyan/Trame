@@ -3,24 +3,24 @@
 > Statut : brouillon v0.1 — 2026-10-09 — à relire par Ryan
 
 ## 1. Contexte et problème
-MyAnimeList et AniList sont centrés sur le Japon et l'Asie ; la création européenne et indépendante, francophone comprise, y est marginale ou absente. Les sites BD historiques (BDGest, etc.) sont orientés collection et catalogue, avec des ergonomies peu adaptées au mobile et au format feuilleton (webtoons, webcomics, prépublication en ligne).
-Il manque un endroit simple, beau et rapide pour **suivre ce qu'on lit** dans la scène alternative européenne, francophone d'abord (Mangadraft, webtoons d'auteurs, auto-édition, petits éditeurs), et pour **découvrir** ces œuvres.
+MyAnimeList et AniList sont centrés sur le Japon et l'Asie ; la création européenne, francophone comprise, y est marginale ou absente. Les sites BD historiques (BDGest, etc.) sont orientés collection et catalogue, avec des ergonomies peu adaptées au mobile et au format feuilleton (webtoons, webcomics, prépublication en ligne).
+Il manque un endroit simple, beau et rapide pour **suivre ce qu'on lit** dans la création européenne, francophone d'abord (Mangadraft, webtoons d'auteurs, auto-édition, petits et grands éditeurs), et pour **découvrir** ces œuvres.
 
 ## 2. Vision
-Un objet numérique minimaliste et fluide, à la manière de MyAnimeList (et de ses clients tiers) mais dédié à la création alternative européenne, francophone d'abord : une fiche par œuvre, un suivi précis sans friction, un profil partageable, une mise en avant des auteurs indépendants.
+Un objet numérique minimaliste et fluide, à la manière de MyAnimeList (et de ses clients tiers) mais dédié à la création européenne, francophone d'abord : une fiche par œuvre, un suivi précis sans friction, un profil partageable, une mise en avant des auteurs indépendants comme des éditeurs établis.
 
 ## 3. Objectifs
 | # | Objectif | Mesure |
 |---|---|---|
 | O1 | Remplacer mes notes personnelles (Google Keep) pour suivre mes lectures | Critère de réussite : **après un mois d'usage, je préfère Trame à mes notes** |
-| O2 | Offrir un catalogue crédible de la scène alternative, francophone d'abord | 100–300 fiches soignées au lancement du MVP |
+| O2 | Offrir un catalogue crédible de la création européenne, francophone d'abord | 100–300 fiches soignées au lancement du MVP |
 | O3 | Être trouvable : chaque fiche indexable par les moteurs de recherche | Fiches rendues côté serveur, sitemap, balisage structuré |
 | O4 | Rester un projet maintenable seul, à coût nul pour le MVP | 0 € en local ; outils gratuits ; technologies durables |
 
 Hors objectifs : croissance d'audience, communauté (avis, discussions). Ils pourront venir plus tard.
 
 ## 4. Public
-- **Lecteur de la scène alternative** (cible principale, dont moi) : lit des webtoons, des tomes d'éditeurs indés, des œuvres Mangadraft ; veut noter, suivre où il en est, retrouver ce qu'il a lu.
+- **Lecteur de la création européenne** (cible principale, dont moi) : lit des webtoons, des tomes d'éditeurs indépendants ou établis, des œuvres Mangadraft ; veut noter, suivre où il en est, retrouver ce qu'il a lu.
 - **Auteur / éditeur indépendant** (cible secondaire) : veut une vitrine gratuite pour son œuvre et pouvoir en corriger la fiche.
 - **Administrateur** : moi, pour saisir et valider le catalogue.
 
@@ -38,7 +38,7 @@ Hors objectifs : croissance d'audience, communauté (avis, discussions). Ils pou
 Calendrier des sorties à venir (rôle de MangaCollec), œuvres pour adultes (non référencées), avis et discussions, relectures, e-mails de synthèse, import depuis MAL/AniList, votes, notifications, applications sur les stores, ISBN, notion d'édition (classique/deluxe), listes personnalisées.
 
 ## 6. Hypothèses
-- La scène alternative francophone, ouverte ensuite à l'Europe, est trop petite pour être couverte par les catalogues existants et assez active pour fournir 100–300 œuvres.
+- La création francophone, ouverte ensuite à l'Europe, est trop peu couverte par les catalogues existants et assez riche pour fournir 100–300 œuvres.
 - Les auteurs indépendants acceptent volontiers de figurer dans le catalogue (promotion gratuite).
 - Un cadence de parution lente justifie un usage hebdomadaire ou mensuel plutôt que quotidien.
 

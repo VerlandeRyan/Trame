@@ -1,6 +1,6 @@
 # Trame
 
-Plateforme de suivi de lecture et de découverte pour la **création alternative européenne, FR d'abord** (manga, BD, webtoons, webcomics d'auteurs indépendants). Un « MyAnimeList » de cette scène. Projet personnel, solo, gratuit au démarrage. **Phase actuelle : documentation, aucun code.**
+Plateforme de suivi de lecture et de découverte pour la **création européenne, FR d'abord** (manga, BD, webtoons, webcomics, d'auteurs indépendants comme d'éditeurs établis). Un « MyAnimeList » de cette scène. Projet personnel, solo, gratuit au démarrage. **Phase actuelle : documentation, aucun code.**
 
 ## Démarrage de session
 1. Lire ce fichier puis `private/etat-courant.md` (privé, ignoré par git). N'ouvrir d'autres documents que si la tâche l'exige.
@@ -8,7 +8,7 @@ Plateforme de suivi de lecture et de découverte pour la **création alternative
 3. Mettre à jour `private/etat-courant.md` **une seule fois, en fin de session ou si Ryan le demande**, jamais après chaque décision (coût en tokens). Décision technique structurante : un ADR. Réflexions et décisions stratégiques : `private/docs/genese.md`, seulement si Ryan le demande.
 
 ## Décisions clés (détail dans `docs/` et `docs/adr/`)
-- Création indépendante européenne, FR d'abord ; **une œuvre = une fiche** ; modèle calqué sur MyAnimeList.
+- Création européenne (indépendante ou éditeurs établis), FR d'abord ; **une œuvre = une fiche** ; modèle calqué sur MyAnimeList.
 - i18n (ADR 0007) : interface FR au MVP, prête pour d'autres langues ; titres et synopsis par langue (`work_title`, `work_synopsis`), repli sur la langue originale ; pas de filtre de disponibilité ; codes d'énumération et de genre en anglais, libellés côté front.
 - Compteurs **chapitres lus** et **tomes lus** indépendants : jamais mappés ni additionnés. Note /10. Pas d'édition, pas d'ISBN.
 - `work.type` ∈ `series | oneshot | anthology` ; manga/manhwa/BD/webtoon/webcomic = **formats** et fantasy/humor… = **genres**, deux catégories de la table `genre`, multiples par œuvre et distinctes du type.
