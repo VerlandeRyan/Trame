@@ -36,6 +36,11 @@ describe('couleurs de survol', () => {
     ['color-cover-empty', 'survol des boutons blancs et de « Tous les… »'],
     ['color-field-soft', 'repos de « Tous les… »'],
     ['color-chip', 'repos des genres'],
+    ['color-format-manga', 'carte du menu Explorer'],
+    ['color-format-manhwa', 'carte du menu Explorer'],
+    ['color-format-webtoon', 'carte du menu Explorer'],
+    ['color-format-bd', 'carte du menu Explorer'],
+    ['color-format-webcomic', 'carte du menu Explorer'],
   ])('texte d’encre lisible sur %s (%s)', (name) => {
     expect(contrastRatio(ink, token(name))).toBeGreaterThanOrEqual(4.5)
   })

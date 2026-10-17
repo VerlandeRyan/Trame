@@ -3,9 +3,37 @@ import {
   circularIndex,
   formatRatingAverage,
   pickExploreCodes,
+  pickExploreFacets,
   swipeDirection,
   type GenreItem,
 } from './home'
+
+describe('pickExploreFacets', () => {
+  it("range formats et genres dans l'ordre éditorial, compteurs conservés", () => {
+    const result = pickExploreFacets({
+      format: [
+        { code: 'bd', count: 4 },
+        { code: 'manga', count: 9 },
+      ],
+      genre: [
+        { code: 'humor', count: 2 },
+        { code: 'zen', count: 1 },
+        { code: 'fantasy', count: 5 },
+      ],
+    })
+
+    expect(result.formats).toEqual([
+      { code: 'manga', count: 9 },
+      { code: 'bd', count: 4 },
+    ])
+    expect(result.themes.map((item) => item.code)).toEqual(['fantasy', 'humor', 'zen'])
+    expect(result.themes[0]).toEqual({ code: 'fantasy', count: 5 })
+  })
+
+  it('accepte des listes vides', () => {
+    expect(pickExploreFacets({ format: [], genre: [] })).toEqual({ formats: [], themes: [] })
+  })
+})
 
 describe('pickExploreCodes', () => {
   const format = (code: string): GenreItem => ({ code, category: 'format' })

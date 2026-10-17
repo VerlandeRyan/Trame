@@ -1,5 +1,5 @@
 // Accueil : types des réponses de l'API et logique pure.
-import type { WorkSummary } from './search'
+import type { FacetCount, WorkFacets, WorkSummary } from './search'
 
 export interface FeaturedWork extends WorkSummary {
   synopsis: string | null
@@ -21,6 +21,7 @@ export const SHELF_SIZE = 12
 
 const MAX_EXPLORE_FORMATS = 7
 const MAX_EXPLORE_THEMES = 5
+const MAX_MENU_THEMES = 8
 
 // Ordre éditorial des maquettes ; les codes inconnus suivent, par ordre alphabétique.
 const FORMAT_ORDER = ['manga', 'manhwa', 'manhua', 'bd', 'webtoon', 'webcomic', 'comics']
@@ -53,6 +54,23 @@ export function pickExploreCodes(items: GenreItem[]): { formats: string[]; theme
   return {
     formats: codesOfCategory('format', FORMAT_ORDER, MAX_EXPLORE_FORMATS),
     themes: codesOfCategory('theme', THEME_ORDER, MAX_EXPLORE_THEMES),
+  }
+}
+
+/** Formats et genres du menu « Explorer » de l'en-tête, avec leurs compteurs, dans l'ordre éditorial. */
+export function pickExploreFacets(facets: Pick<WorkFacets, 'format' | 'genre'>): {
+  formats: FacetCount[]
+  themes: FacetCount[]
+} {
+  const ordered = (items: FacetCount[], order: string[], max: number) => {
+    const countOf = new Map(items.map((item) => [item.code, item.count]))
+    return sortByEditorialOrder([...countOf.keys()], order)
+      .slice(0, max)
+      .map((code) => ({ code, count: countOf.get(code) ?? 0 }))
+  }
+  return {
+    formats: ordered(facets.format, FORMAT_ORDER, MAX_EXPLORE_FORMATS),
+    themes: ordered(facets.genre, THEME_ORDER, MAX_MENU_THEMES),
   }
 }
 

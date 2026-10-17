@@ -58,6 +58,44 @@ describe('LayoutHeader', () => {
 
     expect(wrapper.find('[data-testid="search-open"]').exists()).toBe(false)
   })
+
+  it('porte le bouton Explorer', async () => {
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+
+    expect(wrapper.find('[data-testid="explore-open"]').exists()).toBe(true)
+  })
+
+  it('masque le bouton Explorer sur la page de recherche', async () => {
+    const wrapper = await mountSuspended(LayoutHeader, { route: '/search' })
+
+    expect(wrapper.find('[data-testid="explore-open"]').exists()).toBe(false)
+  })
+
+  it('referme Explorer à chaque navigation, même vers une page qui le masque', async () => {
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+
+    await wrapper.get('[data-testid="explore-open"]').trigger('click')
+    await navigateTo('/search?format=bd')
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="explore-open"]').exists()).toBe(false),
+    )
+    await navigateTo(WORK_ROUTE)
+
+    await vi.waitFor(() =>
+      expect(wrapper.get('[data-testid="explore-open"]').attributes('aria-expanded')).toBe('false'),
+    )
+  })
+
+  it('referme Explorer quand on ouvre la recherche', async () => {
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+    const explore = wrapper.get('[data-testid="explore-open"]')
+
+    await explore.trigger('click')
+    expect(explore.attributes('aria-expanded')).toBe('true')
+    await wrapper.get('[data-testid="search-open"]').trigger('click')
+
+    expect(explore.attributes('aria-expanded')).toBe('false')
+  })
 })
 
 describe("LayoutHeader sur l'accueil", () => {
