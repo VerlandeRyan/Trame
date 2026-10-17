@@ -8,13 +8,15 @@ test("accueil en français, sans préfixe d'URL", async ({ page }) => {
     'La création européenne, à suivre en un seul endroit',
   )
   await expect(page.locator('.home__highlight')).toHaveText('en un seul endroit')
-  await expect(page.getByTestId('home-intro')).toContainText('suis ta lecture')
+  await expect(page.getByTestId('home-intro')).toHaveText(
+    'Retrouve tes coups de cœur ou déniche ta prochaine claque.',
+  )
 })
 
 test('accueil en anglais sous /en', async ({ page }) => {
   await page.goto('/en')
   await expect(page.locator('html')).toHaveAttribute('lang', 'en-GB')
-  await expect(page.getByTestId('home-intro')).toContainText('track your reading')
+  await expect(page.getByTestId('home-intro')).toContainText('favourites')
 })
 
 test('le sélecteur de langue bascule vers /en', async ({ page }) => {
@@ -24,16 +26,103 @@ test('le sélecteur de langue bascule vers /en', async ({ page }) => {
   await page.getByRole('button', { name: "Langue de l'interface" }).click()
   await page.getByRole('link', { name: /English/ }).click()
   await expect(page).toHaveURL(/\/en\/?$/)
-  await expect(page.getByTestId('home-intro')).toContainText('track your reading')
+  await expect(page.getByTestId('home-intro')).toContainText('favourites')
 })
 
-test('les cinq blocs de données et la proposition inactive sont présents', async ({ page }) => {
+test('les blocs de données et les boutons inactifs sont présents, sans bloc Explorer', async ({
+  page,
+}) => {
   await page.goto('/')
 
-  for (const id of ['home-featured', 'home-explore', 'home-recent', 'home-top-rated']) {
+  for (const id of ['home-pitch', 'home-featured', 'home-recent', 'home-top-rated']) {
     await expect(page.getByTestId(id)).toBeVisible()
   }
+  await expect(page.getByTestId('home-explore')).toHaveCount(0)
   await expect(page.getByTestId('home-propose')).toBeDisabled()
+  await expect(page.getByTestId('home-create-list')).toBeDisabled()
+})
+
+test('hero : le panneau « Pourquoi Trame ? » est à droite du titre au bureau, sous la recherche au mobile', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 800 })
+  await page.goto('/')
+  const title = (await page.getByTestId('home-title').boundingBox())!
+  const pitch = (await page.getByTestId('home-pitch').boundingBox())!
+  expect(pitch.x).toBeGreaterThan(title.x + title.width)
+  await expect(page.getByTestId('home-pitch').getByRole('heading', { level: 3 })).toHaveCount(3)
+
+  await page.setViewportSize({ width: 390, height: 844 })
+  const search = (await page.getByRole('main').getByRole('combobox').boundingBox())!
+  const mobilePitch = (await page.getByTestId('home-pitch').boundingBox())!
+  expect(mobilePitch.y).toBeGreaterThan(search.y + search.height)
+})
+
+test('hero mobile : titre, sous-titre, tampons sur une ligne, puis recherche', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+
+  const top = (locator: ReturnType<typeof page.locator>) =>
+    locator.boundingBox().then((box) => box!.y)
+  const stamps = page.getByTestId('home-stamps')
+  const orderedTops = [
+    await top(page.getByTestId('home-title')),
+    await top(page.getByTestId('home-intro')),
+    await top(stamps),
+    await top(page.getByRole('main').getByRole('combobox')),
+  ]
+  expect(orderedTops).toEqual([...orderedTops].sort((a, b) => a - b))
+  const stampTops = await stamps
+    .locator('li')
+    .evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().top)))
+  // Une seule ligne : les inclinaisons décalent chaque tampon de quelques pixels au plus.
+  expect(Math.max(...stampTops) - Math.min(...stampTops)).toBeLessThan(8)
+})
+
+test('hero : les tampons et le panneau tiennent à 360 px, sans défilement horizontal', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 360, height: 780 })
+  await page.goto('/')
+  await expect(page.getByTestId('home-stamps')).toBeVisible()
+
+  const overflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  )
+  expect(overflow).toBeLessThanOrEqual(0)
+})
+
+test('le titre est en Poppins auto-hébergée, sans appel à un CDN', async ({ page }) => {
+  const outside: string[] = []
+  await page.goto('/')
+  const ownHost = new URL(page.url()).host
+  page.on('request', (request) => {
+    const { protocol, host } = new URL(request.url())
+    if (protocol.startsWith('http') && host !== ownHost) outside.push(request.url())
+  })
+  await page.reload()
+  await page.waitForLoadState('networkidle')
+
+  await expect(page.getByTestId('home-title')).toHaveCSS('font-family', /Poppins/)
+  const loaded = await page.evaluate(() => document.fonts.check("800 1em 'Poppins'"))
+  expect(loaded).toBe(true)
+  expect(outside).toEqual([])
+})
+
+test('le hero est sur un fond bleu pâle, le reste de la page sur le papier', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.locator('.home__hero')).toHaveCSS('background-color', 'rgb(238, 241, 255)')
+  await expect(page.getByTestId('home-featured')).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)')
+})
+
+test('le badge « Populaire cette semaine » est jaune doré', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.locator('.featured__badge').first()).toHaveCSS(
+    'background-color',
+    'rgb(255, 201, 51)',
+  )
 })
 
 test("l'accueil ne propose aucun lien vers la galerie, même activée", async ({ page }) => {
@@ -51,8 +140,10 @@ test('les titres de bloc sont à l’encre, seuls le titre et les œuvres sont b
   const ink = 'rgb(27, 42, 92)'
   const blue = 'rgb(35, 64, 184)'
   await expect(page.getByRole('heading', { level: 2, name: 'À la une' })).toHaveCSS('color', ink)
-  await expect(page.getByRole('heading', { level: 2, name: 'Explorer' })).toHaveCSS('color', ink)
-  await expect(page.getByRole('heading', { level: 2, name: 'Mieux notées' })).toHaveCSS('color', ink)
+  await expect(page.getByRole('heading', { level: 2, name: 'Mieux notées' })).toHaveCSS(
+    'color',
+    ink,
+  )
   await expect(page.getByTestId('home-title')).toHaveCSS('color', blue)
   await expect(page.getByTestId('featured-title')).toHaveCSS('color', blue)
 })
@@ -132,9 +223,7 @@ test('« À la une » : chaque pastille mène à son œuvre, y compris celle du 
 
 // Régression : des zones tactiles invisibles qui se recouvraient faisaient capter le clic de la
 // pastille du milieu par sa voisine. Le point visé est celui qu'atteint un doigt ou une souris.
-test('les commandes de « À la une » et d’Explorer reçoivent leurs propres clics', async ({
-  page,
-}) => {
+test('les commandes de « À la une » reçoivent leurs propres clics', async ({ page }) => {
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
@@ -142,7 +231,7 @@ test('les commandes de « À la une » et d’Explorer reçoivent leurs propres 
 
     const stolen = await page.evaluate(() => {
       const selector =
-        '[data-testid="featured-dot"], [data-testid="featured-prev"], [data-testid="featured-next"], .explore__link'
+        '[data-testid="featured-dot"], [data-testid="featured-prev"], [data-testid="featured-next"]'
       return [...document.querySelectorAll(selector)].flatMap((target) => {
         target.scrollIntoView({ block: 'center' })
         const box = target.getBoundingClientRect()
@@ -171,7 +260,12 @@ test('« À la une » se fait glisser au doigt : à gauche la suite, à droite l
       (stage, [start, end]) => {
         const send = (type: string, x: number) =>
           stage.dispatchEvent(
-            new PointerEvent(type, { bubbles: true, pointerType: 'touch', clientX: x, clientY: 200 }),
+            new PointerEvent(type, {
+              bubbles: true,
+              pointerType: 'touch',
+              clientX: x,
+              clientY: 200,
+            }),
           )
         send('pointerdown', start!)
         send('pointerup', end!)
@@ -210,7 +304,8 @@ test('survol à la souris : rose pour les formats, rose soutenu pour les genres,
 }) => {
   test.skip(hasTouch, 'Pas de survol sur écran tactile')
   await page.setViewportSize({ width: 1280, height: 900 })
-  await page.goto('/')
+  // Le bloc Explorer n'est plus sur l'accueil (il rejoint l'en-tête, #97) : la galerie le montre.
+  await page.goto('/components')
   await page.waitForLoadState('networkidle')
 
   await page.getByTestId('explore-format-manga').hover()
@@ -239,9 +334,7 @@ test('survol à la souris : la pastille sélectionnée du carrousel reste bleue'
   await page.waitForLoadState('networkidle')
   const dots = page.getByTestId('featured-dot')
   const circle = (index: number) =>
-    dots
-      .nth(index)
-      .evaluate((dot) => getComputedStyle(dot, '::before').backgroundColor)
+    dots.nth(index).evaluate((dot) => getComputedStyle(dot, '::before').backgroundColor)
 
   await dots.nth(0).hover()
   await expect.poll(() => circle(0)).toBe('rgb(35, 64, 184)')
@@ -264,7 +357,7 @@ test('écran tactile : aucun état de survol ne reste collé après un toucher',
 
 test('Explorer : chaque rangée de pastilles occupe toute la largeur', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
-  await page.goto('/')
+  await page.goto('/components')
 
   const lists = page.getByTestId('home-explore').locator('.explore__list')
   const section = await page.getByTestId('home-explore').boundingBox()
@@ -294,6 +387,7 @@ test('« Mieux notées » : seulement les œuvres de 10 notes ou plus, avec la m
 test('« Récemment ajoutées » mène à la recherche triée, Explorer à la recherche filtrée', async ({
   page,
 }) => {
+  // Explorer : bloc de la galerie `/components` (voir plus haut).
   await page.goto('/')
   await page.waitForLoadState('networkidle')
 
@@ -303,7 +397,7 @@ test('« Récemment ajoutées » mène à la recherche triée, Explorer à la re
     .click()
   await expect(page).toHaveURL(/\/search\?sort=recent$/)
 
-  await page.goto('/')
+  await page.goto('/components')
   await page.waitForLoadState('networkidle')
   await page.getByTestId('explore-format-manga').click()
   await expect(page).toHaveURL(/\/search\?format=manga$/)
@@ -344,4 +438,67 @@ test('mobile : trois œuvres par rangée, sans défilement horizontal', async ({
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   )
   expect(overflow).toBeLessThanOrEqual(0)
+})
+
+test('« À la une » : le nombre de lecteurs de la semaine est affiché', async ({ page }) => {
+  await page.goto('/')
+
+  await expect(page.getByTestId('featured-readers')).toHaveText(
+    /^\d+ lecteurs? l’(a|ont) ajoutée cette semaine$/,
+  )
+})
+
+test('« À la une » mobile : badge, titre et auteur à côté de la couverture, le reste dessous', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/')
+
+  const slide = page.getByTestId('featured-slide')
+  const cover = (await slide.locator('.featured__cover').boundingBox())!
+  const badge = (await slide.locator('.featured__badge').boundingBox())!
+  const title = (await page.getByTestId('featured-title').boundingBox())!
+  const meta = (await slide.locator('.featured__meta').boundingBox())!
+
+  expect(badge.x).toBeGreaterThanOrEqual(cover.x + cover.width)
+  expect(title.x).toBeGreaterThanOrEqual(cover.x + cover.width)
+  expect(title.y).toBeGreaterThan(badge.y)
+  // Le haut du badge est aligné sur le haut de la couverture ; l'auteur est sous le titre.
+  expect(Math.abs(badge.y - cover.y)).toBeLessThanOrEqual(1)
+  expect(meta.x).toBeGreaterThanOrEqual(cover.x + cover.width)
+  expect(meta.y).toBeGreaterThanOrEqual(title.y + title.height)
+
+  // Le reste prend la place libérée : il commence sous la couverture, à gauche de la carte.
+  const synopsis = (await slide.locator('.featured__synopsis').boundingBox())!
+  expect(synopsis.y).toBeGreaterThanOrEqual(cover.y + cover.height)
+  expect(synopsis.x).toBeLessThan(cover.x + cover.width)
+
+  // Le bouton garde sa largeur naturelle, il ne remplit pas la carte.
+  const open = (await page.getByTestId('featured-open').boundingBox())!
+  const card = (await slide.boundingBox())!
+  expect(open.width).toBeLessThan(card.width / 2)
+})
+
+test('les icônes de « Pourquoi Trame ? » reprennent les couleurs de l’app', async ({ page }) => {
+  await page.goto('/')
+
+  const icons = page.getByTestId('home-pitch').locator('.pitch__icon')
+  await expect(icons.nth(0)).toHaveCSS('background-color', 'rgb(76, 195, 138)')
+  await expect(icons.nth(1)).toHaveCSS('background-color', 'rgb(207, 194, 245)')
+  await expect(icons.nth(2)).toHaveCSS('background-color', 'rgb(255, 201, 51)')
+})
+
+test('hero large : le panneau garde une marge à droite, le titre reste sur deux lignes', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 900 })
+  await page.goto('/')
+
+  const pitch = (await page.getByTestId('home-pitch').boundingBox())!
+  expect(1920 - (pitch.x + pitch.width)).toBeGreaterThanOrEqual(200)
+  const title = (await page.getByTestId('home-title').boundingBox())!
+  const lineHeight = await page
+    .getByTestId('home-title')
+    .evaluate((element) => parseFloat(getComputedStyle(element).lineHeight))
+  expect(Math.round(title.height / lineHeight)).toBe(2)
 })

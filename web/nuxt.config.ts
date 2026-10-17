@@ -7,7 +7,8 @@ export default defineNuxtConfig({
 
   modules: ['@nuxtjs/i18n', '@nuxt/icon', '@nuxt/eslint'],
 
-  css: ['~/assets/styles/main.scss'],
+  // Poppins 800, sous-ensemble latin seulement (licence OFL, servie par notre propre serveur).
+  css: ['@fontsource/poppins/latin-800.css', '~/assets/styles/main.scss'],
 
   runtimeConfig: {
     // Surchargé par NUXT_API_BASE (serveur) : adresse interne de l'API.

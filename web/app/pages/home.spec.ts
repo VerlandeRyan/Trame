@@ -25,7 +25,7 @@ function respond<T>(name: string, body: T): T {
   return body
 }
 
-const BLOCKS = ['home-featured', 'home-explore', 'home-recent', 'home-top-rated']
+const BLOCKS = ['home-featured', 'home-recent', 'home-top-rated']
 
 describe("page d'accueil", () => {
   let initialValue: boolean
@@ -39,7 +39,9 @@ describe("page d'accueil", () => {
     clearNuxtData()
     registerEndpoint('/api/v1/works/featured', () =>
       respond('featured', {
-        items: empty ? [] : [{ ...summary(1, 'Aube Fictive'), synopsis: 'Résumé fictif.' }],
+        items: empty
+          ? []
+          : [{ ...summary(1, 'Aube Fictive'), synopsis: 'Résumé fictif.', recentAdditions: 4 }],
       }),
     )
     registerEndpoint('/api/v1/works/top-rated', () =>
@@ -58,9 +60,6 @@ describe("page d'accueil", () => {
         approximate: false,
       }),
     )
-    registerEndpoint('/api/v1/genres', () =>
-      respond('genres', { items: empty ? [] : [{ code: 'manga', category: 'format' }] }),
-    )
   })
 
   afterEach(() => {
@@ -74,8 +73,37 @@ describe("page d'accueil", () => {
       'La création européenne, à suivre en un seul endroit',
     )
     expect(wrapper.get('.home__highlight').text()).toBe('en un seul endroit')
-    expect(wrapper.get('[data-testid="home-intro"]').text()).toContain('suis ta lecture')
+    expect(wrapper.get('[data-testid="home-intro"]').text()).toBe(
+      'Retrouve tes coups de cœur ou déniche ta prochaine claque.',
+    )
+    expect(wrapper.findAll('.home__keyword').map((keyword) => keyword.text())).toEqual([
+      'coups de cœur',
+      'claque',
+    ])
     expect(wrapper.find('[role="combobox"]').exists()).toBe(true)
+  })
+
+  it('affiche les cinq tampons de formats, masqués aux lecteurs d’écran', async () => {
+    const wrapper = await mountSuspended(HomePage)
+
+    const stamps = wrapper.get('[data-testid="home-stamps"]')
+    expect(stamps.attributes('aria-hidden')).toBe('true')
+    expect(stamps.findAll('li').map((stamp) => stamp.text())).toEqual([
+      'Manga',
+      'BD',
+      'Webtoon',
+      'Webcomic',
+      'Comics',
+    ])
+  })
+
+  it('affiche le panneau « Pourquoi Trame ? » avec son bouton inactif', async () => {
+    const wrapper = await mountSuspended(HomePage)
+
+    const pitch = wrapper.get('[data-testid="home-pitch"]')
+    expect(pitch.attributes('aria-label')).toBe('Pourquoi Trame ?')
+    expect(pitch.findAll('li')).toHaveLength(3)
+    expect(wrapper.get('[data-testid="home-create-list"]').attributes('disabled')).toBeDefined()
   })
 
   it("affiche tous les blocs quand l'API a des données", async () => {

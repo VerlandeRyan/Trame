@@ -73,8 +73,25 @@
   "home": {
     "title": "La création européenne, à suivre",
     "titleHighlight": "en un seul endroit",
-    "intro": "Manga, BD, webtoons et webcomics d'auteurs et d'éditeurs indépendants : cherche une œuvre, suis ta lecture, découvre la suite.",
-    "introShort": "Cherche une œuvre, suis ta lecture, découvre la suite.",
+    "intro": "Retrouve tes {favorites} ou déniche ta prochaine {hit}.",
+    "introFavorites": "coups de cœur",
+    "introHit": "claque",
+    "pitch": {
+      "title": "Pourquoi Trame ?",
+      "tracking": {
+        "title": "Garde le fil de tes lectures",
+        "text": "Note où tu en es, évalue tes séries et retrouve tes favoris en un coup d’œil."
+      },
+      "everything": {
+        "title": "Une seule appli pour tout tracker",
+        "text": "Quel que soit le médium ou le support : papier comme écran, centralise toutes tes lectures."
+      },
+      "catalogue": {
+        "title": "Des œuvres introuvables ailleurs",
+        "text": "Des créations françaises et européennes, d’auteurs indépendants comme d’éditeurs établis."
+      },
+      "createList": "Créer ma liste de lecture"
+    },
     "searchPlaceholder": "Rechercher une œuvre, un auteur, un éditeur…",
     "searchPlaceholderShort": "Rechercher…",
     "seeAll": "Tout voir",
@@ -82,6 +99,8 @@
     "featured": {
       "title": "À la une",
       "badge": "Populaire cette semaine",
+      "synopsis": "Synopsis :",
+      "readers": "{count} lecteur l’a ajoutée cette semaine | {count} lecteurs l’ont ajoutée cette semaine",
       "open": "Voir la fiche",
       "previous": "Œuvre précédente",
       "next": "Œuvre suivante",

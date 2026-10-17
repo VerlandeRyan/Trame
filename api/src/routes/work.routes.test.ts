@@ -602,6 +602,13 @@ describe('GET /api/v1/works/featured', () => {
     );
   });
 
+  it('donne le nombre d’ajouts récents, décroissant et d’au moins 3', async () => {
+    const res = await request(app).get('/api/v1/works/featured');
+    const counts = (res.body.items as { recentAdditions: number }[]).map((i) => i.recentAdditions);
+    expect(counts.every((count) => Number.isInteger(count) && count >= 3)).toBe(true);
+    expect(counts).toEqual([...counts].sort((a, b) => b - a));
+  });
+
   it('refuse une langue inconnue', async () => {
     const res = await request(app).get('/api/v1/works/featured?lang=xx');
     expect(res.status).toBe(400);

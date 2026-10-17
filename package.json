@@ -1,7 +1,7 @@
 {
   "name": "trame",
   "private": true,
-  "description": "Plateforme de suivi de lecture et de découverte pour la création francophone alternative.",
+  "description": "Plateforme de suivi de lecture et de découverte pour la création européenne, d'auteurs indépendants comme d'éditeurs établis.",
   "engines": {
     "node": ">=24.11.0"
   },

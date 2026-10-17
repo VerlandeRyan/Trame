@@ -16,7 +16,7 @@ useHead(() => ({
   <div class="layout">
     <a class="layout__skip-link" href="#contenu">{{ t('nav.skipToContent') }}</a>
     <LayoutHeader />
-    <!-- Décor : trame de points violette au bord droit, sous l'en-tête, derrière le contenu. -->
+    <!-- Décor : trame de points roses au bord droit, sous l'en-tête, derrière le contenu. -->
     <div v-if="route.meta.trame !== 'hero'" class="layout__trame" aria-hidden="true" />
     <main id="contenu" class="layout__main" tabindex="-1">
       <slot />
@@ -57,7 +57,7 @@ useHead(() => ({
   }
 }
 
-// Trame violette du bord droit, fixe pendant le défilement, qui s'estompe vers la gauche et le bas.
+// Trame rose du bord droit, fixe pendant le défilement, qui s'estompe vers la gauche et le bas.
 // Décor : ni clic ni lecteur d'écran.
 .layout__trame {
   position: fixed;

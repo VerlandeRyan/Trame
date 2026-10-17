@@ -7,6 +7,6 @@ describe('application', () => {
     const wrapper = await mountSuspended(App, { route: '/' })
 
     expect(wrapper.find('header').exists()).toBe(true)
-    expect(wrapper.get('main#contenu').text()).toContain('suis ta lecture')
+    expect(wrapper.get('main#contenu').text()).toContain('coups de cœur')
   })
 })

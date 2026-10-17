@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { SHELF_SIZE, type FeaturedWork, type GenreItem, type RatedWork } from '~/utils/home'
+import { SHELF_SIZE, type FeaturedWork, type RatedWork } from '~/utils/home'
 import type { WorkPage } from '~/utils/search'
 
 // `path: '/'` fait de ce fichier la racine. `trame: 'hero'` : la trame du bord droit reste dans la
@@ -14,8 +14,10 @@ interface HomeData {
   featured: FeaturedWork[]
   recent: WorkPage['items']
   topRated: RatedWork[]
-  genres: GenreItem[]
 }
+
+// Tampons du hero, dans l'ordre de la maquette ; libellés dans `genre.*`.
+const STAMP_FORMATS = ['manga', 'bd', 'webtoon', 'webcomic', 'comics']
 
 // Un bloc dont l'appel échoue est masqué : une panne ne casse pas l'accueil.
 async function loadOrFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
@@ -28,7 +30,7 @@ async function loadOrFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
 
 async function loadHomeBlocks(): Promise<HomeData> {
   const lang = locale.value
-  const [featured, recent, topRated, genres] = await Promise.all([
+  const [featured, recent, topRated] = await Promise.all([
     loadOrFallback(api.request<{ items: FeaturedWork[] }>('/works/featured', { query: { lang } }), {
       items: [],
     }),
@@ -39,13 +41,11 @@ async function loadHomeBlocks(): Promise<HomeData> {
     loadOrFallback(api.request<{ items: RatedWork[] }>('/works/top-rated', { query: { lang } }), {
       items: [],
     }),
-    loadOrFallback(api.request<{ items: GenreItem[] }>('/genres'), { items: [] }),
   ])
   return {
     featured: featured.items,
     recent: recent.items,
     topRated: topRated.items,
-    genres: genres.items,
   }
 }
 
@@ -75,34 +75,49 @@ useHead({ title: () => t('app.name') })
 <template>
   <div class="home">
     <section class="home__hero">
-      <h1 class="home__title" data-testid="home-title">
-        {{ t('home.title') }} <span class="home__highlight">{{ t('home.titleHighlight') }}</span>
-      </h1>
-      <p class="home__intro" data-testid="home-intro">
-        <span class="home__intro-long">{{ t('home.intro') }}</span>
-        <span class="home__intro-short">{{ t('home.introShort') }}</span>
-      </p>
-      <div class="home__search">
-        <LayoutSearchBox
-          ref="searchBox"
-          variant="hero"
-          :placeholder="placeholder"
-          class="home__field"
-        />
-        <UiButton
-          class="home__submit"
-          data-testid="home-search-submit"
-          @click="searchBox?.submit()"
-        >
-          {{ t('nav.search') }}
-        </UiButton>
+      <div class="home__lead">
+        <h1 class="home__title" data-testid="home-title">
+          {{ t('home.title') }} <span class="home__highlight">{{ t('home.titleHighlight') }}</span>
+        </h1>
+        <!-- Décor : les formats sont déjà dans le texte et dans la recherche. -->
+        <ul class="home__stamps" aria-hidden="true" data-testid="home-stamps">
+          <li v-for="format in STAMP_FORMATS" :key="format" class="home__stamp">
+            {{ t(`genre.${format}`) }}
+          </li>
+        </ul>
+        <p class="home__intro" data-testid="home-intro">
+          <i18n-t keypath="home.intro" scope="global">
+            <template #favorites>
+              <mark class="home__keyword">{{ t('home.introFavorites') }}</mark>
+            </template>
+            <template #hit>
+              <mark class="home__keyword">{{ t('home.introHit') }}</mark>
+            </template>
+          </i18n-t>
+        </p>
+        <div class="home__search">
+          <LayoutSearchBox
+            ref="searchBox"
+            variant="hero"
+            :placeholder="placeholder"
+            class="home__field"
+          />
+          <UiButton
+            class="home__submit"
+            data-testid="home-search-submit"
+            @click="searchBox?.submit()"
+          >
+            {{ t('nav.search') }}
+          </UiButton>
+        </div>
       </div>
+
+      <!-- Visiteur seulement : à masquer pour un membre connecté quand la session existera (#22). -->
+      <HomePitch class="home__pitch" />
     </section>
 
     <div class="home__body">
       <HomeFeatured v-if="data?.featured.length" :works="data.featured" />
-
-      <HomeExplore v-if="data?.genres.length" :genres="data.genres" />
 
       <HomeShelf
         v-if="data?.recent.length"
@@ -144,7 +159,12 @@ useHead({ title: () => t('app.name') })
 // La trame du bord droit (décor, sans clic) s'arrête au filet de la bande.
 .home__hero {
   position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) 48px;
+  align-items: center;
   padding: 22px 14px 20px;
+  background: var(--color-field-soft);
   border-bottom: var(--border);
 
   &::before {
@@ -167,7 +187,8 @@ useHead({ title: () => t('app.name') })
   }
 
   @media (min-width: 768px) {
-    padding: 40px 40px 34px;
+    padding: 40px max(40px, calc(40px + (100vw - 1280px) * 0.35)) 34px 40px;
+    gap: 28px 48px;
 
     &::before {
       width: 30%;
@@ -175,13 +196,40 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-.home__title {
-  color: var(--color-blue);
-  font-size: 1.5rem;
-  line-height: 1.1;
+// Colonne de gauche : au mobile l'ordre visuel est titre, sous-titre, tampons, recherche.
+.home__lead {
+  display: flex;
+  flex: 1 1 100%;
+  flex-direction: column;
+  min-width: 0;
 
   @media (min-width: 768px) {
-    font-size: 2.125rem;
+    flex: 1 1 480px;
+    max-width: 820px;
+  }
+}
+
+.home__pitch {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin-top: var(--space-3);
+
+  @media (min-width: 768px) {
+    flex: 0 1 440px;
+    margin-top: 0;
+    margin-left: auto;
+  }
+}
+
+.home__title {
+  color: var(--color-blue);
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  line-height: 1.1;
+  text-wrap: balance;
+
+  @media (min-width: 768px) {
+    font-size: clamp(2.2rem, 4vw, 3.2rem);
   }
 }
 
@@ -190,40 +238,111 @@ useHead({ title: () => t('app.name') })
   background: linear-gradient(transparent 62%, var(--color-rose) 62%);
 }
 
-.home__intro {
-  max-width: 520px;
-  margin: 8px 0 18px;
-  color: var(--color-ink-soft);
-  font-size: 0.875rem;
-}
+// Tampons blancs inclinés, non cliquables, sur une seule ligne (au mobile comme au bureau).
+.home__stamps {
+  display: flex;
+  gap: 6px;
+  order: 2;
+  margin: 0 0 var(--space-3);
+  // Une ligne jusqu'à 320 px : le corps suit la largeur (décor, masqué aux lecteurs d'écran).
+  font-size: min(0.78rem, 2.9vw);
 
-// Accroche complète au bureau, courte au mobile.
-.home__intro-short {
   @media (min-width: 768px) {
-    display: none;
+    gap: var(--space-3);
+    order: 0;
+    margin: 14px 0 16px;
+    font-size: 1rem;
   }
 }
 
-.home__intro-long {
-  @media (max-width: 767px) {
-    display: none;
+.home__stamp {
+  padding: 2px 6px;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-small);
+  font-weight: 800;
+  white-space: nowrap;
+
+  &:nth-child(1) {
+    transform: rotate(-2deg);
   }
+
+  &:nth-child(2) {
+    transform: rotate(1.5deg);
+  }
+
+  &:nth-child(3) {
+    transform: rotate(-1deg);
+  }
+
+  &:nth-child(4) {
+    transform: rotate(2deg);
+  }
+
+  &:nth-child(5) {
+    transform: rotate(-1.5deg);
+  }
+
+  @media (min-width: 768px) {
+    padding: 3px 12px;
+  }
+}
+
+// Une ligne au bureau (la colonne est assez large), deux lignes au mobile.
+.home__intro {
+  order: 1;
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: 1.02rem;
+  font-weight: 600;
+
+  @media (min-width: 768px) {
+    order: 0;
+    margin: 0;
+    font-size: 1.2rem;
+    white-space: nowrap;
+  }
+}
+
+.home__keyword {
+  padding: 0 2px;
+  background: linear-gradient(transparent 55%, var(--color-cyan) 55%);
+  color: inherit;
+  font-weight: 700;
 }
 
 .home__search {
   display: flex;
+  order: 3;
   gap: 10px;
   max-width: 640px;
+  margin-top: 10px;
+
+  @media (min-width: 768px) {
+    order: 0;
+    margin-top: var(--space-4);
+  }
 }
 
 .home__field {
   flex: 1;
+
+  @media (min-width: 768px) {
+    :deep(.search-box__input) {
+      min-height: 60px;
+      font-size: 1.05rem;
+    }
+  }
 }
 
 // Au mobile, Entrée suffit : le bouton n'existe qu'à partir de la tablette.
 .home__submit {
   @media (max-width: 767px) {
     display: none;
+  }
+
+  @media (min-width: 768px) {
+    min-height: 60px;
   }
 }
 

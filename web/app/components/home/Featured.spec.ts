@@ -18,6 +18,7 @@ const work = (
   coverPath: null,
   mainAuthor: 'Autrice Inventée',
   synopsis,
+  recentAdditions: id === 1 ? 1 : 5,
 })
 
 const works = [work(1, 'Aube Fictive'), work(2, 'Brume Fictive'), work(3, 'Crépuscule Fictif')]
@@ -29,7 +30,10 @@ describe('HomeFeatured', () => {
     expect(wrapper.get('[data-testid="featured-title"]').text()).toBe('Aube Fictive')
     expect(wrapper.text()).toContain('Populaire cette semaine')
     expect(wrapper.text()).toContain('Autrice Inventée · Série · Manga · En cours')
-    expect(wrapper.text()).toContain('Résumé fictif.')
+    expect(wrapper.get('.featured__synopsis').text()).toBe('Synopsis : Résumé fictif.')
+    expect(wrapper.get('[data-testid="featured-readers"]').text()).toBe(
+      '1 lecteur l’a ajoutée cette semaine',
+    )
     expect(wrapper.get('[data-testid="featured-open"]').attributes('href')).toBe(
       '/work/1-aube-fictive',
     )

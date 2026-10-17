@@ -73,8 +73,25 @@
   "home": {
     "title": "European creation,",
     "titleHighlight": "all in one place",
-    "intro": "Manga, comics, webtoons and webcomics from independent authors and publishers: look up a work, track your reading, find what to read next.",
-    "introShort": "Look up a work, track your reading, find what to read next.",
+    "intro": "Find your {favorites} or dig up your next {hit}.",
+    "introFavorites": "favourites",
+    "introHit": "obsession",
+    "pitch": {
+      "title": "Why Trame?",
+      "tracking": {
+        "title": "Keep track of your reading",
+        "text": "Note where you are, rate your series and find your favourites at a glance."
+      },
+      "everything": {
+        "title": "One app to track it all",
+        "text": "Whatever the medium or format, print or screen: keep all your reading in one place."
+      },
+      "catalogue": {
+        "title": "Works you won’t find elsewhere",
+        "text": "French and European creations, from independent authors and established publishers alike."
+      },
+      "createList": "Create my reading list"
+    },
     "searchPlaceholder": "Search for a work, an author, a publisher…",
     "searchPlaceholderShort": "Search…",
     "seeAll": "See all",
@@ -82,6 +99,8 @@
     "featured": {
       "title": "Featured",
       "badge": "Popular this week",
+      "synopsis": "Synopsis:",
+      "readers": "{count} reader added it this week | {count} readers added it this week",
       "open": "View the page",
       "previous": "Previous work",
       "next": "Next work",

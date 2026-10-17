@@ -3,6 +3,7 @@ import type { WorkSummary } from './search'
 
 export interface FeaturedWork extends WorkSummary {
   synopsis: string | null
+  recentAdditions: number
 }
 
 export interface RatedWork extends WorkSummary {

@@ -59,7 +59,7 @@ export function buildOpenApiDocument() {
       title: 'API Trame',
       version: '1.0.0',
       description:
-        'Catalogue de la création alternative européenne. Toutes les erreurs ont la forme `{ code, message, details? }` ; le `code` est stable.',
+        'Catalogue de la création européenne, d’auteurs indépendants comme d’éditeurs établis. Toutes les erreurs ont la forme `{ code, message, details? }` ; le `code` est stable.',
     },
     // Chemins complets : `/health` est à la racine, hors `/api/v1`, et les clients (Scalar) ignorent
     // les serveurs propres à un chemin.
