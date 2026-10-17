@@ -46,6 +46,18 @@ SELECT
   now() - (n || ' hours')::interval
 FROM generate_series(1, 48) AS n;
 
+-- Synopsis en français pour chaque œuvre (affichés dans « À la une »), de quatre longueurs de phrase.
+INSERT INTO work_synopsis (work_id, language, text, source)
+SELECT w.id, 'fr',
+  (ARRAY[
+    'Une anthologie de récits courts où chaque auteur imagine un désert différent.',
+    'Un one-shot sur un braquage qui tourne à la fable, dessiné à l''encre sur papier ocre.',
+    'Une série où un village disparaît chaque nuit dans la brume, un habitant à la fois.',
+    'Une cartographe suit une côte qui change de forme à chaque marée et découvre qui la redessine.'
+  ])[1 + (substring(w.title FROM '(\d+)$')::int % 4)],
+  'official'
+FROM work w WHERE w.title LIKE '[Démo] %';
+
 -- Format et un à deux genres par œuvre, répartis de façon inégale (compteurs, « Voir les N autres »).
 WITH demo AS (
   SELECT id, substring(title FROM '(\d+)$')::int AS n FROM work WHERE title LIKE '[Démo] %'

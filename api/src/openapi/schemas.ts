@@ -71,6 +71,12 @@ export const featuredListSchema = z
           .string()
           .nullable()
           .describe('Synopsis dans la langue demandée, sinon dans la langue originale.'),
+        recentAdditions: z
+          .number()
+          .int()
+          .describe(
+            'Ajouts à une liste depuis 7 jours (au moins 3), pour « N lecteurs l’ont ajoutée ».',
+          ),
       }) satisfies z.ZodType<FeaturedWork>,
     ),
   })

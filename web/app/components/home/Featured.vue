@@ -111,10 +111,23 @@ const descriptionLine = computed(() => {
         >
           <WorkCover :url="coverUrl(work.coverPath)" class="featured__cover" />
           <div class="featured__body">
-            <span class="featured__badge">{{ t('home.featured.badge') }}</span>
-            <h3 class="featured__work" data-testid="featured-title">{{ work.title }}</h3>
-            <p class="featured__meta">{{ descriptionLine }}</p>
-            <p v-if="work.synopsis" class="featured__synopsis">{{ work.synopsis }}</p>
+            <div class="featured__head">
+              <span class="featured__badge">{{ t('home.featured.badge') }}</span>
+              <h3 class="featured__work" data-testid="featured-title">{{ work.title }}</h3>
+              <p class="featured__meta">{{ descriptionLine }}</p>
+            </div>
+            <p v-if="work.synopsis" class="featured__synopsis">
+              <strong>{{ t('home.featured.synopsis') }}</strong> {{ work.synopsis }}
+            </p>
+            <p class="featured__readers" data-testid="featured-readers">
+              {{
+                t(
+                  'home.featured.readers',
+                  { count: work.recentAdditions },
+                  { plural: work.recentAdditions },
+                )
+              }}
+            </p>
             <NuxtLink
               :to="localePath(`/work/${workSlug(work.id, work.title)}`)"
               class="featured__open"
@@ -222,17 +235,19 @@ const descriptionLine = computed(() => {
   touch-action: pan-y;
 }
 
-// Couverture à gauche au bureau, au-dessus du texte au mobile.
+// Bureau : couverture à gauche du texte. Mobile : le badge et le titre sont à côté de la couverture,
+// le reste (`display: contents` sur le corps) prend toute la largeur dessous.
 .featured__slide {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-4);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-4) var(--space-3);
+  align-items: start;
   padding: 14px;
 
   @media (min-width: 768px) {
-    flex-direction: row;
+    display: flex;
     align-items: center;
+    gap: var(--space-4);
   }
 }
 
@@ -246,16 +261,43 @@ const descriptionLine = computed(() => {
 }
 
 .featured__body {
-  min-width: 0;
+  display: contents;
+
+  @media (min-width: 768px) {
+    display: block;
+    min-width: 0;
+  }
+
+  > :not(.featured__head) {
+    @media (max-width: 767px) {
+      grid-column: 1 / -1;
+    }
+  }
 }
 
+// Au mobile, le haut du badge est aligné sur le haut de la couverture.
+.featured__head {
+  min-width: 0;
+  align-self: start;
+}
+
+// Texte en crimson sur le blanc de la carte (contraste AA vérifié).
+.featured__readers {
+  margin: var(--space-2) 0 0;
+  color: var(--color-crimson);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+// En bloc (et non en ligne) : pas d'interligne au-dessus, le haut du badge touche le haut de la couverture.
 .featured__badge {
-  display: inline-block;
+  display: block;
+  width: fit-content;
   margin-bottom: var(--space-2);
   padding: 1px 8px;
   border: var(--border);
   border-radius: var(--radius);
-  background: var(--status-reading);
+  background: var(--color-yellow);
   font-size: 0.6875rem;
   font-weight: 800;
 }
@@ -316,6 +358,8 @@ const descriptionLine = computed(() => {
   align-items: center;
   min-height: var(--touch);
   margin-top: var(--space-3);
+  // Au mobile (grille), le lien ne s'étire pas sur toute la largeur de la carte.
+  justify-self: start;
   padding: 0 var(--space-4);
   border: var(--border);
   border-radius: var(--radius);

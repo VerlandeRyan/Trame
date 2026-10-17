@@ -40,6 +40,19 @@ describe('couleurs de survol', () => {
     expect(contrastRatio(ink, token(name))).toBeGreaterThanOrEqual(4.5)
   })
 
+  it.each([
+    ['color-yellow', 'badge « Populaire cette semaine » et compteurs'],
+    ['color-cyan', 'surlignage des mots clés du sous-titre'],
+    ['status-reading', 'icône « Garde le fil » du panneau « Pourquoi Trame ? »'],
+    ['status-plan_to_read', 'icône « Une seule appli » du panneau'],
+  ])('texte d’encre lisible sur %s (%s)', (name) => {
+    expect(contrastRatio(ink, token(name))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('« N lecteurs l’ont ajoutée » lisible sur le blanc de la carte', () => {
+    expect(contrastRatio(token('color-crimson'), '#ffffff')).toBeGreaterThanOrEqual(4.5)
+  })
+
   it('lien « Tout voir » lisible au survol sur le papier', () => {
     expect(contrastRatio(token('color-blue-light'), token('color-paper'))).toBeGreaterThanOrEqual(
       4.5,

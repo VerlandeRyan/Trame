@@ -20,9 +20,15 @@
   --color-cover-blank: #bcc8ff;
   --color-rose-vivid: #ff2f9e;
   --color-field: #e3e7ff;
-  // Trame décorative du bord droit (layouts/default.vue).
-  --color-trame-side: #7b4fe0;
+  // Trame décorative du bord droit (layouts/default.vue, hero de l'accueil) : même rose vif que la
+  // trame des couvertures sans image.
+  --color-trame-side: var(--color-rose-vivid);
   --color-field-soft: #eef1ff;
+  // Accueil visiteur : badge « À la une » et icône de découverte, surlignage des mots clés,
+  // « N lecteurs ». Texte d'encre sur `yellow` et `cyan`, `crimson` sur fond blanc (`contrast.spec.ts`).
+  --color-yellow: #ffc933;
+  --color-cyan: #8ff3fa;
+  --color-crimson: #a3174f;
   --color-danger: #b3263e;
   --color-rule: rgb(27 42 92 / 27%);
 
@@ -40,8 +46,9 @@
   --shadow: 3px 3px 0 var(--color-ink);
   --shadow-small: 2px 2px 0 var(--color-ink);
 
-  // Typographie : pile système en attendant le choix de la police finale.
+  // Typographie : pile système, et Poppins 800 (auto-hébergée, `nuxt.config.ts`) pour les titres d'accroche.
   --font-sans: system-ui, -apple-system, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif;
+  --font-display: 'Poppins', var(--font-sans);
   --weight-title: 800;
 
   // Espacement (échelle de 4 px)

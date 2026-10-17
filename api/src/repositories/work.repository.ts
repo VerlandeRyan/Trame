@@ -86,6 +86,8 @@ export interface WorkFacets {
 
 export interface FeaturedWork extends WorkSummary {
   synopsis: string | null;
+  /** Ajouts à une liste dans la fenêtre « populaire » (au moins `minAdditions`). */
+  recentAdditions: number;
 }
 
 /** Populaire : au moins `minAdditions` ajouts à une liste depuis `sinceDays` jours. */
@@ -384,16 +386,25 @@ export function createWorkRepository(db: Db): WorkRepository {
         .groupBy('work_id')
         .having((eb) => eb.fn.countAll(), '>=', minAdditions)
         .as('recent');
-      return db
+      const rows = await db
         .selectFrom('work')
         .innerJoin(recent, 'recent.work_id', 'work.id')
-        .select([...workSummaryColumns(shownTitle), preferredSynopsis(lang).as('synopsis')])
+        .select([
+          ...workSummaryColumns(shownTitle),
+          preferredSynopsis(lang).as('synopsis'),
+          'recent.additions',
+        ])
         .where('work.deleted_at', 'is', null)
         .orderBy('recent.additions', 'desc')
         .orderBy(shownTitle)
         .orderBy('work.id')
         .limit(limit)
         .execute();
+      // `count` revient de pg en texte (bigint).
+      return rows.map(({ additions, ...work }) => ({
+        ...work,
+        recentAdditions: Number(additions),
+      }));
     },
 
     async findTopRatedWorks({ lang, minRatings, limit }) {

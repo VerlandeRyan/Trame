@@ -223,14 +223,14 @@ describe('WorkService.listFeaturedWorks et listTopRatedWorks', () => {
       ...NO_REPOSITORY,
       findFeaturedWorks: (criteria) => {
         calls.push(criteria);
-        return Promise.resolve([{ ...summary, synopsis: 'Texte fictif.' }]);
+        return Promise.resolve([{ ...summary, synopsis: 'Texte fictif.', recentAdditions: 4 }]);
       },
     });
 
     const result = await service.listFeaturedWorks('en');
 
     expect(calls).toEqual([{ lang: 'en', minAdditions: 3, sinceDays: 7, limit: 3 }]);
-    expect(result.items).toEqual([{ ...summary, synopsis: 'Texte fictif.' }]);
+    expect(result.items).toEqual([{ ...summary, synopsis: 'Texte fictif.', recentAdditions: 4 }]);
   });
 
   it('calcule la moyenne sur une décimale et applique le seuil de notes du dépôt', async () => {
