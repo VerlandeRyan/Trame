@@ -1,6 +1,6 @@
 # Trame
 
-Plateforme de suivi de lecture et de découverte pour la **création alternative européenne, francophone d'abord** : manga, BD, webtoons et webcomics d'auteurs indépendants (Mangadraft, auto-édition, petits éditeurs).
+Plateforme de suivi de lecture et de découverte pour la **création européenne, francophone d'abord** : manga, BD, webtoons et webcomics, d'auteurs indépendants (Mangadraft, auto-édition) comme d'éditeurs établis.
 
 Pensée comme un « MyAnimeList » de cette scène : une fiche par œuvre, un suivi par chapitres lus et par tomes lus, une note sur 10, un profil public partageable.
 

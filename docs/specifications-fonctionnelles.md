@@ -8,13 +8,14 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 
 ### Découverte
 **US-15 — Consulter l'accueil** (visiteur, utilisateur)
-- Blocs : recherche ; « À la une » (carrousel de 3 œuvres « populaires cette semaine ») ; Explorer (formats puis genres, sans compteur) ; récemment ajoutées ; mieux notées (seuil RG-04) ; « Une œuvre manque à Trame ? » (lien vers US-09).
-- Connecté, un bloc « Ma liste de lecture » ajoute les compteurs par statut.
+- Blocs : hero avec recherche ; « À la une » (carrousel de 3 œuvres « populaires cette semaine ») ; récemment ajoutées ; mieux notées (seuil RG-04) ; « Une œuvre manque à Trame ? » (lien vers US-09).
+- **Deux accueils selon la connexion.** Visiteur : hero (titre, tampons de formats non cliquables, recherche) et panneau « Pourquoi Trame ? » (trois engagements) avec le bouton « Créer ma liste de lecture ». Connecté : pas de panneau ; hero « Bon retour, @handle » avec la recherche et une bande « Reprendre la lecture » (œuvres en cours, bouton +1, lien « Voir ma liste »). Si la liste est vide, un message d'accueil remplace la bande, avec les formats cliquables.
+- **Explorer** n'est pas un bloc de la page : c'est un bouton de l'en-tête de toutes les pages (masqué sur la page de recherche). Il ouvre une fenêtre avec les formats puis les genres, **avec le nombre d'œuvres**, et un lien « Voir tout le catalogue ». Seuls les formats et genres qui ont au moins une œuvre sont affichés. Au mobile, le menu ☰ ne contient qu'Explorer.
 - « Populaire cette semaine » : œuvres les plus ajoutées à une liste sur les 7 derniers jours, avec au moins 3 ajouts ; les 3 premières sont affichées.
 - Le carrousel n'a pas de défilement automatique et reste utilisable au clavier. Mise en avant éditoriale ou sponsorisée : hors MVP.
 
 **US-01 — Rechercher une œuvre** (visiteur, utilisateur)
-- Une zone de recherche est accessible depuis toutes les pages.
+- Une zone de recherche est accessible depuis toutes les pages : au bureau, le champ de l'en-tête a une largeur limitée ; au mobile, une icône l'ouvre sur toute la largeur (la recherche et le menu ☰ ne sont jamais ouverts ensemble).
 - La recherche porte sur titre (et titres alternatifs), auteur, éditeur/plateforme ; elle est insensible à la casse et aux accents et tolère une faute de frappe légère.
 - Les résultats apparaissent pendant la saisie à partir de 2 caractères, avec couverture, titre, type, auteur principal.
 - Chaque mot saisi doit correspondre à un titre, un auteur, un éditeur, un format ou un genre (« aube manga » trouve Aube Fictive). Sans résultat complet, les œuvres qui contiennent au moins un mot sont proposées, avec une mention « résultats approchants ».
@@ -67,6 +68,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - URL `/u/{handle}` ; affiche les statistiques séparées (œuvres suivies, note moyenne donnée, répartition par statut), les œuvres les mieux notées et les dernières mises à jour (journal de lecture).
 - Un lien mène à la page « Ma liste de lecture » : même page que US-07, en lecture seule pour un tiers et uniquement avec les entrées publiques.
 - Le profil est **public par défaut** ; l'utilisateur peut le passer en privé à tout moment.
+- Le menu du compte (« @handle ») propose un lien de partage de son propre profil. Trouver et consulter le profil d'un autre membre (recherche de membres, page communauté) est hors MVP.
 
 ### Contribution
 **US-09 — Proposer une œuvre manquante** (utilisateur)
