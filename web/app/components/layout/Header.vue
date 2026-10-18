@@ -12,7 +12,10 @@ const searching = ref(false)
 const searchBox = ref<{ focus: () => void } | null>(null)
 const searchLink = ref<HTMLButtonElement | null>(null)
 
+// Menu Explorer : ouvrir la recherche le referme (jamais deux croix à la fois).
+const exploring = ref(false)
 async function openSearch() {
+  exploring.value = false
   searching.value = true
   await nextTick()
   searchBox.value?.focus()
@@ -29,11 +32,13 @@ function onEscape(event: KeyboardEvent) {
   if (searching.value && !event.defaultPrevented) void closeSearch()
 }
 
-// Une navigation referme le champ.
+// Une navigation referme le champ et le menu Explorer (le menu est démonté sur `/search` : il ne
+// peut pas se refermer lui-même à temps, l'état doit rester ici).
 watch(
   () => route.fullPath,
   () => {
     searching.value = false
+    exploring.value = false
   },
 )
 </script>
@@ -67,6 +72,11 @@ watch(
     >
       <Icon name="tabler:x" size="18" aria-hidden="true" />
     </button>
+    <LayoutExploreMenu
+      v-if="!onSearchPage"
+      v-model:open="exploring"
+      class="layout-header__explore"
+    />
     <LayoutLanguageSwitcher class="layout-header__language" />
     <UiButton variant="blue" size="small" class="layout-header__sign-in">
       <Icon
@@ -118,9 +128,18 @@ watch(
   flex: 1;
 }
 
-// Sans champ de recherche (accueil), la langue et le compte restent à droite.
-.layout-header--plain .layout-header__language {
+.layout-header__language {
   margin-left: auto;
+}
+
+@media (min-width: 768px) {
+  .layout-header__explore {
+    margin-left: auto;
+  }
+
+  .layout-header__explore ~ .layout-header__language {
+    margin-left: 0;
+  }
 }
 
 // Ouvrir / fermer la recherche : mobile seulement.
@@ -162,6 +181,11 @@ watch(
     display: none;
   }
 
+  .layout-header > .layout-header__explore {
+    position: static;
+    order: 1;
+  }
+
   .layout-header__search-link {
     display: grid;
   }
@@ -176,6 +200,7 @@ watch(
 
   .layout-header--searching {
     .layout-header__logo,
+    .layout-header__explore,
     .layout-header__search-link,
     .layout-header__language,
     .layout-header__sign-in {

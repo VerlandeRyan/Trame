@@ -32,6 +32,13 @@
   --color-danger: #b3263e;
   --color-rule: rgb(27 42 92 / 27%);
 
+  // Cartes de formats du menu « Explorer » (un format inconnu garde --color-field-soft)
+  --color-format-manga: #ffd3ea;
+  --color-format-manhwa: #e5d9fb;
+  --color-format-webtoon: #fff3b8;
+  --color-format-bd: #dde4ff;
+  --color-format-webcomic: #d6f8f4;
+
   // Statuts de lecture (clés = codes de work_status de library_entry)
   --status-reading: #4cc38a;
   --status-completed: #7fa0ff;
