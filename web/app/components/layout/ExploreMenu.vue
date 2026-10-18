@@ -46,10 +46,6 @@ watch(open, (isOpen) => {
   if (isOpen) void loadFacets()
 })
 
-function closeOnLink(event: MouseEvent) {
-  if ((event.target as HTMLElement).closest('a')) close()
-}
-
 function closeOnOutsideClick(event: MouseEvent) {
   if (open.value && !root.value?.contains(event.target as Node)) close()
 }
@@ -90,7 +86,8 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', closeOnEscape)
 })
 
-// Un lien choisi change la route : le menu se referme.
+// Un lien choisi referme le menu tout de suite (`@click="close()"`) : sur `/search` le menu est
+// démonté et ne verrait plus la route changer ; ceci couvre les autres navigations.
 watch(
   () => route.fullPath,
   () => close(),
@@ -124,13 +121,7 @@ watch(
       />
     </button>
 
-    <div
-      v-show="open"
-      :id="panelId"
-      class="explore-menu__panel"
-      data-testid="explore-panel"
-      @click="closeOnLink"
-    >
+    <div v-show="open" :id="panelId" class="explore-menu__panel" data-testid="explore-panel">
       <div class="explore-menu__intro">
         <button
           v-if="isMobile"
@@ -158,6 +149,7 @@ watch(
                 class="explore-menu__card"
                 :class="`explore-menu__card--${item.code}`"
                 :data-testid="`explore-format-${item.code}`"
+                @click="close()"
               >
                 <span class="explore-menu__card-name">{{ label(item.code) }}</span>
                 <span class="explore-menu__pill">{{ t('nav.worksCount', item.count) }}</span>
@@ -174,6 +166,7 @@ watch(
                 :to="{ path: localePath('/search'), query: { genre: item.code } }"
                 class="explore-menu__chip"
                 :data-testid="`explore-genre-${item.code}`"
+                @click="close()"
               >
                 {{ label(item.code) }}<small>{{ item.count }}</small>
               </NuxtLink>
@@ -187,6 +180,7 @@ watch(
         :to="localePath('/search')"
         class="explore-menu__all"
         data-testid="explore-all-catalog"
+        @click="close()"
       >
         {{ t('nav.exploreAll') }} ›
       </NuxtLink>

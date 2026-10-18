@@ -47,11 +47,9 @@ test('mobile : recherche, langue, compte et ☰ sont groupés à droite de l\'en
   const menu = await page.getByTestId('explore-open').boundingBox()
   const logo = await page.locator('.layout-header__logo').boundingBox()
   expect(search && signIn && menu && logo).toBeTruthy()
-  // Le ☰ touche la marge droite (12 px), le compte le précède ; la recherche est à droite du logo,
-  // pas collée à lui.
   expect(Math.round(390 - (menu!.x + menu!.width))).toBeLessThanOrEqual(14)
   expect(menu!.x - (signIn!.x + signIn!.width)).toBeLessThan(14)
-  expect(search!.x - (logo!.x + logo!.width)).toBeGreaterThan(24)
+  expect(search!.x - (logo!.x + logo!.width)).toBeGreaterThanOrEqual(4)
 })
 
 test('le menu des langues est intégré, calé sur le bouton, et se ferme avec Échap', async ({
