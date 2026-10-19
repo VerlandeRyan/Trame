@@ -1,5 +1,4 @@
-import type { RequestHandler } from 'express';
-import { rateLimit } from 'express-rate-limit';
+import type { Options } from 'express-rate-limit';
 import { AppError } from '../errors.js';
 
 export interface RateLimitSettings {
@@ -11,13 +10,16 @@ export interface RateLimitSettings {
 /** Connexion et création de compte : largement au-dessus d'un usage normal. */
 export const AUTH_RATE_LIMIT: RateLimitSettings = { windowMs: 10 * 60 * 1000, limit: 30 };
 
-/** Au-delà de la limite : `RATE_LIMITED` (429) avec l'en-tête `Retry-After`. */
-export function createRateLimiter({ windowMs, limit }: RateLimitSettings): RequestHandler {
-  return rateLimit({
+/**
+ * Options communes à tous les limiteurs ; la route appelle elle-même `rateLimit(...)`.
+ * Au-delà de la limite : `RATE_LIMITED` (429) avec l'en-tête `Retry-After`.
+ */
+export function rateLimitOptions({ windowMs, limit }: RateLimitSettings): Partial<Options> {
+  return {
     windowMs,
     limit,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     handler: (_req, _res, next) => next(new AppError('RATE_LIMITED')),
-  });
+  };
 }

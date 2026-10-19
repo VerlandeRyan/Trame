@@ -1,7 +1,9 @@
-import { Router, type RequestHandler } from 'express';
+import { Router } from 'express';
+import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
 import { createAuthController } from '../controllers/auth.controller.js';
 import { handleSchema } from '../handle-rules.js';
+import { rateLimitOptions, type RateLimitSettings } from '../middleware/rate-limit.js';
 import { validate } from '../middleware/validate.js';
 import type { AuthService } from '../services/auth.service.js';
 
@@ -26,9 +28,9 @@ export const loginQuery = z.object({
 
 export function createAuthRouter(
   service: AuthService,
-  options: { webOrigin: string; secureCookies: boolean; limiter: RequestHandler },
+  options: { webOrigin: string; secureCookies: boolean; rateLimit: RateLimitSettings },
 ): Router {
-  const { limiter } = options;
+  const limiter = rateLimit(rateLimitOptions(options.rateLimit));
   const controller = createAuthController(service, options);
   const router = Router();
   router.get('/google', limiter, validate('query', loginQuery), controller.startGoogleLogin);
