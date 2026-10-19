@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { createAuthController } from '../controllers/auth.controller.js';
 import { handleSchema } from '../handle-rules.js';
@@ -26,14 +26,15 @@ export const loginQuery = z.object({
 
 export function createAuthRouter(
   service: AuthService,
-  options: { webOrigin: string; secureCookies: boolean },
+  options: { webOrigin: string; secureCookies: boolean; limiter: RequestHandler },
 ): Router {
+  const { limiter } = options;
   const controller = createAuthController(service, options);
   const router = Router();
-  router.get('/google', validate('query', loginQuery), controller.startGoogleLogin);
-  router.get('/google/callback', controller.finishGoogleLogin);
+  router.get('/google', limiter, validate('query', loginQuery), controller.startGoogleLogin);
+  router.get('/google/callback', limiter, controller.finishGoogleLogin);
   router.get('/me', controller.getAuthStatus);
-  router.post('/handle', validate('body', handleBody), controller.createAccount);
+  router.post('/handle', limiter, validate('body', handleBody), controller.createAccount);
   router.post('/cancel', controller.signOut);
   router.post('/logout', controller.signOut);
   return router;

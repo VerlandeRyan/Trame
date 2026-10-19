@@ -3,6 +3,11 @@ import express, { type Express, type RequestHandler } from 'express';
 import type { Db } from './db/database.js';
 import { attachUser, checkOrigin } from './middleware/auth.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
+import {
+  AUTH_RATE_LIMIT,
+  createRateLimiter,
+  type RateLimitSettings,
+} from './middleware/rate-limit.js';
 import { buildOpenApiDocument } from './openapi/document.js';
 import { createHealthRepository } from './repositories/health.repository.js';
 import { createGenreRepository } from './repositories/genre.repository.js';
@@ -28,6 +33,8 @@ export interface AuthOptions {
   sessionSecret?: string;
   webOrigin?: string;
   secureCookies?: boolean;
+  /** Limite de débit des routes de connexion */
+  rateLimit?: RateLimitSettings;
 }
 
 /**
@@ -50,6 +57,7 @@ export function createApp({
     sessionSecret = randomBytes(32).toString('hex'),
     webOrigin = 'http://localhost:3001',
     secureCookies = false,
+    rateLimit = AUTH_RATE_LIMIT,
   } = auth;
   const authService = createAuthService({ users: createUserRepository(db), google });
 
@@ -81,6 +89,7 @@ export function createApp({
       authService,
       webOrigin,
       secureCookies,
+      authLimiter: createRateLimiter(rateLimit),
       genreService: createGenreService(createGenreRepository(db)),
       workService: createWorkService(createWorkRepository(db)),
     }),

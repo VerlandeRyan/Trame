@@ -34,6 +34,7 @@ Contrat : `docs/architecture.md`. À retenir en lisant le code :
 - `session/store.ts` : store `express-session` maison sur la table `session` (SQL dans `repositories/session.repository.ts`) ; `server.ts` purge les sessions expirées.
 - Handle : casse conservée, unicité insensible à la casse (citext). Mots réservés et offensants dans `handle-rules.ts` (code, pas de migration) : `OFFENSIVE_ANYWHERE` (mot refusé où qu'il soit) et `OFFENSIVE_WHOLE` (segment entier seulement, pour ne pas toucher Monique, Dickens, Nazir…).
 - Derrière un reverse proxy HTTPS, `TRUST_PROXY` (nombre de proxys) est indispensable : sans lui Express croit être en HTTP et le cookie `Secure` n'est jamais posé. En production `SESSION_SECRET` est obligatoire ; les E2E (HTTP local) passent `SECURE_COOKIES=false`.
+- Limite de débit : `middleware/rate-limit.ts` (`AUTH_RATE_LIMIT`, mémoire du processus) posée sur les routes de connexion dans `routes/auth.routes.ts` ; `createApp` accepte `auth.rateLimit` pour que les tests la relèvent. Recherche et soumission ne sont pas limitées (#85) : l'API voit l'adresse du serveur Nuxt, pas celle du visiteur, tant que l'adresse d'origine n'est pas transmise.
 - `npm run db:promote-admin -- <handle>` : promeut le premier admin (base de travail, `DATABASE_URL`) ; refuse dès qu'un admin existe. Testé dans `src/db/promote-admin.test.ts`.
 
 ## Erreurs

@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type RequestHandler } from 'express';
 import type { AuthService } from '../services/auth.service.js';
 import type { GenreService } from '../services/genre.service.js';
 import type { WorkService } from '../services/work.service.js';
@@ -12,6 +12,7 @@ export interface ApiServices {
   workService: WorkService;
   webOrigin: string;
   secureCookies: boolean;
+  authLimiter: RequestHandler;
 }
 
 /** Routes versionnées, montées sous `/api/v1`. Les routes métier s'ajoutent ici. */
@@ -21,9 +22,13 @@ export function createApiRouter({
   workService,
   webOrigin,
   secureCookies,
+  authLimiter,
 }: ApiServices): Router {
   const router = Router();
-  router.use('/auth', createAuthRouter(authService, { webOrigin, secureCookies }));
+  router.use(
+    '/auth',
+    createAuthRouter(authService, { webOrigin, secureCookies, limiter: authLimiter }),
+  );
   router.use('/genres', createGenreRouter(genreService));
   router.use('/works', createWorkRouter(workService));
   return router;

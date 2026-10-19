@@ -113,6 +113,7 @@ describe('contrat : routes montées et spécification', () => {
         workService: none,
         webOrigin: 'http://localhost:3001',
         secureCookies: false,
+        authLimiter: (_req, _res, next) => next(),
       }),
       prefixes,
     );

@@ -25,6 +25,7 @@
   "dependencies": {
     "@scalar/express-api-reference": "0.10.29",
     "express": "5.3.0",
+    "express-rate-limit": "8.7.1",
     "express-session": "1.19.0",
     "google-auth-library": "11.3.1",
     "kysely": "0.29.6",

@@ -58,6 +58,10 @@ const errorResponse = (code: ErrorCode, description: string) => ({
 });
 
 const internalError = errorResponse('INTERNAL_ERROR', 'Erreur inattendue, sans détail.');
+const rateLimited = errorResponse(
+  'RATE_LIMITED',
+  'Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`.',
+);
 
 /** Document OpenAPI 3.1, construit depuis les schémas Zod des routes et des réponses. */
 export function buildOpenApiDocument() {
@@ -161,6 +165,7 @@ export function buildOpenApiDocument() {
           parameters: toParameters(loginQuery, 'query'),
           responses: {
             '302': redirectResponse('Redirection vers l’écran de connexion de Google.'),
+            '429': rateLimited,
             '503': errorResponse('AUTH_UNAVAILABLE', 'Connexion Google non configurée.'),
             '500': internalError,
           },
@@ -182,6 +187,7 @@ export function buildOpenApiDocument() {
             '302': redirectResponse(
               'Redirection vers le front : `returnTo` ou `/` (compte existant), `/signup/handle?returnTo=…` (nouveau compte, handle à choisir) ou `/?auth_error=<code>` (refus ou échec).',
             ),
+            '429': rateLimited,
             '500': internalError,
           },
         },
@@ -220,6 +226,7 @@ export function buildOpenApiDocument() {
             ),
             '403': errorResponse('FORBIDDEN_ORIGIN', 'Origine de la requête refusée.'),
             '409': errorResponse('HANDLE_TAKEN', 'Handle déjà pris (casse ignorée).'),
+            '429': rateLimited,
             '500': internalError,
           },
         },

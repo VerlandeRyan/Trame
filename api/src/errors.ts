@@ -15,6 +15,7 @@ export const ERROR_CODES = {
   HANDLE_TAKEN: { status: 409, message: 'This handle is already taken.' },
   AUTH_STATE_INVALID: { status: 400, message: 'Invalid or expired sign-in attempt.' },
   AUTH_UNAVAILABLE: { status: 503, message: 'Google sign-in is not configured.' },
+  RATE_LIMITED: { status: 429, message: 'Too many requests, try again later.' },
   INTERNAL_ERROR: { status: 500, message: 'Internal error.' },
 } as const;
 

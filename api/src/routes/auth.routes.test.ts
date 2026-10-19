@@ -34,7 +34,16 @@ const google: GoogleClient = {
   },
 };
 
-const app = createApp({ db, auth: { google, webOrigin: WEB, sessionSecret: 's'.repeat(32) } });
+const authOptions = { google, webOrigin: WEB, sessionSecret: 's'.repeat(32) };
+// Les tests enchaînent bien plus de connexions que la limite réelle : on la relève.
+const app = createApp({
+  db,
+  auth: { ...authOptions, rateLimit: { windowMs: 60_000, limit: 10_000 } },
+});
+const limitedApp = createApp({
+  db,
+  auth: { ...authOptions, rateLimit: { windowMs: 60_000, limit: 3 } },
+});
 const appWithoutGoogle = createApp({ db });
 
 beforeAll(() => client.connect());
@@ -307,6 +316,27 @@ describe('retour de Google en échec', () => {
     const res = await signIn(agent, 'refused');
     expect(res.headers.location).toBe(`${WEB}/?auth_error=AUTH_STATE_INVALID`);
     expect((await agent.get(`${BASE}/me`)).body).toEqual({ status: 'anonymous' });
+  });
+});
+
+describe('limitation de débit', () => {
+  it('refuse au-delà de la limite avec RATE_LIMITED et Retry-After', async () => {
+    for (let i = 0; i < 3; i += 1) {
+      expect((await request(limitedApp).get(`${BASE}/google`)).status).toBe(302);
+    }
+    const res = await request(limitedApp).get(`${BASE}/google`);
+    expect(res.status).toBe(429);
+    expect(res.body.code).toBe('RATE_LIMITED');
+    expect(res.headers['retry-after']).toBeDefined();
+  });
+
+  it('compte ensemble connexion, retour de Google et choix du handle, mais pas /auth/me', async () => {
+    const agent = request.agent(limitedApp);
+    await agent.get(`${BASE}/google`);
+    await agent.get(`${BASE}/google/callback`).query({ error: 'access_denied' });
+    await agent.post(`${BASE}/handle`).send({ handle: 'Ryan' });
+    expect((await agent.get(`${BASE}/google`)).status).toBe(429);
+    expect((await agent.get(`${BASE}/me`)).status).toBe(200);
   });
 });
 
