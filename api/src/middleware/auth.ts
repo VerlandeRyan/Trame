@@ -23,14 +23,18 @@ declare module 'express-serve-static-core' {
 
 const READ_ONLY_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
-/** Anti-CSRF : toute requête qui n'est pas une lecture et porte un `Origin` doit venir du front. */
+/**
+ * Anti-CSRF : une requête qui n'est pas une lecture doit venir du front. On se fie à `Origin` ;
+ * à défaut, le navigateur dit lui-même si la requête vient d'un autre site (`Sec-Fetch-Site`).
+ * Les outils qui n'envoient aucun de ces en-têtes passent.
+ */
 export function checkOrigin(allowedOrigin: string): RequestHandler {
   return (req, _res, next) => {
+    if (READ_ONLY_METHODS.has(req.method)) return next();
     const origin = req.get('origin');
-    const foreign = origin !== undefined && origin !== allowedOrigin;
-    next(
-      !READ_ONLY_METHODS.has(req.method) && foreign ? new AppError('FORBIDDEN_ORIGIN') : undefined,
-    );
+    const fromFront =
+      origin === undefined ? req.get('sec-fetch-site') !== 'cross-site' : origin === allowedOrigin;
+    next(fromFront ? undefined : new AppError('FORBIDDEN_ORIGIN'));
   };
 }
 

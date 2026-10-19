@@ -16,8 +16,11 @@ const ryan = { id: 1, handle: 'Ryan', role: 'user' as const };
 
 describe('checkOrigin', () => {
   const check = checkOrigin('https://trame.example');
-  const request = (method: string, origin?: string) =>
-    ({ method, get: () => origin }) as unknown as Partial<Request>;
+  const request = (method: string, origin?: string, secFetchSite?: string) =>
+    ({
+      method,
+      get: (name: string) => (name === 'origin' ? origin : secFetchSite),
+    }) as unknown as Partial<Request>;
 
   it('laisse passer une écriture venant du front', async () => {
     expect(await run(check, request('POST', 'https://trame.example'))).toBeUndefined();
@@ -35,6 +38,25 @@ describe('checkOrigin', () => {
       });
     },
   );
+
+  it('sans Origin, refuse une écriture que le navigateur dit venir d’un autre site', async () => {
+    expect(await run(check, request('POST', undefined, 'cross-site'))).toMatchObject({
+      code: 'FORBIDDEN_ORIGIN',
+    });
+  });
+
+  it.each(['same-origin', 'same-site', 'none'])(
+    'sans Origin, laisse passer une écriture annoncée %s',
+    async (site) => {
+      expect(await run(check, request('POST', undefined, site))).toBeUndefined();
+    },
+  );
+
+  it('fait confiance à un Origin valide même si le front est sur un autre site', async () => {
+    expect(
+      await run(check, request('POST', 'https://trame.example', 'cross-site')),
+    ).toBeUndefined();
+  });
 
   it('ne contrôle pas les lectures', async () => {
     expect(await run(check, request('GET', 'https://evil.example'))).toBeUndefined();

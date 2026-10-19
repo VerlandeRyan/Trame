@@ -358,6 +358,14 @@ describe('déconnexion et contrôle d’origine', () => {
     expect((await agent.get(`${BASE}/me`)).body.status).toBe('authenticated');
   });
 
+  it('refuse une écriture sans Origin que le navigateur annonce venir d’un autre site', async () => {
+    const agent = await newAccount();
+    const res = await agent.post(`${BASE}/logout`).set('Sec-Fetch-Site', 'cross-site');
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('FORBIDDEN_ORIGIN');
+    expect((await agent.get(`${BASE}/me`)).body.status).toBe('authenticated');
+  });
+
   it('laisse passer les lectures quelle que soit l’origine', async () => {
     const res = await request(app).get(`${BASE}/me`).set('Origin', 'https://evil.example');
     expect(res.status).toBe(200);
