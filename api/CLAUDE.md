@@ -26,6 +26,16 @@ Contrat complet : `docs/architecture.md`. À retenir en lisant le code :
 - Seuils et tailles dans `services/work.service.ts` (`FEATURED_*`, `TOP_RATED_LIMIT`, `MIN_RATINGS_FOR_AVERAGE`), passés au dépôt en paramètres : le dépôt ne connaît pas les règles. Le dépôt joint un sous-ensemble agrégé de `library_entry` (ajouts récents, notes) à `work` ; la moyenne est calculée dans le service.
 - `library_entry.created_at` (migration `…_library_entry_created_at`) date l'ajout ; `updated_at` bouge à chaque progression. Le jeu de démo (`db/demo-data.sql`) pose des ajouts relatifs à `now()` pour que « 7 jours » reste vrai à chaque rechargement ; les tests de ces routes en dépendent.
 
+## Authentification (`/auth`)
+Contrat : `docs/architecture.md`. À retenir en lisant le code :
+- Les routes ne lisent jamais `req.session` : seul `middleware/auth.ts` (`attachUser`) le fait et pose `req.user` ; on protège une route avec `requireUser` / `requireAdmin`. Un `Authorization: Bearer` (Capacitor/Expo) pourra s'ajouter dans `attachUser` sans toucher aux routes.
+- `services/google-identity.ts` est la seule porte vers Google (doublure `GoogleClient` dans les tests, aucun appel réseau). Sans client OAuth configuré, `AUTH_UNAVAILABLE`.
+- Le compte n'est créé qu'au choix du handle (`POST /auth/handle`) ; avant, l'identité attend 10 minutes dans la session. On ne conserve que `google_sub` et l'e-mail (pas le nom Google), jamais renvoyés par l'API.
+- `session/store.ts` : store `express-session` maison sur la table `session` (SQL dans `repositories/session.repository.ts`) ; `server.ts` purge les sessions expirées.
+- Handle : casse conservée, unicité insensible à la casse (citext). Mots réservés et offensants dans `handle-rules.ts` (code, pas de migration) : `OFFENSIVE_ANYWHERE` (mot refusé où qu'il soit) et `OFFENSIVE_WHOLE` (segment entier seulement, pour ne pas toucher Monique, Dickens, Nazir…).
+- Derrière un reverse proxy HTTPS, `TRUST_PROXY` (nombre de proxys) est indispensable : sans lui Express croit être en HTTP et le cookie `Secure` n'est jamais posé. En production `SESSION_SECRET` est obligatoire ; les E2E (HTTP local) passent `SECURE_COOKIES=false`.
+- `npm run db:promote-admin -- <handle>` : promeut le premier admin (base de travail, `DATABASE_URL`) ; refuse dès qu'un admin existe. Testé dans `src/db/promote-admin.test.ts`.
+
 ## Erreurs
 Réponse unique `{ code, message, details? }` ; `message` est un texte technique en anglais, non affiché (le front lit `code`). `details[]` d'une validation : `path`, `code` Zod et paramètres, jamais de message ni de valeur saisie. Les codes vivent dans `src/errors.ts` (`ERROR_CODES`) : en ajouter un là, jamais de JSON d'erreur improvisé. Les erreurs inattendues donnent `INTERNAL_ERROR` sans détail.
 

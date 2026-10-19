@@ -1,4 +1,4 @@
-import { Kysely, PostgresDialect, type Generated } from 'kysely';
+import { Kysely, PostgresDialect, type ColumnType, type Generated } from 'kysely';
 import pg from 'pg';
 
 /** Structure de l'histoire ; le format (manga, webtoon…) est dans la table `genre`. */
@@ -126,6 +126,27 @@ export interface LibraryEntryTable {
   created_at: Generated<Date>;
 }
 
+export type UserRole = 'user' | 'admin';
+
+export interface AppUserTable {
+  id: Generated<number>;
+  email: string;
+  google_sub: string;
+  /** citext, stocké en minuscules : 3 à 30 caractères `[a-z0-9_-]`. */
+  handle: string;
+  display_name: string | null;
+  role: Generated<UserRole>;
+  created_at: Generated<Date>;
+  deleted_at: Date | null;
+}
+
+export interface SessionTable {
+  sid: string;
+  /** jsonb : sérialisé à l'écriture, déjà analysé à la lecture. */
+  sess: ColumnType<unknown, string, string>;
+  expire: Date;
+}
+
 /**
  * Types des tables, ajoutés au fur et à mesure des dépôts qui en ont besoin.
  * La base reste la référence : `docs/modele-de-donnees.md` et `migrations/`.
@@ -143,6 +164,8 @@ export interface Database {
   work_genre: WorkGenreTable;
   external_link: ExternalLinkTable;
   library_entry: LibraryEntryTable;
+  app_user: AppUserTable;
+  session: SessionTable;
 }
 
 export type Db = Kysely<Database>;

@@ -106,7 +106,16 @@ describe('contrat : routes montées et spécification', () => {
       .map((path) => `/${path.slice(API_PREFIX.length + 1).split('/')[0]}`)
       .filter((prefix, i, all) => all.indexOf(prefix) === i);
     const none = {} as never;
-    const api = mountedRoutes(createApiRouter({ genreService: none, workService: none }), prefixes);
+    const api = mountedRoutes(
+      createApiRouter({
+        authService: none,
+        genreService: none,
+        workService: none,
+        webOrigin: 'http://localhost:3001',
+        secureCookies: false,
+      }),
+      prefixes,
+    );
     const health = mountedRoutes(createHealthRouter(none), ['/health']);
     const mounted = [
       ...api.map((r) => r.replace(' /', ` ${API_PREFIX}/`)),

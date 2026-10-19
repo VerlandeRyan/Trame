@@ -1,6 +1,8 @@
 import { createApp } from './app.js';
 import { loadConfig } from './config.js';
 import { createDb } from './db/database.js';
+import { createSessionRepository } from './repositories/session.repository.js';
+import { createGoogleClient } from './services/google-identity.js';
 
 const config = loadConfig();
 const db = createDb(config.DATABASE_URL);
@@ -11,9 +13,33 @@ const docs =
     : (await import('@scalar/express-api-reference')).apiReference({
         url: '/api/v1/openapi.json',
       });
-const server = createApp({ db, docs }).listen(config.PORT, () => {
+if (config.NODE_ENV === 'production' && !config.GOOGLE) {
+  console.warn('Connexion Google non configurée : /api/v1/auth/google répondra AUTH_UNAVAILABLE.');
+}
+const app = createApp({
+  db,
+  docs,
+  trustProxy: config.TRUST_PROXY,
+  auth: {
+    google: config.GOOGLE && createGoogleClient(config.GOOGLE),
+    sessionSecret: config.SESSION_SECRET,
+    webOrigin: config.WEB_ORIGIN,
+    secureCookies: config.SECURE_COOKIES,
+  },
+});
+const server = app.listen(config.PORT, () => {
   console.log(`API à l'écoute sur le port ${config.PORT}`);
 });
+
+// Purge des sessions expirées (au démarrage puis toutes les 15 minutes).
+const sessions = createSessionRepository(db);
+const PRUNE_INTERVAL_MS = 15 * 60 * 1000;
+const prune = () => {
+  sessions.removeExpired().catch((err: unknown) => console.error(err));
+};
+prune();
+const pruneTimer = setInterval(prune, PRUNE_INTERVAL_MS);
+pruneTimer.unref();
 
 function closeServer(): Promise<void> {
   return new Promise((resolve, reject) => {

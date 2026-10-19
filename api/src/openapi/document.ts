@@ -1,7 +1,10 @@
 import { z } from 'zod';
 import type { ErrorCode } from '../errors.js';
+import { handleBody, loginQuery } from '../routes/auth.routes.js';
+import { SESSION_COOKIE_NAME } from '../session/middleware.js';
 import { facetsQuery, listWorksQuery, workParams, workQuery } from '../routes/work.routes.js';
 import {
+  authStatusSchema,
   errorSchema,
   featuredListSchema,
   genreListSchema,
@@ -42,6 +45,11 @@ const schemaRef = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 const jsonResponse = (name: string, description: string) => ({
   description,
   content: { 'application/json': { schema: schemaRef(name) } },
+});
+
+const redirectResponse = (description: string) => ({
+  description,
+  headers: { Location: { schema: { type: 'string' } } },
 });
 
 const errorResponse = (code: ErrorCode, description: string) => ({
@@ -145,6 +153,101 @@ export function buildOpenApiDocument() {
           },
         },
       },
+      [`${API_PREFIX}/auth/google`]: {
+        get: {
+          summary: 'Démarrer la connexion Google',
+          operationId: 'startGoogleLogin',
+          tags: ['auth'],
+          parameters: toParameters(loginQuery, 'query'),
+          responses: {
+            '302': redirectResponse('Redirection vers l’écran de connexion de Google.'),
+            '503': errorResponse('AUTH_UNAVAILABLE', 'Connexion Google non configurée.'),
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/auth/google/callback`]: {
+        get: {
+          summary: 'Retour de Google après la connexion',
+          operationId: 'finishGoogleLogin',
+          tags: ['auth'],
+          parameters: ['code', 'state', 'error'].map((name) => ({
+            name,
+            in: 'query',
+            required: false,
+            description: 'Renseigné par Google.',
+            schema: { type: 'string' },
+          })),
+          responses: {
+            '302': redirectResponse(
+              'Redirection vers le front : `returnTo` ou `/` (compte existant), `/signup/handle?returnTo=…` (nouveau compte, handle à choisir) ou `/?auth_error=<code>` (refus ou échec).',
+            ),
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/auth/me`]: {
+        get: {
+          summary: 'Savoir qui est connecté',
+          operationId: 'getAuthStatus',
+          tags: ['auth'],
+          security: [{}, { sessionCookie: [] }],
+          responses: {
+            '200': jsonResponse('AuthStatus', 'Visiteur, inscription en attente ou connecté.'),
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/auth/handle`]: {
+        post: {
+          summary: 'Choisir son handle et créer le compte',
+          operationId: 'createAccount',
+          tags: ['auth'],
+          security: [{ sessionCookie: [] }],
+          requestBody: {
+            required: true,
+            content: { 'application/json': { schema: toJsonSchema(handleBody, 'input') } },
+          },
+          responses: {
+            '201': jsonResponse('AuthStatus', 'Compte créé et connecté.'),
+            '400': errorResponse(
+              'VALIDATION_ERROR',
+              'Format invalide (ou `HANDLE_NOT_ALLOWED` pour un mot réservé ou interdit).',
+            ),
+            '401': errorResponse(
+              'SIGNUP_EXPIRED',
+              'Aucune inscription en cours, ou elle a expiré (10 minutes).',
+            ),
+            '403': errorResponse('FORBIDDEN_ORIGIN', 'Origine de la requête refusée.'),
+            '409': errorResponse('HANDLE_TAKEN', 'Handle déjà pris (casse ignorée).'),
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/auth/cancel`]: {
+        post: {
+          summary: 'Abandonner l’inscription en cours',
+          operationId: 'cancelSignup',
+          tags: ['auth'],
+          responses: {
+            '204': { description: 'Session détruite, aucun compte créé.' },
+            '403': errorResponse('FORBIDDEN_ORIGIN', 'Origine de la requête refusée.'),
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/auth/logout`]: {
+        post: {
+          summary: 'Se déconnecter',
+          operationId: 'signOut',
+          tags: ['auth'],
+          responses: {
+            '204': { description: 'Session détruite.' },
+            '403': errorResponse('FORBIDDEN_ORIGIN', 'Origine de la requête refusée.'),
+            '500': internalError,
+          },
+        },
+      },
       [`${API_PREFIX}/genres`]: {
         get: {
           summary: 'Lister les formats et les genres',
@@ -158,8 +261,17 @@ export function buildOpenApiDocument() {
       },
     },
     components: {
+      securitySchemes: {
+        sessionCookie: {
+          type: 'apiKey',
+          in: 'cookie',
+          name: SESSION_COOKIE_NAME,
+          description: 'Cookie de session `httpOnly`, posé par la connexion Google.',
+        },
+      },
       schemas: {
         Error: toJsonSchema(errorSchema, 'output'),
+        AuthStatus: toJsonSchema(authStatusSchema, 'output'),
         FeaturedList: toJsonSchema(featuredListSchema, 'output'),
         TopRatedList: toJsonSchema(topRatedListSchema, 'output'),
         GenreList: toJsonSchema(genreListSchema, 'output'),

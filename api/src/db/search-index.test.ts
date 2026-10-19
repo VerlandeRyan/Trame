@@ -6,9 +6,12 @@ const client = new pg.Client({ connectionString });
 
 beforeAll(async () => {
   await client.connect();
-  // Les tables de test sont presque vides : sans cela le planificateur préfère un balayage séquentiel.
-  // On vérifie ici que l'index est *utilisable* par l'expression exacte du dépôt, pas qu'il est choisi.
+  // Les tables de test sont presque vides, voire vidées par d'autres tests : le planificateur préfère
+  // alors un balayage séquentiel ou la clé primaire. On écarte ces plans pour vérifier que l'index
+  // est *utilisable* par l'expression exacte du dépôt, pas qu'il est choisi.
   await client.query('SET enable_seqscan = off');
+  await client.query('SET enable_indexscan = off');
+  await client.query('SET enable_indexonlyscan = off');
 });
 afterAll(() => client.end());
 

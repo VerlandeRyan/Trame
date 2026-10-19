@@ -42,6 +42,9 @@ export default defineConfig({
         DATABASE_URL: testDatabaseUrl,
         PORT: String(PORT_API),
         NODE_ENV: 'production',
+        // Valeurs propres aux E2E : API en HTTP local, donc cookies non `Secure`.
+        SESSION_SECRET: 'e2e-only-session-secret-not-for-real-use',
+        SECURE_COOKIES: 'false',
       },
       reuseExistingServer: !process.env.CI,
       timeout: 30_000,

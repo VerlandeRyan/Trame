@@ -44,6 +44,7 @@ erDiagram
 | `library_entry` | **Le suivi d'une œuvre par un utilisateur** : statut de lecture, chapitres lus, tomes lus, note, dates. Une seule ligne par couple utilisateur/œuvre | (`user_id`, `work_id`) | L'utilisateur |
 | `reading_event` | Journal en ajout seul des progressions de lecture, pour l'historique et le bilan annuel | `id` | L'API, automatiquement |
 | `submission` | Une proposition d'œuvre faite par un utilisateur, en attente d'une décision de l'admin (contient les champs proposés en JSON) | `id` | L'utilisateur ; l'admin la traite |
+| `session` | Session de connexion (cookie `httpOnly`) : technique, hors modèle métier ; non reliée aux autres tables | `sid` | L'API, automatiquement |
 
 **Lecture d'ensemble** : le **catalogue** (`work`, `person`, `publisher` et leurs tables d'association) est alimenté par l'administrateur ; la partie **utilisateur** (`app_user`, `library_entry`, `reading_event`) par les utilisateurs ; `submission` fait le pont entre les deux.
 
@@ -55,12 +56,21 @@ erDiagram
 | id | bigint identity | PK |
 | email | text | NOT NULL, unique (insensible à la casse) |
 | google_sub | text | NOT NULL, unique — identifiant Google du compte |
-| handle | citext | NOT NULL, unique, 3–30 car. `[a-z0-9_-]`, liste de mots réservés |
+| handle | citext | NOT NULL, unique sans tenir compte de la casse, 3–30 car. `[A-Za-z0-9_-]` (casse saisie conservée pour l'affichage), liste de mots réservés (comparée en minuscules) |
 | display_name | text | nullable |
 | role | text | NOT NULL, `user` \| `admin`, défaut `user` |
 | profile_visibility | text | NOT NULL, `public` \| `private`, **défaut `public`** |
 | created_at | timestamptz | NOT NULL, défaut `now()` |
 | deleted_at | timestamptz | nullable (suppression de compte) |
+
+### `session`
+| Colonne | Type | Contraintes / règle |
+|---|---|---|
+| sid | text | PK — identifiant opaque porté par le cookie |
+| sess | jsonb | NOT NULL — identifiant de l'utilisateur connecté, ou identité Google en attente du choix du handle (10 minutes) ; jamais de jeton Google |
+| expire | timestamptz | NOT NULL, indexée — au-delà, la session est ignorée puis purgée (toutes les 15 minutes) |
+
+La déconnexion et l'abandon d'une inscription suppriment la ligne ; une session dont le compte a été supprimé ou archivé est détruite à la requête suivante : la session est révocable côté serveur.
 
 ### `work`
 | Colonne | Type | Contraintes / règle |
