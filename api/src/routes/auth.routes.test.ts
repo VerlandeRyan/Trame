@@ -100,8 +100,36 @@ describe('retour à la page d’origine (returnTo)', () => {
   it('transmet returnTo à l’écran du handle pour un nouveau compte', async () => {
     const res = await signIn(request.agent(app), 'sub-1|ryan@exemple.test', '/en/work/42?a=b');
     expect(res.headers.location).toBe(
-      `${WEB}/signup/handle?returnTo=${encodeURIComponent('/en/work/42?a=b')}`,
+      `${WEB}/en/signup/handle?returnTo=${encodeURIComponent('/en/work/42?a=b')}`,
     );
+  });
+
+  it('garde la langue de la page d’origine pour l’écran du handle', async () => {
+    const french = await signIn(request.agent(app), 'sub-1|ryan@exemple.test', '/work/42');
+    expect(french.headers.location).toBe(
+      `${WEB}/signup/handle?returnTo=${encodeURIComponent('/work/42')}`,
+    );
+    const englishHome = await signIn(request.agent(app), 'sub-2|a@exemple.test', '/en');
+    expect(englishHome.headers.location).toBe(
+      `${WEB}/en/signup/handle?returnTo=${encodeURIComponent('/en')}`,
+    );
+  });
+
+  it('ne prend pour une langue que le premier segment du chemin', async () => {
+    const res = await signIn(request.agent(app), 'sub-1|ryan@exemple.test', '/english/work');
+    expect(res.headers.location).toBe(
+      `${WEB}/signup/handle?returnTo=${encodeURIComponent('/english/work')}`,
+    );
+  });
+
+  it('ramène un échec dans la langue de la page d’origine', async () => {
+    const agent = request.agent(app);
+    await agent.get(`${BASE}/google`).query({ returnTo: '/en/search?q=a' });
+    const res = await agent.get(`${BASE}/google/callback`).query({ error: 'access_denied' });
+    expect(res.headers.location).toBe(`${WEB}/en/?auth_error=cancelled`);
+
+    const refused = await signIn(request.agent(app), 'refused', '/en/work/42');
+    expect(refused.headers.location).toBe(`${WEB}/en/?auth_error=AUTH_STATE_INVALID`);
   });
 
   it.each(['https://evil.example/', '//evil.example', '/\\evil.example', 'work/42', '/a b'])(
