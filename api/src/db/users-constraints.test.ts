@@ -1,5 +1,6 @@
 import pg from 'pg';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { isHandleAllowed } from '../handle-rules.js';
 import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
 
 const client = new pg.Client({ connectionString });
@@ -58,6 +59,15 @@ describe('app_user', () => {
     await expect(user({ handle: 'admin' })).rejects.toThrow();
     await expect(user({ handle: 'ADMIN' })).rejects.toThrow();
     await expect(user({ handle: 'Admin' })).rejects.toThrow();
+  });
+
+  it('ne réserve en base que des mots que handle-rules refuse aussi', async () => {
+    const res = await client.query<{ def: string }>(
+      "SELECT pg_get_constraintdef(oid) AS def FROM pg_constraint WHERE conname = 'app_user_handle_reserved_check'",
+    );
+    const words = [...res.rows[0].def.matchAll(/'([a-z]+)'::text/g)].map((match) => match[1]);
+    expect(words.length).toBeGreaterThan(10);
+    expect(words.filter((word) => isHandleAllowed(word))).toEqual([]);
   });
 
   it('conserve la casse du handle saisi', async () => {
