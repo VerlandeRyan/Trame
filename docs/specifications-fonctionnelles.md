@@ -39,8 +39,11 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 
 ### Compte
 **US-04 — Se connecter avec Google**
-- Connexion en un clic ; à la première connexion, choix d'un handle (validé : unicité, format, mots réservés).
-- Aucun mot de passe stocké ; session en cookie `httpOnly`.
+- Connexion en un clic ; un compte déjà connu est connecté directement et revient à la page où il se trouvait (langue comprise).
+- À la première connexion, **aucun compte n'est créé tant que le handle n'est pas choisi** : l'utilisateur a 10 minutes. S'il abandonne ou laisse expirer, rien n'est enregistré et il peut recommencer.
+- Handle : 3 à 30 caractères (lettres, chiffres, `_` et `-`), casse choisie conservée (« Ryan »), unique sans tenir compte de la casse ; les mots réservés et offensants sont refusés sans en donner la raison.
+- Aucun mot de passe stocké ; seuls l'e-mail et l'identifiant Google sont conservés (jamais le nom Google). Session en cookie `httpOnly`, 30 jours, prolongée à chaque visite.
+- Le changement de pseudo après la première connexion est traité à part (#105).
 
 **US-12 — Supprimer mon compte**
 - Bouton dans le profil avec confirmation ; supprime l'identité et la liste de lecture (voir exigences non fonctionnelles, RGPD).
@@ -127,10 +130,11 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Journal de lecture (`reading_event`) **dans le MVP**.
 - Pseudonymes : une `person` par nom d'usage ; alias plus tard si besoin.
 - Contenu multilingue (2026-10-12, ADR 0007, #53) : l'API accepte `lang` (liste de langues dans la configuration de l'API) ; sans `lang`, titre et synopsis sont dans la langue originale. Un titre `short` ou `former` n'est jamais choisi comme titre affiché mais reste recherchable.
+- Connexion et pseudo (2026-10-20, #22) : compte créé seulement au choix du handle (attente de 10 minutes, sans trace en cas d'abandon) ; handle avec la casse choisie, unicité insensible à la casse, mots réservés et offensants refusés ; seuls l'e-mail et l'identifiant Google sont conservés.
 
 ## 5. Points encore ouverts
 Décidés au démarrage du ticket concerné :
-- Pseudo : format, mots réservés, changement après la première connexion, reprise sans pseudo (#22).
+- Changement de pseudo : historique des anciens handles, redirection de l'ancien profil, limite de fréquence (#105).
 - Export des données et visibilité des notes d'un profil public (#34).
 - Soumission : règles de la limite de fréquence, motifs de refus et de signalement prédéfinis, preuve du retrait (#31, #32, #33).
 - Le proposant voit-il le motif de refus et peut-il le contester ? (#32).
