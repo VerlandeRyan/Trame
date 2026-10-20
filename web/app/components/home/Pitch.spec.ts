@@ -20,11 +20,16 @@ describe('HomePitch', () => {
     expect(wrapper.get('.pitch__sticker').attributes('aria-hidden')).toBe('true')
   })
 
-  it('propose « Créer ma liste de lecture », inactif tant que la connexion n’existe pas', async () => {
+  it('propose « Créer ma liste de lecture », qui ouvre la fenêtre de connexion', async () => {
     const wrapper = await mountSuspended(HomePitch)
+    const signInOpen = useSignInModal()
+    signInOpen.value = false
 
     const button = wrapper.get('[data-testid="home-create-list"]')
     expect(button.text()).toBe('Créer ma liste de lecture')
-    expect(button.attributes('disabled')).toBeDefined()
+    expect(button.attributes('disabled')).toBeUndefined()
+    await button.trigger('click')
+
+    expect(signInOpen.value).toBe(true)
   })
 })

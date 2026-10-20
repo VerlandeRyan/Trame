@@ -35,7 +35,8 @@ services:
       WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3001}
       SESSION_SECRET: ${SESSION_SECRET:-}
       SECURE_COOKIES: ${SECURE_COOKIES:-false}
-      TRUST_PROXY: ${TRUST_PROXY:-0}
+      # 1 : le site Nuxt relaie les appels et transmet l'adresse du visiteur (X-Forwarded-For).
+      TRUST_PROXY: ${TRUST_PROXY:-1}
       # Active la documentation interactive /docs (désactivée en production).
       NODE_ENV: development
     ports:

@@ -124,7 +124,7 @@ jobs:
       - name: API compilée et base de test migrée (les E2E chargent le jeu de démo)
         run: |
           npm ci --ignore-scripts
-          npm run build
+          npm run build:e2e
           npm run migrate:test
         working-directory: api
       - run: npm ci --ignore-scripts

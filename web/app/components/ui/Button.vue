@@ -3,21 +3,32 @@ withDefaults(
   defineProps<{
     variant?: 'primary' | 'secondary' | 'blue'
     size?: 'normal' | 'small'
-    // Couleur de statut : bouton principal d'une œuvre déjà dans la liste (libellé toujours présent).
+    // Couleur de statut : œuvre déjà dans la liste (le libellé reste toujours présent).
     status?: 'reading' | 'completed' | 'plan_to_read' | 'on_hold' | 'dropped'
+    // Un lien (navigation complète) à l'aspect d'un bouton.
+    href?: string
+    // Pleine largeur, survol moins incliné.
+    block?: boolean
   }>(),
-  { variant: 'primary', size: 'normal', status: undefined },
+  { variant: 'primary', size: 'normal', status: undefined, href: undefined, block: false },
 )
 </script>
 
 <template>
-  <button
-    type="button"
+  <component
+    :is="href ? 'a' : 'button'"
+    :type="href ? undefined : 'button'"
+    :href="href"
     class="btn"
-    :class="[`btn--${variant}`, `btn--${size}`, status && `btn--status-${status}`]"
+    :class="[
+      `btn--${variant}`,
+      `btn--${size}`,
+      status && `btn--status-${status}`,
+      block && 'btn--block',
+    ]"
   >
     <slot />
-  </button>
+  </component>
 </template>
 
 <style scoped lang="scss">
@@ -35,13 +46,8 @@ withDefaults(
   box-shadow: var(--shadow);
   color: var(--color-ink);
   font-weight: 700;
+  text-decoration: none;
   cursor: pointer;
-
-  // Seul retour au doigt ; l'emporte sur l'inclinaison du survol.
-  &:active:not(:disabled) {
-    transform: translate(2px, 2px);
-    box-shadow: 1px 1px 0 var(--color-ink);
-  }
 
   // Sans cela un bouton inactif a l'air actif.
   &:disabled {
@@ -75,10 +81,6 @@ withDefaults(
   box-shadow: var(--shadow-small);
   font-size: 0.8125rem;
   font-weight: 800;
-
-  &:active:not(:disabled) {
-    box-shadow: none;
-  }
 }
 
 // Statuts : leur couleur est une donnée, on l'assombrit.
@@ -92,5 +94,24 @@ withDefaults(
       filter: brightness(0.92);
     }
   }
+}
+
+// Pleine largeur : une inclinaison de −2,5° ferait déborder les coins sur les éléments voisins.
+.btn--block {
+  display: flex;
+  width: 100%;
+
+  @include tilt-on-hover(null, 1.015, -0.6deg);
+}
+
+// Appui (seul retour au doigt) : déclaré en dernier pour l'emporter sur l'inclinaison du survol,
+// de même spécificité.
+.btn:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--color-ink);
+}
+
+.btn--small:active:not(:disabled) {
+  box-shadow: none;
 }
 </style>

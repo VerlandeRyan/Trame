@@ -1,12 +1,19 @@
 <script setup lang="ts">
 // En-tête du site, d'après les maquettes : logo, recherche, langue, connexion.
 // Au mobile, la recherche est une icône qui déploie le champ dans l'en-tête.
-const { t } = useI18n()
+const { t, locales } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
-const onSearchPage = computed(() => route.path === localePath('/search'))
-// L'accueil porte son propre champ de recherche (maquettes 05 et 06) : pas de champ dans l'en-tête.
-const onHomePage = computed(() => route.path === localePath('/'))
+const { state: auth } = useAuth()
+const signInOpen = useSignInModal()
+
+// Dans n'importe quelle langue : au changement de langue, `localePath` suit déjà la nouvelle langue
+// alors que `route.path` est encore l'ancien, ce qui ferait clignoter le champ de recherche.
+const isCurrentPage = (path: string) =>
+  locales.value.some(({ code }) => route.path === localePath(path, code))
+const onSearchPage = computed(() => isCurrentPage('/search'))
+// L'accueil porte son propre champ de recherche : pas de champ dans l'en-tête.
+const onHomePage = computed(() => isCurrentPage('/'))
 
 const searching = ref(false)
 const searchBox = ref<{ focus: () => void } | null>(null)
@@ -78,7 +85,19 @@ watch(
       class="layout-header__explore"
     />
     <LayoutLanguageSwitcher class="layout-header__language" />
-    <UiButton variant="blue" size="small" class="layout-header__sign-in">
+    <LayoutAccountMenu
+      v-if="auth.status === 'authenticated'"
+      :handle="auth.user.handle"
+      class="layout-header__account"
+    />
+    <UiButton
+      v-else
+      variant="blue"
+      size="small"
+      class="layout-header__sign-in"
+      data-testid="sign-in"
+      @click="signInOpen = true"
+    >
       <Icon
         name="tabler:user"
         size="18"
@@ -203,6 +222,7 @@ watch(
     .layout-header__explore,
     .layout-header__search-link,
     .layout-header__language,
+    .layout-header__account,
     .layout-header__sign-in {
       display: none;
     }

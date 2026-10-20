@@ -1,4 +1,5 @@
 import type { Request, RequestHandler } from 'express';
+import { SUPPORTED_LANGUAGES } from '../config.js';
 import { AppError } from '../errors.js';
 import {
   PENDING_SIGNUP_TTL_MS,
@@ -9,9 +10,20 @@ import type { GoogleIdentity } from '../services/google-identity.js';
 import { SESSION_COOKIE_NAME, SESSION_TTL_MS, cookieOptions } from '../session/middleware.js';
 import { destroySession, regenerateSession, saveSession } from '../session/session-actions.js';
 
-/** Pages du front vers lesquelles Google ramène l'utilisateur (noms définitifs : #104). */
 const HOME_PATH = '/';
 const HANDLE_PATH = '/signup/handle';
+
+// Le français n'a pas de préfixe d'URL, les autres langues en ont un (`/en/…`).
+const DEFAULT_LANGUAGE = 'fr';
+const PREFIXED_LANGUAGES: ReadonlySet<string> = new Set(
+  SUPPORTED_LANGUAGES.filter((language) => language !== DEFAULT_LANGUAGE),
+);
+
+/** Préfixe de langue de la page d'origine (`/en`), pour garder le parcours dans cette langue. */
+function localePrefix(returnTo?: string): string {
+  const firstSegment = returnTo?.split(/[/?#]/)[1] ?? '';
+  return PREFIXED_LANGUAGES.has(firstSegment) ? `/${firstSegment}` : '';
+}
 
 /** Le front renvoie l'utilisateur vers `returnTo` une fois son handle choisi. */
 function withReturnTo(path: string, returnTo?: string): string {
@@ -55,7 +67,8 @@ export function createAuthController(
       const { code, state, error } = req.query as Record<string, string | undefined>;
       const attempt = req.session.oauth;
       const backToFront = (path: string) => res.redirect(`${webOrigin}${path}`);
-      const fail = (reason: string) => backToFront(`/?auth_error=${reason}`);
+      const fail = (reason: string) =>
+        backToFront(`${localePrefix(attempt?.returnTo)}${HOME_PATH}?auth_error=${reason}`);
 
       if (error !== undefined) return fail('cancelled');
       if (!attempt || !code || state !== attempt.state) return fail('AUTH_STATE_INVALID');
@@ -69,7 +82,7 @@ export function createAuthController(
           return backToFront(returnTo ?? HOME_PATH);
         }
         await openSession(req, { pending: outcome.identity }, PENDING_SIGNUP_TTL_MS);
-        return backToFront(withReturnTo(HANDLE_PATH, returnTo));
+        return backToFront(withReturnTo(`${localePrefix(returnTo)}${HANDLE_PATH}`, returnTo));
       } catch (err) {
         if (err instanceof AppError) return fail(err.code);
         throw err;

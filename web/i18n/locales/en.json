@@ -257,8 +257,57 @@
     "notFoundText": "The link may be wrong, or the page may have moved. Try a search.",
     "backHome": "Back to home"
   },
+  "auth": {
+    "cancelled": "Sign-in cancelled. You can try again whenever you like.",
+    "signupCancelled": "Sign-up cancelled. Nothing was saved: you can start again whenever you like.",
+    "signOut": "Sign out",
+    "signedOut": "You are signed out. See you soon on Trame!",
+    "signOutFailed": "Unable to sign out right now. Please try again in a moment.",
+    "signOutConfirm": {
+      "title": "Sign out?",
+      "text": "You can sign back in with Google at any time.",
+      "confirm": "Sign out",
+      "keep": "Stay signed in"
+    },
+    "signIn": {
+      "title": "Sign in to Trame",
+      "intro": "It takes one click, then you can track your reading.",
+      "google": "Continue with Google",
+      "noPassword": "No password to create or remember.",
+      "emailHidden": "Your email address is never shown.",
+      "publicHandle": "You then choose a public username.",
+      "legal": "By continuing, you accept the terms of use and the privacy policy."
+    },
+    "handle": {
+      "title": "Choose your username",
+      "stepSignIn": "Sign-in",
+      "stepHandle": "Your username",
+      "steps": "Sign-up steps",
+      "intro": "This is the name others will see on your profile and in your page address.",
+      "label": "Username",
+      "hint": "3 to 30 characters: letters, digits, hyphen or underscore.",
+      "profileAddress": "Your profile address:",
+      "visibility": "Your profile will be public by default. You can make it private at any time in your settings.",
+      "submit": "Continue",
+      "cancel": "Cancel sign-up",
+      "confirmCancel": {
+        "title": "Cancel sign-up?",
+        "text": "Nothing has been saved. To start again, you will need to sign in with Google again.",
+        "confirm": "Yes, cancel",
+        "keep": "Continue sign-up"
+      },
+      "expired": "Your sign-up has expired. Sign in again to start over."
+    }
+  },
   "error": {
     "INTERNAL_ERROR": "Something went wrong. Please try again in a moment.",
-    "ADMIN_REQUIRED": "This action is reserved for administrators."
+    "ADMIN_REQUIRED": "This action is reserved for administrators.",
+    "HANDLE_TAKEN": "This username is already taken. Try another one.",
+    "HANDLE_NOT_ALLOWED": "This username is reserved. Choose another one.",
+    "VALIDATION_ERROR": "This username is not valid.",
+    "SIGNUP_EXPIRED": "Your sign-up has expired. Sign in again to start over.",
+    "AUTH_STATE_INVALID": "Sign-in failed or expired. Please try again.",
+    "AUTH_UNAVAILABLE": "Sign-in is unavailable right now.",
+    "RATE_LIMITED": "Too many attempts. Please try again in a few minutes."
   }
 }

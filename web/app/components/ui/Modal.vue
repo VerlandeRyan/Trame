@@ -1,10 +1,15 @@
 <script setup lang="ts">
-// Modale simple basée sur <dialog> natif (focus, Échap, inertie du fond gérés par le navigateur).
-// `placement="bottom"` : feuille basse ; le slot `footer` reste visible sous le contenu défilant.
-// Les cas complexes (combobox, menus) passeront par des primitives headless, plus tard.
+// Modale basée sur <dialog> natif (focus, Échap, inertie du fond gérés par le navigateur).
+// `placement="bottom"` : feuille basse, le slot `footer` reste visible sous le contenu défilant.
+// `plain` : fenêtre d'invitation, sans filet sous le titre.
 withDefaults(
-  defineProps<{ title: string; closeLabel: string; placement?: 'center' | 'bottom' }>(),
-  { placement: 'center' },
+  defineProps<{
+    title: string
+    closeLabel: string
+    placement?: 'center' | 'bottom'
+    plain?: boolean
+  }>(),
+  { placement: 'center', plain: false },
 )
 const open = defineModel<boolean>({ default: false })
 const dialog = ref<HTMLDialogElement | null>(null)
@@ -26,7 +31,7 @@ watch(open, (isOpen) => {
   <dialog
     ref="dialog"
     class="modal"
-    :class="`modal--${placement}`"
+    :class="[`modal--${placement}`, plain && 'modal--plain']"
     @close="open = false"
     @click="onDialogClick"
   >
@@ -43,6 +48,8 @@ watch(open, (isOpen) => {
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .modal {
   width: min(480px, calc(100vw - 2 * var(--space-4)));
   padding: 0;
@@ -89,6 +96,71 @@ watch(open, (isOpen) => {
     overflow-y: auto;
     padding-top: 0;
     overscroll-behavior: contain;
+  }
+}
+
+// Déclaré après `modal--bottom` : à spécificité égale, ces règles l'emportent.
+.modal--plain {
+  &.modal--center {
+    width: min(440px, calc(100vw - 2 * var(--space-4)));
+  }
+
+  .modal__head {
+    padding: 22px 24px 0;
+    border-bottom: 0;
+  }
+
+  .modal__title {
+    padding-right: 40px;
+    color: var(--color-blue);
+    font-size: 1.25rem;
+    font-weight: 800;
+  }
+
+  // Croix de 28 px dans le coin, zone tactile de 44 px (`::after`).
+  .modal__close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: var(--border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+    }
+
+    // Même mouvement que les flèches du carrousel.
+    @media (prefers-reduced-motion: no-preference) {
+      transition:
+        transform 0.12s ease-out,
+        box-shadow 0.12s ease-out,
+        background-color 0.15s;
+    }
+
+    @include on-hover {
+      background: var(--color-rose);
+
+      @media (prefers-reduced-motion: no-preference) {
+        box-shadow: var(--shadow-small);
+        transform: translate(-1px, -1px);
+      }
+    }
+
+    &:active {
+      background: var(--color-rose);
+      box-shadow: none;
+      transform: translate(1px, 1px);
+    }
+  }
+
+  .modal__body {
+    padding: 8px 24px 22px;
   }
 }
 

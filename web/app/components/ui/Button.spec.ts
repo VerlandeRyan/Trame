@@ -16,6 +16,24 @@ describe('UiButton', () => {
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['btn--blue', 'btn--small']))
   })
 
+  it('devient un lien quand une adresse est donnée', async () => {
+    const wrapper = await mountSuspended(UiButton, {
+      props: { href: '/api/v1/auth/google' },
+      slots: { default: 'Google' },
+    })
+
+    expect(wrapper.element.tagName).toBe('A')
+    expect(wrapper.attributes('href')).toBe('/api/v1/auth/google')
+    expect(wrapper.attributes('type')).toBeUndefined()
+  })
+
+  it('passe en pleine largeur à la demande', async () => {
+    const wrapper = await mountSuspended(UiButton, { props: { block: true } })
+
+    expect(wrapper.classes()).toContain('btn--block')
+    expect((await mountSuspended(UiButton)).classes()).not.toContain('btn--block')
+  })
+
   it('prend la couleur du statut de lecture', async () => {
     const wrapper = await mountSuspended(UiButton, { props: { status: 'on_hold' } })
 

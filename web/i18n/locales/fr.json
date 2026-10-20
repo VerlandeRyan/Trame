@@ -140,7 +140,11 @@
     "volumesRead": "Tomes lus",
     "emptyTitle": "Rien à afficher pour l'instant",
     "emptyText": "Le catalogue apparaîtra ici.",
-    "modalText": "Contenu de la fenêtre."
+    "modalText": "Contenu de la fenêtre.",
+    "auth": "Connexion, champs et confirmations",
+    "wideLink": "Lien pleine largeur",
+    "openSignIn": "Fenêtre de connexion",
+    "openConfirm": "Fenêtre de confirmation"
   },
   "action": {
     "addToList": "Ajouter à ma liste",
@@ -257,8 +261,57 @@
     "notFoundText": "Le lien est peut-être erroné, ou la fiche a changé d'adresse. Essaie une recherche.",
     "backHome": "Retour à l'accueil"
   },
+  "auth": {
+    "cancelled": "Connexion annulée. Tu peux recommencer quand tu veux.",
+    "signupCancelled": "Inscription annulée. Rien n'a été enregistré : tu peux recommencer quand tu veux.",
+    "signOut": "Se déconnecter",
+    "signedOut": "Tu es déconnecté. À bientôt sur Trame !",
+    "signOutFailed": "Déconnexion impossible pour le moment. Réessaie dans un instant.",
+    "signOutConfirm": {
+      "title": "Se déconnecter ?",
+      "text": "Tu pourras te reconnecter avec Google à tout moment.",
+      "confirm": "Se déconnecter",
+      "keep": "Rester connecté"
+    },
+    "signIn": {
+      "title": "Connecte-toi à Trame",
+      "intro": "Ça prend un clic : tu pourras ensuite suivre tes lectures.",
+      "google": "Continuer avec Google",
+      "noPassword": "Aucun mot de passe à créer ni à retenir.",
+      "emailHidden": "Ton adresse e-mail n'est jamais affichée.",
+      "publicHandle": "Tu choisis ensuite un pseudo public.",
+      "legal": "En continuant, tu acceptes les conditions d'utilisation et la politique de confidentialité."
+    },
+    "handle": {
+      "title": "Choisis ton pseudo",
+      "stepSignIn": "Connexion",
+      "stepHandle": "Ton pseudo",
+      "steps": "Étapes de l'inscription",
+      "intro": "C'est le nom que les autres verront sur ton profil et dans l'adresse de ta page.",
+      "label": "Pseudo",
+      "hint": "3 à 30 caractères : lettres, chiffres, tiret ou tiret bas.",
+      "profileAddress": "Adresse de ton profil :",
+      "visibility": "Ton profil sera public par défaut. Tu pourras le passer en privé à tout moment dans tes réglages.",
+      "submit": "Continuer",
+      "cancel": "Annuler l'inscription",
+      "confirmCancel": {
+        "title": "Annuler l'inscription ?",
+        "text": "Rien n'a été enregistré. Pour recommencer, tu devras te reconnecter avec Google.",
+        "confirm": "Oui, annuler",
+        "keep": "Continuer l'inscription"
+      },
+      "expired": "Ton inscription a expiré. Reconnecte-toi pour recommencer."
+    }
+  },
   "error": {
     "INTERNAL_ERROR": "Une erreur est survenue. Réessaie dans un instant.",
-    "ADMIN_REQUIRED": "Cette action est réservée aux administrateurs."
+    "ADMIN_REQUIRED": "Cette action est réservée aux administrateurs.",
+    "HANDLE_TAKEN": "Ce pseudo est déjà pris. Essaie un autre.",
+    "HANDLE_NOT_ALLOWED": "Ce pseudo est réservé. Choisis-en un autre.",
+    "VALIDATION_ERROR": "Ce pseudo n'est pas valide.",
+    "SIGNUP_EXPIRED": "Ton inscription a expiré. Reconnecte-toi pour recommencer.",
+    "AUTH_STATE_INVALID": "La connexion a échoué ou a expiré. Réessaie.",
+    "AUTH_UNAVAILABLE": "La connexion est indisponible pour le moment.",
+    "RATE_LIMITED": "Trop de tentatives. Réessaie dans quelques minutes."
   }
 }

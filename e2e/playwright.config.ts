@@ -20,6 +20,7 @@ const PORT = 3200
 const PORT_GALLERY_OFF = 3201
 const PORT_API = 3202
 const API_URL = `http://127.0.0.1:${PORT_API}`
+const WEB_URL = `http://127.0.0.1:${PORT}`
 
 // Le front et l'API doivent être construits avant (npm run build dans web/ et api/) : on teste la
 // sortie réelle de Nitro et le serveur compilé.
@@ -36,12 +37,18 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: 'node ../api/dist/server.js',
+      // Point d'entrée E2E : Google est remplacé par une doublure, tout le reste est réel.
+      command: 'node ../api/dist-e2e/server.e2e.js',
       url: `${API_URL}/health`,
       env: {
         DATABASE_URL: testDatabaseUrl,
         PORT: String(PORT_API),
         NODE_ENV: 'production',
+        WEB_ORIGIN: WEB_URL,
+        // Un `.env` local peut porter les vrais identifiants Google : les E2E n'en veulent aucun.
+        GOOGLE_CLIENT_ID: '',
+        GOOGLE_CLIENT_SECRET: '',
+        GOOGLE_REDIRECT_URI: '',
         // Valeurs propres aux E2E : API en HTTP local, donc cookies non `Secure`.
         SESSION_SECRET: 'e2e-only-session-secret-not-for-real-use',
         SECURE_COOKIES: 'false',

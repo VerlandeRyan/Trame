@@ -55,16 +55,8 @@ const { data } = await useAsyncData<HomeData>(`home-${locale.value}`, loadHomeBl
 
 const searchBox = ref<{ submit: () => void } | null>(null)
 
-// Au mobile, le champ n'a que « Rechercher… ». Choisi après le montage pour que le rendu serveur
-// et le premier rendu du navigateur restent identiques.
-const narrow = ref(false)
-onMounted(() => {
-  const query = window.matchMedia('(max-width: 767px)')
-  narrow.value = query.matches
-  query.addEventListener('change', (event) => {
-    narrow.value = event.matches
-  })
-})
+// Au mobile, le champ n'a que « Rechercher… ».
+const narrow = useNarrowScreen()
 const placeholder = computed(() =>
   narrow.value ? t('home.searchPlaceholderShort') : t('home.searchPlaceholder'),
 )
