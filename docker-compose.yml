@@ -28,6 +28,14 @@ services:
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       PORT: "3000"
+      # Connexion Google et session : valeurs lues dans .env, toutes facultatives en local.
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: ${GOOGLE_REDIRECT_URI:-}
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3001}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      SECURE_COOKIES: ${SECURE_COOKIES:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
       # Active la documentation interactive /docs (désactivée en production).
       NODE_ENV: development
     ports:

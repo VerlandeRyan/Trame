@@ -7,6 +7,7 @@ import type { z } from 'zod';
 import { createApp } from '../app.js';
 import { createDb } from '../db/database.js';
 import { ERROR_CODES } from '../errors.js';
+import { AUTH_RATE_LIMIT } from '../middleware/rate-limit.js';
 import { createHealthRouter } from '../routes/health.routes.js';
 import { createApiRouter } from '../routes/index.js';
 import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
@@ -106,7 +107,17 @@ describe('contrat : routes montées et spécification', () => {
       .map((path) => `/${path.slice(API_PREFIX.length + 1).split('/')[0]}`)
       .filter((prefix, i, all) => all.indexOf(prefix) === i);
     const none = {} as never;
-    const api = mountedRoutes(createApiRouter({ genreService: none, workService: none }), prefixes);
+    const api = mountedRoutes(
+      createApiRouter({
+        authService: none,
+        genreService: none,
+        workService: none,
+        webOrigin: 'http://localhost:3001',
+        secureCookies: false,
+        authRateLimit: AUTH_RATE_LIMIT,
+      }),
+      prefixes,
+    );
     const health = mountedRoutes(createHealthRouter(none), ['/health']);
     const mounted = [
       ...api.map((r) => r.replace(' /', ` ${API_PREFIX}/`)),

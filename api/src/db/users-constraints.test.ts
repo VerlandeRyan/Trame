@@ -57,6 +57,13 @@ describe('app_user', () => {
     await expect(user({ handle: 'a'.repeat(31) })).rejects.toThrow();
     await expect(user({ handle: 'admin' })).rejects.toThrow();
     await expect(user({ handle: 'ADMIN' })).rejects.toThrow();
+    await expect(user({ handle: 'Admin' })).rejects.toThrow();
+  });
+
+  it('conserve la casse du handle saisi', async () => {
+    const id = await user({ handle: 'Ryan_B' });
+    const res = await client.query('SELECT handle FROM app_user WHERE id = $1', [id]);
+    expect(res.rows[0].handle).toBe('Ryan_B');
   });
 
   it('refuse un handle, un e-mail ou un compte Google en double (sans tenir compte de la casse)', async () => {

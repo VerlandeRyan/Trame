@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { ERROR_CODES, type ErrorBody } from '../errors.js';
 import type { GenreRecord } from '../repositories/genre.repository.js';
 import type { FeaturedWork, WorkFacets, WorkSummary } from '../repositories/work.repository.js';
+import type { AuthStatus } from '../services/auth.service.js';
 import type { HealthStatus } from '../services/health.service.js';
 import type { TopRatedWork, WorkDetail, WorkPage } from '../services/work.service.js';
 
@@ -171,6 +172,27 @@ export const healthSchema = z.strictObject({
   status: z.enum(['ok', 'degraded']),
   database: z.enum(['up', 'down']),
 }) satisfies z.ZodType<HealthStatus>;
+
+export const authStatusSchema = z
+  .discriminatedUnion('status', [
+    z.strictObject({ status: z.literal('anonymous') }),
+    z
+      .strictObject({
+        status: z.literal('pending'),
+      })
+      .describe('Identité Google validée : le handle reste à choisir (10 minutes).'),
+    z.strictObject({
+      status: z.literal('authenticated'),
+      user: z.strictObject({
+        id: z.number().int(),
+        handle: z.string().describe('Pseudo public, avec la casse choisie.'),
+        role: z.enum(['user', 'admin']),
+      }),
+    }),
+  ])
+  .describe(
+    'Qui est derrière la requête. Jamais l’e-mail ni l’identifiant Google.',
+  ) satisfies z.ZodType<AuthStatus>;
 
 const errorCodes = Object.keys(ERROR_CODES) as [
   keyof typeof ERROR_CODES,
