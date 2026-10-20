@@ -299,6 +299,42 @@
       "expired": "Your sign-up has expired. Sign in again to start over."
     }
   },
+  "library": {
+    "progress": "My progress",
+    "chaptersRead": "Chapters read",
+    "volumesRead": "Volumes read",
+    "of": "of {total}",
+    "ofUnknown": "of ?",
+    "ofTen": "out of 10",
+    "exceedsChapters": "More than the {total} known released chapters.",
+    "exceedsVolumes": "More than the {total} known released volumes.",
+    "rating": "My rating",
+    "noRating": "—",
+    "dates": "Reading dates",
+    "startedOn": "Started on",
+    "finishedOn": "Finished on",
+    "remove": "Remove from my list",
+    "removeTitle": "Remove this work from your list?",
+    "removeText": "Your status, counters, rating and dates for this work will be erased.",
+    "keep": "Keep it",
+    "readingPrompt": {
+      "start": "Started this work?",
+      "resume": "Resume reading?",
+      "text": "This work is “{status}”. Move it to “Reading” to save your progress?",
+      "confirm": "Move to “Reading”",
+      "cancel": "Cancel",
+      "finish": "Finished this work?",
+      "finishChapters": "You have read all released chapters ({total}). Move it to “Completed”?",
+      "finishVolumes": "You have read all released volumes ({total}). Move it to “Completed”?",
+      "confirmFinish": "Move to “Completed”",
+      "keep": "Keep “{status}”"
+    },
+    "error": {
+      "generic": "Could not save right now. Please try again in a moment.",
+      "signedOut": "Your session has expired. Sign in again to continue.",
+      "notFound": "This work is no longer available."
+    }
+  },
   "error": {
     "INTERNAL_ERROR": "Something went wrong. Please try again in a moment.",
     "ADMIN_REQUIRED": "This action is reserved for administrators.",

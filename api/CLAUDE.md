@@ -26,6 +26,13 @@ Contrat complet : `docs/architecture.md`. À retenir en lisant le code :
 - Seuils et tailles dans `services/work.service.ts` (`FEATURED_*`, `TOP_RATED_LIMIT`, `MIN_RATINGS_FOR_AVERAGE`), passés au dépôt en paramètres : le dépôt ne connaît pas les règles. Le dépôt joint un sous-ensemble agrégé de `library_entry` (ajouts récents, notes) à `work` ; la moyenne est calculée dans le service.
 - `library_entry.created_at` (migration `…_library_entry_created_at`) date l'ajout ; `updated_at` bouge à chaque progression. Le jeu de démo (`db/demo-data.sql`) pose des ajouts relatifs à `now()` pour que « 7 jours » reste vrai à chaque rechargement ; les tests de ces routes en dépendent.
 
+## Liste de lecture (`/works/:id/entry`)
+Contrat : `docs/architecture.md`. Tables `library_entry` et `reading_event` (migration `…_utilisateurs`) ; aucune migration propre à #23.
+- `library.service.ts` porte les règles : fusion des champs omis, dates proposées au changement de statut, et `journalEvents` (une ligne de journal par statut, compteur ou note modifié ; variation **signée** pour que les sommes du bilan annuel restent justes ; retirer une note n'écrit rien).
+- `library.repository.ts` `save(userId, workId, decide)` lit l'entrée avec `FOR UPDATE`, appelle `decide` puis écrit entrée et journal dans **une transaction** : deux requêtes qui se croisent ne faussent pas le journal. Le service n'écrit pas de SQL, le dépôt ne connaît pas les règles.
+- Routes protégées par `requireUser` ; limite d'écriture `LIBRARY_RATE_LIMIT` (120/min/IP, un `+1` répété ne doit pas être gêné). Le routeur est monté sous `/works` **avant** `createWorkRouter`.
+- Tests : `routes/library.routes.test.ts` supprime ses propres utilisateurs (e-mail `@library.test`) au lieu de tronquer `app_user`, dont dépend `work` (`deleted_by`).
+
 ## Authentification (`/auth`)
 Contrat : `docs/architecture.md`. À retenir en lisant le code :
 - Les routes ne lisent jamais `req.session` : seul `middleware/auth.ts` (`attachUser`) le fait et pose `req.user` ; on protège une route avec `requireUser` / `requireAdmin`. Un `Authorization: Bearer` (Capacitor/Expo) pourra s'ajouter dans `attachUser` sans toucher aux routes.

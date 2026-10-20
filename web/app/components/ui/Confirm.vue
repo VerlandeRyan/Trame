@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // Confirmation d'une action sensible ; `cancelLabel` est l'issue sûre (ne rien changer).
+// `cancel` distingue le bouton de refus de la croix, d'Échap et du clic à côté (qui ne font que fermer).
 defineProps<{
   title: string
   text: string
@@ -7,13 +8,18 @@ defineProps<{
   cancelLabel: string
   closeLabel: string
 }>()
-const emit = defineEmits<{ confirm: [] }>()
+const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const open = defineModel<boolean>({ default: false })
 const narrow = useNarrowScreen()
 
 function confirm() {
   open.value = false
   emit('confirm')
+}
+
+function cancel() {
+  open.value = false
+  emit('cancel')
 }
 </script>
 
@@ -28,10 +34,17 @@ function confirm() {
     <div class="confirm">
       <p class="confirm__text">{{ text }}</p>
       <div class="confirm__actions">
-        <UiButton variant="secondary" data-testid="confirm-cancel" @click="open = false">
+        <UiButton
+          variant="secondary"
+          class="confirm__button"
+          data-testid="confirm-cancel"
+          @click="cancel"
+        >
           {{ cancelLabel }}
         </UiButton>
-        <UiButton data-testid="confirm-accept" @click="confirm">{{ confirmLabel }}</UiButton>
+        <UiButton class="confirm__button" data-testid="confirm-accept" @click="confirm">
+          {{ confirmLabel }}
+        </UiButton>
       </div>
     </div>
   </UiModal>
@@ -49,7 +62,12 @@ function confirm() {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-  justify-content: flex-end;
   margin-top: var(--space-4);
+}
+
+// Côte à côte, ils se partagent la ligne ; quand les libellés sont longs et qu'ils passent l'un
+// sous l'autre, ils prennent la même largeur (sinon l'un est plus étroit et la fenêtre paraît mal alignée).
+.confirm__button {
+  flex: 1 1 auto;
 }
 </style>

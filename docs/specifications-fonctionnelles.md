@@ -59,6 +59,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Aucune validation croisée entre les deux compteurs ; un avertissement discret (non bloquant) si une valeur dépasse le nombre connu de chapitres/tomes parus.
 - Note de 1 à 10, facultative et retirable.
 - Les dates de début et de fin sont proposées automatiquement lors des changements de statut vers En cours / Terminé, et modifiables.
+- Progresser sur une œuvre « À lire », « En pause » ou « Abandonné » demande avant de la passer en « En cours » (rien n'est enregistré si on annule). Atteindre le total connu de chapitres ou de tomes (« ? » tant que l'œuvre est en cours) propose de la passer en « Terminé » ; refuser garde le statut et enregistre quand même le compteur.
 - Un seul composant « fiche de lecture » (statut, chapitres lus, tomes lus, note, dates, retirer de ma liste), réutilisé sur la fiche œuvre et dans la liste.
 
 **US-07 — Consulter ma liste de lecture**

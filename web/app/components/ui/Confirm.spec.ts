@@ -32,6 +32,16 @@ describe('UiConfirm', () => {
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
     expect(wrapper.emitted('confirm')).toBeUndefined()
+    expect(wrapper.emitted('cancel')).toHaveLength(1)
+  })
+
+  it('ne signale pas un refus quand on ferme par la croix', async () => {
+    const wrapper = await mountConfirm()
+
+    await wrapper.get('[aria-label="Fermer"]').trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
+    expect(wrapper.emitted('cancel')).toBeUndefined()
   })
 
   it('se referme et prévient quand on confirme', async () => {

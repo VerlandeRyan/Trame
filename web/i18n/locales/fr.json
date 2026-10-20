@@ -303,6 +303,42 @@
       "expired": "Ton inscription a expiré. Reconnecte-toi pour recommencer."
     }
   },
+  "library": {
+    "progress": "Ma progression",
+    "chaptersRead": "Chapitres lus",
+    "volumesRead": "Tomes lus",
+    "of": "sur {total}",
+    "ofUnknown": "sur ?",
+    "ofTen": "sur 10",
+    "exceedsChapters": "Plus que les {total} chapitres parus connus.",
+    "exceedsVolumes": "Plus que les {total} tomes parus connus.",
+    "rating": "Ma note",
+    "noRating": "—",
+    "dates": "Dates de lecture",
+    "startedOn": "Début de lecture",
+    "finishedOn": "Fin de lecture",
+    "remove": "Retirer de ma liste",
+    "removeTitle": "Retirer cette œuvre de ta liste ?",
+    "removeText": "Ton statut, tes compteurs, ta note et tes dates pour cette œuvre seront effacés.",
+    "keep": "Garder",
+    "readingPrompt": {
+      "start": "Tu as commencé cette œuvre ?",
+      "resume": "Reprendre la lecture ?",
+      "text": "Cette œuvre est « {status} ». La passer en « En cours » pour enregistrer ta progression ?",
+      "confirm": "Passer en « En cours »",
+      "cancel": "Annuler",
+      "finish": "Tu as fini cette œuvre ?",
+      "finishChapters": "Tu as lu tous les chapitres parus ({total}). La passer en « Terminé » ?",
+      "finishVolumes": "Tu as lu tous les tomes parus ({total}). La passer en « Terminé » ?",
+      "confirmFinish": "Passer en « Terminé »",
+      "keep": "Garder « {status} »"
+    },
+    "error": {
+      "generic": "Impossible d'enregistrer pour l'instant. Réessaie dans un instant.",
+      "signedOut": "Ta session a expiré. Reconnecte-toi pour continuer.",
+      "notFound": "Cette œuvre n'est plus disponible."
+    }
+  },
   "error": {
     "INTERNAL_ERROR": "Une erreur est survenue. Réessaie dans un instant.",
     "ADMIN_REQUIRED": "Cette action est réservée aux administrateurs.",

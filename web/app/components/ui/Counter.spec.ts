@@ -40,4 +40,39 @@ describe('UiCounter', () => {
 
     expect(wrapper.emitted('update:modelValue')).toEqual([[99], [0]])
   })
+
+  it('affiche le libellé vide à la valeur minimale, y compris après une saisie', async () => {
+    const wrapper = await mountSuspended(UiCounter, {
+      props: { label: 'Ma note', modelValue: 0, max: 10, emptyLabel: '—' },
+    })
+    const field = wrapper.get('input')
+    expect(field.element).toHaveProperty('value', '—')
+
+    await field.setValue('7')
+    await field.trigger('change')
+    await field.setValue('abc')
+    await field.trigger('change')
+
+    expect(wrapper.emitted('update:modelValue')).toEqual([[7], [0]])
+    expect(field.element).toHaveProperty('value', '—')
+  })
+
+  it('réduit la police à partir de quatre chiffres pour que la valeur reste visible', async () => {
+    const lengthClass = async (modelValue: number) =>
+      (await mountSuspended(UiCounter, { props: { label: 'Chapitres lus', modelValue } }))
+        .get('input')
+        .classes()
+
+    expect(await lengthClass(999)).toEqual(['counter__value'])
+    expect(await lengthClass(1000)).toContain('counter__value--long')
+    expect(await lengthClass(10000)).toContain('counter__value--longer')
+  })
+
+  it('a des boutons compacts en option', async () => {
+    const wrapper = await mountSuspended(UiCounter, {
+      props: { label: 'Tomes lus', modelValue: 1, compact: true },
+    })
+
+    expect(wrapper.classes()).toContain('counter--compact')
+  })
 })

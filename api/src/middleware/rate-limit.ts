@@ -10,6 +10,9 @@ export interface RateLimitSettings {
 /** Connexion et création de compte : largement au-dessus d'un usage normal. */
 export const AUTH_RATE_LIMIT: RateLimitSettings = { windowMs: 10 * 60 * 1000, limit: 30 };
 
+/** Écritures de la liste de lecture : de quoi enchaîner des +1 sans gêner un usage normal. */
+export const LIBRARY_RATE_LIMIT: RateLimitSettings = { windowMs: 60 * 1000, limit: 120 };
+
 /**
  * Options communes à tous les limiteurs ; la route appelle elle-même `rateLimit(...)`.
  * Au-delà de la limite : `RATE_LIMITED` (429) avec l'en-tête `Retry-After`.
