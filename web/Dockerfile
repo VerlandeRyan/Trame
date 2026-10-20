@@ -7,6 +7,7 @@ COPY nuxt.config.ts tsconfig.json ./
 COPY app ./app
 COPY i18n ./i18n
 COPY server ./server
+COPY shared ./shared
 RUN npm run build
 
 FROM node:24-alpine
