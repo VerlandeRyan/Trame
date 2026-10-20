@@ -138,4 +138,17 @@ describe("LayoutHeader sur l'accueil", () => {
     expect(wrapper.get('header').classes()).toContain('layout-header--plain')
     expect(wrapper.find('button[aria-haspopup]').text()).toBe('FR')
   })
+
+  it("reste sans champ de recherche dans l'autre langue, y compris pendant le changement", async () => {
+    const english = await mountSuspended(LayoutHeader, { route: '/en' })
+    expect(english.find('[role="combobox"]').exists()).toBe(false)
+
+    // La langue change avant la page : `localePath` suit déjà l'anglais, `route.path` est encore `/`.
+    const { $i18n } = useNuxtApp()
+    const wrapper = await mountSuspended(LayoutHeader, { route: '/' })
+    $i18n.locale.value = 'en'
+    await nextTick()
+    expect(wrapper.find('[role="combobox"]').exists()).toBe(false)
+    $i18n.locale.value = 'fr'
+  })
 })

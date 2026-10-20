@@ -1,14 +1,19 @@
 <script setup lang="ts">
 // En-tête du site, d'après les maquettes : logo, recherche, langue, connexion.
 // Au mobile, la recherche est une icône qui déploie le champ dans l'en-tête.
-const { t } = useI18n()
+const { t, locales } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
 const { state: auth } = useAuth()
 const signInOpen = useSignInModal()
-const onSearchPage = computed(() => route.path === localePath('/search'))
-// L'accueil porte son propre champ de recherche (maquettes 05 et 06) : pas de champ dans l'en-tête.
-const onHomePage = computed(() => route.path === localePath('/'))
+
+// Dans n'importe quelle langue : au changement de langue, `localePath` suit déjà la nouvelle langue
+// alors que `route.path` est encore l'ancien, ce qui ferait clignoter le champ de recherche.
+const isCurrentPage = (path: string) =>
+  locales.value.some(({ code }) => route.path === localePath(path, code))
+const onSearchPage = computed(() => isCurrentPage('/search'))
+// L'accueil porte son propre champ de recherche : pas de champ dans l'en-tête.
+const onHomePage = computed(() => isCurrentPage('/'))
 
 const searching = ref(false)
 const searchBox = ref<{ focus: () => void } | null>(null)
