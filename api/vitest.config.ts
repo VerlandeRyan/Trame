@@ -19,7 +19,13 @@ export default defineConfig({
       include: ['src/**/*.ts'],
       // Amorçage du processus (écoute, signaux) : aucune logique métier, exclu du calcul ; les
       // tests et leur support (`src/testing/`) ne sont pas du code à couvrir.
-      exclude: ['src/server.ts', 'src/**/*.test.ts', 'src/testing/**'],
+      exclude: [
+        'src/server.ts',
+        'src/server.e2e.ts',
+        'src/bootstrap.ts',
+        'src/**/*.test.ts',
+        'src/testing/**',
+      ],
       thresholds: { statements: 80, branches: 80, functions: 80, lines: 80 },
       reporter: ['text-summary', 'lcov'],
       reportsDirectory: 'coverage',

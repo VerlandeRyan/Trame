@@ -28,6 +28,7 @@ docs/export/
 # --- Dépendances et builds ---
 node_modules/
 dist/
+dist-e2e/
 .output/
 .nuxt/
 coverage/
