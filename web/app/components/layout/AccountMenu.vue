@@ -67,11 +67,18 @@ async function confirmSignOut() {
 </template>
 
 <style scoped lang="scss">
+// Le compte cède de la place avant que l'en-tête déborde : seul le pseudo se tronque.
 .account-menu {
   position: relative;
+  min-width: 0;
+}
+
+.account-menu__trigger {
+  max-width: 100%;
 }
 
 .account-menu__handle {
+  min-width: 0;
   max-width: 8rem;
   overflow: hidden;
   text-overflow: ellipsis;

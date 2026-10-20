@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { signUp, uniqueHandle } from '../support/session'
 
 // L'accueil porte son propre champ de recherche : ces contrôles de l'en-tête se font sur une fiche.
 const WORK_PATH = '/work/1-les-lanternes-de-brume'
 
-test('l\'en-tête présente la recherche et la connexion', async ({ page }) => {
+test("l'en-tête présente la recherche et la connexion", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto(WORK_PATH)
   const header = page.getByRole('banner')
@@ -14,14 +15,14 @@ test('l\'en-tête présente la recherche et la connexion', async ({ page }) => {
   await expect(header.getByRole('button', { name: 'Se connecter', exact: true })).toBeVisible()
 })
 
-test('« Se connecter » est le bouton bleu de l\'en-tête', async ({ page }) => {
+test("« Se connecter » est le bouton bleu de l'en-tête", async ({ page }) => {
   await page.goto('/')
   const signIn = page.getByRole('banner').getByRole('button', { name: 'Se connecter', exact: true })
   await expect(signIn).toHaveCSS('background-color', 'rgb(35, 64, 184)')
   await expect(signIn).toHaveCSS('color', 'rgb(255, 255, 255)')
 })
 
-test('le lien d\'évitement mène au contenu', async ({ page }) => {
+test("le lien d'évitement mène au contenu", async ({ page }) => {
   await page.goto('/')
   const skipLink = page.getByRole('link', { name: 'Aller au contenu' })
   await skipLink.focus()
@@ -29,6 +30,28 @@ test('le lien d\'évitement mène au contenu', async ({ page }) => {
   await skipLink.press('Enter')
   await expect(page).toHaveURL(/#contenu$/)
 })
+
+const MAX_HANDLE_LENGTH = 30
+
+for (const width of [320, 390]) {
+  test(`connecté avec un pseudo de 30 caractères : pas de défilement horizontal à ${width} px`, async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize({ width, height: 800 })
+    const handle = await signUp(context, uniqueHandle(MAX_HANDLE_LENGTH))
+
+    for (const path of [WORK_PATH, '/']) {
+      await page.goto(path)
+      await page.waitForLoadState('networkidle')
+      await expect(page.getByTestId('account-menu')).toContainText(`@${handle.slice(0, 3)}`)
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+      expect(overflow).toBeLessThanOrEqual(0)
+    }
+  })
+}
 
 test('pas de défilement horizontal de la page', async ({ page }) => {
   await page.goto('/')
@@ -38,7 +61,9 @@ test('pas de défilement horizontal de la page', async ({ page }) => {
   expect(overflow).toBeLessThanOrEqual(0)
 })
 
-test('mobile : recherche, langue, compte et ☰ sont groupés à droite de l\'en-tête', async ({ page }) => {
+test("mobile : recherche, langue, compte et ☰ sont groupés à droite de l'en-tête", async ({
+  page,
+}) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(WORK_PATH)
 
@@ -93,7 +118,7 @@ test('le menu des langues est intégré, calé sur le bouton, et se ferme avec �
   await expect(trigger).toBeFocused()
 })
 
-test('petit mobile (320 px) : l\'en-tête tient sur une ligne, menu des langues ouvert compris', async ({
+test("petit mobile (320 px) : l'en-tête tient sur une ligne, menu des langues ouvert compris", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 640 })
@@ -131,7 +156,7 @@ test('bureau : Explorer ouvre formats et genres avec compteurs, Échap rend le f
   await expect(trigger).toBeFocused()
 })
 
-test('bureau : un clic à l\'extérieur ferme Explorer, un format mène à la recherche filtrée', async ({
+test("bureau : un clic à l'extérieur ferme Explorer, un format mène à la recherche filtrée", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
@@ -162,7 +187,7 @@ test('bureau : « Voir tout le catalogue » mène à la recherche', async ({ pag
   await expect(page).toHaveURL(/\/search$/)
 })
 
-test('bureau : la recherche remplit l\'espace entre le logo et Explorer, collé à la langue', async ({
+test("bureau : la recherche remplit l'espace entre le logo et Explorer, collé à la langue", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1440, height: 800 })
@@ -177,7 +202,7 @@ test('bureau : la recherche remplit l\'espace entre le logo et Explorer, collé 
   expect(language!.x - (explore!.x + explore!.width)).toBeLessThan(20)
 })
 
-test('bureau : le bouton reste blanc ouvert, la fenêtre reste dans l\'écran à 800 px', async ({
+test("bureau : le bouton reste blanc ouvert, la fenêtre reste dans l'écran à 800 px", async ({
   page,
 }) => {
   for (const width of [800, 1280]) {
@@ -197,7 +222,7 @@ test('bureau : le bouton reste blanc ouvert, la fenêtre reste dans l\'écran à
   }
 })
 
-test('mobile : ☰ ouvre Explorer, recherche et menu s\'excluent, zones de clic ≥ 44 px', async ({
+test("mobile : ☰ ouvre Explorer, recherche et menu s'excluent, zones de clic ≥ 44 px", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
@@ -303,6 +328,8 @@ test('en anglais : le contenu du menu Explorer est traduit', async ({ page }) =>
   const panel = page.getByTestId('explore-panel')
   await expect(panel).toContainText('Find your next read by format or genre.')
   await expect(panel).toContainText('See the whole catalogue')
-  await expect(panel.locator('[data-testid^="explore-format-"]').first()).toContainText(/\d+ works?/)
+  await expect(panel.locator('[data-testid^="explore-format-"]').first()).toContainText(
+    /\d+ works?/,
+  )
   await expect(panel).not.toContainText('œuvre')
 })

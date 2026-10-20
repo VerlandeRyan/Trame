@@ -86,6 +86,22 @@ const codeLabel = (code: string) => (te(`genre.${code}`) ? t(`genre.${code}`) : 
 const tags = [...detail.formats, ...detail.genres].map((code) => ({ code, label: codeLabel(code) }))
 const alternativeTitles = formatAlternativeTitles(detail.alternativeTitles)
 const relationGroups = groupRelations(detail.relations)
+
+// Ma liste de lecture : lue dès le rendu serveur (cookie du visiteur), pour que la page arrive
+// dans le bon état. Au navigateur, on relit à l'arrivée par un lien du site, ou si le serveur
+// n'a pas pu lire (la page affichée au chargement a déjà l'état reçu du serveur).
+const { state: auth } = useAuth()
+const isSignedIn = computed(() => auth.value.status === 'authenticated')
+const library = useLibraryEntry(workId)
+const { entry, isLoaded, isBusy, errorKey } = library
+const isClientNavigation = import.meta.client && !useNuxtApp().isHydrating
+async function loadEntryOnServer() {
+  if (import.meta.server && isSignedIn.value) await library.load()
+}
+await loadEntryOnServer()
+onMounted(() => {
+  if (isSignedIn.value && (isClientNavigation || !isLoaded.value)) library.load()
+})
 </script>
 
 <template>
@@ -94,6 +110,17 @@ const relationGroups = groupRelations(detail.relations)
          les blocs s'enchaînent dans l'ordre de la maquette grâce à `order`. -->
     <div class="work__side">
       <WorkCover class="work__cover" :url="cover" />
+      <LibraryStatusMenu
+        class="work__status"
+        :entry="entry"
+        :is-signed-in="isSignedIn"
+        :is-loaded="isLoaded"
+        :is-busy="isBusy"
+        :error-key="errorKey"
+        @add="library.save({})"
+        @change-status="library.save({ status: $event })"
+        @remove="library.remove()"
+      />
       <WorkActions class="work__actions" :links="detail.links" />
       <WorkInfo
         class="work__info"
@@ -125,6 +152,14 @@ const relationGroups = groupRelations(detail.relations)
         :average="detail.ratingAverage"
         :rating-count="detail.ratingCount"
         :member-count="detail.memberCount"
+      />
+      <LibraryProgress
+        v-if="entry"
+        class="work__progress"
+        :entry="entry"
+        :total-chapters="detail.chapters"
+        :total-volumes="detail.volumes"
+        @change="library.save($event)"
       />
       <WorkSynopsis
         class="work__synopsis"
@@ -164,31 +199,42 @@ const relationGroups = groupRelations(detail.relations)
   min-width: 0;
 }
 
-.work__actions {
+// Mobile (maquette 02) : le bouton de statut, « Lire / Acheter », puis « Ma progression » avant la note.
+.work__status {
   order: 3;
 }
 
-.work__rating {
+.work__actions {
   order: 4;
 }
 
-.work__synopsis {
+.work__progress {
   order: 5;
 }
 
-.work__info {
+.work__rating {
   order: 6;
 }
 
-.work__related {
+.work__synopsis {
   order: 7;
 }
 
-.work__people {
+.work__info {
   order: 8;
 }
 
+.work__related {
+  order: 9;
+}
+
+.work__people {
+  order: 10;
+}
+
+.work__status,
 .work__actions,
+.work__progress,
 .work__rating,
 .work__synopsis,
 .work__info,
@@ -232,7 +278,9 @@ const relationGroups = groupRelations(detail.relations)
 
   .work__cover,
   .work__header,
+  .work__status,
   .work__actions,
+  .work__progress,
   .work__rating,
   .work__synopsis,
   .work__info,

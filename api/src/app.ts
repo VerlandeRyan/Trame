@@ -3,10 +3,15 @@ import express, { type Express, type RequestHandler } from 'express';
 import type { Db } from './db/database.js';
 import { attachUser, checkOrigin } from './middleware/auth.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
-import { AUTH_RATE_LIMIT, type RateLimitSettings } from './middleware/rate-limit.js';
+import {
+  AUTH_RATE_LIMIT,
+  LIBRARY_RATE_LIMIT,
+  type RateLimitSettings,
+} from './middleware/rate-limit.js';
 import { buildOpenApiDocument } from './openapi/document.js';
 import { createHealthRepository } from './repositories/health.repository.js';
 import { createGenreRepository } from './repositories/genre.repository.js';
+import { createLibraryRepository } from './repositories/library.repository.js';
 import { createWorkRepository } from './repositories/work.repository.js';
 import { createHealthRouter } from './routes/health.routes.js';
 import { createApiRouter } from './routes/index.js';
@@ -18,6 +23,7 @@ import { createSessionMiddleware } from './session/middleware.js';
 import { SessionStore } from './session/store.js';
 import { createGenreService } from './services/genre.service.js';
 import { createHealthService } from './services/health.service.js';
+import { createLibraryService } from './services/library.service.js';
 import { createWorkService } from './services/work.service.js';
 
 /**
@@ -86,6 +92,8 @@ export function createApp({
       webOrigin,
       secureCookies,
       authRateLimit: rateLimit,
+      libraryRateLimit: LIBRARY_RATE_LIMIT,
+      libraryService: createLibraryService(createLibraryRepository(db)),
       genreService: createGenreService(createGenreRepository(db)),
       workService: createWorkService(createWorkRepository(db)),
     }),

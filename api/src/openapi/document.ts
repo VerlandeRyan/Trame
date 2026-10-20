@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { ErrorCode } from '../errors.js';
 import { handleBody, loginQuery } from '../routes/auth.routes.js';
+import { entryBody } from '../routes/library.routes.js';
 import { SESSION_COOKIE_NAME } from '../session/middleware.js';
 import { facetsQuery, listWorksQuery, workParams, workQuery } from '../routes/work.routes.js';
 import {
@@ -9,6 +10,7 @@ import {
   featuredListSchema,
   genreListSchema,
   healthSchema,
+  libraryEntryResponseSchema,
   topRatedListSchema,
   workDetailSchema,
   workFacetsSchema,
@@ -255,6 +257,59 @@ export function buildOpenApiDocument() {
           },
         },
       },
+      [`${API_PREFIX}/works/{id}/entry`]: {
+        get: {
+          summary: 'Lire mon suivi d’une œuvre',
+          operationId: 'getLibraryEntry',
+          tags: ['library'],
+          security: [{ sessionCookie: [] }],
+          parameters: toParameters(workParams, 'path'),
+          responses: {
+            '200': jsonResponse('LibraryEntryResponse', 'Mon entrée, ou `null` si absente.'),
+            '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
+            '401': errorResponse('UNAUTHENTICATED', 'Connexion requise.'),
+            '403': errorResponse('HANDLE_REQUIRED', 'Inscription en attente du choix du handle.'),
+            '404': errorResponse('NOT_FOUND', 'Œuvre inconnue ou archivée.'),
+            '500': internalError,
+          },
+        },
+        put: {
+          summary: 'Ajouter une œuvre à ma liste ou mettre à jour mon suivi',
+          operationId: 'saveLibraryEntry',
+          tags: ['library'],
+          security: [{ sessionCookie: [] }],
+          parameters: toParameters(workParams, 'path'),
+          requestBody: {
+            required: true,
+            content: { 'application/json': { schema: toJsonSchema(entryBody, 'input') } },
+          },
+          responses: {
+            '200': jsonResponse('LibraryEntryResponse', 'Entrée enregistrée.'),
+            '400': errorResponse('VALIDATION_ERROR', 'Corps ou identifiant invalide.'),
+            '401': errorResponse('UNAUTHENTICATED', 'Connexion requise.'),
+            '403': errorResponse('FORBIDDEN_ORIGIN', 'Origine de la requête refusée.'),
+            '404': errorResponse('NOT_FOUND', 'Œuvre inconnue ou archivée.'),
+            '429': rateLimited,
+            '500': internalError,
+          },
+        },
+        delete: {
+          summary: 'Retirer une œuvre de ma liste',
+          operationId: 'removeLibraryEntry',
+          tags: ['library'],
+          security: [{ sessionCookie: [] }],
+          parameters: toParameters(workParams, 'path'),
+          responses: {
+            '204': { description: 'Entrée retirée (ou déjà absente).' },
+            '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
+            '401': errorResponse('UNAUTHENTICATED', 'Connexion requise.'),
+            '403': errorResponse('FORBIDDEN_ORIGIN', 'Origine de la requête refusée.'),
+            '404': errorResponse('NOT_FOUND', 'Œuvre inconnue ou archivée.'),
+            '429': rateLimited,
+            '500': internalError,
+          },
+        },
+      },
       [`${API_PREFIX}/genres`]: {
         get: {
           summary: 'Lister les formats et les genres',
@@ -282,6 +337,7 @@ export function buildOpenApiDocument() {
         FeaturedList: toJsonSchema(featuredListSchema, 'output'),
         TopRatedList: toJsonSchema(topRatedListSchema, 'output'),
         GenreList: toJsonSchema(genreListSchema, 'output'),
+        LibraryEntryResponse: toJsonSchema(libraryEntryResponseSchema, 'output'),
         WorkDetail: toJsonSchema(workDetailSchema, 'output'),
         WorkFacets: toJsonSchema(workFacetsSchema, 'output'),
         WorkPage: toJsonSchema(workPageSchema, 'output'),

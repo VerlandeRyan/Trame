@@ -117,13 +117,43 @@ export interface ExternalLinkTable {
   label: string | null;
 }
 
+export const LIBRARY_STATUSES = [
+  'reading',
+  'completed',
+  'plan_to_read',
+  'on_hold',
+  'dropped',
+] as const;
+export type LibraryStatus = (typeof LIBRARY_STATUSES)[number];
+
 export interface LibraryEntryTable {
   user_id: number;
   work_id: number;
+  status: LibraryStatus;
+  /** Chapitres lus, indépendants de `volumes_read` (jamais mappés ni additionnés). */
+  chapters_read: Generated<number>;
+  volumes_read: Generated<number>;
   /** Note donnée par le lecteur, de 1 à 10 ; `null` tant qu'il n'a pas noté. */
   rating: number | null;
+  /** Dates calendaires `YYYY-MM-DD`. */
+  started_on: string | null;
+  finished_on: string | null;
   /** Date d'ajout à la liste. */
   created_at: Generated<Date>;
+  updated_at: Generated<Date>;
+}
+
+/** Journal en ajout seul : seule la colonne de valeur correspondant à `kind` est renseignée. */
+export interface ReadingEventTable {
+  id: Generated<number>;
+  user_id: number;
+  work_id: number;
+  kind: 'chapters' | 'volumes' | 'status' | 'rating';
+  chapters_added: number | null;
+  volumes_added: number | null;
+  new_status: LibraryStatus | null;
+  new_rating: number | null;
+  occurred_at: Generated<Date>;
 }
 
 export type UserRole = 'user' | 'admin';
@@ -164,6 +194,7 @@ export interface Database {
   work_genre: WorkGenreTable;
   external_link: ExternalLinkTable;
   library_entry: LibraryEntryTable;
+  reading_event: ReadingEventTable;
   app_user: AppUserTable;
   session: SessionTable;
 }

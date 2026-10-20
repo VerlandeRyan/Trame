@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import { LIBRARY_STATUSES } from '../db/database.js';
 import { ERROR_CODES, type ErrorBody } from '../errors.js';
 import type { GenreRecord } from '../repositories/genre.repository.js';
+import type { LibraryEntry } from '../repositories/library.repository.js';
 import type { FeaturedWork, WorkFacets, WorkSummary } from '../repositories/work.repository.js';
 import type { AuthStatus } from '../services/auth.service.js';
 import type { HealthStatus } from '../services/health.service.js';
@@ -193,6 +195,24 @@ export const authStatusSchema = z
   .describe(
     'Qui est derrière la requête. Jamais l’e-mail ni l’identifiant Google.',
   ) satisfies z.ZodType<AuthStatus>;
+
+export const libraryEntryResponseSchema = z
+  .strictObject({
+    entry: z
+      .strictObject({
+        status: z.enum(LIBRARY_STATUSES),
+        chaptersRead: z.number().int().describe('Chapitres lus, indépendants des tomes.'),
+        volumesRead: z.number().int().describe('Tomes lus, indépendants des chapitres.'),
+        rating: z.number().int().nullable().describe('Note de 1 à 10, `null` si non notée.'),
+        startedOn: z.string().nullable().describe('Date `YYYY-MM-DD`.'),
+        finishedOn: z.string().nullable().describe('Date `YYYY-MM-DD`.'),
+      })
+      .nullable()
+      .describe('`null` tant que l’œuvre n’est pas dans la liste de l’utilisateur.'),
+  })
+  .describe('Suivi d’une œuvre par l’utilisateur connecté.') satisfies z.ZodType<{
+  entry: LibraryEntry | null;
+}>;
 
 const errorCodes = Object.keys(ERROR_CODES) as [
   keyof typeof ERROR_CODES,

@@ -13,6 +13,14 @@ describe('judgeRelayRequest', () => {
     expect(judgeRelayRequest('POST', 'authors/1')).toBe('method-not-allowed')
   })
 
+  it("autorise l'écriture de la liste de lecture sur une œuvre seulement", () => {
+    expect(judgeRelayRequest('PUT', 'works/12/entry')).toBe('allowed')
+    expect(judgeRelayRequest('DELETE', 'works/12/entry')).toBe('allowed')
+    expect(judgeRelayRequest('POST', 'works/12/entry')).toBe('method-not-allowed')
+    expect(judgeRelayRequest('PUT', 'works/abc/entry')).toBe('method-not-allowed')
+    expect(judgeRelayRequest('PUT', 'works/12/entry/extra')).toBe('method-not-allowed')
+  })
+
   it('refuse les autres méthodes', () => {
     expect(judgeRelayRequest('DELETE', 'auth/handle')).toBe('method-not-allowed')
     expect(judgeRelayRequest('PUT', 'works/1')).toBe('method-not-allowed')

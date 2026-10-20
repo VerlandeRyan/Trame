@@ -1,16 +1,20 @@
 // Règles du relais `/api/v1/…` (`server/api/v1/[...path].ts`), dans `shared/` pour que le serveur
 // les utilise sans import et que les tests les atteignent.
 const READ_METHODS = new Set(['GET', 'HEAD'])
-const WRITE_METHODS = new Set(['POST'])
 // Une route d'écriture s'ajoute ici avec son ticket.
-const WRITABLE_PREFIXES = ['auth/']
+const WRITABLE_ROUTES = [
+  { methods: new Set(['POST']), path: /^auth\// },
+  { methods: new Set(['PUT', 'DELETE']), path: /^works\/\d+\/entry$/ },
+]
 
 export type RelayVerdict = 'allowed' | 'bad-request' | 'method-not-allowed'
 
 export function judgeRelayRequest(method: string, path: string): RelayVerdict {
   if (path.split('/').includes('..')) return 'bad-request'
   if (READ_METHODS.has(method)) return 'allowed'
-  const writable = WRITE_METHODS.has(method) && WRITABLE_PREFIXES.some((p) => path.startsWith(p))
+  const writable = WRITABLE_ROUTES.some(
+    (route) => route.methods.has(method) && route.path.test(path),
+  )
   return writable ? 'allowed' : 'method-not-allowed'
 }
 

@@ -87,12 +87,13 @@ test('première connexion : pseudo refusé puis accepté, retour sur la fiche, d
   await account.click()
   await page.getByTestId('sign-out').click()
   await expect(page.getByRole('heading', { name: 'Se déconnecter ?' })).toBeVisible()
-  await page.getByTestId('confirm-cancel').click()
+  // La fiche porte aussi la confirmation du retrait de la liste : on cible la fenêtre ouverte.
+  await page.getByRole('dialog').getByTestId('confirm-cancel').click()
   await expect(account).toBeVisible()
 
   await account.click()
   await page.getByTestId('sign-out').click()
-  await page.getByTestId('confirm-accept').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
   await expect(page.getByTestId('sign-in')).toBeVisible()
   await expect(page.getByTestId('auth-notice')).toContainText('Tu es déconnecté')
 })

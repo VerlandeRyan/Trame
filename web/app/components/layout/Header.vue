@@ -151,6 +151,12 @@ watch(
   margin-left: auto;
 }
 
+// Les autres éléments gardent leur largeur : le compte (pseudo tronqué) absorbe le manque de place.
+.layout-header__logo,
+.layout-header__language {
+  flex-shrink: 0;
+}
+
 @media (min-width: 768px) {
   .layout-header__explore {
     margin-left: auto;
