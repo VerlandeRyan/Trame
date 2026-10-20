@@ -66,6 +66,15 @@ describe('UiModal', () => {
     expect(sheet.classes()).toContain('modal--bottom')
   })
 
+  it("prend l'allure d'une fenêtre d'invitation, sans filet, avec `plain`", async () => {
+    expect((await mountModal(false)).classes()).not.toContain('modal--plain')
+
+    const plain = await mountSuspended(UiModal, {
+      props: { title: 'Connecte-toi', closeLabel: 'Fermer', modelValue: false, plain: true },
+    })
+    expect(plain.classes()).toContain('modal--plain')
+  })
+
   it('affiche le pied seulement quand il est fourni', async () => {
     const without = await mountModal(false)
     expect(without.find('footer').exists()).toBe(false)

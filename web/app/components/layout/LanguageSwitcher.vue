@@ -5,9 +5,9 @@ const { t, locale, locales } = useI18n()
 const switchLocalePath = useSwitchLocalePath()
 const route = useRoute()
 
-const isOpen = ref(false)
 const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
+const { isOpen, close } = useDismissableMenu(root, () => trigger.value?.focus())
 const menuId = useId()
 
 const items = computed(() =>
@@ -19,30 +19,6 @@ const items = computed(() =>
     isCurrent: entry.code === locale.value,
   })),
 )
-
-function close({ restoreFocus = false } = {}) {
-  isOpen.value = false
-  if (restoreFocus) trigger.value?.focus()
-}
-
-function closeOnOutsideClick(event: MouseEvent) {
-  if (isOpen.value && !root.value?.contains(event.target as Node)) close()
-}
-
-// Échap sur le document : Safari ne donne pas le focus à un bouton cliqué, un `keydown` posé sur
-// le composant ne serait donc jamais reçu.
-function closeOnEscape(event: KeyboardEvent) {
-  if (isOpen.value && event.key === 'Escape') close({ restoreFocus: true })
-}
-
-onMounted(() => {
-  document.addEventListener('click', closeOnOutsideClick)
-  document.addEventListener('keydown', closeOnEscape)
-})
-onBeforeUnmount(() => {
-  document.removeEventListener('click', closeOnOutsideClick)
-  document.removeEventListener('keydown', closeOnEscape)
-})
 
 // Après le choix d'une langue, la route change : le menu se referme.
 watch(
