@@ -13,7 +13,7 @@ describe("page d'erreur", () => {
   it('annonce une page introuvable pour une 404', async () => {
     const wrapper = await mountError(404)
 
-    expect(wrapper.get('h2').text()).toBe("Cette page n'existe pas")
+    expect(wrapper.get('main h2').text()).toBe("Cette page n'existe pas")
     expect(wrapper.get('[data-testid="not-found"]').text()).toContain('404')
     expect(wrapper.text()).toContain("Retour à l'accueil")
   })
@@ -29,7 +29,7 @@ describe("page d'erreur", () => {
   it('annonce une erreur générique pour les autres statuts', async () => {
     const wrapper = await mountError(500)
 
-    expect(wrapper.get('h2').text()).toBe('Une erreur est survenue')
+    expect(wrapper.get('main h2').text()).toBe('Une erreur est survenue')
   })
 
   it("ramène à l'accueil depuis le bouton de retour", async () => {

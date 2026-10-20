@@ -98,6 +98,37 @@ describe('LayoutHeader', () => {
   })
 })
 
+describe('LayoutHeader et la connexion', () => {
+  it('ouvre la fenêtre de connexion avec « Se connecter »', async () => {
+    useSignInModal().value = false
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+
+    await wrapper.get('[data-testid="sign-in"]').trigger('click')
+
+    expect(useSignInModal().value).toBe(true)
+  })
+
+  it('montre le pseudo du membre connecté à la place du bouton', async () => {
+    useState('auth').value = {
+      status: 'authenticated',
+      user: { id: 1, handle: 'Ryan', role: 'user' },
+    }
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+
+    expect(wrapper.find('[data-testid="sign-in"]').exists()).toBe(false)
+    expect(wrapper.get('[data-testid="account-menu"]').text()).toBe('@Ryan')
+    useState('auth').value = { status: 'anonymous' }
+  })
+
+  it('garde « Se connecter » tant que le pseudo n’est pas choisi', async () => {
+    useState('auth').value = { status: 'pending' }
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+
+    expect(wrapper.find('[data-testid="sign-in"]').exists()).toBe(true)
+    useState('auth').value = { status: 'anonymous' }
+  })
+})
+
 describe("LayoutHeader sur l'accueil", () => {
   it("n'a pas de champ de recherche : l'accueil porte le sien", async () => {
     const wrapper = await mountSuspended(LayoutHeader, { route: '/' })

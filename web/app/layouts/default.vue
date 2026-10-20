@@ -2,20 +2,15 @@
 const { t } = useI18n()
 const route = useRoute()
 
-// Attributs lang/dir selon la langue d'interface (hreflang/SEO : à ajouter avec l'URL publique).
-const localeHead = useLocaleHead({ dir: true, seo: false })
-useHead(() => ({
-  htmlAttrs: {
-    lang: localeHead.value.htmlAttrs?.lang,
-    dir: localeHead.value.htmlAttrs?.dir,
-  },
-}))
+useHtmlLanguage()
 </script>
 
 <template>
   <div class="layout">
     <a class="layout__skip-link" href="#contenu">{{ t('nav.skipToContent') }}</a>
     <LayoutHeader />
+    <AuthNotice />
+    <AuthSignInModal />
     <!-- Décor : trame de points roses au bord droit, sous l'en-tête, derrière le contenu. -->
     <div v-if="route.meta.trame !== 'hero'" class="layout__trame" aria-hidden="true" />
     <main id="contenu" class="layout__main" tabindex="-1">

@@ -97,13 +97,13 @@ describe("page d'accueil", () => {
     ])
   })
 
-  it('affiche le panneau « Pourquoi Trame ? » avec son bouton inactif', async () => {
+  it('affiche le panneau « Pourquoi Trame ? » avec son bouton actif', async () => {
     const wrapper = await mountSuspended(HomePage)
 
     const pitch = wrapper.get('[data-testid="home-pitch"]')
     expect(pitch.attributes('aria-label')).toBe('Pourquoi Trame ?')
     expect(pitch.findAll('li')).toHaveLength(3)
-    expect(wrapper.get('[data-testid="home-create-list"]').attributes('disabled')).toBeDefined()
+    expect(wrapper.get('[data-testid="home-create-list"]').attributes('disabled')).toBeUndefined()
   })
 
   it("affiche tous les blocs quand l'API a des données", async () => {

@@ -4,6 +4,8 @@
 const { t } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
+const { state: auth } = useAuth()
+const signInOpen = useSignInModal()
 const onSearchPage = computed(() => route.path === localePath('/search'))
 // L'accueil porte son propre champ de recherche (maquettes 05 et 06) : pas de champ dans l'en-tête.
 const onHomePage = computed(() => route.path === localePath('/'))
@@ -78,7 +80,19 @@ watch(
       class="layout-header__explore"
     />
     <LayoutLanguageSwitcher class="layout-header__language" />
-    <UiButton variant="blue" size="small" class="layout-header__sign-in">
+    <LayoutAccountMenu
+      v-if="auth.status === 'authenticated'"
+      :handle="auth.user.handle"
+      class="layout-header__account"
+    />
+    <UiButton
+      v-else
+      variant="blue"
+      size="small"
+      class="layout-header__sign-in"
+      data-testid="sign-in"
+      @click="signInOpen = true"
+    >
       <Icon
         name="tabler:user"
         size="18"
@@ -203,6 +217,7 @@ watch(
     .layout-header__explore,
     .layout-header__search-link,
     .layout-header__language,
+    .layout-header__account,
     .layout-header__sign-in {
       display: none;
     }

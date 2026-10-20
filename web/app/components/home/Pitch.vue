@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const { t } = useI18n()
+const signInOpen = useSignInModal()
 
 // Les trois engagements du panneau ; les textes sont dans `home.pitch.*`.
 const pillars = [
@@ -25,8 +26,12 @@ const pillars = [
         </li>
       </ul>
       <div class="pitch__cta">
-        <!-- Inactif jusqu'à la connexion Google (#22). -->
-        <UiButton disabled class="pitch__button" data-testid="home-create-list">
+        <UiButton
+          block
+          class="pitch__button"
+          data-testid="home-create-list"
+          @click="signInOpen = true"
+        >
           {{ t('home.pitch.createList') }}
         </UiButton>
       </div>
@@ -141,7 +146,6 @@ const pillars = [
 }
 
 .pitch__button {
-  width: 100%;
   min-height: 48px;
 }
 </style>

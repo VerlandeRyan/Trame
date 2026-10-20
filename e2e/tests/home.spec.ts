@@ -29,7 +29,7 @@ test('le sélecteur de langue bascule vers /en', async ({ page }) => {
   await expect(page.getByTestId('home-intro')).toContainText('favourites')
 })
 
-test('les blocs de données et les boutons inactifs sont présents, sans bloc Explorer', async ({
+test('les blocs de données et le bouton inactif sont présents, sans bloc Explorer', async ({
   page,
 }) => {
   await page.goto('/')
@@ -39,7 +39,7 @@ test('les blocs de données et les boutons inactifs sont présents, sans bloc Ex
   }
   await expect(page.getByTestId('home-explore')).toHaveCount(0)
   await expect(page.getByTestId('home-propose')).toBeDisabled()
-  await expect(page.getByTestId('home-create-list')).toBeDisabled()
+  await expect(page.getByTestId('home-create-list')).toBeEnabled()
 })
 
 test('hero : le panneau « Pourquoi Trame ? » est à droite du titre au bureau, sous la recherche au mobile', async ({

@@ -46,6 +46,9 @@ const sampleGenres = [
 ]
 
 const isModalOpen = ref(false)
+const isConfirmOpen = ref(false)
+const signInOpen = useSignInModal()
+const sampleHandle = ref('lecteur')
 const searchText = ref('')
 const chaptersRead = ref(12)
 const volumesRead = ref(2)
@@ -110,11 +113,42 @@ const tabs = computed(() => [
       />
     </section>
 
+    <section class="gallery__section" data-testid="gallery-auth">
+      <h2>{{ t('gallery.auth') }}</h2>
+      <UiField
+        id="gallery-handle"
+        v-model="sampleHandle"
+        :label="t('auth.handle.label')"
+        :hint="t('auth.handle.hint')"
+        :error="t('error.HANDLE_TAKEN')"
+        prefix="@"
+      />
+      <UiButton block variant="secondary" href="#">{{ t('gallery.wideLink') }}</UiButton>
+      <div class="gallery__row">
+        <UiButton variant="secondary" @click="signInOpen = true">
+          {{ t('gallery.openSignIn') }}
+        </UiButton>
+        <UiButton variant="secondary" @click="isConfirmOpen = true">
+          {{ t('gallery.openConfirm') }}
+        </UiButton>
+      </div>
+      <AuthNotice />
+    </section>
+
     <UiEmptyState :title="t('gallery.emptyTitle')" :text="t('gallery.emptyText')" />
 
     <UiModal v-model="isModalOpen" :title="t('action.add')" :close-label="t('action.close')">
       <p>{{ t('gallery.modalText') }}</p>
     </UiModal>
+
+    <UiConfirm
+      v-model="isConfirmOpen"
+      :title="t('auth.handle.confirmCancel.title')"
+      :text="t('auth.handle.confirmCancel.text')"
+      :confirm-label="t('auth.handle.confirmCancel.confirm')"
+      :cancel-label="t('auth.handle.confirmCancel.keep')"
+      :close-label="t('action.close')"
+    />
   </div>
 </template>
 
