@@ -258,8 +258,8 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   }
 }
 
-// Mobile : un bouton à icône en haut à droite de la carte ; bureau : « Modifier » dans sa colonne.
-// Pas de `position` : le survol d'un bouton passe en `relative` et décalerait un bouton posé en absolu.
+// Mobile, bouton à icône en haut à droite de la carte. Bureau, « Modifier » dans sa colonne.
+// Pas de `position` ici. Le survol d'un bouton passe en `relative` et décalerait un bouton en absolu.
 .row__edit {
   grid-row: 1;
   grid-column: 3;
