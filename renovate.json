@@ -22,6 +22,11 @@
       "groupName": "dépendances npm (mineures et correctifs)"
     },
     {
+      "description": "Playwright : le paquet et l'image de la CI doivent avoir la même version",
+      "matchPackageNames": ["@playwright/test", "mcr.microsoft.com/playwright"],
+      "groupName": "Playwright (paquet et image de la CI)"
+    },
+    {
       "description": "Actions GitHub regroupées",
       "matchManagers": ["github-actions"],
       "groupName": "actions GitHub"

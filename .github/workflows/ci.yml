@@ -11,6 +11,8 @@ permissions:
 env:
   # renovate: datasource=github-releases depName=gitleaks/gitleaks extractVersion=^v(?<version>.+)$
   GITLEAKS_VERSION: 8.30.1
+  # renovate: datasource=github-releases depName=rhysd/actionlint extractVersion=^v(?<version>.+)$
+  ACTIONLINT_VERSION: 1.7.12
   # renovate: datasource=docker depName=semgrep/semgrep
   SEMGREP_VERSION: 1.180.0
   SEMGREP_IMAGE_DIGEST: sha256:529ee8a277ec8adc5b534d7c74eea0a47e9de21d62852b6ba7ac6ba9566845c3
@@ -33,6 +35,22 @@ jobs:
           tar -xzf "${archive}" gitleaks
       - name: Analyser l'historique
         run: ./gitleaks git --redact --verbose
+
+  workflows:
+    name: Workflows (actionlint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Installer actionlint (binaire officiel, somme de contrôle vérifiée)
+        run: |
+          base="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}"
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl --proto '=https' --tlsv1.2 -fsSLO "${base}/${archive}"
+          curl --proto '=https' --tlsv1.2 -fsSLO "${base}/actionlint_${ACTIONLINT_VERSION}_checksums.txt"
+          grep " ${archive}\$" "actionlint_${ACTIONLINT_VERSION}_checksums.txt" | sha256sum -c -
+          tar -xzf "${archive}" actionlint
+      - name: Vérifier les workflows
+        run: ./actionlint -color
 
   semgrep:
     name: Analyse statique (Semgrep)
@@ -63,25 +81,8 @@ jobs:
       - run: npx --no-install commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
 
   web:
-    name: Web (types, lint, build et E2E)
+    name: Web (types, lint, tests et build)
     runs-on: ubuntu-latest
-    # Les E2E lisent la vraie API sur une base de test jetable, rechargée avec le jeu de démo.
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_DB: trame
-          POSTGRES_USER: trame
-          POSTGRES_PASSWORD: ci-only
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U trame -d trame"
-          --health-interval 5s
-          --health-timeout 3s
-          --health-retries 10
-    env:
-      TEST_DATABASE_URL: postgres://trame:ci-only@localhost:5432/trame
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
@@ -121,6 +122,57 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - run: npm run build
         working-directory: web
+
+  # Un job par navigateur : Chromium et WebKit tournent en parallèle, chacun sur sa base de test.
+  e2e:
+    name: E2E (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    # Un téléchargement ou un test bloqué doit échouer, pas occuper le runner des heures.
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: Chromium bureau, project: desktop-chromium }
+          - { name: WebKit iPhone, project: iphone-webkit }
+    # Image officielle de Playwright : navigateurs et dépendances système déjà installés, donc
+    # aucun `apt` ni téléchargement de navigateur. Sa version doit être celle de `@playwright/test`
+    # dans e2e/package.json (Renovate les met à jour ensemble) ; sinon Playwright signale que le
+    # navigateur de l'image est introuvable.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
+      # Mémoire partagée suffisante pour Chromium.
+      options: --ipc=host --init
+    # Les E2E lisent la vraie API sur une base de test jetable, rechargée avec le jeu de démo.
+    # Le job tourne dans un conteneur : la base se joint par le nom du service, pas par localhost.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: trame
+          POSTGRES_USER: trame
+          POSTGRES_PASSWORD: ci-only
+        options: >-
+          --health-cmd "pg_isready -U trame -d trame"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://trame:ci-only@postgres:5432/trame
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: |
+            api/package-lock.json
+            web/package-lock.json
+            e2e/package-lock.json
+      - run: npm ci --ignore-scripts
+        working-directory: web
+      - run: npm run build
+        working-directory: web
       - name: API compilée et base de test migrée (les E2E chargent le jeu de démo)
         run: |
           npm ci --ignore-scripts
@@ -129,9 +181,7 @@ jobs:
         working-directory: api
       - run: npm ci --ignore-scripts
         working-directory: e2e
-      - run: npx --no-install playwright install --with-deps chromium webkit
-        working-directory: e2e
-      - run: npm test
+      - run: npx --no-install playwright test --project=${{ matrix.project }}
         working-directory: e2e
 
   api:
