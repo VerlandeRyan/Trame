@@ -13,7 +13,7 @@ const genreCode = z
   .regex(/^[a-z0-9]+(_[a-z0-9]+)*$/);
 
 /** Langue de l'application ; absente, titres et synopsis sont renvoyés dans la langue originale. */
-const lang = z
+export const lang = z
   .enum(SUPPORTED_LANGUAGES)
   .describe('Langue de l’application ; absente, titres et synopsis sont dans la langue originale.');
 
@@ -21,14 +21,14 @@ const lang = z
 const MAX_FILTER_VALUES = 10;
 
 /** Liste séparée par des virgules (`status=ongoing,hiatus`), chaque valeur validée, sans doublon. */
-function commaSeparatedList<T extends z.ZodType<string, string>>(item: T) {
+export function commaSeparatedList<T extends z.ZodType<string, string>>(item: T) {
   return z
     .string()
     .transform((value) => [...new Set(value.split(',').map((part) => part.trim()))])
     .pipe(z.array(item).min(1).max(MAX_FILTER_VALUES));
 }
 
-const MULTI_VALUE = `Liste séparée par des virgules (${MAX_FILTER_VALUES} valeurs au plus, doublons ignorés).`;
+export const MULTI_VALUE = `Liste séparée par des virgules (${MAX_FILTER_VALUES} valeurs au plus, doublons ignorés).`;
 
 /** Recherche et filtres, communs à la liste et aux compteurs. Les `describe` alimentent OpenAPI. */
 const filtersQuery = z.object({

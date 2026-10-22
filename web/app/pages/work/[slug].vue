@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ApiError } from '~/utils/api-error'
+import type { LibraryStatus } from '~/utils/library'
 import {
   buildJsonLd,
   coverUrl,
@@ -94,6 +95,28 @@ const { state: auth } = useAuth()
 const isSignedIn = computed(() => auth.value.status === 'authenticated')
 const library = useLibraryEntry(workId)
 const { entry, isLoaded, isBusy, errorKey } = library
+// Passer en « Terminé » avec des compteurs sous le total paru propose de les y mettre.
+const {
+  isOpen: isAskingToRead,
+  title: promptTitle,
+  text: promptText,
+  confirmLabel: promptConfirmLabel,
+  cancelLabel: promptCancelLabel,
+  request: requestPrompt,
+  confirm: confirmPrompt,
+  decline: declinePrompt,
+} = useReadingPrompt()
+function changeStatus(status: LibraryStatus) {
+  const isAsking =
+    entry.value !== null &&
+    requestPrompt(
+      entry.value,
+      { chapters: detail.chapters, volumes: detail.volumes },
+      { status },
+      { apply: (changes) => library.save(changes), discard: () => undefined },
+    )
+  if (!isAsking) void library.save({ status })
+}
 const isClientNavigation = import.meta.client && !useNuxtApp().isHydrating
 async function loadEntryOnServer() {
   if (import.meta.server && isSignedIn.value) await library.load()
@@ -118,7 +141,7 @@ onMounted(() => {
         :is-busy="isBusy"
         :error-key="errorKey"
         @add="library.save({})"
-        @change-status="library.save({ status: $event })"
+        @change-status="changeStatus"
         @remove="library.remove()"
       />
       <WorkActions class="work__actions" :links="detail.links" />
@@ -170,6 +193,17 @@ onMounted(() => {
       />
       <WorkRelated class="work__related" :groups="relationGroups" />
     </div>
+
+    <UiConfirm
+      v-model="isAskingToRead"
+      :title="promptTitle"
+      :text="promptText"
+      :confirm-label="promptConfirmLabel"
+      :cancel-label="promptCancelLabel"
+      :close-label="t('action.close')"
+      @confirm="confirmPrompt"
+      @cancel="declinePrompt"
+    />
   </article>
 </template>
 

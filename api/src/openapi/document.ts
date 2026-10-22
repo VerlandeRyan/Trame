@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { ErrorCode } from '../errors.js';
 import { handleBody, loginQuery } from '../routes/auth.routes.js';
-import { entryBody } from '../routes/library.routes.js';
+import { entryBody, listEntriesQuery } from '../routes/library.routes.js';
 import { SESSION_COOKIE_NAME } from '../session/middleware.js';
 import { facetsQuery, listWorksQuery, workParams, workQuery } from '../routes/work.routes.js';
 import {
@@ -11,6 +11,7 @@ import {
   genreListSchema,
   healthSchema,
   libraryEntryResponseSchema,
+  libraryPageSchema,
   topRatedListSchema,
   workDetailSchema,
   workFacetsSchema,
@@ -257,6 +258,22 @@ export function buildOpenApiDocument() {
           },
         },
       },
+      [`${API_PREFIX}/me/entries`]: {
+        get: {
+          summary: 'Lister ma liste de lecture',
+          operationId: 'listLibraryEntries',
+          tags: ['library'],
+          security: [{ sessionCookie: [] }],
+          parameters: toParameters(listEntriesQuery, 'query'),
+          responses: {
+            '200': jsonResponse('LibraryPage', 'Une page de ma liste, avec les compteurs.'),
+            '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
+            '401': errorResponse('UNAUTHENTICATED', 'Connexion requise.'),
+            '403': errorResponse('HANDLE_REQUIRED', 'Inscription en attente du choix du handle.'),
+            '500': internalError,
+          },
+        },
+      },
       [`${API_PREFIX}/works/{id}/entry`]: {
         get: {
           summary: 'Lire mon suivi d’une œuvre',
@@ -338,6 +355,7 @@ export function buildOpenApiDocument() {
         TopRatedList: toJsonSchema(topRatedListSchema, 'output'),
         GenreList: toJsonSchema(genreListSchema, 'output'),
         LibraryEntryResponse: toJsonSchema(libraryEntryResponseSchema, 'output'),
+        LibraryPage: toJsonSchema(libraryPageSchema, 'output'),
         WorkDetail: toJsonSchema(workDetailSchema, 'output'),
         WorkFacets: toJsonSchema(workFacetsSchema, 'output'),
         WorkPage: toJsonSchema(workPageSchema, 'output'),

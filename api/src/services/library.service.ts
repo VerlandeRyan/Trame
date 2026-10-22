@@ -3,7 +3,9 @@ import { AppError } from '../errors.js';
 import type {
   EntryChange,
   LibraryEntry,
+  LibraryList,
   LibraryRepository,
+  LibrarySort,
   NewReadingEvent,
 } from '../repositories/library.repository.js';
 
@@ -23,6 +25,23 @@ export interface LibraryService {
   saveEntry(userId: number, workId: number, input: EntryInput): Promise<LibraryEntry>;
   /** Sans effet si l'œuvre n'est pas dans la liste. */
   removeEntry(userId: number, workId: number): Promise<void>;
+  listEntries(userId: number, input: ListEntriesInput): Promise<LibraryPage>;
+}
+
+export interface ListEntriesInput {
+  q?: string;
+  status?: LibraryStatus[];
+  lang?: string;
+  sort: LibrarySort;
+  page: number;
+  pageSize: number;
+}
+
+export interface LibraryPage extends LibraryList {
+  page: number;
+  pageSize: number;
+  /** Œuvres correspondant à la recherche et au filtre de statut. */
+  total: number;
 }
 
 const NEW_ENTRY: Omit<LibraryEntry, 'status'> = {
@@ -100,6 +119,21 @@ export function createLibraryService(
     async removeEntry(userId, workId) {
       await assertWorkAvailable(workId);
       await repository.remove(userId, workId);
+    },
+
+    async listEntries(userId, { q, status, lang, sort, page, pageSize }) {
+      const list = await repository.list({
+        userId,
+        q: q?.replace(/\s+/g, ' ').trim() || undefined,
+        status,
+        lang,
+        sort,
+        limit: pageSize,
+        offset: (page - 1) * pageSize,
+      });
+      const counted = status ?? (Object.keys(list.statusCounts) as LibraryStatus[]);
+      const total = counted.reduce((sum, each) => sum + list.statusCounts[each], 0);
+      return { ...list, page, pageSize, total };
     },
   };
 }

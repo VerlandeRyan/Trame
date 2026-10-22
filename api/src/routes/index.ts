@@ -6,7 +6,7 @@ import type { LibraryService } from '../services/library.service.js';
 import type { WorkService } from '../services/work.service.js';
 import { createAuthRouter } from './auth.routes.js';
 import { createGenreRouter } from './genre.routes.js';
-import { createLibraryRouter } from './library.routes.js';
+import { createLibraryRouter, createMyLibraryRouter } from './library.routes.js';
 import { createWorkRouter } from './work.routes.js';
 
 export interface ApiServices {
@@ -37,6 +37,7 @@ export function createApiRouter({
     createAuthRouter(authService, { webOrigin, secureCookies, rateLimit: authRateLimit }),
   );
   router.use('/genres', createGenreRouter(genreService));
+  router.use('/me', createMyLibraryRouter(libraryService));
   router.use('/works', createLibraryRouter(libraryService, { rateLimit: libraryRateLimit }));
   router.use('/works', createWorkRouter(workService));
   return router;

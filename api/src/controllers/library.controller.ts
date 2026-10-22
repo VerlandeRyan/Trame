@@ -1,5 +1,9 @@
 import type { Request, RequestHandler } from 'express';
-import type { EntryInput, LibraryService } from '../services/library.service.js';
+import type {
+  EntryInput,
+  LibraryService,
+  ListEntriesInput,
+} from '../services/library.service.js';
 
 /** `requireUser` a déjà écarté les visiteurs ; `workId` est validé par la route. */
 function target(req: Request): { userId: number; workId: number } {
@@ -11,8 +15,15 @@ export function createLibraryController(service: LibraryService): {
   get: RequestHandler;
   save: RequestHandler;
   remove: RequestHandler;
+  list: RequestHandler;
 } {
   return {
+    async list(req, res) {
+      // Déjà validé et converti par `validate('query', …)` dans la route.
+      const input = req.query as unknown as ListEntriesInput;
+      res.json(await service.listEntries(req.user!.id, input));
+    },
+
     async get(req, res) {
       const { userId, workId } = target(req);
       res.json({ entry: await service.getEntry(userId, workId) });

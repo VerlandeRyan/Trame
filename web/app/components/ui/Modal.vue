@@ -101,8 +101,9 @@ watch(open, (isOpen) => {
 
 // Déclaré après `modal--bottom` : à spécificité égale, ces règles l'emportent.
 .modal--plain {
+  // `--modal-width` : une fenêtre plus riche (formulaire) élargit la fenêtre d'invitation.
   &.modal--center {
-    width: min(440px, calc(100vw - 2 * var(--space-4)));
+    width: min(var(--modal-width, 440px), calc(100vw - 2 * var(--space-4)));
   }
 
   .modal__head {

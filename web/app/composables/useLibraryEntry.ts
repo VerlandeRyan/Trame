@@ -17,13 +17,9 @@ export function useLibraryEntry(workId: number) {
   const api = useApi()
   const entry = useState<LibraryEntry | null>(`library-entry-${workId}`, () => null)
   const isLoaded = useState(`library-loaded-${workId}`, () => false)
-  const isBusy = ref(false)
   const errorKey = ref<string | null>(null)
   const path = `/works/${workId}/entry`
   const cookieHeaders = import.meta.server ? useRequestHeaders(['cookie']) : undefined
-
-  let pendingCount = 0
-  let queue: Promise<void> = Promise.resolve()
 
   async function fetchEntry() {
     entry.value = (
@@ -41,21 +37,12 @@ export function useLibraryEntry(workId: number) {
     }
   }
 
-  function enqueue(task: () => Promise<void>): Promise<void> {
-    pendingCount += 1
-    isBusy.value = true
-    queue = queue
-      .then(() => {
-        errorKey.value = null
-        return task()
-      })
-      .catch(resyncAfter)
-      .finally(() => {
-        pendingCount -= 1
-        isBusy.value = pendingCount > 0
-      })
-    return queue
-  }
+  const { enqueue, isBusy, isLatest } = useRequestQueue({
+    onStart: () => {
+      errorKey.value = null
+    },
+    onError: resyncAfter,
+  })
 
   async function load() {
     let hasFailed = false
@@ -77,14 +64,14 @@ export function useLibraryEntry(workId: number) {
       const saved = (await api.request<{ entry: LibraryEntry }>(path, { method: 'PUT', body }))
         .entry
       // Une demande plus récente est en route : sa réponse fera foi.
-      if (pendingCount === 1) entry.value = saved
+      if (isLatest()) entry.value = saved
     })
   }
 
   function remove() {
     return enqueue(async () => {
       await api.request(path, { method: 'DELETE' })
-      if (pendingCount === 1) entry.value = null
+      if (isLatest()) entry.value = null
     })
   }
 

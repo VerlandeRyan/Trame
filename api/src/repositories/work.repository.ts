@@ -167,7 +167,7 @@ export interface WorkRepository {
  * Titre à afficher pour la langue `lang` : titre `translated` puis `international` de cette langue,
  * sinon titre original (aussi quand `lang` est la langue originale). `alias` : table `work`.
  */
-function displayTitle(alias: string, lang: string | undefined): RawBuilder<string> {
+export function displayTitle(alias: string, lang: string | undefined): RawBuilder<string> {
   const title = sql.ref(`${alias}.title`);
   if (lang === undefined) return sql<string>`${title}`;
   const id = sql.ref(`${alias}.id`);
@@ -232,7 +232,7 @@ function termCondition(term: string): RawBuilder<boolean> {
 }
 
 /** `all` : chaque mot doit correspondre (« aube manga » : titre + format) ; `any` : un seul suffit. */
-function searchCondition(q: string, match: MatchMode): RawBuilder<boolean> {
+export function searchCondition(q: string, match: MatchMode): RawBuilder<boolean> {
   const conditions = searchTerms(q).map(termCondition);
   const separator = match === 'any' ? sql` OR ` : sql` AND `;
   return sql<boolean>`(${sql.join(conditions, separator)})`;
@@ -251,7 +251,7 @@ const FORMATS = sql<string[]>`COALESCE((
   WHERE wg.work_id = work.id AND g.category = 'format'
 ), '{}')`;
 
-function workSummaryColumns(shownTitle: RawBuilder<string>) {
+export function workSummaryColumns(shownTitle: RawBuilder<string>) {
   return [
     'work.id',
     shownTitle.as('title'),

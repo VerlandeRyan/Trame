@@ -60,10 +60,12 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Note de 1 à 10, facultative et retirable.
 - Les dates de début et de fin sont proposées automatiquement lors des changements de statut vers En cours / Terminé, et modifiables.
 - Progresser sur une œuvre « À lire », « En pause » ou « Abandonné » demande avant de la passer en « En cours » (rien n'est enregistré si on annule). Atteindre le total connu de chapitres ou de tomes (« ? » tant que l'œuvre est en cours) propose de la passer en « Terminé » ; refuser garde le statut et enregistre quand même le compteur.
+- Passer en « Terminé » à la main (fiche œuvre, liste, fenêtre de modification) avec un compteur sous le total paru connu propose de le mettre à ce total (« Compteurs au total ? ») : confirmer met seulement les compteurs en dessous et le statut, « Garder mes compteurs » enregistre le statut seul, fermer n'enregistre rien. Rien n'est proposé sans total connu ni si les compteurs y sont déjà.
 - Un seul composant « fiche de lecture » (statut, chapitres lus, tomes lus, note, dates, retirer de ma liste), réutilisé sur la fiche œuvre et dans la liste.
 
 **US-07 — Consulter ma liste de lecture**
 - Filtre par statut, tri (dernière mise à jour, titre, note), recherche dans ma liste ; bascule Liste / Grille.
+- En grille, une pastille sur chaque couverture compte au choix les chapitres ou les tomes (interrupteur « Compter ») ; des boutons −1 / +1 la modifient, et au doigt glisser vers la gauche fait +1, vers la droite −1 (la couverture suit le doigt). L'ombre de la couverture a la couleur du statut.
 - Chargement continu par pages de 50 (`pageSize` ≤ 50).
 - Les totaux « chapitres lus » et « tomes lus » sont affichés séparément, jamais additionnés.
 - Une œuvre archivée disparaît de la liste mais l'entrée est conservée ; elle réapparaît si l'œuvre est restaurée.
