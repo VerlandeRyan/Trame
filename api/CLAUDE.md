@@ -61,7 +61,7 @@ Réponse unique `{ code, message, details? }` ; `message` est un texte technique
 - `npm run dev` : serveur avec rechargement (`DATABASE_URL` requise).
 - `npm run build` / `npm start` : compilation vers `dist/` puis exécution.
 - `npm run typecheck`, `npm test` (`TEST_DATABASE_URL` requise, base migrée par `migrate:test`, tests en série).
-- `npm run migrate:up` (base de travail), `npm run migrate:test` (base de test), `npm run db:seed` (démo dans la base de test).
+- `npm run migrate:up` (base de travail), `npm run migrate:test` (base de test), `npm run db:seed` (démo dans la base de test). `db:seed` refuse tout hôte non local ; `TEST_DATABASE_ALLOWED_HOSTS` (liste séparée par des virgules) en autorise d'autres : seule la CI l'utilise, pour le service Postgres de son conteneur (`postgres`).
 - `npm run db:seed:bulk` / `db:seed:bulk:remove` : 48 œuvres fictives marquées « [Démo] » (+ personnes et éditeurs « (démo) », genres thématiques) **ajoutées** à la base de travail locale pour essayer pagination, genres et tri (`db/demo-bulk.sql`). Rien n'est vidé ; le retrait ne supprime que les lignes marquées.
 
 ## Règles
