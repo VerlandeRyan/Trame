@@ -2,6 +2,7 @@
 // Compte connecté : le pseudo et un menu réduit à la déconnexion (le reste viendra avec le profil).
 defineProps<{ handle: string }>()
 const { t } = useI18n()
+const localePath = useLocalePath()
 const { signOut } = useAuth()
 const notice = useAuthNotice()
 
@@ -48,6 +49,15 @@ async function confirmSignOut() {
         variant="secondary"
         size="small"
         class="account-menu__item"
+        :href="localePath('/list')"
+        data-testid="my-list-link"
+      >
+        <Icon name="tabler:books" size="18" aria-hidden="true" />{{ t('nav.myList') }}
+      </UiButton>
+      <UiButton
+        variant="secondary"
+        size="small"
+        class="account-menu__item"
         data-testid="sign-out"
         @click="askSignOut"
       >
@@ -90,6 +100,8 @@ async function confirmSignOut() {
 }
 
 .account-menu__panel {
+  display: grid;
+  gap: var(--space-2);
   position: absolute;
   top: calc(100% + var(--space-2));
   right: 0;

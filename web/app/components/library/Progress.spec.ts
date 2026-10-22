@@ -147,7 +147,7 @@ describe('LibraryProgress', () => {
       const wrapper = await reachChapterTotal()
 
       expect(wrapper.text()).toContain('Tu as fini cette œuvre ?')
-      expect(wrapper.text()).toContain('Tu as lu tous les chapitres parus (158)')
+      expect(wrapper.text()).toContain('Tu as lu les 158 chapitres parus')
       expect(wrapper.emitted('change')).toBeUndefined()
     })
 
@@ -156,7 +156,7 @@ describe('LibraryProgress', () => {
 
       await wrapper.get('[aria-label="Augmenter : Tomes lus"]').trigger('click')
 
-      expect(wrapper.text()).toContain('Tu as lu tous les tomes parus (4)')
+      expect(wrapper.text()).toContain('Tu as lu les 4 tomes parus')
     })
 
     it('passe en « Terminé » avec le compteur quand on confirme', async () => {
@@ -170,7 +170,7 @@ describe('LibraryProgress', () => {
 
     it('enregistre le compteur seul quand on garde le statut', async () => {
       const wrapper = await reachChapterTotal()
-      expect(wrapper.get('[data-testid="confirm-cancel"]').text()).toBe('Garder « En cours »')
+      expect(wrapper.get('[data-testid="confirm-cancel"]').text()).toBe('Garder « En cours »')
 
       await wrapper.get('[data-testid="confirm-cancel"]').trigger('click')
       await nextTick()

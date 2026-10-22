@@ -186,7 +186,7 @@ test.describe('total connu atteint', () => {
 
     await page.getByRole('button', { name: 'Augmenter : Tomes lus' }).click()
     await expect(page.getByRole('dialog')).toContainText('Tu as fini cette œuvre ?')
-    await expect(page.getByRole('dialog')).toContainText('tous les tomes parus (1)')
+    await expect(page.getByRole('dialog')).toContainText('Tu as lu le tome paru')
     await page.getByRole('dialog').getByTestId('confirm-accept').click()
 
     await expect(statusButton(page)).toContainText('Terminé')
@@ -218,6 +218,47 @@ test.describe('total connu atteint', () => {
 
     await expect(page.getByRole('dialog')).toBeHidden()
     await expect(statusButton(page)).toContainText('En cours')
+    await expect(volumesField(page)).toHaveValue('0')
+  })
+})
+
+// Passer en « Terminé » avec un compteur sous le total connu (1 tome) propose de l'y mettre.
+test.describe('passage en « Terminé » avec un total connu', () => {
+  test('confirmer met le compteur au total paru', async ({ page, context }) => {
+    await signUp(context)
+    await openWork(page)
+    await addToList(page)
+
+    await chooseStatus(page, 'completed')
+    await expect(page.getByRole('dialog')).toContainText('Compteurs au total')
+    await expect(page.getByRole('dialog')).toContainText('Mettre tes tomes lus à 1')
+    await page.getByRole('dialog').getByTestId('confirm-accept').click()
+
+    await expect(statusButton(page)).toContainText('Terminé')
+    await expect(volumesField(page)).toHaveValue('1')
+  })
+
+  test('« Garder mes compteurs » enregistre le statut seul', async ({ page, context }) => {
+    await signUp(context)
+    await openWork(page)
+    await addToList(page)
+
+    await chooseStatus(page, 'completed')
+    await page.getByRole('dialog').getByTestId('confirm-cancel').click()
+
+    await expect(statusButton(page)).toContainText('Terminé')
+    await expect(volumesField(page)).toHaveValue('0')
+  })
+
+  test('la croix n’enregistre rien', async ({ page, context }) => {
+    await signUp(context)
+    await openWork(page)
+    await addToList(page)
+
+    await chooseStatus(page, 'completed')
+    await page.keyboard.press('Escape')
+
+    await expect(statusButton(page)).toContainText('À lire')
     await expect(volumesField(page)).toHaveValue('0')
   })
 })

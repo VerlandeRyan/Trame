@@ -58,16 +58,19 @@ function cancel() {
   line-height: 1.5;
 }
 
+// Les deux boutons restent toujours côte à côte, à largeur égale ; un libellé long passe sur deux
+// lignes dans son bouton plutôt que d'envoyer un bouton sous l'autre.
 .confirm__actions {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-3);
   margin-top: var(--space-4);
 }
 
-// Côte à côte, ils se partagent la ligne ; quand les libellés sont longs et qu'ils passent l'un
-// sous l'autre, ils prennent la même largeur (sinon l'un est plus étroit et la fenêtre paraît mal alignée).
 .confirm__button {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  min-width: 0;
+  padding-inline: var(--space-2);
+  text-align: center;
+  text-wrap: balance;
 }
 </style>

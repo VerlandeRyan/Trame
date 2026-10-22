@@ -1,5 +1,18 @@
-import type { Selectable } from 'kysely';
-import type { Db, LibraryEntryTable, LibraryStatus, ReadingEventTable } from '../db/database.js';
+import { sql, type Expression, type ExpressionBuilder, type Selectable, type SqlBool } from 'kysely';
+import {
+  LIBRARY_STATUSES,
+  type Database,
+  type Db,
+  type LibraryEntryTable,
+  type LibraryStatus,
+  type ReadingEventTable,
+} from '../db/database.js';
+import {
+  displayTitle,
+  searchCondition,
+  workSummaryColumns,
+  type WorkSummary,
+} from './work.repository.js';
 
 /** Le suivi d'une œuvre par son lecteur. */
 export interface LibraryEntry {
@@ -9,6 +22,50 @@ export interface LibraryEntry {
   rating: number | null;
   startedOn: string | null;
   finishedOn: string | null;
+}
+
+/** `updated` : dernière progression d'abord ; `title` : A→Z ; `rating` : mieux notées d'abord. */
+export type LibrarySort = 'updated' | 'title' | 'rating';
+
+export interface LibraryListCriteria {
+  userId: number;
+  /** Texte déjà nettoyé (espaces) et d'au moins 2 caractères. */
+  q?: string;
+  /** Plusieurs statuts : OU. */
+  status?: LibraryStatus[];
+  /** Langue de l'application : sert à choisir le titre affiché (repli sur le titre original). */
+  lang?: string;
+  sort: LibrarySort;
+  limit: number;
+  offset: number;
+}
+
+/** Une œuvre de la liste, avec ses totaux publiés (`null` : inconnu ou en cours de publication). */
+export interface ListedWork extends WorkSummary {
+  chapters: number | null;
+  volumes: number | null;
+}
+
+export interface ListedEntry {
+  work: ListedWork;
+  entry: LibraryEntry;
+}
+
+/** Chapitres et tomes lus sur toute la liste : deux totaux, jamais additionnés. */
+export interface ReadingTotals {
+  chaptersRead: number;
+  volumesRead: number;
+}
+
+export type StatusCounts = Record<LibraryStatus, number>;
+
+export interface LibraryList {
+  /** La page demandée, filtrée par statut. */
+  items: ListedEntry[];
+  /** Œuvres par statut, selon la recherche `q` mais sans le filtre de statut (onglets). */
+  statusCounts: StatusCounts;
+  /** Sur toute la liste, sans recherche ni filtre. */
+  totals: ReadingTotals;
 }
 
 /** Un changement à journaliser ; les compteurs portent la variation (négative si on retire). */
@@ -38,6 +95,24 @@ export interface LibraryRepository {
     decide: (current: LibraryEntry | null) => EntryChange,
   ): Promise<LibraryEntry>;
   remove(userId: number, workId: number): Promise<void>;
+  /** Les œuvres archivées n'y figurent pas ; leur entrée est conservée. */
+  list(criteria: LibraryListCriteria): Promise<LibraryList>;
+}
+
+/** Entrées de l'utilisateur sur des œuvres non archivées, avec la recherche `q` si elle est donnée. */
+function ownEntries(userId: number, q: string | undefined) {
+  return (eb: ExpressionBuilder<Database, 'library_entry' | 'work'>): Expression<SqlBool> => {
+    const conditions: Expression<SqlBool>[] = [
+      eb('library_entry.user_id', '=', userId),
+      eb('work.deleted_at', 'is', null),
+    ];
+    if (q !== undefined) conditions.push(searchCondition(q, 'all'));
+    return eb.and(conditions);
+  };
+}
+
+function zeroStatusCounts(): StatusCounts {
+  return Object.fromEntries(LIBRARY_STATUSES.map((status) => [status, 0])) as StatusCounts;
 }
 
 const ENTRY_COLUMNS = [
@@ -153,6 +228,60 @@ export function createLibraryRepository(db: Db): LibraryRepository {
         .where('user_id', '=', userId)
         .where('work_id', '=', workId)
         .execute();
+    },
+
+    async list({ userId, q, status, lang, sort, limit, offset }) {
+      const shownTitle = displayTitle('work', lang);
+      let itemsQuery = db
+        .selectFrom('library_entry')
+        .innerJoin('work', 'work.id', 'library_entry.work_id')
+        .select([
+          ...workSummaryColumns(shownTitle),
+          'work.chapters',
+          'work.volumes',
+          'library_entry.status as entryStatus',
+          'library_entry.chapters_read as chaptersRead',
+          'library_entry.volumes_read as volumesRead',
+          'library_entry.rating',
+          'library_entry.started_on as startedOn',
+          'library_entry.finished_on as finishedOn',
+        ])
+        .where(ownEntries(userId, q));
+      if (status !== undefined) itemsQuery = itemsQuery.where('library_entry.status', 'in', status);
+      if (sort === 'updated') itemsQuery = itemsQuery.orderBy('library_entry.updated_at', 'desc');
+      if (sort === 'rating') {
+        itemsQuery = itemsQuery.orderBy('library_entry.rating', (order) => order.desc().nullsLast());
+      }
+
+      const [rows, countRows, totals] = await Promise.all([
+        itemsQuery.orderBy(shownTitle).orderBy('work.id').limit(limit).offset(offset).execute(),
+        db
+          .selectFrom('library_entry')
+          .innerJoin('work', 'work.id', 'library_entry.work_id')
+          .select(['library_entry.status', (eb) => eb.fn.countAll<number>().as('count')])
+          .where(ownEntries(userId, q))
+          .groupBy('library_entry.status')
+          .execute(),
+        db
+          .selectFrom('library_entry')
+          .innerJoin('work', 'work.id', 'library_entry.work_id')
+          .select([
+            sql<number>`COALESCE(SUM(library_entry.chapters_read), 0)::bigint`.as('chaptersRead'),
+            sql<number>`COALESCE(SUM(library_entry.volumes_read), 0)::bigint`.as('volumesRead'),
+          ])
+          .where(ownEntries(userId, undefined))
+          .executeTakeFirstOrThrow(),
+      ]);
+
+      const statusCounts = zeroStatusCounts();
+      for (const { status: counted, count } of countRows) statusCounts[counted] = count;
+      const items = rows.map(
+        ({ entryStatus, chaptersRead, volumesRead, rating, startedOn, finishedOn, ...work }) => ({
+          work,
+          entry: { status: entryStatus, chaptersRead, volumesRead, rating, startedOn, finishedOn },
+        }),
+      );
+      return { items, statusCounts, totals };
     },
   };
 }

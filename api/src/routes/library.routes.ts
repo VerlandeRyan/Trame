@@ -7,7 +7,7 @@ import { requireUser } from '../middleware/auth.js';
 import { rateLimitOptions, type RateLimitSettings } from '../middleware/rate-limit.js';
 import { validate } from '../middleware/validate.js';
 import type { LibraryService } from '../services/library.service.js';
-import { workParams } from './work.routes.js';
+import { commaSeparatedList, lang, MULTI_VALUE, workParams } from './work.routes.js';
 
 /** Plus de chapitres qu'aucune œuvre n'en compte : borne la saisie, sans règle métier. */
 const MAX_COUNT = 99_999;
@@ -45,6 +45,34 @@ export const entryBody = z.strictObject({
     )
     .optional(),
 });
+
+export const listEntriesQuery = z.object({
+  q: z
+    .string()
+    .trim()
+    .min(2)
+    .max(100)
+    .describe('Mots recherchés (6 au plus) dans les œuvres de la liste, comme `GET /works`.')
+    .optional(),
+  status: commaSeparatedList(z.enum(LIBRARY_STATUSES))
+    .describe(`Statuts de lecture (OU). ${MULTI_VALUE}`)
+    .optional(),
+  lang: lang.optional(),
+  sort: z
+    .enum(['updated', 'title', 'rating'])
+    .describe('Ordre : dernière progression, titre A→Z, mieux notées d’abord.')
+    .default('updated'),
+  page: z.coerce.number().int().min(1).max(100_000).describe('Numéro de page.').default(1),
+  pageSize: z.coerce.number().int().min(1).max(50).describe('Œuvres par page.').default(50),
+});
+
+/** Monté sous `/me` : la liste de lecture de l'utilisateur connecté. */
+export function createMyLibraryRouter(service: LibraryService): Router {
+  const controller = createLibraryController(service);
+  const router = Router();
+  router.get('/entries', requireUser, validate('query', listEntriesQuery), controller.list);
+  return router;
+}
 
 /** Monté sous `/works` : le suivi d'une œuvre par l'utilisateur connecté. */
 export function createLibraryRouter(

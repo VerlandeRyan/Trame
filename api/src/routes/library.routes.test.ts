@@ -5,6 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { createApp } from '../app.js';
 import { createDb } from '../db/database.js';
 import { AppError } from '../errors.js';
+import { libraryPageSchema } from '../openapi/schemas.js';
 import type { GoogleClient } from '../services/google-identity.js';
 import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
 
@@ -219,5 +220,177 @@ describe('DELETE /works/:id/entry', () => {
        WHERE user_id IN (SELECT id FROM app_user WHERE handle = 'lectrice')`,
     );
     expect(events.rows[0].n).toBe(1);
+  });
+});
+
+describe('GET /me/entries', () => {
+  const LIST = '/api/v1/me/entries';
+
+  async function addTo(agent: Agent, title: string, entry: Record<string, unknown>) {
+    const res = await agent.put(entryUrl(await idOf(title))).send(entry);
+    expect(res.status).toBe(200);
+  }
+
+  const titlesOf = (body: { items: { work: { title: string } }[] }) =>
+    body.items.map((item) => item.work.title);
+
+  it('refuse un visiteur', async () => {
+    const res = await request(app).get(LIST);
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('renvoie une liste vide avec des compteurs à zéro', async () => {
+    const agent = await newReader('lectrice');
+    const res = await agent.get(LIST);
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      items: [],
+      page: 1,
+      pageSize: 50,
+      total: 0,
+      statusCounts: { reading: 0, completed: 0, plan_to_read: 0, on_hold: 0, dropped: 0 },
+      totals: { chaptersRead: 0, volumesRead: 0 },
+    });
+  });
+
+  it('liste l’œuvre avec son entrée et ses totaux publiés, dans le contrat OpenAPI', async () => {
+    const agent = await newReader('lectrice');
+    await addTo(agent, 'Les Lanternes de Brume', {
+      status: 'reading',
+      chaptersRead: 12,
+      volumesRead: 2,
+      rating: 8,
+    });
+    const res = await agent.get(LIST);
+    expect(() => libraryPageSchema.parse(res.body)).not.toThrow();
+    expect(res.body.items).toHaveLength(1);
+    expect(res.body.items[0].work).toMatchObject({
+      title: 'Les Lanternes de Brume',
+      chapters: 120,
+      volumes: 3,
+    });
+    expect(res.body.items[0].entry).toMatchObject({
+      status: 'reading',
+      chaptersRead: 12,
+      volumesRead: 2,
+      rating: 8,
+    });
+  });
+
+  it('ne renvoie que ma liste', async () => {
+    const first = await newReader('premier');
+    const second = await newReader('second');
+    await addTo(first, 'Chroniques de Basalte', { status: 'reading' });
+    const res = await second.get(LIST);
+    expect(res.body.total).toBe(0);
+  });
+
+  it('compte chapitres et tomes séparément, sur toute la liste', async () => {
+    const agent = await newReader('lectrice');
+    await addTo(agent, 'Les Lanternes de Brume', {
+      status: 'completed',
+      chaptersRead: 10,
+      volumesRead: 3,
+    });
+    await addTo(agent, 'Chroniques de Basalte', {
+      status: 'reading',
+      chaptersRead: 5,
+      volumesRead: 1,
+    });
+    const res = await agent.get(LIST).query({ status: 'reading', q: 'basalte' });
+    expect(res.body.totals).toEqual({ chaptersRead: 15, volumesRead: 4 });
+  });
+
+  it('filtre par statut (OU) et compte chaque statut sans ce filtre', async () => {
+    const agent = await newReader('lectrice');
+    await addTo(agent, 'Les Lanternes de Brume', { status: 'completed' });
+    await addTo(agent, 'Chroniques de Basalte', { status: 'reading' });
+    await addTo(agent, 'Cap sur les Archipels', { status: 'plan_to_read' });
+    const one = await agent.get(LIST).query({ status: 'reading' });
+    expect(titlesOf(one.body)).toEqual(['Chroniques de Basalte']);
+    expect(one.body.total).toBe(1);
+    expect(one.body.statusCounts).toMatchObject({ reading: 1, completed: 1, plan_to_read: 1 });
+    const two = await agent.get(LIST).query({ status: 'reading,plan_to_read' });
+    expect(two.body.total).toBe(2);
+  });
+
+  it('cherche dans ma liste seulement', async () => {
+    const agent = await newReader('lectrice');
+    await addTo(agent, 'Les Lanternes de Brume', { status: 'reading' });
+    await addTo(agent, 'Chroniques de Basalte', { status: 'reading' });
+    const res = await agent.get(LIST).query({ q: 'basalte' });
+    expect(titlesOf(res.body)).toEqual(['Chroniques de Basalte']);
+    expect(res.body.statusCounts.reading).toBe(1);
+  });
+
+  it('trie par titre, par note (sans note en dernier) et par dernière progression', async () => {
+    const agent = await newReader('lectrice');
+    await addTo(agent, 'Les Lanternes de Brume', { status: 'reading', rating: 6 });
+    await addTo(agent, 'Chroniques de Basalte', { status: 'reading' });
+    await addTo(agent, 'Cap sur les Archipels', { status: 'reading', rating: 9 });
+    const byTitle = await agent.get(LIST).query({ sort: 'title' });
+    expect(titlesOf(byTitle.body)).toEqual([
+      'Cap sur les Archipels',
+      'Chroniques de Basalte',
+      'Les Lanternes de Brume',
+    ]);
+    const byRating = await agent.get(LIST).query({ sort: 'rating' });
+    expect(titlesOf(byRating.body)).toEqual([
+      'Cap sur les Archipels',
+      'Les Lanternes de Brume',
+      'Chroniques de Basalte',
+    ]);
+    await addTo(agent, 'Les Lanternes de Brume', { status: 'reading', chaptersRead: 1 });
+    const byUpdate = await agent.get(LIST);
+    expect(titlesOf(byUpdate.body)[0]).toBe('Les Lanternes de Brume');
+  });
+
+  it('pagine sans perdre le total', async () => {
+    const agent = await newReader('lectrice');
+    await addTo(agent, 'Les Lanternes de Brume', { status: 'reading' });
+    await addTo(agent, 'Chroniques de Basalte', { status: 'reading' });
+    await addTo(agent, 'Cap sur les Archipels', { status: 'reading' });
+    const res = await agent.get(LIST).query({ sort: 'title', pageSize: 2, page: 2 });
+    expect(titlesOf(res.body)).toEqual(['Les Lanternes de Brume']);
+    expect(res.body).toMatchObject({ page: 2, pageSize: 2, total: 3 });
+  });
+
+  it('masque une œuvre archivée mais conserve l’entrée', async () => {
+    const agent = await newReader('lectrice');
+    await addTo(agent, 'Les Lanternes de Brume', { status: 'reading', chaptersRead: 3 });
+    await client.query('UPDATE work SET deleted_at = now() WHERE id = $1', [workId]);
+    try {
+      const hidden = await agent.get(LIST);
+      expect(hidden.body.total).toBe(0);
+      expect(hidden.body.totals.chaptersRead).toBe(0);
+    } finally {
+      await client.query('UPDATE work SET deleted_at = NULL WHERE id = $1', [workId]);
+    }
+    const restored = await agent.get(LIST);
+    expect(restored.body.total).toBe(1);
+  });
+
+  it('affiche le titre dans la langue demandée', async () => {
+    const agent = await newReader('lectrice');
+    await addTo(agent, 'Hollow Tide', { status: 'reading' });
+    const res = await agent.get(LIST).query({ lang: 'fr' });
+    expect(res.body.items[0].work).toMatchObject({
+      title: 'Marée creuse',
+      originalTitle: 'Hollow Tide',
+    });
+  });
+
+  it.each([
+    ['statut inconnu', { status: 'finished' }],
+    ['tri inconnu', { sort: 'rank' }],
+    ['recherche trop courte', { q: 'a' }],
+    ['page à 0', { page: 0 }],
+    ['pageSize au-dessus de 50', { pageSize: 51 }],
+  ])('refuse : %s', async (_label, query) => {
+    const agent = await newReader('lectrice');
+    const res = await agent.get(LIST).query(query);
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
   });
 });

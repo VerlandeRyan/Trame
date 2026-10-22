@@ -6,6 +6,7 @@ import type { LibraryEntry } from '../repositories/library.repository.js';
 import type { FeaturedWork, WorkFacets, WorkSummary } from '../repositories/work.repository.js';
 import type { AuthStatus } from '../services/auth.service.js';
 import type { HealthStatus } from '../services/health.service.js';
+import type { LibraryPage } from '../services/library.service.js';
 import type { TopRatedWork, WorkDetail, WorkPage } from '../services/work.service.js';
 
 // `satisfies` lie chaque schéma au type du service ; `strictObject` fait échouer le test de contrat
@@ -196,23 +197,53 @@ export const authStatusSchema = z
     'Qui est derrière la requête. Jamais l’e-mail ni l’identifiant Google.',
   ) satisfies z.ZodType<AuthStatus>;
 
+const libraryEntry = z.strictObject({
+  status: z.enum(LIBRARY_STATUSES),
+  chaptersRead: z.number().int().describe('Chapitres lus, indépendants des tomes.'),
+  volumesRead: z.number().int().describe('Tomes lus, indépendants des chapitres.'),
+  rating: z.number().int().nullable().describe('Note de 1 à 10, `null` si non notée.'),
+  startedOn: z.string().nullable().describe('Date `YYYY-MM-DD`.'),
+  finishedOn: z.string().nullable().describe('Date `YYYY-MM-DD`.'),
+}) satisfies z.ZodType<LibraryEntry>;
+
 export const libraryEntryResponseSchema = z
   .strictObject({
-    entry: z
-      .strictObject({
-        status: z.enum(LIBRARY_STATUSES),
-        chaptersRead: z.number().int().describe('Chapitres lus, indépendants des tomes.'),
-        volumesRead: z.number().int().describe('Tomes lus, indépendants des chapitres.'),
-        rating: z.number().int().nullable().describe('Note de 1 à 10, `null` si non notée.'),
-        startedOn: z.string().nullable().describe('Date `YYYY-MM-DD`.'),
-        finishedOn: z.string().nullable().describe('Date `YYYY-MM-DD`.'),
-      })
-      .nullable()
-      .describe('`null` tant que l’œuvre n’est pas dans la liste de l’utilisateur.'),
+    entry: libraryEntry.nullable().describe(
+      '`null` tant que l’œuvre n’est pas dans la liste de l’utilisateur.',
+    ),
   })
   .describe('Suivi d’une œuvre par l’utilisateur connecté.') satisfies z.ZodType<{
   entry: LibraryEntry | null;
 }>;
+
+export const libraryPageSchema = z
+  .strictObject({
+    items: z.array(
+      z.strictObject({
+        work: workSummary.extend({
+          chapters: z.number().int().nullable().describe('Chapitres publiés, `null` si inconnu.'),
+          volumes: z.number().int().nullable().describe('Tomes publiés, `null` si inconnu.'),
+        }),
+        entry: libraryEntry,
+      }),
+    ),
+    page: z.number().int(),
+    pageSize: z.number().int(),
+    total: z
+      .number()
+      .int()
+      .describe('Œuvres correspondant à la recherche et au filtre de statut.'),
+    statusCounts: z
+      .record(z.enum(LIBRARY_STATUSES), z.number().int())
+      .describe('Œuvres par statut, selon la recherche mais sans le filtre de statut.'),
+    totals: z
+      .strictObject({
+        chaptersRead: z.number().int(),
+        volumesRead: z.number().int(),
+      })
+      .describe('Sur toute la liste ; chapitres et tomes ne sont jamais additionnés.'),
+  })
+  .describe('Une page de la liste de lecture de l’utilisateur connecté.') satisfies z.ZodType<LibraryPage>;
 
 const errorCodes = Object.keys(ERROR_CODES) as [
   keyof typeof ERROR_CODES,

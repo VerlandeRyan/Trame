@@ -3,6 +3,7 @@ import { AppError } from '../errors.js';
 import type {
   EntryChange,
   LibraryEntry,
+  LibraryListCriteria,
   LibraryRepository,
   NewReadingEvent,
 } from '../repositories/library.repository.js';
@@ -12,7 +13,11 @@ import { createLibraryService } from './library.service.js';
 const TODAY = '2026-10-20';
 
 function fakeRepository(initial: LibraryEntry | null = null, isWorkAvailable = true) {
-  const state = { entry: initial, events: [] as NewReadingEvent[] };
+  const state = {
+    entry: initial,
+    events: [] as NewReadingEvent[],
+    listCriteria: undefined as LibraryListCriteria | undefined,
+  };
   const repository: LibraryRepository = {
     async isWorkAvailable() {
       return isWorkAvailable;
@@ -28,6 +33,14 @@ function fakeRepository(initial: LibraryEntry | null = null, isWorkAvailable = t
     },
     async remove() {
       state.entry = null;
+    },
+    async list(criteria) {
+      state.listCriteria = criteria;
+      return {
+        items: [],
+        statusCounts: { reading: 3, completed: 2, plan_to_read: 4, on_hold: 0, dropped: 1 },
+        totals: { chaptersRead: 0, volumesRead: 0 },
+      };
     },
   };
   return { repository, state };
@@ -177,5 +190,38 @@ describe('removeEntry', () => {
     const { service, state } = serviceWith(entry());
     await service.removeEntry(1, 1);
     expect(state.entry).toBeNull();
+  });
+});
+
+describe('listEntries', () => {
+  const input = { sort: 'updated', page: 1, pageSize: 50 } as const;
+
+  it('totalise tous les statuts sans filtre', async () => {
+    const { service } = serviceWith();
+    const page = await service.listEntries(7, input);
+    expect(page.total).toBe(10);
+  });
+
+  it('ne totalise que les statuts demandés', async () => {
+    const { service } = serviceWith();
+    const page = await service.listEntries(7, { ...input, status: ['reading', 'dropped'] });
+    expect(page.total).toBe(4);
+  });
+
+  it('calcule le décalage de la page et nettoie la recherche', async () => {
+    const { service, state } = serviceWith();
+    await service.listEntries(7, { ...input, page: 3, pageSize: 20, q: '  aube   manga ' });
+    expect(state.listCriteria).toMatchObject({
+      userId: 7,
+      q: 'aube manga',
+      limit: 20,
+      offset: 40,
+    });
+  });
+
+  it('ignore une recherche réduite à des espaces', async () => {
+    const { service, state } = serviceWith();
+    await service.listEntries(7, { ...input, q: '   ' });
+    expect(state.listCriteria?.q).toBeUndefined();
   });
 });

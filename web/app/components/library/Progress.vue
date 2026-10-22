@@ -2,11 +2,8 @@
 import {
   exceedsKnownTotal,
   RATING_MAX,
-  readingPrompt,
-  withPromptStatus,
   type LibraryEntry,
   type LibraryEntryChanges,
-  type ReadingPrompt,
 } from '~/utils/library'
 
 // « Ma progression » (US-06) : chapitres lus, tomes lus et note, puis les dates de lecture
@@ -34,71 +31,29 @@ const volumesExceedTotal = computed(() =>
   exceedsKnownTotal(props.entry.volumesRead, props.totalVolumes),
 )
 
-// Une progression peut demander de changer le statut (`readingPrompt`) :
-// - « En cours » (une œuvre « À lire », « En pause » ou « Abandonné » avance) : seule la
-//   confirmation enregistre (compteur et statut) ; Annuler, la croix, Échap et un clic à côté
-//   n'enregistrent rien et les compteurs reprennent leur valeur.
-// - « Terminé » (le total connu est atteint) : la confirmation enregistre compteur et statut,
-//   « Garder » enregistre le compteur seul (sinon on ne pourrait pas saisir le total), la croix,
-//   Échap et un clic à côté n'enregistrent rien.
-const pendingProgress = ref<LibraryEntryChanges | null>(null)
-const askedPrompt = ref<ReadingPrompt>('start')
-const isAskingToRead = ref(false)
+// Une progression peut demander de changer le statut (`useReadingPrompt`) ; si rien n'est
+// enregistré, le compteur a pu afficher la valeur saisie : on le recrée pour qu'il relise la vraie.
 const counterKey = ref(0)
-let answer: 'confirmed' | 'declined' | null = null
-
-const isFinishPrompt = computed(
-  () => askedPrompt.value === 'finishChapters' || askedPrompt.value === 'finishVolumes',
-)
-const promptTitle = computed(() =>
-  t(`library.readingPrompt.${isFinishPrompt.value ? 'finish' : askedPrompt.value}`),
-)
-const promptText = computed(() => {
-  switch (askedPrompt.value) {
-    case 'finishChapters':
-      return t('library.readingPrompt.finishChapters', { total: props.totalChapters })
-    case 'finishVolumes':
-      return t('library.readingPrompt.finishVolumes', { total: props.totalVolumes })
-    default:
-      return t('library.readingPrompt.text', { status: t(`readingStatus.${props.entry.status}`) })
-  }
-})
-const promptCancelLabel = computed(() =>
-  isFinishPrompt.value
-    ? t('library.readingPrompt.keep', { status: t(`readingStatus.${props.entry.status}`) })
-    : t('library.readingPrompt.cancel'),
-)
+const {
+  isOpen: isAskingToRead,
+  title: promptTitle,
+  text: promptText,
+  confirmLabel: promptConfirmLabel,
+  cancelLabel: promptCancelLabel,
+  request: requestPrompt,
+  confirm: confirmPrompt,
+  decline: declinePrompt,
+} = useReadingPrompt()
 
 function changeProgress(changes: LibraryEntryChanges) {
-  const prompt = readingPrompt(props.entry, changes, {
-    chapters: props.totalChapters,
-    volumes: props.totalVolumes,
-  })
-  if (prompt === null) {
-    emit('change', changes)
-    return
-  }
-  pendingProgress.value = changes
-  askedPrompt.value = prompt
-  answer = null
-  isAskingToRead.value = true
+  const isAsking = requestPrompt(
+    props.entry,
+    { chapters: props.totalChapters, volumes: props.totalVolumes },
+    changes,
+    { apply: (confirmed) => emit('change', confirmed), discard: () => (counterKey.value += 1) },
+  )
+  if (!isAsking) emit('change', changes)
 }
-
-// Après la fermeture (`post` : le clic sur un bouton a eu le temps de noter la réponse).
-watch(
-  isAskingToRead,
-  (isOpen) => {
-    const changes = pendingProgress.value
-    if (isOpen || !changes) return
-    pendingProgress.value = null
-    if (answer === 'confirmed') emit('change', withPromptStatus(askedPrompt.value, changes))
-    else if (answer === 'declined' && isFinishPrompt.value) emit('change', changes)
-    // Rien d'enregistré : le compteur a pu afficher la valeur saisie, on le recrée pour qu'il
-    // relise la vraie.
-    else counterKey.value += 1
-  },
-  { flush: 'post' },
-)
 
 const changeRating = (rating: number) =>
   emit('change', { rating: rating === NO_RATING ? null : rating })
@@ -191,11 +146,11 @@ function changeDate(field: 'startedOn' | 'finishedOn', event: Event) {
       v-model="isAskingToRead"
       :title="promptTitle"
       :text="promptText"
-      :confirm-label="t(`library.readingPrompt.${isFinishPrompt ? 'confirmFinish' : 'confirm'}`)"
+      :confirm-label="promptConfirmLabel"
       :cancel-label="promptCancelLabel"
       :close-label="t('action.close')"
-      @confirm="answer = 'confirmed'"
-      @cancel="answer = 'declined'"
+      @confirm="confirmPrompt"
+      @cancel="declinePrompt"
     />
   </div>
 </template>
