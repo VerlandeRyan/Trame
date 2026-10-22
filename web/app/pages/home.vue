@@ -364,6 +364,8 @@ useHead({ title: () => t('app.name') })
   font-size: 1.85rem;
   line-height: 1.1;
   text-wrap: balance;
+  // Un pseudo de 30 caractères n'a aucun point de coupure : sans cela il déborde de l'écran.
+  overflow-wrap: anywhere;
 
   @media (min-width: 768px) {
     font-size: clamp(2.2rem, 4vw, 3.2rem);

@@ -48,11 +48,14 @@ export function createApp({
   docs,
   auth = {},
   trustProxy = 0,
+  libraryRateLimit = LIBRARY_RATE_LIMIT,
 }: {
   db: Db;
   docs?: RequestHandler<never, string>;
   auth?: AuthOptions;
   trustProxy?: number;
+  /** Limite de débit des écritures de la liste de lecture (relevée par les E2E). */
+  libraryRateLimit?: RateLimitSettings;
 }): Express {
   const {
     google = unavailableGoogleClient,
@@ -92,7 +95,7 @@ export function createApp({
       webOrigin,
       secureCookies,
       authRateLimit: rateLimit,
-      libraryRateLimit: LIBRARY_RATE_LIMIT,
+      libraryRateLimit,
       libraryService: createLibraryService(createLibraryRepository(db)),
       genreService: createGenreService(createGenreRepository(db)),
       workService: createWorkService(createWorkRepository(db)),

@@ -25,6 +25,7 @@ export async function startServer(
     db,
     docs,
     trustProxy: config.TRUST_PROXY,
+    libraryRateLimit: rateLimit,
     auth: {
       google,
       sessionSecret: config.SESSION_SECRET,
