@@ -124,6 +124,24 @@
     "topRated": {
       "title": "Top rated"
     },
+    "member": {
+      "welcomeBack": "Welcome back, {handle}",
+      "subtitle": "Where are you in your reading?"
+    },
+    "continueReading": {
+      "title": "Keep reading",
+      "seeList": "See my list ›",
+      "chapter": "Chapter {value}",
+      "volume": "Volume {value}",
+      "addOne": "+1",
+      "addChapter": "Add a chapter to {title}",
+      "addVolume": "Add a volume to {title}"
+    },
+    "empty": {
+      "title": "Welcome to Trame, {handle}",
+      "text": "Your list is empty for now: add your first title.",
+      "orFormat": "Or start from a format"
+    },
     "missing": {
       "title": "Is a work missing from Trame?",
       "text": "Suggest it for the catalogue: an administrator checks it before publication.",

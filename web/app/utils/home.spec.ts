@@ -4,9 +4,24 @@ import {
   formatRatingAverage,
   pickExploreCodes,
   pickExploreFacets,
+  incrementUnit,
   swipeDirection,
   type GenreItem,
 } from './home'
+
+describe('incrementUnit', () => {
+  it('compte les tomes pour un lecteur qui ne suit que les tomes', () => {
+    expect(incrementUnit({ chaptersRead: 0, volumesRead: 2 })).toBe('volumes')
+  })
+
+  it.each([
+    { chaptersRead: 12, volumesRead: 0 },
+    { chaptersRead: 5, volumesRead: 1 },
+    { chaptersRead: 0, volumesRead: 0 },
+  ])('compte les chapitres sinon (%o)', (entry) => {
+    expect(incrementUnit(entry)).toBe('chapters')
+  })
+})
 
 describe('pickExploreFacets', () => {
   it("range formats et genres dans l'ordre éditorial, compteurs conservés", () => {

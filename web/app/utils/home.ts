@@ -1,4 +1,6 @@
 // Accueil : types des réponses de l'API et logique pure.
+import type { LibraryEntry } from './library'
+import type { ListUnit } from './reading-list'
 import type { FacetCount, WorkFacets, WorkSummary } from './search'
 
 export interface FeaturedWork extends WorkSummary {
@@ -94,4 +96,12 @@ export function swipeDirection(deltaX: number, deltaY: number, threshold = 40): 
 /** Position voisine dans le carrousel, qui reboucle aux extrémités. */
 export function circularIndex(index: number, step: 1 | -1, length: number): number {
   return (index + step + length) % length
+}
+
+/** Œuvres de la bande « Reprendre la lecture ». */
+export const CONTINUE_READING_SIZE = 3
+
+/** Le +1 compte les tomes pour un lecteur qui ne suit que les tomes, sinon les chapitres. */
+export function incrementUnit(entry: Pick<LibraryEntry, 'chaptersRead' | 'volumesRead'>): ListUnit {
+  return entry.chaptersRead === 0 && entry.volumesRead > 0 ? 'volumes' : 'chapters'
 }
