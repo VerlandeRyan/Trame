@@ -1,6 +1,10 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { enableAutoUnmount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import HomePage from './home.vue'
+
+// Une page restée montée relit ses données quand la connexion change : elle fausserait le test suivant.
+enableAutoUnmount(afterEach)
 
 const summary = (id: number, title: string) => ({
   id,
@@ -129,6 +133,101 @@ describe("page d'accueil", () => {
 
     expect(wrapper.find('[data-testid="home-top-rated"]').exists()).toBe(false)
     expect(wrapper.find('[data-testid="home-recent"]').exists()).toBe(true)
+  })
+
+  describe('membre connecté', () => {
+    const MEMBER = { status: 'authenticated', user: { id: 1, handle: 'lectrice', role: 'user' } }
+    const reading = {
+      work: { ...summary(9, 'Lanterne Fictive'), chapters: null, volumes: null },
+      entry: {
+        status: 'reading',
+        chaptersRead: 4,
+        volumesRead: 0,
+        rating: null,
+        startedOn: null,
+        finishedOn: null,
+      },
+    }
+    const counts = (reading: number, plan: number) => ({
+      reading,
+      completed: 0,
+      plan_to_read: plan,
+      on_hold: 0,
+      dropped: 0,
+    })
+    let entriesPage: { items: unknown[]; statusCounts: unknown } | null = null
+
+    beforeEach(() => {
+      useState('auth').value = MEMBER
+      entriesPage = { items: [reading], statusCounts: counts(1, 0) }
+      registerEndpoint('/api/v1/me/entries', () => {
+        if (entriesPage === null) {
+          throw createError({ statusCode: 500, data: { code: 'INTERNAL_ERROR' } })
+        }
+        return entriesPage
+      })
+    })
+
+    // Une page montée relit ses données quand la connexion change : on la démonte avant de la changer.
+    const mounted: { unmount: () => void }[] = []
+    async function mountHome() {
+      const wrapper = await mountSuspended(HomePage)
+      mounted.push(wrapper)
+      return wrapper
+    }
+
+    afterEach(() => {
+      for (const wrapper of mounted.splice(0)) wrapper.unmount()
+      useState('auth').value = { status: 'anonymous' }
+    })
+
+    it('salue le membre, avec la bande « Reprendre la lecture » et sans panneau visiteur', async () => {
+      const wrapper = await mountHome()
+
+      expect(wrapper.get('[data-testid="home-title"]').text()).toBe('Bon retour, @lectrice')
+      expect(wrapper.get('[data-testid="home-intro"]').text()).toBe(
+        'Où en es-tu dans tes lectures ?',
+      )
+      expect(wrapper.findAll('[data-testid="continue-reading-work"]')).toHaveLength(1)
+      for (const id of ['home-pitch', 'home-stamps', 'home-empty', 'home-formats']) {
+        expect(wrapper.find(`[data-testid="${id}"]`).exists(), id).toBe(false)
+      }
+    })
+
+    it('propose de partir d’un format quand la liste est vide', async () => {
+      entriesPage = { items: [], statusCounts: counts(0, 0) }
+
+      const wrapper = await mountHome()
+
+      expect(wrapper.get('[data-testid="home-title"]').text()).toBe(
+        'Bienvenue sur Trame, @lectrice',
+      )
+      expect(wrapper.find('[data-testid="home-continue-reading"]').exists()).toBe(false)
+      const manga = wrapper.get('[data-testid="home-format-manga"]')
+      expect(manga.attributes('href')).toBe('/search?format=manga')
+    })
+
+    it('garde « Bon retour » sans bande quand rien n’est en cours mais que la liste existe', async () => {
+      entriesPage = { items: [], statusCounts: counts(0, 2) }
+
+      const wrapper = await mountHome()
+
+      expect(wrapper.get('[data-testid="home-title"]').text()).toBe('Bon retour, @lectrice')
+      expect(wrapper.find('[data-testid="home-formats"]').exists()).toBe(false)
+      expect(wrapper.get('[data-testid="home-continue-reading"]').attributes('style')).toContain(
+        'none',
+      )
+    })
+
+    it("n'affiche pas « liste vide » quand la lecture de la liste échoue", async () => {
+      entriesPage = null
+
+      const wrapper = await mountHome()
+
+      expect(wrapper.get('[data-testid="home-title"]').text()).toBe('Bon retour, @lectrice')
+      expect(wrapper.find('[data-testid="home-continue-reading"]').exists()).toBe(false)
+      expect(wrapper.find('[data-testid="home-empty"]').exists()).toBe(false)
+    })
   })
 
   it('ne propose jamais de lien vers la galerie de composants', async () => {

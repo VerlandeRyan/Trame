@@ -124,6 +124,24 @@
     "topRated": {
       "title": "Les mieux notées"
     },
+    "member": {
+      "welcomeBack": "Bon retour, {handle}",
+      "subtitle": "Où en es-tu dans tes lectures ?"
+    },
+    "continueReading": {
+      "title": "Reprendre la lecture",
+      "seeList": "Voir ma liste ›",
+      "chapter": "Chapitre {value}",
+      "volume": "Tome {value}",
+      "addOne": "+1",
+      "addChapter": "Ajouter un chapitre à {title}",
+      "addVolume": "Ajouter un tome à {title}"
+    },
+    "empty": {
+      "title": "Bienvenue sur Trame, {handle}",
+      "text": "Ta liste est vide pour l’instant : ajoute ton premier titre.",
+      "orFormat": "Ou pars d’un format"
+    },
     "missing": {
       "title": "Une œuvre manque à Trame ?",
       "text": "Propose-la au catalogue : un administrateur la vérifie avant publication.",

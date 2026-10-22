@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { SHELF_SIZE, type FeaturedWork, type RatedWork } from '~/utils/home'
+import { CONTINUE_READING_SIZE, SHELF_SIZE, type FeaturedWork, type RatedWork } from '~/utils/home'
+import { countEntriesOfAllStatuses, type ListedEntry, type ListPage } from '~/utils/reading-list'
 import type { WorkPage } from '~/utils/search'
 
 // `path: '/'` fait de ce fichier la racine. `trame: 'hero'` : la trame du bord droit reste dans la
@@ -10,14 +11,29 @@ const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const api = useApi()
 
+/** Œuvres en cours d'un membre ; `isReadingListEmpty` : aucune œuvre, tous statuts confondus. */
+interface ContinueReadingData {
+  items: ListedEntry[]
+  isReadingListEmpty: boolean
+}
+
 interface HomeData {
   featured: FeaturedWork[]
   recent: WorkPage['items']
   topRated: RatedWork[]
+  continueReading: ContinueReadingData | null
 }
 
 // Tampons du hero, dans l'ordre de la maquette ; libellés dans `genre.*`.
 const STAMP_FORMATS = ['manga', 'bd', 'webtoon', 'webcomic', 'comics']
+
+// Seul un membre connecté a un accueil personnalisé (`pending` : pseudo pas encore choisi).
+const auth = useAuth()
+const member = computed(() =>
+  auth.state.value.status === 'authenticated' ? auth.state.value.user : null,
+)
+const memberHandle = computed(() => (member.value ? `@${member.value.handle}` : ''))
+const cookieHeaders = import.meta.server ? useRequestHeaders(['cookie']) : undefined
 
 // Un bloc dont l'appel échoue est masqué : une panne ne casse pas l'accueil.
 async function loadOrFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
@@ -28,9 +44,26 @@ async function loadOrFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
   }
 }
 
+// Une panne laisse la bande absente (`null`) : on ne la prend pas pour une liste vide.
+async function loadContinueReading(lang: string): Promise<ContinueReadingData | null> {
+  if (!member.value) return null
+  return loadOrFallback<ContinueReadingData | null>(
+    api
+      .request<ListPage>('/me/entries', {
+        query: { lang, status: 'reading', sort: 'updated', pageSize: CONTINUE_READING_SIZE },
+        headers: cookieHeaders,
+      })
+      .then((page) => ({
+        items: page.items,
+        isReadingListEmpty: countEntriesOfAllStatuses(page.statusCounts) === 0,
+      })),
+    null,
+  )
+}
+
 async function loadHomeBlocks(): Promise<HomeData> {
   const lang = locale.value
-  const [featured, recent, topRated] = await Promise.all([
+  const [featured, recent, topRated, continueReading] = await Promise.all([
     loadOrFallback(api.request<{ items: FeaturedWork[] }>('/works/featured', { query: { lang } }), {
       items: [],
     }),
@@ -41,17 +74,23 @@ async function loadHomeBlocks(): Promise<HomeData> {
     loadOrFallback(api.request<{ items: RatedWork[] }>('/works/top-rated', { query: { lang } }), {
       items: [],
     }),
+    loadContinueReading(lang),
   ])
   return {
     featured: featured.items,
     recent: recent.items,
     topRated: topRated.items,
+    continueReading,
   }
 }
 
-const { data } = await useAsyncData<HomeData>(`home-${locale.value}`, loadHomeBlocks, {
-  watch: [locale],
-})
+const { data } = await useAsyncData<HomeData>(
+  () => `home-${locale.value}-${member.value ? 'member' : 'visitor'}`,
+  loadHomeBlocks,
+  { watch: [locale, member] },
+)
+
+const isReadingListEmpty = computed(() => data.value?.continueReading?.isReadingListEmpty === true)
 
 const searchBox = ref<{ submit: () => void } | null>(null)
 
@@ -66,27 +105,46 @@ useHead({ title: () => t('app.name') })
 
 <template>
   <div class="home">
-    <section class="home__hero">
-      <div class="home__lead">
-        <h1 class="home__title" data-testid="home-title">
-          {{ t('home.title') }} <span class="home__highlight">{{ t('home.titleHighlight') }}</span>
-        </h1>
-        <!-- Décor : les formats sont déjà dans le texte et dans la recherche. -->
-        <ul class="home__stamps" aria-hidden="true" data-testid="home-stamps">
-          <li v-for="format in STAMP_FORMATS" :key="format" class="home__stamp">
-            {{ t(`genre.${format}`) }}
-          </li>
-        </ul>
-        <p class="home__intro" data-testid="home-intro">
-          <i18n-t keypath="home.intro" scope="global">
-            <template #favorites>
-              <mark class="home__keyword">{{ t('home.introFavorites') }}</mark>
-            </template>
-            <template #hit>
-              <mark class="home__keyword">{{ t('home.introHit') }}</mark>
-            </template>
-          </i18n-t>
-        </p>
+    <section
+      class="home__hero"
+      :class="{ 'home__hero--empty': isReadingListEmpty }"
+      :data-testid="isReadingListEmpty ? 'home-empty' : undefined"
+    >
+      <div class="home__lead" :class="{ 'home__lead--member': member }">
+        <template v-if="member">
+          <h1 class="home__title" data-testid="home-title">
+            {{
+              t(isReadingListEmpty ? 'home.empty.title' : 'home.member.welcomeBack', {
+                handle: memberHandle,
+              })
+            }}
+          </h1>
+          <p class="home__intro" data-testid="home-intro">
+            {{ t(isReadingListEmpty ? 'home.empty.text' : 'home.member.subtitle') }}
+          </p>
+        </template>
+        <template v-else>
+          <h1 class="home__title" data-testid="home-title">
+            {{ t('home.title') }}
+            <span class="home__highlight">{{ t('home.titleHighlight') }}</span>
+          </h1>
+          <!-- Décor : les formats sont déjà dans le texte et dans la recherche. -->
+          <ul class="home__stamps" aria-hidden="true" data-testid="home-stamps">
+            <li v-for="format in STAMP_FORMATS" :key="format" class="home__stamp">
+              {{ t(`genre.${format}`) }}
+            </li>
+          </ul>
+          <p class="home__intro" data-testid="home-intro">
+            <i18n-t keypath="home.intro" scope="global">
+              <template #favorites>
+                <mark class="home__keyword">{{ t('home.introFavorites') }}</mark>
+              </template>
+              <template #hit>
+                <mark class="home__keyword">{{ t('home.introHit') }}</mark>
+              </template>
+            </i18n-t>
+          </p>
+        </template>
         <div class="home__search">
           <LayoutSearchBox
             ref="searchBox"
@@ -102,10 +160,30 @@ useHead({ title: () => t('app.name') })
             {{ t('nav.search') }}
           </UiButton>
         </div>
+
+        <div v-if="isReadingListEmpty" class="home__formats" data-testid="home-formats">
+          <p class="home__formats-label">{{ t('home.empty.orFormat') }}</p>
+          <ul class="home__formats-list">
+            <li v-for="format in STAMP_FORMATS" :key="format">
+              <NuxtLink
+                :to="{ path: localePath('/search'), query: { format } }"
+                class="home__format"
+                :data-testid="`home-format-${format}`"
+              >
+                {{ t(`genre.${format}`) }}
+              </NuxtLink>
+            </li>
+          </ul>
+        </div>
       </div>
 
-      <!-- Visiteur seulement : à masquer pour un membre connecté quand la session existera (#22). -->
-      <HomePitch class="home__pitch" />
+      <HomeContinueReading
+        v-if="data?.continueReading && !isReadingListEmpty"
+        :entries="data.continueReading.items"
+        class="home__continue-reading"
+      />
+
+      <HomePitch v-if="!member" class="home__pitch" />
     </section>
 
     <div class="home__body">
@@ -141,6 +219,8 @@ useHead({ title: () => t('app.name') })
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 // Bandes pleine largeur : on annule les marges de `<main>`, la page pose les siennes.
 .home {
   margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--main-pad-x))
@@ -211,6 +291,71 @@ useHead({ title: () => t('app.name') })
     margin-top: 0;
     margin-left: auto;
   }
+}
+
+// Membre : pas de tampons ni de sous-titre inversé, l'ordre du DOM suffit.
+.home__lead.home__lead--member > * {
+  order: 0;
+}
+
+// La bande occupe toute la largeur du hero, sous la recherche.
+.home__continue-reading {
+  flex: 1 1 100%;
+  min-width: 0;
+  margin-top: var(--space-2);
+}
+
+// Liste vide : au bureau, titre, recherche et formats sont centrés.
+.home__hero--empty {
+  @media (min-width: 768px) {
+    justify-content: center;
+    text-align: center;
+
+    .home__lead {
+      align-items: center;
+    }
+
+    // Le centrage ne doit pas gagner le menu de suggestions.
+    .home__search {
+      width: 100%;
+      margin-inline: auto;
+      text-align: start;
+    }
+  }
+}
+
+.home__formats-label {
+  margin: var(--space-4) 0 var(--space-2);
+  color: var(--color-ink-soft);
+  font-size: 0.875rem;
+  font-weight: 800;
+}
+
+.home__formats-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+
+  @media (min-width: 768px) {
+    justify-content: center;
+  }
+}
+
+// Formats cliquables : mêmes pastilles blanches que les tampons, mais droites et de 44 px.
+.home__format {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-small);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-weight: 800;
+  text-decoration: none;
+
+  @include tilt-on-hover(var(--color-rose));
 }
 
 .home__title {
