@@ -1,5 +1,6 @@
 // Charge db/demo-data.sql (jeu de démonstration fictif) dans la base de TEST (TEST_DATABASE_URL).
-// Le fichier vide d'abord les tables : refus sur tout ce qui n'est pas une base locale.
+// Le fichier vide d'abord les tables : refus sur tout ce qui n'est pas une base locale, sauf les
+// hôtes listés dans TEST_DATABASE_ALLOWED_HOSTS (la CI y met le nom du service Postgres).
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
@@ -14,8 +15,14 @@ if (process.env.NODE_ENV === 'production') {
   process.exit(1);
 }
 
+const LOCAL_HOSTS = ['localhost', '127.0.0.1', '[::1]', '::1'];
+const allowedHosts = (process.env.TEST_DATABASE_ALLOWED_HOSTS ?? '')
+  .split(',')
+  .map((allowed) => allowed.trim())
+  .filter(Boolean);
+
 const host = new URL(connectionString).hostname;
-if (!['localhost', '127.0.0.1', '[::1]', '::1'].includes(host)) {
+if (![...LOCAL_HOSTS, ...allowedHosts].includes(host)) {
   console.error(`Refus : l'hôte « ${host} » n'est pas une base locale.`);
   process.exit(1);
 }
