@@ -191,6 +191,8 @@ jobs:
         working-directory: e2e
       - run: npm run format:check
         working-directory: e2e
+      - run: npm run lint
+        working-directory: e2e
       - run: npx --no-install playwright test --project=${{ matrix.project }}
         working-directory: e2e
 
@@ -229,6 +231,7 @@ jobs:
           cache-dependency-path: api/package-lock.json
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
+      - run: npm run lint
       - run: npm run format:check
       - run: npm run migrate:test
       - run: npm run test:coverage

@@ -34,7 +34,7 @@ async function loadWork(): Promise<WorkDetail> {
 
 const { data: work, error } = await useAsyncData(`work-${workId}-${locale.value}`, loadWork)
 if (error.value || !work.value) {
-  throw createError({ statusCode: error.value?.statusCode ?? 404, fatal: true })
+  throw createError({ statusCode: error.value?.status ?? 404, fatal: true })
 }
 
 // L'URL canonique porte le titre affiché dans la langue de l'interface, comme les liens des œuvres

@@ -77,8 +77,11 @@ useSeoMeta({
 })
 
 // Filtre, tri et réinitialisation remplacent l'entrée d'historique : « Retour » quitte la recherche.
-function navigateToSearch(next: SearchState, options: { replace?: boolean } = {}) {
-  return navigateTo(
+async function navigateToSearch(
+  next: SearchState,
+  options: { replace?: boolean } = {},
+): Promise<void> {
+  await navigateTo(
     { path: localePath('/search'), query: toRouteQuery(next) },
     { replace: options.replace },
   )

@@ -50,7 +50,7 @@ function registerEntryEndpoints(workId: number) {
     method: 'PUT',
     handler: async (event) => {
       const body = (await readBody(event)) as Record<string, unknown>
-      ;(savedBodies[workId] ??= []).push(body)
+      savedBodies[workId] = [...(savedBodies[workId] ?? []), body]
       return { entry: { ...items.find((item) => item.work.id === workId)?.entry, ...body } }
     },
   })

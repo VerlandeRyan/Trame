@@ -12,7 +12,7 @@ const secrets = { codeVerifier: 'verifier', nonce: 'nonce-1' };
 /** Google simulé : renvoie le jeton et le contenu donnés, ou échoue. */
 function fakeOAuth(options: {
   idToken?: string | null;
-  payload?: Record<string, unknown> | undefined;
+  payload?: Record<string, unknown>;
   tokenError?: Error;
 }): GoogleOAuth {
   const { idToken = 'id-token', payload, tokenError } = options;

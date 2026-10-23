@@ -27,6 +27,11 @@
       "groupName": "Playwright (paquet et image de la CI)"
     },
     {
+      "description": "TypeScript 6 tant que typescript-eslint et vue-tsc n'acceptent pas TypeScript 7 (#128)",
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7"
+    },
+    {
       "description": "Actions GitHub regroupées",
       "matchManagers": ["github-actions"],
       "groupName": "actions GitHub"

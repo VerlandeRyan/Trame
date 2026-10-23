@@ -4,11 +4,15 @@ import { defineComponent, h } from 'vue'
 
 /** Observateur piloté par le test : il ne se déclenche que quand on appelle `reveal`. */
 class FakeIntersectionObserver {
-  static latest: FakeIntersectionObserver
+  static readonly created: FakeIntersectionObserver[] = []
   readonly disconnect = vi.fn()
 
+  static get latest(): FakeIntersectionObserver {
+    return FakeIntersectionObserver.created.at(-1)!
+  }
+
   constructor(private readonly callback: (entries: { isIntersecting: boolean }[]) => void) {
-    FakeIntersectionObserver.latest = this
+    FakeIntersectionObserver.created.push(this)
   }
 
   observe() {}
