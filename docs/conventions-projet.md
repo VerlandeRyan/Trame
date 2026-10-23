@@ -48,7 +48,7 @@ GitHub Issues + Projects. Labels `type:*` (feature, bug, docs, chore) et `area:*
 
 ## 6. Qualité et tests
 - Lint : ESLint + `eslint-plugin-vue` + Prettier ; types : `vue-tsc`, TypeScript strict (6, partout) ; SQL : SQLFluff.
-- **Règles Sonar avant le push** : `npm run lint` (web, api, e2e) applique `eslint-plugin-sonarjs` en lint typé, comme le hook et la CI. SonarQube for IDE se branche sur le projet SonarCloud par le fichier partagé de `.sonarlint/` (commande « Share Connected Mode configuration » de l'IDE). Ce qu'un linter ne voit pas, et que le quality gate des PR refuse :
+- **Règles Sonar avant le push** : `npm run lint` (web, api, e2e) applique `eslint-plugin-sonarjs` en lint typé, comme le hook et la CI. Ce qu'un linter ne voit pas, et que le quality gate des PR refuse :
   - `void` seulement devant une vraie `Promise` : une fonction au type mixte (`navigateTo`) passe par une fonction `async` ;
   - pas de bloc recopié entre deux pages ou composants (≤ 3 % de duplication) : extraire un composable ;
   - chaque ligne nouvelle est testée (≥ 80 % du nouveau code) : lancer `npm run test:coverage` avant le push ;

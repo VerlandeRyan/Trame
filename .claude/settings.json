@@ -11,5 +11,20 @@
       "Read(./private/catalogue-depart/**)",
       "Read(./private/audit-*)"
     ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/lint-edited-file.mjs\"",
+            "timeout": 120,
+            "statusMessage": "ESLint (règles Sonar) sur le fichier modifié"
+          }
+        ]
+      }
+    ]
   }
 }
