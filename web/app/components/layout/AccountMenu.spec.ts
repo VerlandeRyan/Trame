@@ -85,6 +85,27 @@ describe('LayoutAccountMenu', () => {
     wrapper.unmount()
   })
 
+  it('montre les entrées sans page en inactif, sans groupe Administration', async () => {
+    const wrapper = await mountSuspended(LayoutAccountMenu, { props: { handle: 'Ryan' } })
+
+    expect(wrapper.get('[data-testid="my-list-link"]').attributes('href')).toBeDefined()
+    for (const testId of ['profile-link', 'propose-work-link', 'my-submissions-link']) {
+      expect(wrapper.get(`[data-testid="${testId}"]`).attributes('disabled')).toBeDefined()
+    }
+    expect(wrapper.find('[data-testid="admin-group"]').exists()).toBe(false)
+  })
+
+  it('ajoute le groupe Administration, inactif, pour un admin', async () => {
+    const wrapper = await mountSuspended(LayoutAccountMenu, {
+      props: { handle: 'Ryan', isAdmin: true },
+    })
+
+    expect(wrapper.get('[data-testid="admin-group"]').text()).toContain('Administration')
+    for (const testId of ['admin-submissions-link', 'admin-catalogue-link', 'admin-reports-link']) {
+      expect(wrapper.get(`[data-testid="${testId}"]`).attributes('disabled')).toBeDefined()
+    }
+  })
+
   it('reste connecté quand on renonce à se déconnecter', async () => {
     useState('auth').value = {
       status: 'authenticated',

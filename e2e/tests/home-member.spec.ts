@@ -1,6 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { signUp } from '../support/session'
+import { signUp } from '../support/session.js'
 
 // Accueil d'un membre connecté (US-15, #96) : l'API, la base, la session et le relais Nuxt sont
 // réels. Œuvre de démo sans lecteur ni ajout récent (n° 2) : une entrée de plus n'y change ni

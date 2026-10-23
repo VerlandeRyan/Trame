@@ -120,6 +120,17 @@ describe('LayoutHeader et la connexion', () => {
     useState('auth').value = { status: 'anonymous' }
   })
 
+  it('réserve le groupe Administration aux admins', async () => {
+    useState('auth').value = {
+      status: 'authenticated',
+      user: { id: 1, handle: 'Ryan', role: 'admin' },
+    }
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+
+    expect(wrapper.find('[data-testid="admin-group"]').exists()).toBe(true)
+    useState('auth').value = { status: 'anonymous' }
+  })
+
   it('garde « Se connecter » tant que le pseudo n’est pas choisi', async () => {
     useState('auth').value = { status: 'pending' }
     const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })

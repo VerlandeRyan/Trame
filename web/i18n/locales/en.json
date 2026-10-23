@@ -13,7 +13,16 @@
     "languageLabel": "Interface language",
     "skipToContent": "Skip to content",
     "signIn": "Sign in",
-    "myList": "My reading list"
+    "myList": "My reading list",
+    "profile": "My profile",
+    "proposeWork": "Suggest a work",
+    "mySubmissions": "My submissions",
+    "admin": {
+      "title": "Administration",
+      "submissions": "Submissions",
+      "catalogue": "Catalogue",
+      "reports": "Reports"
+    }
   },
   "search": {
     "title": "Search",
