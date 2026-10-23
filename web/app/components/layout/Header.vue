@@ -88,6 +88,7 @@ watch(
     <LayoutAccountMenu
       v-if="auth.status === 'authenticated'"
       :handle="auth.user.handle"
+      :is-admin="auth.user.role === 'admin'"
       class="layout-header__account"
     />
     <UiButton

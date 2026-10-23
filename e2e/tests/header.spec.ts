@@ -1,3 +1,4 @@
+import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
 import { signUp, uniqueHandle } from '../support/session'
 
@@ -52,6 +53,30 @@ for (const width of [320, 390]) {
     }
   })
 }
+
+test('le menu du compte liste les entrées, sans Administration pour un membre', async ({
+  page,
+  context,
+}) => {
+  await page.setViewportSize({ width: 390, height: 600 })
+  await signUp(context)
+  await page.goto(WORK_PATH)
+  await page.waitForLoadState('networkidle')
+
+  await page.getByTestId('account-menu').click()
+
+  await expect(page.getByTestId('my-list-link')).toBeVisible()
+  for (const name of ['Mon profil', 'Proposer une œuvre', 'Mes soumissions']) {
+    await expect(page.getByRole('button', { name, exact: true })).toBeDisabled()
+  }
+  await expect(page.getByTestId('sign-out')).toBeVisible()
+  await expect(page.getByText('Administration')).toHaveCount(0)
+
+  const results = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+    .analyze()
+  expect(results.violations.map((violation) => violation.id)).toEqual([])
+})
 
 test('pas de défilement horizontal de la page', async ({ page }) => {
   await page.goto('/')

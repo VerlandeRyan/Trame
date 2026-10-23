@@ -1,6 +1,18 @@
 <script setup lang="ts">
-// Compte connecté : le pseudo et un menu réduit à la déconnexion (le reste viendra avec le profil).
-defineProps<{ handle: string }>()
+// Compte connecté : le pseudo et son menu. Les entrées sans page (profil #22, soumissions #25)
+// sont visibles mais inactives en attendant leur ticket.
+const props = defineProps<{ handle: string; isAdmin?: boolean }>()
+const PLANNED_ITEMS = [
+  { labelKey: 'nav.profile', testId: 'profile-link' },
+  { labelKey: 'nav.proposeWork', testId: 'propose-work-link' },
+  { labelKey: 'nav.mySubmissions', testId: 'my-submissions-link' },
+]
+const ADMIN_ITEMS = [
+  { labelKey: 'nav.admin.submissions', testId: 'admin-submissions-link' },
+  { labelKey: 'nav.admin.catalogue', testId: 'admin-catalogue-link' },
+  { labelKey: 'nav.admin.reports', testId: 'admin-reports-link' },
+]
+const initial = computed(() => props.handle.charAt(0).toUpperCase())
 const { t } = useI18n()
 const localePath = useLocalePath()
 const { signOut } = useAuth()
@@ -45,24 +57,49 @@ async function confirmSignOut() {
       <span class="account-menu__handle">@{{ handle }}</span>
     </UiButton>
     <div v-show="isOpen" :id="menuId" class="account-menu__panel">
-      <UiButton
-        variant="secondary"
-        size="small"
-        class="account-menu__item"
-        :href="localePath('/list')"
+      <p class="account-menu__who">
+        <span class="account-menu__avatar" aria-hidden="true">{{ initial }}</span>
+        <span class="account-menu__who-handle">@{{ handle }}</span>
+      </p>
+      <NuxtLink
+        :to="localePath('/list')"
+        class="account-menu__row"
         data-testid="my-list-link"
+        @click="close()"
       >
-        <Icon name="tabler:books" size="18" aria-hidden="true" />{{ t('nav.myList') }}
-      </UiButton>
-      <UiButton
-        variant="secondary"
-        size="small"
-        class="account-menu__item"
+        {{ t('nav.myList') }}
+      </NuxtLink>
+      <button
+        v-for="item in PLANNED_ITEMS"
+        :key="item.testId"
+        type="button"
+        class="account-menu__row"
+        disabled
+        :data-testid="item.testId"
+      >
+        {{ t(item.labelKey) }}
+      </button>
+      <section v-if="isAdmin" class="account-menu__group" data-testid="admin-group">
+        <p class="account-menu__group-title">{{ t('nav.admin.title') }}</p>
+        <button
+          v-for="item in ADMIN_ITEMS"
+          :key="item.testId"
+          type="button"
+          class="account-menu__row"
+          disabled
+          :data-testid="item.testId"
+        >
+          {{ t(item.labelKey) }}
+        </button>
+      </section>
+      <button
+        type="button"
+        class="account-menu__row account-menu__row--sign-out"
         data-testid="sign-out"
         @click="askSignOut"
       >
-        <Icon name="tabler:logout" size="18" aria-hidden="true" />{{ t('auth.signOut') }}
-      </UiButton>
+        {{ t('auth.signOut') }}
+      </button>
     </div>
     <UiConfirm
       v-model="confirmingSignOut"
@@ -77,6 +114,8 @@ async function confirmSignOut() {
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 // Le compte cède de la place avant que l'en-tête déborde : seul le pseudo se tronque.
 .account-menu {
   position: relative;
@@ -100,20 +139,129 @@ async function confirmSignOut() {
 }
 
 .account-menu__panel {
-  display: grid;
-  gap: var(--space-2);
   position: absolute;
   top: calc(100% + var(--space-2));
   right: 0;
   z-index: 40;
-  padding: var(--space-2);
+  width: 280px;
+  max-width: calc(100vw - 32px);
+  // Le menu complet dépasse un petit écran en hauteur.
+  max-height: calc(100dvh - 5rem);
+  overflow-y: auto;
+  padding: 4px 16px 8px;
   border: var(--border);
   border-radius: var(--radius);
-  background: var(--color-surface);
+  background: var(--color-paper);
   box-shadow: var(--shadow);
 }
 
-.account-menu__item {
-  white-space: nowrap;
+.account-menu__who {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 0 8px;
+  font-weight: 800;
+}
+
+.account-menu__who-handle {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.account-menu__avatar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: var(--border);
+  border-radius: 50%;
+  background: var(--color-rose);
+  font-size: 0.9rem;
+}
+
+// Lignes à plat comme la maquette : filet, chevron, aucun cadre de bouton.
+.account-menu__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 52px;
+  padding: 0;
+  border: 0;
+  border-bottom: 2px solid var(--color-rule);
+  background: none;
+  color: var(--color-ink);
+  font: 800 1.05rem var(--font-sans);
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+
+  // Le chevron est décoratif : le second `content` (texte alternatif vide) le retire du nom accessible.
+  &::after {
+    content: '›';
+    content: '›' / '';
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  // Même fond que le menu des langues, débordant de 8 px de chaque côté sans toucher aux filets.
+  &:focus-visible {
+    background: var(--color-field);
+    box-shadow:
+      -8px 0 0 var(--color-field),
+      8px 0 0 var(--color-field);
+  }
+
+  @include on-hover {
+    background: var(--color-field);
+    box-shadow:
+      -8px 0 0 var(--color-field),
+      8px 0 0 var(--color-field);
+  }
+}
+
+// Le filet de la dernière ligne ferait double trait avec le titre du groupe.
+.account-menu__row:has(+ .account-menu__group) {
+  border-bottom: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .account-menu__panel {
+    animation: account-menu-in 0.12s ease-out;
+  }
+
+  @keyframes account-menu-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+}
+
+.account-menu__row--sign-out {
+  border-bottom: 0;
+  color: var(--color-danger);
+
+  &::after {
+    content: none;
+  }
+}
+
+.account-menu__group-title {
+  margin: 12px 0 0;
+  padding-top: 8px;
+  border-top: 2px solid var(--color-ink);
+  color: var(--color-ink-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 </style>
