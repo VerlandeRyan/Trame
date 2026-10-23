@@ -1,6 +1,6 @@
 # Trame
 
-Plateforme de suivi de lecture et de découverte pour la **création européenne, FR d'abord** (manga, BD, webtoons, webcomics, d'auteurs indépendants comme d'éditeurs établis). Un « MyAnimeList » de cette scène. Projet personnel, solo, gratuit au démarrage. **Phase actuelle : documentation, aucun code.**
+Plateforme de suivi de lecture et de découverte pour la **création européenne, FR d'abord** (manga, BD, webtoons, webcomics, d'auteurs indépendants comme d'éditeurs établis). Un « MyAnimeList » de cette scène. Projet personnel, solo, gratuit au démarrage. **Phase actuelle : MVP en développement (web et suivi de lecture).**
 
 ## Démarrage de session
 1. Lire ce fichier puis `private/etat-courant.md` (privé, ignoré par git). N'ouvrir d'autres documents que si la tâche l'exige.
@@ -30,16 +30,17 @@ Plateforme de suivi de lecture et de découverte pour la **création européenne
 - Rester sur la tâche demandée ; poser une question courte plutôt que supposer (licence, hébergement, périmètre, droits).
 - Tout changement de comportement ⇒ test E2E ; toute évolution de schéma ⇒ migration + `docs/modele-de-donnees.md`.
 - Tests E2E : lancer seulement les nouveaux/modifiés en local ; la CI exécute la suite complète.
-- **Vérifier soi-même** : typecheck, tests et couverture sont lancés par Claude avant de proposer un commit, jamais laissés à Ryan ; le résultat chiffré fait partie du compte rendu.
+- **Vérifier soi-même** : typecheck, lint, tests et couverture sont lancés par Claude avant de proposer un commit, jamais laissés à Ryan ; le résultat chiffré fait partie du compte rendu.
+- **Règles Sonar** : le hook `.claude/hooks/lint-edited-file.mjs` lance ESLint (sonarjs) après chaque fichier modifié ; corriger aussitôt ce qu'il signale. Après le push d'une PR, lire son quality gate et ses alertes par l'API publique de SonarCloud (`api/qualitygates/project_status`, `api/issues/search`, projets `VerlandeRyan_Trame_web` et `_api`, paramètre `pullRequest`) et corriger.
 - **Début de sujet** : donner le nom de branche, puis attendre que Ryan l'ait créée avant toute modification. **Début et fin de conversation** : vérifier en lecture seule que git est propre (branche, branches fusionnées, PR ouvertes, CI de `main` verte) et le signaler.
 - **Git : Ryan garde la main complète.** Ne jamais exécuter de commande git qui écrit (`add`, `commit`, `push`, `merge`, `rebase`, `reset`, `tag`, config du dépôt…). Seule la lecture (`status`, `diff`, `log`) est permise. En fin de tâche, proposer un message de commit prêt à copier. Commits : `type(scope): message (#n)` ; branches `feat/12-slug`.
 - **Tickets** : pas de travail sans ticket (le hook exige `type/n-slug`). Créer ou proposer tout ticket avec `gh issue create --repo VerlandeRyan/Trame --assignee "@me" --project Trame` + labels `type:*` et `area:*` ; pas de milestone si le sujet n'est pas lié à une phase. Au démarrage du travail sur un ticket, le passer en **In progress** dans le Project (`gh project field-list 1 --owner VerlandeRyan` pour les identifiants, puis `gh project item-edit`) ; Done est automatique à la fusion de la PR (`Closes #n`). Changement de sujet : si le ticket existe, donner à Ryan le nom de branche `type/n-slug` (il la crée) ; sinon créer le ticket d'abord, puis donner la branche.
 - **Code lisible et maintenable par un humain** : commentaires courts, seulement pour le « pourquoi » non évident (jamais pour redire le code, ni l'historique d'une décision) ; noms de fonctions et de variables explicites (verbe pour une action, `is…` pour un booléen, une fonction = une responsabilité) ; fonctions courtes. Relire commentaires et noms avant de rendre le travail, sans attendre que Ryan le demande.
 - Technologies durables : Node LTS, TypeScript stable, aucune version préliminaire.
 
-## Structure cible
+## Structure
 `api/` (Node/TS, migrations) · `web/` (Nuxt) · `db/demo-data.sql` · `e2e/` · `docs/` · `private/` (ignoré) · `docker-compose.yml`.
-Chaque sous-dossier aura son propre `CLAUDE.md` court (≤ 150 lignes) quand il existera.
+`api/` et `web/` ont chacun leur `CLAUDE.md` (commandes et règles du dossier).
 
 ## Documentation
 Cadrage : `docs/cadrage.md`. Modèle de données : `docs/modele-de-donnees.md`. Spécifications : `docs/specifications-fonctionnelles.md`. Architecture et ADR : `docs/architecture.md`. Conventions : `docs/conventions-projet.md`.
