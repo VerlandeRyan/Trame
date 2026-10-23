@@ -213,6 +213,23 @@ test('la grille compte les chapitres puis les tomes avec −1 / +1', async ({ pa
   await expect(item.getByTestId('list-grid-badge')).toHaveText('T. 1')
 })
 
+test('basculer entre liste et grille ne relit pas la liste', async ({ page, context }) => {
+  await signUpWithList(context)
+  await openList(page)
+  const listReads: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/api/v1/me/entries')) listReads.push(request.url())
+  })
+
+  await page.getByTestId('list-view-grid').click()
+  await expect(page).toHaveURL(/view=grid/)
+  await expect(page.getByTestId('list-grid-item')).toHaveCount(3)
+  await page.getByTestId('list-view-list').click()
+  await expect(rows(page)).toHaveCount(3)
+
+  expect(listReads).toEqual([])
+})
+
 test('aucune violation d’accessibilité : liste, grille et fenêtre de modification', async ({
   page,
   context,

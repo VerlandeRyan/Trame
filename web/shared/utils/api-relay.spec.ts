@@ -21,6 +21,12 @@ describe('judgeRelayRequest', () => {
     expect(judgeRelayRequest('PUT', 'works/12/entry/extra')).toBe('method-not-allowed')
   })
 
+  it('autorise le réglage de visibilité de son profil, et rien d’autre sous /me', () => {
+    expect(judgeRelayRequest('PATCH', 'me/profile')).toBe('allowed')
+    expect(judgeRelayRequest('PUT', 'me/profile')).toBe('method-not-allowed')
+    expect(judgeRelayRequest('PATCH', 'me/entries')).toBe('method-not-allowed')
+  })
+
   it('refuse les autres méthodes', () => {
     expect(judgeRelayRequest('DELETE', 'auth/handle')).toBe('method-not-allowed')
     expect(judgeRelayRequest('PUT', 'works/1')).toBe('method-not-allowed')

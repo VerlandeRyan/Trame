@@ -66,7 +66,8 @@ test('le menu du compte liste les entrées, sans Administration pour un membre',
   await page.getByTestId('account-menu').click()
 
   await expect(page.getByTestId('my-list-link')).toBeVisible()
-  for (const name of ['Mon profil', 'Proposer une œuvre', 'Mes soumissions']) {
+  await expect(page.getByRole('link', { name: 'Mon profil', exact: true })).toBeVisible()
+  for (const name of ['Proposer une œuvre', 'Mes soumissions']) {
     await expect(page.getByRole('button', { name, exact: true })).toBeDisabled()
   }
   await expect(page.getByTestId('sign-out')).toBeVisible()

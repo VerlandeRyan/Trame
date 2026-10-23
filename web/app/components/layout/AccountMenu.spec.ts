@@ -89,7 +89,8 @@ describe('LayoutAccountMenu', () => {
     const wrapper = await mountSuspended(LayoutAccountMenu, { props: { handle: 'Ryan' } })
 
     expect(wrapper.get('[data-testid="my-list-link"]').attributes('href')).toBeDefined()
-    for (const testId of ['profile-link', 'propose-work-link', 'my-submissions-link']) {
+    expect(wrapper.get('[data-testid="profile-link"]').attributes('href')).toBe('/u/Ryan')
+    for (const testId of ['propose-work-link', 'my-submissions-link']) {
       expect(wrapper.get(`[data-testid="${testId}"]`).attributes('disabled')).toBeDefined()
     }
     expect(wrapper.find('[data-testid="admin-group"]').exists()).toBe(false)

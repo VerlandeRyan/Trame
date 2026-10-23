@@ -327,6 +327,64 @@
       "expired": "Your sign-up has expired. Sign in again to start over."
     }
   },
+  "profile": {
+    "title": "{'@'}{handle}'s profile",
+    "seoDescription": "{'@'}{handle}'s reading profile on Trame: statistics, latest updates and top-rated works.",
+    "memberSince": "Member since {date}",
+    "stats": "Statistics",
+    "chaptersRead": "Chapters read",
+    "volumesRead": "Volumes read",
+    "worksFollowed": "Works followed",
+    "ratingAverage": "Average rating given",
+    "ratingAverageValue": "{value} / 10",
+    "noRating": "—",
+    "statuses": {
+      "reading": "Reading",
+      "plan_to_read": "Plan to read",
+      "completed": "Completed",
+      "on_hold": "On hold",
+      "dropped": "Dropped"
+    },
+    "copyLink": "Copy my profile link",
+    "linkCopied": "Link copied",
+    "seeList": "See their full list ›",
+    "openMyList": "Open my reading list ›",
+    "recent": "Latest updates",
+    "topRated": "Top rated",
+    "ratingOutOf": "{rating} / 10",
+    "chapter": "Chapter {value}",
+    "volume": "Volume {value}",
+    "completedRated": "Completed · rated {rating}",
+    "completed": "Completed",
+    "noRecent": "Nothing read yet.",
+    "noTopRated": "No ratings yet.",
+    "age": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "days": "{count}d ago",
+      "weeks": "{count}w ago",
+      "months": "{count}mo ago"
+    },
+    "visibility": {
+      "public": "Public profile · visible to everyone",
+      "private": "Private profile · visible to you only",
+      "makePrivate": "Make private",
+      "makePublic": "Make public",
+      "error": "Could not save right now. Try again in a moment."
+    },
+    "private": {
+      "title": "This profile is private",
+      "text": "This person chose not to share their reading list."
+    },
+    "list": {
+      "title": "{'@'}{handle}'s reading list",
+      "back": "‹ Back to profile",
+      "empty": "This list is empty.",
+      "searchLabel": "Search this list",
+      "searchPlaceholder": "Search this list",
+      "readOnly": "Read only"
+    }
+  },
   "list": {
     "title": "My reading list",
     "totalChapters": "Chapters read",

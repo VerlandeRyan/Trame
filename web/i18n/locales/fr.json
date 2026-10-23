@@ -331,6 +331,64 @@
       "expired": "Ton inscription a expiré. Reconnecte-toi pour recommencer."
     }
   },
+  "profile": {
+    "title": "Profil de {'@'}{handle}",
+    "seoDescription": "Le profil de lecture de {'@'}{handle} sur Trame : statistiques, dernières mises à jour et œuvres les mieux notées.",
+    "memberSince": "Membre depuis {date}",
+    "stats": "Statistiques",
+    "chaptersRead": "Chapitres lus",
+    "volumesRead": "Tomes lus",
+    "worksFollowed": "Œuvres suivies",
+    "ratingAverage": "Note moyenne donnée",
+    "ratingAverageValue": "{value} / 10",
+    "noRating": "—",
+    "statuses": {
+      "reading": "En cours",
+      "plan_to_read": "À lire",
+      "completed": "Terminées",
+      "on_hold": "En pause",
+      "dropped": "Abandonnées"
+    },
+    "copyLink": "Copier le lien de mon profil",
+    "linkCopied": "Lien copié",
+    "seeList": "Voir toute sa liste ›",
+    "openMyList": "Ouvrir ma liste de lecture ›",
+    "recent": "Dernières mises à jour",
+    "topRated": "Les mieux notées",
+    "ratingOutOf": "{rating} / 10",
+    "chapter": "Chapitre {value}",
+    "volume": "Tome {value}",
+    "completedRated": "Terminée · note {rating}",
+    "completed": "Terminée",
+    "noRecent": "Aucune lecture pour l'instant.",
+    "noTopRated": "Aucune note pour l'instant.",
+    "age": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "days": "Il y a {count} j",
+      "weeks": "Il y a {count} sem.",
+      "months": "Il y a {count} mois"
+    },
+    "visibility": {
+      "public": "Profil public · visible par tous",
+      "private": "Profil privé · visible par toi seul",
+      "makePrivate": "Passer en privé",
+      "makePublic": "Passer en public",
+      "error": "Impossible d'enregistrer pour l'instant. Réessaie dans un instant."
+    },
+    "private": {
+      "title": "Ce profil est privé",
+      "text": "Cette personne a choisi de ne pas partager sa liste de lecture."
+    },
+    "list": {
+      "title": "Liste de lecture de {'@'}{handle}",
+      "back": "‹ Retour au profil",
+      "empty": "Cette liste est vide.",
+      "searchLabel": "Rechercher dans cette liste",
+      "searchPlaceholder": "Rechercher dans cette liste",
+      "readOnly": "Lecture seule"
+    }
+  },
   "list": {
     "title": "Ma liste de lecture",
     "totalChapters": "Chapitres lus",

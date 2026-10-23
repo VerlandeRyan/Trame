@@ -22,14 +22,17 @@ const NO_STATUS_COUNTS = Object.fromEntries(
 ) as StatusCounts
 
 /**
- * Ma liste de lecture : première page lue dès le rendu serveur (cookie du visiteur transmis), pages
- * suivantes au défilement, modifications enregistrées par `PUT/DELETE /works/:id/entry`.
+ * Une liste de lecture (`source` : la mienne par défaut, ou celle d'un membre en lecture seule) :
+ * première page lue dès le rendu serveur (cookie du visiteur transmis), pages suivantes au
+ * défilement, modifications enregistrées par `PUT/DELETE /works/:id/entry`.
  * Un changement s'affiche aussitôt, compteurs et totaux compris, sans relire la liste ; en cas
  * d'échec la première page est relue. À appeler avant tout autre `await` de la page.
  */
-export async function useReadingList(state: ComputedRef<ListState>) {
+export async function useReadingList(
+  state: ComputedRef<ListState>,
+  source: string = '/me/entries',
+) {
   const api = useApi()
-  const route = useRoute()
   const { locale } = useI18n()
   const cookieHeaders = import.meta.server ? useRequestHeaders(['cookie']) : undefined
 
@@ -43,16 +46,20 @@ export async function useReadingList(state: ComputedRef<ListState>) {
   let loadedPages = 0
 
   const fetchPage = (page: number) =>
-    api.request<ListPage>('/me/entries', {
+    api.request<ListPage>(source, {
       query: toListApiQuery(state.value, { lang: locale.value, page }),
       headers: cookieHeaders,
     })
 
-  // Adresse + langue : la liste est relue quand l'une des deux change.
+  // Relue seulement quand la requête change (onglet, recherche, tri, langue) : basculer entre liste
+  // et grille garde les pages déjà chargées.
+  const firstPageQuery = computed(() =>
+    JSON.stringify(toListApiQuery(state.value, { lang: locale.value, page: 1 })),
+  )
   const { data, status, error, refresh } = await useAsyncData<ListPage>(
-    `reading-list-${locale.value}`,
+    `reading-list-${source}-${locale.value}`,
     () => fetchPage(1),
-    { watch: [() => route.fullPath, locale] },
+    { watch: [firstPageQuery] },
   )
 
   watch(

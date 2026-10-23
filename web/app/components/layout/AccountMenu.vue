@@ -1,9 +1,8 @@
 <script setup lang="ts">
-// Compte connecté : le pseudo et son menu. Les entrées sans page (profil #22, soumissions #25)
+// Compte connecté : le pseudo et son menu. Les entrées sans page (soumissions)
 // sont visibles mais inactives en attendant leur ticket.
 const props = defineProps<{ handle: string; isAdmin?: boolean }>()
 const PLANNED_ITEMS = [
-  { labelKey: 'nav.profile', testId: 'profile-link' },
   { labelKey: 'nav.proposeWork', testId: 'propose-work-link' },
   { labelKey: 'nav.mySubmissions', testId: 'my-submissions-link' },
 ]
@@ -68,6 +67,14 @@ async function confirmSignOut() {
         @click="close()"
       >
         {{ t('nav.myList') }}
+      </NuxtLink>
+      <NuxtLink
+        :to="localePath(`/u/${handle}`)"
+        class="account-menu__row"
+        data-testid="profile-link"
+        @click="close()"
+      >
+        {{ t('nav.profile') }}
       </NuxtLink>
       <button
         v-for="item in PLANNED_ITEMS"

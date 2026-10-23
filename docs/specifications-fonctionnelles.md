@@ -71,10 +71,10 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Une œuvre archivée disparaît de la liste mais l'entrée est conservée ; elle réapparaît si l'œuvre est restaurée.
 
 **US-08 — Profil public**
-- URL `/u/{handle}` ; affiche les statistiques séparées (œuvres suivies, note moyenne donnée, répartition par statut), les œuvres les mieux notées et les dernières mises à jour (journal de lecture).
-- Un lien mène à la page « Ma liste de lecture » : même page que US-07, en lecture seule pour un tiers et uniquement avec les entrées publiques.
+- URL `/u/{handle}` ; affiche les statistiques séparées (œuvres suivies, note moyenne donnée, répartition par statut), les œuvres les mieux notées et les dernières mises à jour (les entrées de la liste modifiées le plus récemment, une ligne par œuvre ; le journal de lecture servira à l'historique détaillé).
+- Un lien mène à la page « Ma liste de lecture » : même page que US-07, en lecture seule pour un tiers, et seulement si le profil est public (la visibilité est celle du profil entier, pas par entrée).
 - Le profil est **public par défaut** ; l'utilisateur peut le passer en privé à tout moment.
-- Le menu du compte (« @handle ») propose un lien de partage de son propre profil. Trouver et consulter le profil d'un autre membre (recherche de membres, page communauté) est hors MVP.
+- Son propre profil, s'il est public, propose de copier son lien de partage ; le menu du compte (« @handle ») y mène par « Mon profil ». Trouver et consulter le profil d'un autre membre (recherche de membres, page communauté) est hors MVP.
 
 ### Contribution
 **US-09 — Proposer une œuvre manquante** (utilisateur)

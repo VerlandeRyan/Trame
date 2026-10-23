@@ -5,6 +5,7 @@ const READ_METHODS = new Set(['GET', 'HEAD'])
 const WRITABLE_ROUTES = [
   { methods: new Set(['POST']), path: /^auth\// },
   { methods: new Set(['PUT', 'DELETE']), path: /^works\/\d+\/entry$/ },
+  { methods: new Set(['PATCH']), path: /^me\/profile$/ },
 ]
 
 export type RelayVerdict = 'allowed' | 'bad-request' | 'method-not-allowed'

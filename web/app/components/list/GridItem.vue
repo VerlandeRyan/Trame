@@ -14,7 +14,10 @@ import { coverUrl, workSlug } from '~/utils/work'
 // Couverture à ombre de statut, pastille « Ch. 12 » et boutons −1 / +1. Au doigt, la couverture suit
 // le geste et laisse voir « +1 » / « −1 » dessous (comme MALClient) : glisser vers la gauche fait +1
 // (on va vers la suite, comme le carrousel), vers la droite −1 ; un simple toucher ouvre la fiche.
-const props = defineProps<{ item: ListedEntry; unit: ListUnit }>()
+const props = withDefaults(
+  defineProps<{ item: ListedEntry; unit: ListUnit; isReadOnly?: boolean }>(),
+  { isReadOnly: false },
+)
 const emit = defineEmits<{ change: [changes: LibraryEntryChanges] }>()
 const { t } = useI18n()
 const localePath = useLocalePath()
@@ -58,7 +61,7 @@ const coverStyle = computed(() => ({
 }))
 
 function startSwipe(event: PointerEvent) {
-  if (event.pointerType !== 'touch') return
+  if (props.isReadOnly || event.pointerType !== 'touch') return
   swipeStart = { x: event.clientX, y: event.clientY }
   hasSwiped = false
 }
@@ -120,6 +123,7 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
           <WorkCover :url="coverUrl(item.work.coverPath)" />
         </NuxtLink>
         <button
+          v-if="!isReadOnly"
           type="button"
           class="grid-item__step grid-item__step--down"
           :disabled="progress.read === 0"
@@ -130,6 +134,7 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
           −1
         </button>
         <button
+          v-if="!isReadOnly"
           type="button"
           class="grid-item__step grid-item__step--up"
           :aria-label="t('counter.increase', { label: unitLabel })"
