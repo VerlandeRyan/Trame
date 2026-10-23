@@ -28,8 +28,8 @@ export function useListControls(
   const localePath = useLocalePath()
 
   // Les changements remplacent l'entrée d'historique : « Retour » quitte la liste.
-  function navigateToList(next: ListState) {
-    return navigateTo({ path: localePath(path), query: toListRouteQuery(next) }, { replace: true })
+  async function navigateToList(next: ListState): Promise<void> {
+    await navigateTo({ path: localePath(path), query: toListRouteQuery(next) }, { replace: true })
   }
 
   const tabs = computed<UiTab[]>(() => [
