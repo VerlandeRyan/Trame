@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { LIBRARY_STATUSES } from '../db/database.js';
+import { LIBRARY_STATUSES, PROFILE_VISIBILITIES } from '../db/database.js';
 import { ERROR_CODES, type ErrorBody } from '../errors.js';
 import type { GenreRecord } from '../repositories/genre.repository.js';
 import type { LibraryEntry } from '../repositories/library.repository.js';
@@ -7,6 +7,7 @@ import type { FeaturedWork, WorkFacets, WorkSummary } from '../repositories/work
 import type { AuthStatus } from '../services/auth.service.js';
 import type { HealthStatus } from '../services/health.service.js';
 import type { LibraryPage } from '../services/library.service.js';
+import type { Profile } from '../services/profile.service.js';
 import type { TopRatedWork, WorkDetail, WorkPage } from '../services/work.service.js';
 
 // `satisfies` lie chaque schéma au type du service ; `strictObject` fait échouer le test de contrat
@@ -208,9 +209,9 @@ const libraryEntry = z.strictObject({
 
 export const libraryEntryResponseSchema = z
   .strictObject({
-    entry: libraryEntry.nullable().describe(
-      '`null` tant que l’œuvre n’est pas dans la liste de l’utilisateur.',
-    ),
+    entry: libraryEntry
+      .nullable()
+      .describe('`null` tant que l’œuvre n’est pas dans la liste de l’utilisateur.'),
   })
   .describe('Suivi d’une œuvre par l’utilisateur connecté.') satisfies z.ZodType<{
   entry: LibraryEntry | null;
@@ -229,10 +230,7 @@ export const libraryPageSchema = z
     ),
     page: z.number().int(),
     pageSize: z.number().int(),
-    total: z
-      .number()
-      .int()
-      .describe('Œuvres correspondant à la recherche et au filtre de statut.'),
+    total: z.number().int().describe('Œuvres correspondant à la recherche et au filtre de statut.'),
     statusCounts: z
       .record(z.enum(LIBRARY_STATUSES), z.number().int())
       .describe('Œuvres par statut, selon la recherche mais sans le filtre de statut.'),
@@ -243,7 +241,51 @@ export const libraryPageSchema = z
       })
       .describe('Sur toute la liste ; chapitres et tomes ne sont jamais additionnés.'),
   })
-  .describe('Une page de la liste de lecture de l’utilisateur connecté.') satisfies z.ZodType<LibraryPage>;
+  .describe(
+    'Une page de la liste de lecture de l’utilisateur connecté.',
+  ) satisfies z.ZodType<LibraryPage>;
+
+const statusCounts = z.record(z.enum(LIBRARY_STATUSES), z.number().int());
+
+export const profileSchema = z
+  .strictObject({
+    handle: z.string().describe('Pseudo public, avec la casse choisie.'),
+    visibility: z.enum(PROFILE_VISIBILITIES),
+    isOwner: z.boolean().describe('Vrai si le lecteur connecté est ce membre.'),
+    details: z
+      .strictObject({
+        memberSince: z.iso.datetime().describe('Date de création du compte.'),
+        stats: z.strictObject({
+          worksFollowed: z.number().int().describe('Œuvres de la liste, tous statuts confondus.'),
+          ratingAverage: z
+            .number()
+            .nullable()
+            .describe('Moyenne des notes données, sur une décimale ; `null` si aucune note.'),
+          statusCounts,
+          chaptersRead: z.number().int().describe('Chapitres lus, indépendants des tomes.'),
+          volumesRead: z.number().int().describe('Tomes lus, indépendants des chapitres.'),
+        }),
+        recentUpdates: z
+          .array(
+            z.strictObject({
+              work: workSummary,
+              entry: libraryEntry,
+              updatedAt: z.iso.datetime(),
+            }),
+          )
+          .describe('Jusqu’à 3 entrées de la liste, la plus récemment modifiée d’abord.'),
+        topRated: z
+          .array(z.strictObject({ work: workSummary, rating: z.number().int() }))
+          .describe('Jusqu’à 5 œuvres notées, meilleure note d’abord.'),
+      })
+      .nullable()
+      .describe('`null` si le profil est privé et que le lecteur n’en est pas le propriétaire.'),
+  })
+  .describe('Profil public d’un membre. Jamais l’e-mail.') satisfies z.ZodType<Profile>;
+
+export const profileVisibilitySchema = z
+  .strictObject({ visibility: z.enum(PROFILE_VISIBILITIES) })
+  .describe('Visibilité enregistrée.');
 
 const errorCodes = Object.keys(ERROR_CODES) as [
   keyof typeof ERROR_CODES,

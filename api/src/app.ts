@@ -12,6 +12,7 @@ import { buildOpenApiDocument } from './openapi/document.js';
 import { createHealthRepository } from './repositories/health.repository.js';
 import { createGenreRepository } from './repositories/genre.repository.js';
 import { createLibraryRepository } from './repositories/library.repository.js';
+import { createProfileRepository } from './repositories/profile.repository.js';
 import { createWorkRepository } from './repositories/work.repository.js';
 import { createHealthRouter } from './routes/health.routes.js';
 import { createApiRouter } from './routes/index.js';
@@ -24,6 +25,7 @@ import { SessionStore } from './session/store.js';
 import { createGenreService } from './services/genre.service.js';
 import { createHealthService } from './services/health.service.js';
 import { createLibraryService } from './services/library.service.js';
+import { createProfileService } from './services/profile.service.js';
 import { createWorkService } from './services/work.service.js';
 
 /**
@@ -65,6 +67,7 @@ export function createApp({
     rateLimit = AUTH_RATE_LIMIT,
   } = auth;
   const authService = createAuthService({ users: createUserRepository(db), google });
+  const libraryService = createLibraryService(createLibraryRepository(db));
 
   const app = express();
   app.disable('x-powered-by');
@@ -96,7 +99,11 @@ export function createApp({
       secureCookies,
       authRateLimit: rateLimit,
       libraryRateLimit,
-      libraryService: createLibraryService(createLibraryRepository(db)),
+      libraryService,
+      profileService: createProfileService({
+        profiles: createProfileRepository(db),
+        library: libraryService,
+      }),
       genreService: createGenreService(createGenreRepository(db)),
       workService: createWorkService(createWorkRepository(db)),
     }),

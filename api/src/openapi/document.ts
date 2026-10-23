@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { ErrorCode } from '../errors.js';
 import { handleBody, loginQuery } from '../routes/auth.routes.js';
 import { entryBody, listEntriesQuery } from '../routes/library.routes.js';
+import { profileParams, profileQuery, visibilityBody } from '../routes/profile.routes.js';
 import { SESSION_COOKIE_NAME } from '../session/middleware.js';
 import { facetsQuery, listWorksQuery, workParams, workQuery } from '../routes/work.routes.js';
 import {
@@ -12,6 +13,8 @@ import {
   healthSchema,
   libraryEntryResponseSchema,
   libraryPageSchema,
+  profileSchema,
+  profileVisibilitySchema,
   topRatedListSchema,
   workDetailSchema,
   workFacetsSchema,
@@ -274,6 +277,64 @@ export function buildOpenApiDocument() {
           },
         },
       },
+      [`${API_PREFIX}/me/profile`]: {
+        patch: {
+          summary: 'Régler la visibilité de mon profil',
+          operationId: 'setProfileVisibility',
+          tags: ['profile'],
+          security: [{ sessionCookie: [] }],
+          requestBody: {
+            required: true,
+            content: { 'application/json': { schema: toJsonSchema(visibilityBody, 'input') } },
+          },
+          responses: {
+            '200': jsonResponse('ProfileVisibility', 'Visibilité enregistrée.'),
+            '400': errorResponse('VALIDATION_ERROR', 'Corps invalide.'),
+            '401': errorResponse('UNAUTHENTICATED', 'Connexion requise.'),
+            '403': errorResponse('FORBIDDEN_ORIGIN', 'Origine de la requête refusée.'),
+            '429': rateLimited,
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/users/{handle}`]: {
+        get: {
+          summary: 'Lire le profil d’un membre',
+          operationId: 'getProfile',
+          tags: ['profile'],
+          parameters: [
+            ...toParameters(profileParams, 'path'),
+            ...toParameters(profileQuery, 'query'),
+          ],
+          responses: {
+            '200': jsonResponse(
+              'Profile',
+              'Le profil ; `details` est `null` si le profil est privé et que le lecteur n’en est pas le propriétaire.',
+            ),
+            '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
+            '404': errorResponse('NOT_FOUND', 'Aucun membre avec ce pseudo.'),
+            '500': internalError,
+          },
+        },
+      },
+      [`${API_PREFIX}/users/{handle}/entries`]: {
+        get: {
+          summary: 'Lister la liste de lecture d’un membre',
+          operationId: 'listProfileEntries',
+          tags: ['profile'],
+          parameters: [
+            ...toParameters(profileParams, 'path'),
+            ...toParameters(listEntriesQuery, 'query'),
+          ],
+          responses: {
+            '200': jsonResponse('LibraryPage', 'Une page de sa liste, avec les compteurs.'),
+            '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
+            '403': errorResponse('PROFILE_PRIVATE', 'Profil privé.'),
+            '404': errorResponse('NOT_FOUND', 'Aucun membre avec ce pseudo.'),
+            '500': internalError,
+          },
+        },
+      },
       [`${API_PREFIX}/works/{id}/entry`]: {
         get: {
           summary: 'Lire mon suivi d’une œuvre',
@@ -356,6 +417,8 @@ export function buildOpenApiDocument() {
         GenreList: toJsonSchema(genreListSchema, 'output'),
         LibraryEntryResponse: toJsonSchema(libraryEntryResponseSchema, 'output'),
         LibraryPage: toJsonSchema(libraryPageSchema, 'output'),
+        Profile: toJsonSchema(profileSchema, 'output'),
+        ProfileVisibility: toJsonSchema(profileVisibilitySchema, 'output'),
         WorkDetail: toJsonSchema(workDetailSchema, 'output'),
         WorkFacets: toJsonSchema(workFacetsSchema, 'output'),
         WorkPage: toJsonSchema(workPageSchema, 'output'),

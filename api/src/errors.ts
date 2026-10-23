@@ -10,6 +10,7 @@ export const ERROR_CODES = {
   HANDLE_REQUIRED: { status: 403, message: 'Choose a handle to finish creating the account.' },
   SIGNUP_EXPIRED: { status: 401, message: 'No sign-up in progress, or it has expired.' },
   ADMIN_REQUIRED: { status: 403, message: 'Administrator role required.' },
+  PROFILE_PRIVATE: { status: 403, message: 'This profile is private.' },
   FORBIDDEN_ORIGIN: { status: 403, message: 'Request origin not allowed.' },
   HANDLE_NOT_ALLOWED: { status: 400, message: 'This handle is not allowed.' },
   HANDLE_TAKEN: { status: 409, message: 'This handle is already taken.' },

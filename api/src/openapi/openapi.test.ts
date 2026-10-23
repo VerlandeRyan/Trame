@@ -112,6 +112,7 @@ describe('contrat : routes montées et spécification', () => {
         authService: none,
         genreService: none,
         libraryService: none,
+        profileService: none,
         workService: none,
         webOrigin: 'http://localhost:3001',
         secureCookies: false,
