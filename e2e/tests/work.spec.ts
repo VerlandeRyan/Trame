@@ -91,7 +91,9 @@ test('la fiche occupe toute la largeur et affiche « Membres 1 »', async ({ pag
   await expect(page.getByTestId('work-members')).toHaveText('Membres 1')
 })
 
-test('changer de langue sur une fiche recharge la fiche dans la nouvelle langue', async ({ page }) => {
+test('changer de langue sur une fiche recharge la fiche dans la nouvelle langue', async ({
+  page,
+}) => {
   await page.goto(WORK_PATH)
   await page.waitForLoadState('networkidle')
 

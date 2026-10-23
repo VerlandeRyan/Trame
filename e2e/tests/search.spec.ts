@@ -17,7 +17,9 @@ test.describe('suggestions', () => {
     const menu = page.getByTestId('search-suggestions').first()
     await expect(menu).toBeVisible()
     await expect(menu.getByRole('option').first()).toContainText('Les Lanternes de Brume')
-    await expect(menu.getByRole('option').first()).toContainText('Série · Manhwa · Webtoon · Mélodie Vasseur')
+    await expect(menu.getByRole('option').first()).toContainText(
+      'Série · Manhwa · Webtoon · Mélodie Vasseur',
+    )
 
     await menu.getByRole('option').first().click()
     await expect(page).toHaveURL(/\/work\/1-les-lanternes-de-brume$/)
@@ -270,9 +272,9 @@ test.describe('page de résultats', () => {
     const box = await dialog.boundingBox()
     expect(Math.round(box!.y + box!.height)).toBe(844)
     await expect(dialog.getByTestId('sheet-reset')).toBeVisible()
-    expect(
-      await page.evaluate(() => getComputedStyle(document.documentElement).overflow),
-    ).toBe('hidden')
+    expect(await page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe(
+      'hidden',
+    )
     // Complément de la page figée : vérifié là où la propriété existe.
     const overscroll = await dialog.locator('.modal__body').evaluate((element) => ({
       supported: CSS.supports('overscroll-behavior', 'contain'),

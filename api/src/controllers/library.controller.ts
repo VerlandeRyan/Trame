@@ -1,9 +1,5 @@
 import type { Request, RequestHandler } from 'express';
-import type {
-  EntryInput,
-  LibraryService,
-  ListEntriesInput,
-} from '../services/library.service.js';
+import type { EntryInput, LibraryService, ListEntriesInput } from '../services/library.service.js';
 
 /** `requireUser` a déjà écarté les visiteurs ; `workId` est validé par la route. */
 function target(req: Request): { userId: number; workId: number } {
