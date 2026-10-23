@@ -1,4 +1,10 @@
-import { sql, type Expression, type ExpressionBuilder, type Selectable, type SqlBool } from 'kysely';
+import {
+  sql,
+  type Expression,
+  type ExpressionBuilder,
+  type Selectable,
+  type SqlBool,
+} from 'kysely';
 import {
   LIBRARY_STATUSES,
   type Database,
@@ -111,7 +117,7 @@ function ownEntries(userId: number, q: string | undefined) {
   };
 }
 
-function zeroStatusCounts(): StatusCounts {
+export function zeroStatusCounts(): StatusCounts {
   return Object.fromEntries(LIBRARY_STATUSES.map((status) => [status, 0])) as StatusCounts;
 }
 
@@ -134,6 +140,29 @@ function toEntry(
     rating: row.rating,
     startedOn: row.started_on,
     finishedOn: row.finished_on,
+  };
+}
+
+/** Colonnes de l'entrée lues avec un résumé d'œuvre ; `entryStatus` évite le conflit avec `work.status`. */
+export const LISTED_ENTRY_COLUMNS = [
+  'library_entry.status as entryStatus',
+  'library_entry.chapters_read as chaptersRead',
+  'library_entry.volumes_read as volumesRead',
+  'library_entry.rating',
+  'library_entry.started_on as startedOn',
+  'library_entry.finished_on as finishedOn',
+] as const;
+
+type ListedEntryColumns = Omit<LibraryEntry, 'status'> & { entryStatus: LibraryStatus };
+
+/** Sépare une ligne lue avec `LISTED_ENTRY_COLUMNS` en œuvre et entrée. */
+export function toListedEntry<Row extends ListedEntryColumns>(
+  row: Row,
+): { work: Omit<Row, keyof ListedEntryColumns>; entry: LibraryEntry } {
+  const { entryStatus, chaptersRead, volumesRead, rating, startedOn, finishedOn, ...work } = row;
+  return {
+    work,
+    entry: { status: entryStatus, chaptersRead, volumesRead, rating, startedOn, finishedOn },
   };
 }
 
@@ -239,18 +268,15 @@ export function createLibraryRepository(db: Db): LibraryRepository {
           ...workSummaryColumns(shownTitle),
           'work.chapters',
           'work.volumes',
-          'library_entry.status as entryStatus',
-          'library_entry.chapters_read as chaptersRead',
-          'library_entry.volumes_read as volumesRead',
-          'library_entry.rating',
-          'library_entry.started_on as startedOn',
-          'library_entry.finished_on as finishedOn',
+          ...LISTED_ENTRY_COLUMNS,
         ])
         .where(ownEntries(userId, q));
       if (status !== undefined) itemsQuery = itemsQuery.where('library_entry.status', 'in', status);
       if (sort === 'updated') itemsQuery = itemsQuery.orderBy('library_entry.updated_at', 'desc');
       if (sort === 'rating') {
-        itemsQuery = itemsQuery.orderBy('library_entry.rating', (order) => order.desc().nullsLast());
+        itemsQuery = itemsQuery.orderBy('library_entry.rating', (order) =>
+          order.desc().nullsLast(),
+        );
       }
 
       const [rows, countRows, totals] = await Promise.all([
@@ -275,13 +301,7 @@ export function createLibraryRepository(db: Db): LibraryRepository {
 
       const statusCounts = zeroStatusCounts();
       for (const { status: counted, count } of countRows) statusCounts[counted] = count;
-      const items = rows.map(
-        ({ entryStatus, chaptersRead, volumesRead, rating, startedOn, finishedOn, ...work }) => ({
-          work,
-          entry: { status: entryStatus, chaptersRead, volumesRead, rating, startedOn, finishedOn },
-        }),
-      );
-      return { items, statusCounts, totals };
+      return { items: rows.map(toListedEntry), statusCounts, totals };
     },
   };
 }

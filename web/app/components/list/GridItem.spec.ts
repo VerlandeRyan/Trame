@@ -62,6 +62,17 @@ describe('ListGridItem', () => {
     expect(volumes.emitted('change')).toEqual([[{ volumesRead: 1 }]])
   })
 
+  it('en lecture seule : ni −1 / +1, ni glissement', async () => {
+    const wrapper = await mountSuspended(ListGridItem, {
+      props: { item: ITEM, unit: 'chapters', isReadOnly: true },
+    })
+    expect(wrapper.find('[data-testid="list-grid-plus"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="list-grid-minus"]').exists()).toBe(false)
+
+    await swipe(wrapper, -90)
+    expect(wrapper.emitted('change')).toBeUndefined()
+  })
+
   it('désactive −1 à zéro', async () => {
     const wrapper = await mountItem('volumes')
 

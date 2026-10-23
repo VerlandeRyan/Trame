@@ -36,7 +36,7 @@ test('les onglets se parcourent au clavier', async ({ page }) => {
   await expect(tabs.nth(2)).toHaveAttribute('aria-selected', 'true')
 })
 
-test('la modale s\'ouvre et se ferme', async ({ page }) => {
+test("la modale s'ouvre et se ferme", async ({ page }) => {
   await page.getByRole('button', { name: 'Ajouter +' }).click()
   const dialog = page.getByRole('dialog')
   await expect(dialog).toBeVisible()

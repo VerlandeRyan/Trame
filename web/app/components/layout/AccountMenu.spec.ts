@@ -85,11 +85,24 @@ describe('LayoutAccountMenu', () => {
     wrapper.unmount()
   })
 
+  it('se referme quand on suit « Ma liste de lecture » ou « Mon profil »', async () => {
+    const wrapper = await mountSuspended(LayoutAccountMenu, { props: { handle: 'Ryan' } })
+    const panelStyle = () => wrapper.get('.account-menu__panel').attributes('style') ?? ''
+
+    for (const testId of ['my-list-link', 'profile-link']) {
+      await wrapper.get('[data-testid="account-menu"]').trigger('click')
+      expect(panelStyle()).not.toContain('display: none')
+      await wrapper.get(`[data-testid="${testId}"]`).trigger('click')
+      expect(panelStyle()).toContain('display: none')
+    }
+  })
+
   it('montre les entrées sans page en inactif, sans groupe Administration', async () => {
     const wrapper = await mountSuspended(LayoutAccountMenu, { props: { handle: 'Ryan' } })
 
     expect(wrapper.get('[data-testid="my-list-link"]').attributes('href')).toBeDefined()
-    for (const testId of ['profile-link', 'propose-work-link', 'my-submissions-link']) {
+    expect(wrapper.get('[data-testid="profile-link"]').attributes('href')).toBe('/u/Ryan')
+    for (const testId of ['propose-work-link', 'my-submissions-link']) {
       expect(wrapper.get(`[data-testid="${testId}"]`).attributes('disabled')).toBeDefined()
     }
     expect(wrapper.find('[data-testid="admin-group"]').exists()).toBe(false)

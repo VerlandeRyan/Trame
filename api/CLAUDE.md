@@ -34,6 +34,13 @@ Contrat : `docs/architecture.md`. Tables `library_entry` et `reading_event` (mig
 - Routes protégées par `requireUser` ; limite d'écriture `LIBRARY_RATE_LIMIT` (120/min/IP, un `+1` répété ne doit pas être gêné). Le routeur est monté sous `/works` **avant** `createWorkRouter`.
 - Tests : `routes/library.routes.test.ts` supprime ses propres utilisateurs (e-mail `@library.test`) au lieu de tronquer `app_user`, dont dépend `work` (`deleted_by`).
 
+## Profil public (`/users/:handle`, `/users/:handle/entries`, `PATCH /me/profile`)
+Contrat : `docs/architecture.md`. Colonne `app_user.profile_visibility` (migration `…_utilisateurs`), aucune migration propre à #25.
+- `profile.service.ts` porte les règles : accès (`public`, ou propriétaire) et moyenne des notes (le dépôt ne renvoie que des sommes). `get` renvoie toujours le pseudo ; `details` est `null` pour un profil privé vu par un tiers, alors que `listEntries` lève `PROFILE_PRIVATE` (403). La liste d'un membre **réutilise** `library.service.listEntries` : mêmes paramètres et réponse que `/me/entries`.
+- « Dernières mises à jour » = entrées de `library_entry` triées par `updated_at` (pas le journal `reading_event`, réservé à l'historique à venir).
+- Routes publiques : pas de `requireUser` ; `req.user` sert seulement à reconnaître le propriétaire.
+- Tests : `routes/profile.routes.test.ts` supprime ses utilisateurs (e-mail `@profile.test`).
+
 ## Authentification (`/auth`)
 Contrat : `docs/architecture.md`. À retenir en lisant le code :
 - Les routes ne lisent jamais `req.session` : seul `middleware/auth.ts` (`attachUser`) le fait et pose `req.user` ; on protège une route avec `requireUser` / `requireAdmin`. Un `Authorization: Bearer` (Capacitor/Expo) pourra s'ajouter dans `attachUser` sans toucher aux routes.

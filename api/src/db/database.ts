@@ -158,6 +158,9 @@ export interface ReadingEventTable {
 
 export type UserRole = 'user' | 'admin';
 
+export const PROFILE_VISIBILITIES = ['public', 'private'] as const;
+export type ProfileVisibility = (typeof PROFILE_VISIBILITIES)[number];
+
 export interface AppUserTable {
   id: Generated<number>;
   email: string;
@@ -166,6 +169,7 @@ export interface AppUserTable {
   handle: string;
   display_name: string | null;
   role: Generated<UserRole>;
+  profile_visibility: Generated<ProfileVisibility>;
   created_at: Generated<Date>;
   deleted_at: Date | null;
 }

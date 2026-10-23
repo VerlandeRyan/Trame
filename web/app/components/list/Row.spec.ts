@@ -71,6 +71,15 @@ describe('ListRow', () => {
     expect(wrapper.emitted('change')).toEqual([[{ status: 'completed' }]])
   })
 
+  it('en lecture seule : valeurs et statut en texte, sans compteur ni bouton Modifier', async () => {
+    const wrapper = await mountSuspended(ListRow, { props: { item: ITEM, isReadOnly: true } })
+
+    expect(wrapper.get('[data-testid="list-status"]').text()).toBe('En cours')
+    expect(wrapper.get('[data-testid="list-chapters"]').text()).toContain('12')
+    expect(wrapper.find('input').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="list-edit"]').exists()).toBe(false)
+  })
+
   it('ouvre la fenêtre de modification', async () => {
     const wrapper = await mountRow()
 

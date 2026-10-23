@@ -6,7 +6,10 @@ import { coverUrl, workSlug } from '~/utils/work'
 
 // Une œuvre de la liste : couverture, titre, statut, compteurs de chapitres et de tomes
 // (indépendants), note et accès à la fenêtre « Modifier ma lecture ».
-const props = defineProps<{ item: ListedEntry; counterKey: number }>()
+const props = withDefaults(
+  defineProps<{ item: ListedEntry; counterKey?: number; isReadOnly?: boolean }>(),
+  { counterKey: 0, isReadOnly: false },
+)
 const emit = defineEmits<{ change: [changes: LibraryEntryChanges]; edit: [] }>()
 const { t, te } = useI18n()
 const localePath = useLocalePath()
@@ -45,7 +48,20 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
     </div>
 
     <div class="row__status">
-      <ListStatusPicker :status="item.entry.status" :title="work.title" @change="changeStatus" />
+      <span
+        v-if="isReadOnly"
+        class="row__status-badge"
+        :style="{ background: `var(--status-${item.entry.status})` }"
+        data-testid="list-status"
+      >
+        {{ t(`readingStatus.${item.entry.status}`) }}
+      </span>
+      <ListStatusPicker
+        v-else
+        :status="item.entry.status"
+        :title="work.title"
+        @change="changeStatus"
+      />
       <!-- Au mobile la note suit le statut ; au bureau elle a sa propre colonne. -->
       <span v-if="item.entry.rating !== null" class="row__rating-mobile">
         {{ ratingLabel }}
@@ -53,7 +69,11 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
     </div>
 
     <div class="row__counter" data-testid="list-chapters">
+      <p v-if="isReadOnly" class="row__read-value">
+        <span class="row__read-label">{{ t('list.chapters') }}</span> {{ item.entry.chaptersRead }}
+      </p>
       <UiCounter
+        v-else
         :key="`chapters-${counterKey}`"
         compact
         :model-value="item.entry.chaptersRead"
@@ -64,7 +84,11 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
     </div>
 
     <div class="row__counter" data-testid="list-volumes">
+      <p v-if="isReadOnly" class="row__read-value">
+        <span class="row__read-label">{{ t('list.volumes') }}</span> {{ item.entry.volumesRead }}
+      </p>
       <UiCounter
+        v-else
         :key="`volumes-${counterKey}`"
         compact
         :model-value="item.entry.volumesRead"
@@ -77,6 +101,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
     <p class="row__rating" data-testid="list-rating">{{ ratingLabel }}</p>
 
     <UiButton
+      v-if="!isReadOnly"
       variant="secondary"
       size="small"
       class="row__edit"
@@ -235,6 +260,37 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
       justify-items: center;
     }
   }
+}
+
+// Lecture seule : la valeur remplace le compteur, son libellé n'est visible qu'au mobile.
+.row__read-value {
+  margin: 0;
+  font-weight: 800;
+}
+
+.row__read-label {
+  color: var(--color-ink-soft);
+  font-size: 0.75rem;
+  font-weight: 400;
+
+  @media (min-width: 768px) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+
+.row__status-badge {
+  justify-self: start;
+  padding: 2px var(--space-2);
+  border: 2px solid var(--color-ink);
+  border-radius: var(--radius);
+  color: var(--color-ink);
+  font-size: 0.8125rem;
+  font-weight: 800;
 }
 
 .row__total {

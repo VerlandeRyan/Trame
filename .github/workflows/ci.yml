@@ -76,6 +76,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          # `.nvmrc` dit « 24 » : sans cela, un Node 24.x plus ancien déjà sur le runner serait pris.
+          check-latest: true
           cache: npm
       - run: npm ci --ignore-scripts
       - run: npx --no-install commitlint --from "${{ github.event.pull_request.base.sha }}" --to "${{ github.event.pull_request.head.sha }}" --verbose
@@ -91,6 +93,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          # `.nvmrc` dit « 24 » : sans cela, un Node 24.x plus ancien déjà sur le runner serait pris.
+          check-latest: true
           cache: npm
           cache-dependency-path: |
             api/package-lock.json
@@ -166,6 +170,8 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          # `.nvmrc` dit « 24 » : sans cela, un Node 24.x plus ancien déjà sur le runner serait pris.
+          check-latest: true
           cache: npm
           cache-dependency-path: |
             api/package-lock.json
@@ -182,6 +188,8 @@ jobs:
           npm run migrate:test
         working-directory: api
       - run: npm ci --ignore-scripts
+        working-directory: e2e
+      - run: npm run format:check
         working-directory: e2e
       - run: npx --no-install playwright test --project=${{ matrix.project }}
         working-directory: e2e
@@ -215,10 +223,13 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version-file: .nvmrc
+          # `.nvmrc` dit « 24 » : sans cela, un Node 24.x plus ancien déjà sur le runner serait pris.
+          check-latest: true
           cache: npm
           cache-dependency-path: api/package-lock.json
       - run: npm ci --ignore-scripts
       - run: npm run typecheck
+      - run: npm run format:check
       - run: npm run migrate:test
       - run: npm run test:coverage
       - name: Secret Sonar disponible ?
