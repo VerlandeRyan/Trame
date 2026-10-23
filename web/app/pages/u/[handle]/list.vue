@@ -1,15 +1,5 @@
 <script setup lang="ts">
-import type { UiTab } from '~/components/ui/Tabs.vue'
-import { LIBRARY_STATUSES, type LibraryStatus } from '~/utils/library'
-import {
-  countEntriesOfAllStatuses,
-  LIST_SORTS,
-  parseListQuery,
-  toListRouteQuery,
-  type ListSort,
-  type ListState,
-  type ListView,
-} from '~/utils/reading-list'
+import { countEntriesOfAllStatuses, parseListQuery } from '~/utils/reading-list'
 
 // Liste de lecture d'un membre, en lecture seule (US-08) : la page « Ma liste » sans aucune
 // modification. Un profil privé n'est pas lisible : la page le dit au lieu de lister.
@@ -48,64 +38,15 @@ failIfMemberUnknown()
 
 useSeoMeta({ title: () => t('profile.list.title', { handle }), robots: 'noindex, nofollow' })
 
-function navigateToList(next: ListState) {
-  return navigateTo(
-    { path: localePath(`/u/${handle}/list`), query: toListRouteQuery(next) },
-    { replace: true },
-  )
-}
-
-const ALL_TAB = 'all'
-const tabs = computed<UiTab[]>(() => [
-  {
-    id: ALL_TAB,
-    label: t('list.tabAll'),
-    count: countEntriesOfAllStatuses(list.statusCounts.value),
-  },
-  ...LIBRARY_STATUSES.map((status) => ({
-    id: status,
-    label: t(`readingStatus.${status}`),
-    count: list.statusCounts.value[status],
-    status,
-  })),
-])
-const tab = computed({
-  get: () => state.value.status ?? ALL_TAB,
-  set: (id: string) => {
-    const status = id === ALL_TAB ? null : (id as LibraryStatus)
-    void navigateToList({ ...state.value, status })
-  },
-})
-
-const sortOptions = computed(() =>
-  LIST_SORTS.map((sort) => ({ value: sort, label: t(`list.sort.${sort}`) })),
+const { tabs, tab, sortOptions, sort, changeView, searchText, onSearchInput } = useListControls(
+  state,
+  list.statusCounts,
+  `/u/${handle}/list`,
 )
-const sort = computed({
-  get: () => state.value.sort,
-  set: (value: string) => {
-    void navigateToList({ ...state.value, sort: value as ListSort })
-  },
-})
-
-function changeView(view: ListView) {
-  void navigateToList({ ...state.value, view })
-}
-
-// Recherche : on attend la fin de la frappe avant de changer l'adresse (comme « Ma liste »).
-const SEARCH_DELAY_MS = 250
 const isNarrow = useNarrowScreen()
 const searchPlaceholder = computed(() =>
   t(isNarrow.value ? 'list.searchPlaceholderShort' : 'profile.list.searchPlaceholder'),
 )
-const searchText = ref(parseListQuery(route.query).q)
-let searchTimer: ReturnType<typeof setTimeout> | undefined
-function onSearchInput() {
-  clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    void navigateToList({ ...state.value, q: parseListQuery({ q: searchText.value }).q })
-  }, SEARCH_DELAY_MS)
-}
-onBeforeUnmount(() => clearTimeout(searchTimer))
 
 const unit = ref<'chapters' | 'volumes'>('chapters')
 const isLoading = computed(() => list.status.value === 'pending')
@@ -116,27 +57,7 @@ const isEmpty = computed(
     !list.error.value,
 )
 
-// Défilement continu comme « Ma liste » : la suite se charge quand le bas de la liste approche.
-const sentinel = ref<HTMLElement | null>(null)
-let observer: IntersectionObserver | undefined
-const isSentinelInView = () =>
-  (sentinel.value?.getBoundingClientRect().top ?? Infinity) < innerHeight
-async function loadMoreWhileSentinelVisible(): Promise<void> {
-  const canLoadMore = list.hasMore.value && !list.hasLoadMoreFailed.value && isSentinelInView()
-  if (!canLoadMore) return
-  await list.loadMore()
-  return loadMoreWhileSentinelVisible()
-}
-onMounted(() => {
-  observer = new IntersectionObserver(
-    (entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) void loadMoreWhileSentinelVisible()
-    },
-    { rootMargin: '300px' },
-  )
-  if (sentinel.value) observer.observe(sentinel.value)
-})
-onBeforeUnmount(() => observer?.disconnect())
+const sentinel = useLoadMoreOnScroll(list)
 </script>
 
 <template>

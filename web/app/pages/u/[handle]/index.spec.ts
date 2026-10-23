@@ -95,6 +95,24 @@ describe('page Profil', () => {
     expect(wrapper.find('[data-testid="profile-visibility"]').exists()).toBe(false)
   })
 
+  it('résume chaque mise à jour : tome atteint, ou terminée avec ou sans note', async () => {
+    const [reading] = profile.details!.recentUpdates
+    profile.details!.recentUpdates = [
+      { ...reading!, entry: { ...reading!.entry, chaptersRead: 0, volumesRead: 2 } },
+      {
+        ...reading!,
+        work: { ...WORK, id: 8 },
+        entry: { ...reading!.entry, status: 'completed', rating: 9 },
+      },
+      { ...reading!, work: { ...WORK, id: 9 }, entry: { ...reading!.entry, status: 'completed' } },
+    ]
+
+    const wrapper = await mountProfile()
+
+    const progress = wrapper.findAll('.profile__progress').map((label) => label.text())
+    expect(progress).toEqual(['Tome 2', 'Terminée · note 9', 'Terminée'])
+  })
+
   it('montre « — » sans note donnée et un message sans lecture', async () => {
     profile = publicProfile()
     profile.details!.stats.ratingAverage = null
@@ -145,5 +163,44 @@ describe('page Profil', () => {
 
     await wrapper.get('[data-testid="profile-visibility-toggle"]').trigger('click')
     await vi.waitFor(() => expect(visibilityBodies).toEqual([{ visibility: 'private' }]))
+  })
+
+  it('le dit quand la visibilité ne s’enregistre pas', async () => {
+    profile = publicProfile({ isOwner: true })
+    registerEndpoint('/api/v1/me/profile', {
+      method: 'PATCH',
+      handler: () => {
+        throw createError({ statusCode: 500, data: { code: 'INTERNAL_ERROR' } })
+      },
+    })
+    const wrapper = await mountProfile()
+
+    await wrapper.get('[data-testid="profile-visibility-toggle"]').trigger('click')
+
+    await vi.waitFor(() =>
+      expect(wrapper.get('[data-testid="profile-visibility"] [role="alert"]').text()).toContain(
+        'Impossible d',
+      ),
+    )
+    expect(wrapper.get('[data-testid="profile-visibility"]').text()).toContain('Profil public')
+  })
+
+  it('copie le lien de son profil, et n’annonce rien si la copie est refusée', async () => {
+    profile = publicProfile({ isOwner: true })
+    const writeText = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error('refusé'))
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true })
+    const wrapper = await mountProfile()
+    const copyButton = wrapper.get('[data-testid="profile-copy-link"]')
+
+    await copyButton.trigger('click')
+    await vi.waitFor(() => expect(copyButton.text()).toBe('Lien copié'))
+    expect(writeText).toHaveBeenCalledWith(expect.stringMatching(/\/u\/lectrice$/))
+
+    await copyButton.trigger('click')
+    await vi.waitFor(() => expect(copyButton.text()).toBe('Copier le lien de mon profil'))
+    Reflect.deleteProperty(navigator, 'clipboard')
   })
 })

@@ -85,6 +85,18 @@ describe('LayoutAccountMenu', () => {
     wrapper.unmount()
   })
 
+  it('se referme quand on suit « Ma liste de lecture » ou « Mon profil »', async () => {
+    const wrapper = await mountSuspended(LayoutAccountMenu, { props: { handle: 'Ryan' } })
+    const panelStyle = () => wrapper.get('.account-menu__panel').attributes('style') ?? ''
+
+    for (const testId of ['my-list-link', 'profile-link']) {
+      await wrapper.get('[data-testid="account-menu"]').trigger('click')
+      expect(panelStyle()).not.toContain('display: none')
+      await wrapper.get(`[data-testid="${testId}"]`).trigger('click')
+      expect(panelStyle()).toContain('display: none')
+    }
+  })
+
   it('montre les entrées sans page en inactif, sans groupe Administration', async () => {
     const wrapper = await mountSuspended(LayoutAccountMenu, { props: { handle: 'Ryan' } })
 
