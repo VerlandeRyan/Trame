@@ -5,9 +5,9 @@ const props = defineProps<{ error: NuxtError }>()
 const { t } = useI18n()
 const localePath = useLocalePath()
 
-const notFound = computed(() => props.error.statusCode === 404)
+const notFound = computed(() => props.error.status === 404)
 useHead({
-  title: t(props.error.statusCode === 404 ? 'errorPage.notFoundTitle' : 'errorPage.title'),
+  title: t(props.error.status === 404 ? 'errorPage.notFoundTitle' : 'errorPage.title'),
 })
 
 function goHome() {

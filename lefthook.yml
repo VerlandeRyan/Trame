@@ -8,6 +8,14 @@ pre-commit:
       root: web/
       glob: "*.{ts,vue,mjs}"
       run: npx --no-install eslint {staged_files}
+    lint-api:
+      root: api/
+      glob: "src/**/*.ts"
+      run: npx --no-install eslint {staged_files}
+    lint-e2e:
+      root: e2e/
+      glob: "*.ts"
+      run: npx --no-install eslint {staged_files}
 
 commit-msg:
   commands:

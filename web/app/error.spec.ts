@@ -4,8 +4,8 @@ import type { NuxtError } from '#app'
 import { describe, expect, it } from 'vitest'
 import ErrorPage from './error.vue'
 
-function mountError(statusCode: number) {
-  const error = { statusCode, message: 'technique' } as NuxtError
+function mountError(status: number) {
+  const error = { status, message: 'technique' } as NuxtError
   return mountSuspended(ErrorPage, { props: { error } })
 }
 

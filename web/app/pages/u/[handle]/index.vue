@@ -37,7 +37,7 @@ async function loadProfile(): Promise<Profile> {
 
 const { data: profile, error } = await useAsyncData(profileKey, loadProfile)
 if (error.value || !profile.value) {
-  throw createError({ statusCode: error.value?.statusCode ?? 404, fatal: true })
+  throw createError({ statusCode: error.value?.status ?? 404, fatal: true })
 }
 
 const shownHandle = computed(() => profile.value?.handle ?? handle)

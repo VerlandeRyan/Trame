@@ -2,7 +2,7 @@ import { expect, type BrowserContext } from '@playwright/test'
 
 /** Pseudo valide (3 à 30 caractères) et unique : une base de démo est rechargée à chaque exécution. */
 export function uniqueHandle(length = 12): string {
-  const suffix = Math.random().toString(36).slice(2).padEnd(length, 'x')
+  const suffix = crypto.randomUUID().replaceAll('-', '')
   return `l${suffix}`.slice(0, length)
 }
 

@@ -6,7 +6,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 const WORK_PATH = '/work/1-les-lanternes-de-brume'
 
 function uniqueHandle(prefix = 'lecteur'): string {
-  return `${prefix}_${Math.random().toString(36).slice(2, 10)}`
+  return `${prefix}_${crypto.randomUUID().slice(0, 8)}`
 }
 
 /** Fait le trajet de Google à la main : renvoie la session « pseudo à choisir » ou « connectée ». */

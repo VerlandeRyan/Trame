@@ -175,7 +175,7 @@ test('bureau : Explorer ouvre formats et genres avec compteurs, Échap rend le f
   await expect(panel).toBeVisible()
   const firstFormat = panel.locator('[data-testid^="explore-format-"]').first()
   await expect(firstFormat).toBeVisible()
-  await expect(firstFormat).toContainText(/\d+ œuvres?/)
+  await expect(firstFormat).toContainText(/\d{1,6} œuvres?/)
 
   await page.keyboard.press('Escape')
   await expect(panel).toBeHidden()
@@ -355,7 +355,7 @@ test('en anglais : le contenu du menu Explorer est traduit', async ({ page }) =>
   await expect(panel).toContainText('Find your next read by format or genre.')
   await expect(panel).toContainText('See the whole catalogue')
   await expect(panel.locator('[data-testid^="explore-format-"]').first()).toContainText(
-    /\d+ works?/,
+    /\d{1,6} works?/,
   )
   await expect(panel).not.toContainText('œuvre')
 })
