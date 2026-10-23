@@ -1,6 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { signUp, uniqueHandle } from '../support/session'
+import { signUp, uniqueHandle } from '../support/session.js'
 
 // Fiche de lecture (US-05, US-06) : l'API, la base, la session et le relais Nuxt sont réels ;
 // seul Google est remplacé (voir `auth.spec.ts`). Œuvre de démo : 1 tome, nombre de chapitres inconnu.

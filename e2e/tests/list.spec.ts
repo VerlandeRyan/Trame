@@ -1,6 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
-import { signUp } from '../support/session'
+import { signUp } from '../support/session.js'
 
 // Ma liste de lecture (US-07) : l'API, la base, la session et le relais Nuxt sont réels ; seul
 // Google est remplacé (voir `auth.spec.ts`). Œuvres de démo sans lecteur ni ajout récent (2, 3, 4) :

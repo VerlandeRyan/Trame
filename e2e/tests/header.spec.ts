@@ -1,6 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
-import { signUp, uniqueHandle } from '../support/session'
+import { signUp, uniqueHandle } from '../support/session.js'
 
 // L'accueil porte son propre champ de recherche : ces contrôles de l'en-tête se font sur une fiche.
 const WORK_PATH = '/work/1-les-lanternes-de-brume'
