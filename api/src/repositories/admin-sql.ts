@@ -45,11 +45,12 @@ export const FILTERED_TOTAL = sql<number>`count(*) OVER()`;
  * Total d'une liste : celui des lignes de la page, ou compté à part quand la page est vide
  * (au-delà de la dernière page, aucune ligne ne le porte).
  */
-export async function totalOf(
+export function totalOf(
   rows: { total: number }[],
   countFiltered: () => Promise<number>,
 ): Promise<number> {
-  return rows[0]?.total ?? countFiltered();
+  const [first] = rows;
+  return first ? Promise.resolve(first.total) : countFiltered();
 }
 
 /** Condition sur `deleted_at` pour une portée donnée ; `null` quand tout est demandé. */

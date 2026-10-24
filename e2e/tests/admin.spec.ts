@@ -87,10 +87,19 @@ test('les filtres et le tri de la liste des œuvres se combinent', async ({ page
   await page.goto(`/admin/catalogue?q=${author}&sort=completeness_desc`)
   await expect(rows).toHaveCount(1)
   await page.getByTestId('admin-search').fill('')
-  await page.getByTestId('filter-type').click()
-  await page.getByTestId('filter-type-oneshot').check()
-  await expect(page).toHaveURL(/type=oneshot/)
-  await page.getByTestId('filter-reset').click()
+  // Au mobile, les filtres sont dans la feuille « Filtres » ; au bureau, dans la barre.
+  const isMobile = (page.viewportSize()?.width ?? 1280) < 768
+  if (isMobile) {
+    await page.getByTestId('filters-open').click()
+    await page.getByTestId('sheet-type-oneshot').check()
+    await expect(page).toHaveURL(/type=oneshot/)
+    await page.getByTestId('filters-sheet-reset').click()
+  } else {
+    await page.getByTestId('filter-type').click()
+    await page.getByTestId('filter-type-oneshot').check()
+    await expect(page).toHaveURL(/type=oneshot/)
+    await page.getByTestId('filter-reset').click()
+  }
   await expect(page).not.toHaveURL(/type=/)
   await expect.poll(() => rows.count()).toBeGreaterThan(1)
 })
