@@ -24,6 +24,19 @@ async function saveAndWaitForList(page: Page) {
   await expect(page).toHaveURL(LIST_URL)
 }
 
+// Sous 768 px, la liste n'a plus de bouton « Modifier » ni « Restaurer » : « ⋮ » ouvre une feuille.
+const isMobile = (page: Page) => (page.viewportSize()?.width ?? 1280) < 768
+
+/** Modifie ou restaure l'unique fiche de la liste, au bureau comme au mobile. */
+async function clickRowAction(page: Page, action: 'edit' | 'restore') {
+  if (isMobile(page)) {
+    await page.getByTestId('admin-row-menu').click()
+    await page.getByTestId(`admin-menu-${action}`).click()
+  } else {
+    await page.getByTestId(`admin-${action}`).click()
+  }
+}
+
 /** Choisit le premier résultat d'un sélecteur de la section visible. */
 async function pickFirst(page: Page, search: string) {
   const panel = page.locator('[role="tabpanel"]:visible')
@@ -88,8 +101,7 @@ test('les filtres et le tri de la liste des œuvres se combinent', async ({ page
   await expect(rows).toHaveCount(1)
   await page.getByTestId('admin-search').fill('')
   // Au mobile, les filtres sont dans la feuille « Filtres » ; au bureau, dans la barre.
-  const isMobile = (page.viewportSize()?.width ?? 1280) < 768
-  if (isMobile) {
+  if (isMobile(page)) {
     await page.getByTestId('filters-open').click()
     await page.getByTestId('sheet-type-oneshot').check()
     await expect(page).toHaveURL(/type=oneshot/)
@@ -106,7 +118,7 @@ test('les filtres et le tri de la liste des œuvres se combinent', async ({ page
 
 test('revenir d’une fiche garde l’onglet et la recherche de la liste', async ({ page }) => {
   await page.goto(`/admin/catalogue?kind=people&q=${encodeURIComponent(PERSON)}`)
-  await page.getByTestId('admin-edit').click()
+  await clickRowAction(page, 'edit')
   await expect(page).toHaveURL(/\/admin\/catalogue\/people\/\d+/)
   await page.getByTestId('admin-back').click()
 
@@ -172,7 +184,7 @@ test('archiver masque l’œuvre au public, restaurer la rend', async ({ page, c
   await expect(page.getByTestId('admin-row')).toHaveCount(0)
   await page.goto(`/admin/catalogue?q=${encodeURIComponent(WORK)}&scope=archived`)
   await expect(page.getByTestId('admin-row')).toContainText('par @')
-  await page.getByTestId('admin-restore').click()
+  await clickRowAction(page, 'restore')
   await expect(page.getByTestId('admin-row')).toHaveCount(0)
   expect(await publicStatus()).toBe(200)
 })
