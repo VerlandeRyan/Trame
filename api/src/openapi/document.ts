@@ -1,10 +1,26 @@
 import { z } from 'zod';
 import type { ErrorCode } from '../errors.js';
+import {
+  adminListQuery,
+  adminWorkListQuery,
+  personBody,
+  publisherBody,
+  workBody,
+} from '../schemas/admin-catalogue.js';
+import { idParams } from '../schemas/common.js';
 import { handleBody, loginQuery } from '../routes/auth.routes.js';
 import { entryBody, listEntriesQuery } from '../routes/library.routes.js';
 import { profileParams, profileQuery, visibilityBody } from '../routes/profile.routes.js';
 import { SESSION_COOKIE_NAME } from '../session/middleware.js';
-import { facetsQuery, listWorksQuery, workParams, workQuery } from '../routes/work.routes.js';
+import { facetsQuery, listWorksQuery, workQuery } from '../routes/work.routes.js';
+import {
+  adminPersonPageSchema,
+  adminPersonSchema,
+  adminPublisherPageSchema,
+  adminPublisherSchema,
+  adminWorkPageSchema,
+  adminWorkSchema,
+} from './admin-schemas.js';
 import {
   authStatusSchema,
   errorSchema,
@@ -68,6 +84,150 @@ const rateLimited = errorResponse(
   'RATE_LIMITED',
   'Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`.',
 );
+
+interface AdminResource {
+  /** Segment d'URL sous `/admin`. */
+  path: string;
+  /** Nom de la ressource dans les `operationId` (`listPeople` → `People`). */
+  plural: string;
+  singular: string;
+  /** Composants de réponse : un enregistrement et une page. */
+  record: string;
+  page: string;
+  body: z.ZodType;
+  /** Paramètres de la liste (recherche, portée, page, et filtres propres à la ressource). */
+  listQuery: z.ZodObject;
+  /** Code renvoyé (409) quand l'archivage est refusé, le cas échéant. */
+  archiveBlockedBy?: ErrorCode;
+  /** Code renvoyé (400) quand le corps cite un enregistrement inexistant, le cas échéant. */
+  invalidReference?: boolean;
+  /** Le remplacement porte la version lue (`updatedAt`) et répond 409 `STALE_RECORD` si elle a changé. */
+  versioned?: boolean;
+}
+
+const adminErrors = {
+  '401': errorResponse('UNAUTHENTICATED', 'Connexion requise.'),
+  '403': errorResponse(
+    'ADMIN_REQUIRED',
+    'Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée).',
+  ),
+  '500': internalError,
+};
+
+const adminSecurity = [{ sessionCookie: [] }];
+
+/** Les six opérations d'une ressource du catalogue : liste, lecture, création, remplacement, archivage, restauration. */
+function adminResourcePaths(resource: AdminResource) {
+  const base = `${API_PREFIX}/admin/${resource.path}`;
+  const idParameters = toParameters(idParams, 'path');
+  const notFound = errorResponse('NOT_FOUND', `${resource.singular} inconnu.`);
+  const invalidBody = errorResponse(
+    resource.invalidReference ? 'INVALID_REFERENCE' : 'VALIDATION_ERROR',
+    resource.invalidReference
+      ? 'Corps invalide (`VALIDATION_ERROR`), enregistrement cité inexistant (`INVALID_REFERENCE`) ou archivé (`ARCHIVED_REFERENCE`).'
+      : 'Corps invalide.',
+  );
+  const staleRecord = resource.versioned
+    ? { '409': errorResponse('STALE_RECORD', 'La fiche a été modifiée depuis sa lecture.') }
+    : {};
+  const archiveBlocked = resource.archiveBlockedBy
+    ? { '409': errorResponse(resource.archiveBlockedBy, 'Des œuvres non archivées y sont liées.') }
+    : {};
+  const writeBase = { tags: ['admin'], security: adminSecurity };
+  const writeBody = {
+    required: true,
+    content: { 'application/json': { schema: toJsonSchema(resource.body, 'input') } },
+  };
+  return {
+    [base]: {
+      get: {
+        summary: `Lister : ${resource.plural}`,
+        operationId: `list${resource.plural}`,
+        tags: ['admin'],
+        security: adminSecurity,
+        parameters: toParameters(resource.listQuery, 'query'),
+        responses: {
+          '200': jsonResponse(resource.page, 'Une page, archives comprises selon `scope`.'),
+          '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
+          ...adminErrors,
+        },
+      },
+      post: {
+        ...writeBase,
+        summary: `Créer : ${resource.singular}`,
+        operationId: `create${resource.singular}`,
+        requestBody: writeBody,
+        responses: {
+          '201': jsonResponse(resource.record, 'Créé.'),
+          '400': invalidBody,
+          '429': rateLimited,
+          ...adminErrors,
+        },
+      },
+    },
+    [`${base}/{id}`]: {
+      get: {
+        summary: `Lire : ${resource.singular}`,
+        operationId: `get${resource.singular}`,
+        tags: ['admin'],
+        security: adminSecurity,
+        parameters: idParameters,
+        responses: {
+          '200': jsonResponse(resource.record, 'La fiche, archivée ou non.'),
+          '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
+          '404': notFound,
+          ...adminErrors,
+        },
+      },
+      put: {
+        ...writeBase,
+        summary: `Remplacer : ${resource.singular}`,
+        operationId: `replace${resource.singular}`,
+        parameters: idParameters,
+        requestBody: writeBody,
+        responses: {
+          '200': jsonResponse(resource.record, 'Enregistrée.'),
+          '400': invalidBody,
+          '404': notFound,
+          ...staleRecord,
+          '429': rateLimited,
+          ...adminErrors,
+        },
+      },
+    },
+    [`${base}/{id}/archive`]: {
+      post: {
+        ...writeBase,
+        summary: `Archiver : ${resource.singular}`,
+        operationId: `archive${resource.singular}`,
+        parameters: idParameters,
+        responses: {
+          '200': jsonResponse(resource.record, 'Archivée (sans effet si elle l’est déjà).'),
+          '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
+          '404': notFound,
+          ...archiveBlocked,
+          '429': rateLimited,
+          ...adminErrors,
+        },
+      },
+    },
+    [`${base}/{id}/restore`]: {
+      post: {
+        ...writeBase,
+        summary: `Restaurer : ${resource.singular}`,
+        operationId: `restore${resource.singular}`,
+        parameters: idParameters,
+        responses: {
+          '200': jsonResponse(resource.record, 'Restaurée (sans effet si elle ne l’est pas).'),
+          '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
+          '404': notFound,
+          '429': rateLimited,
+          ...adminErrors,
+        },
+      },
+    },
+  };
+}
 
 /** Document OpenAPI 3.1, construit depuis les schémas Zod des routes et des réponses. */
 export function buildOpenApiDocument() {
@@ -154,7 +314,7 @@ export function buildOpenApiDocument() {
           summary: 'Lire une fiche œuvre',
           operationId: 'getWork',
           tags: ['works'],
-          parameters: [...toParameters(workParams, 'path'), ...toParameters(workQuery, 'query')],
+          parameters: [...toParameters(idParams, 'path'), ...toParameters(workQuery, 'query')],
           responses: {
             '200': jsonResponse('WorkDetail', 'La fiche.'),
             '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
@@ -341,7 +501,7 @@ export function buildOpenApiDocument() {
           operationId: 'getLibraryEntry',
           tags: ['library'],
           security: [{ sessionCookie: [] }],
-          parameters: toParameters(workParams, 'path'),
+          parameters: toParameters(idParams, 'path'),
           responses: {
             '200': jsonResponse('LibraryEntryResponse', 'Mon entrée, ou `null` si absente.'),
             '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
@@ -356,7 +516,7 @@ export function buildOpenApiDocument() {
           operationId: 'saveLibraryEntry',
           tags: ['library'],
           security: [{ sessionCookie: [] }],
-          parameters: toParameters(workParams, 'path'),
+          parameters: toParameters(idParams, 'path'),
           requestBody: {
             required: true,
             content: { 'application/json': { schema: toJsonSchema(entryBody, 'input') } },
@@ -376,7 +536,7 @@ export function buildOpenApiDocument() {
           operationId: 'removeLibraryEntry',
           tags: ['library'],
           security: [{ sessionCookie: [] }],
-          parameters: toParameters(workParams, 'path'),
+          parameters: toParameters(idParams, 'path'),
           responses: {
             '204': { description: 'Entrée retirée (ou déjà absente).' },
             '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
@@ -399,6 +559,37 @@ export function buildOpenApiDocument() {
           },
         },
       },
+      ...adminResourcePaths({
+        path: 'people',
+        plural: 'People',
+        singular: 'Person',
+        record: 'AdminPerson',
+        page: 'AdminPersonPage',
+        body: personBody,
+        listQuery: adminListQuery,
+        archiveBlockedBy: 'PERSON_HAS_WORKS',
+      }),
+      ...adminResourcePaths({
+        path: 'publishers',
+        plural: 'Publishers',
+        singular: 'Publisher',
+        record: 'AdminPublisher',
+        page: 'AdminPublisherPage',
+        body: publisherBody,
+        listQuery: adminListQuery,
+        archiveBlockedBy: 'PUBLISHER_HAS_WORKS',
+      }),
+      ...adminResourcePaths({
+        path: 'works',
+        plural: 'Works',
+        singular: 'Work',
+        record: 'AdminWork',
+        page: 'AdminWorkPage',
+        body: workBody,
+        listQuery: adminWorkListQuery,
+        invalidReference: true,
+        versioned: true,
+      }),
     },
     components: {
       securitySchemes: {
@@ -411,6 +602,12 @@ export function buildOpenApiDocument() {
       },
       schemas: {
         Error: toJsonSchema(errorSchema, 'output'),
+        AdminPerson: toJsonSchema(adminPersonSchema, 'output'),
+        AdminPersonPage: toJsonSchema(adminPersonPageSchema, 'output'),
+        AdminPublisher: toJsonSchema(adminPublisherSchema, 'output'),
+        AdminPublisherPage: toJsonSchema(adminPublisherPageSchema, 'output'),
+        AdminWork: toJsonSchema(adminWorkSchema, 'output'),
+        AdminWorkPage: toJsonSchema(adminWorkPageSchema, 'output'),
         AuthStatus: toJsonSchema(authStatusSchema, 'output'),
         FeaturedList: toJsonSchema(featuredListSchema, 'output'),
         TopRatedList: toJsonSchema(topRatedListSchema, 'output'),

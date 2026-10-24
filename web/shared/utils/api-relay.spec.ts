@@ -27,6 +27,17 @@ describe('judgeRelayRequest', () => {
     expect(judgeRelayRequest('PATCH', 'me/entries')).toBe('method-not-allowed')
   })
 
+  it("autorise les écritures d'administration du catalogue, et rien d'autre sous /admin", () => {
+    expect(judgeRelayRequest('POST', 'admin/works')).toBe('allowed')
+    expect(judgeRelayRequest('PUT', 'admin/people/7')).toBe('allowed')
+    expect(judgeRelayRequest('POST', 'admin/publishers/7/archive')).toBe('allowed')
+    expect(judgeRelayRequest('POST', 'admin/works/7/restore')).toBe('allowed')
+    expect(judgeRelayRequest('DELETE', 'admin/works/7')).toBe('method-not-allowed')
+    expect(judgeRelayRequest('PUT', 'admin/works')).toBe('method-not-allowed')
+    expect(judgeRelayRequest('POST', 'admin/works/7/purge')).toBe('method-not-allowed')
+    expect(judgeRelayRequest('POST', 'admin/genres')).toBe('method-not-allowed')
+  })
+
   it('refuse les autres méthodes', () => {
     expect(judgeRelayRequest('DELETE', 'auth/handle')).toBe('method-not-allowed')
     expect(judgeRelayRequest('PUT', 'works/1')).toBe('method-not-allowed')

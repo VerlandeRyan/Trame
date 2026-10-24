@@ -5,7 +5,8 @@ Plateforme de suivi de lecture et de découverte pour la **création européenne
 ## Démarrage de session
 1. Lire ce fichier puis `private/etat-courant.md` (privé, ignoré par git). N'ouvrir d'autres documents que si la tâche l'exige.
 2. Dès que le sujet est connu (demandé par Ryan, ou déduit de `private/etat-courant.md` § Prochaine tâche), nommer la conversation d'un titre court et explicite (≤ 6 mots, ex. « Issues et GitHub Project ») avec l'outil de titre de session, puis le réajuster si le sujet change.
-3. Mettre à jour `private/etat-courant.md` **une seule fois, en fin de session ou si Ryan le demande**, jamais après chaque décision (coût en tokens). Décision technique structurante : un ADR. Réflexions et décisions stratégiques : `private/docs/genese.md`, seulement si Ryan le demande.
+3. **Ordre à l'ouverture, avant toute modification** : titre de la conversation → contrôle git en lecture seule → nom de branche, puis attendre que Ryan l'ait créée → ticket en « In progress » → plan court dans la liste de tâches de l'app. Les détails de chaque étape sont dans « Façon de travailler ».
+4. Mettre à jour `private/etat-courant.md` **une seule fois, en fin de session ou si Ryan le demande**, jamais après chaque décision (coût en tokens). Décision technique structurante : un ADR. Réflexions et décisions stratégiques : `private/docs/genese.md`, seulement si Ryan le demande.
 
 ## Décisions clés (détail dans `docs/` et `docs/adr/`)
 - Création européenne (indépendante ou éditeurs établis), FR d'abord ; **une œuvre = une fiche** ; modèle calqué sur MyAnimeList.
@@ -27,7 +28,9 @@ Plateforme de suivi de lecture et de découverte pour la **création européenne
 ## Façon de travailler
 - Répondre en français. Modifier les fichiers avec Edit/Write (diffs visibles), jamais par script shell.
 - Regrouper les modifications liées puis faire **une** vérification ; ne pas relire ce qui est déjà en contexte.
-- Rester sur la tâche demandée ; poser une question courte plutôt que supposer (licence, hébergement, périmètre, droits).
+- Rester sur la tâche demandée. **Poser une question courte avant de choisir** dès que le besoin est ambigu (licence, hébergement, périmètre, droits, mais aussi quel élément, quelle couleur, quel comportement) : ne jamais deviner ; sur « montre-moi », faire un mockup. Un composant partagé (`Field`, `Select`, `Tabs`…) ne change que sur demande ; si l'effet touche d'autres écrans, le dire et demander.
+- **Tests d'abord pour la logique et l'API** (`utils/`, services, routes, composables, émissions et accessibilité d'un composant) : un test rouge, puis le code. **Interface visuelle** : mockup validé par Ryan, implémentation, puis capture dans un vrai navigateur (Playwright en session admin, spec temporaire supprimée ensuite) ; ne jamais écrire « vérifié » sans avoir regardé, sinon « non vérifié visuellement ».
+- **Nouveau composant** : son `.spec.ts`, son entrée dans la galerie `/components`, sa ligne dans `web/CLAUDE.md`, ses clés i18n `fr` **et** `en`.
 - Tout changement de comportement ⇒ test E2E ; toute évolution de schéma ⇒ migration + `docs/modele-de-donnees.md`.
 - Tests E2E : lancer seulement les nouveaux/modifiés en local ; la CI exécute la suite complète.
 - **Vérifier soi-même** : typecheck, lint, tests et couverture sont lancés par Claude avant de proposer un commit, jamais laissés à Ryan ; le résultat chiffré fait partie du compte rendu.

@@ -7,6 +7,8 @@ defineProps<{
   confirmLabel: string
   cancelLabel: string
   closeLabel: string
+  // Action destructrice (archivage…) : bouton de confirmation rouge.
+  danger?: boolean
 }>()
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const open = defineModel<boolean>({ default: false })
@@ -27,12 +29,14 @@ function cancel() {
   <UiModal
     v-model="open"
     plain
+    :danger="danger"
     :title="title"
     :close-label="closeLabel"
     :placement="narrow ? 'bottom' : 'center'"
   >
     <div class="confirm">
       <p class="confirm__text">{{ text }}</p>
+      <slot />
       <div class="confirm__actions">
         <UiButton
           variant="secondary"
@@ -42,7 +46,12 @@ function cancel() {
         >
           {{ cancelLabel }}
         </UiButton>
-        <UiButton class="confirm__button" data-testid="confirm-accept" @click="confirm">
+        <UiButton
+          :variant="danger ? 'danger-solid' : 'primary'"
+          class="confirm__button"
+          data-testid="confirm-accept"
+          @click="confirm"
+        >
           {{ confirmLabel }}
         </UiButton>
       </div>

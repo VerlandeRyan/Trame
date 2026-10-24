@@ -128,6 +128,18 @@ describe('LayoutHeader et la connexion', () => {
     const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
 
     expect(wrapper.find('[data-testid="admin-group"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="admin-badge"]').text()).toBe('ADMIN')
+    useState('auth').value = { status: 'anonymous' }
+  })
+
+  it('n’affiche la pastille ADMIN qu’aux admins', async () => {
+    useState('auth').value = {
+      status: 'authenticated',
+      user: { id: 2, handle: 'Lea', role: 'user' },
+    }
+    const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+
+    expect(wrapper.find('[data-testid="admin-badge"]').exists()).toBe(false)
     useState('auth').value = { status: 'anonymous' }
   })
 

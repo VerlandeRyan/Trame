@@ -16,6 +16,13 @@ describe('UiButton', () => {
     expect(wrapper.classes()).toEqual(expect.arrayContaining(['btn--blue', 'btn--small']))
   })
 
+  it('propose les variantes d’enregistrement (vert) et d’action destructrice', async () => {
+    for (const variant of ['success', 'danger', 'danger-solid'] as const) {
+      const wrapper = await mountSuspended(UiButton, { props: { variant } })
+      expect(wrapper.classes()).toContain(`btn--${variant}`)
+    }
+  })
+
   it('devient un lien quand une adresse est donnée', async () => {
     const wrapper = await mountSuspended(UiButton, {
       props: { href: '/api/v1/auth/google' },
@@ -24,6 +31,17 @@ describe('UiButton', () => {
 
     expect(wrapper.element.tagName).toBe('A')
     expect(wrapper.attributes('href')).toBe('/api/v1/auth/google')
+    expect(wrapper.attributes('type')).toBeUndefined()
+  })
+
+  it('devient un lien interne du site quand une destination est donnée', async () => {
+    const wrapper = await mountSuspended(UiButton, {
+      props: { to: '/admin/catalogue' },
+      slots: { default: 'Catalogue' },
+    })
+
+    expect(wrapper.element.tagName).toBe('A')
+    expect(wrapper.attributes('href')).toBe('/admin/catalogue')
     expect(wrapper.attributes('type')).toBeUndefined()
   })
 

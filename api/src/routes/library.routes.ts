@@ -7,7 +7,8 @@ import { requireUser } from '../middleware/auth.js';
 import { rateLimitOptions, type RateLimitSettings } from '../middleware/rate-limit.js';
 import { validate } from '../middleware/validate.js';
 import type { LibraryService } from '../services/library.service.js';
-import { commaSeparatedList, lang, MULTI_VALUE, workParams } from './work.routes.js';
+import { commaSeparatedList, idParams, MULTI_VALUE, pageQuery } from '../schemas/common.js';
+import { lang } from './work.routes.js';
 
 /** Plus de chapitres qu'aucune œuvre n'en compte : borne la saisie, sans règle métier. */
 const MAX_COUNT = 99_999;
@@ -62,8 +63,7 @@ export const listEntriesQuery = z.object({
     .enum(['updated', 'title', 'rating'])
     .describe('Ordre : dernière progression, titre A→Z, mieux notées d’abord.')
     .default('updated'),
-  page: z.coerce.number().int().min(1).max(100_000).describe('Numéro de page.').default(1),
-  pageSize: z.coerce.number().int().min(1).max(50).describe('Œuvres par page.').default(50),
+  ...pageQuery('Œuvres', 50),
 });
 
 /** Monté sous `/me` : la liste de lecture de l'utilisateur connecté. */
@@ -82,12 +82,12 @@ export function createLibraryRouter(
   const limiter = rateLimit(rateLimitOptions(options.rateLimit));
   const controller = createLibraryController(service);
   const router = Router();
-  router.get('/:id/entry', requireUser, validate('params', workParams), controller.get);
+  router.get('/:id/entry', requireUser, validate('params', idParams), controller.get);
   router.put(
     '/:id/entry',
     requireUser,
     limiter,
-    validate('params', workParams),
+    validate('params', idParams),
     validate('body', entryBody),
     controller.save,
   );
@@ -95,7 +95,7 @@ export function createLibraryRouter(
     '/:id/entry',
     requireUser,
     limiter,
-    validate('params', workParams),
+    validate('params', idParams),
     controller.remove,
   );
   return router;

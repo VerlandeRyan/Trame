@@ -1,6 +1,10 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { describe, expect, it, vi } from 'vitest'
+import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import AuthNotice from './Notice.vue'
+
+// Une instance restée montée verrait le même avis et l'effacerait à la navigation.
+enableAutoUnmount(afterEach)
 
 describe('AuthNotice', () => {
   it("n'affiche rien sans motif de retour de Google", async () => {
@@ -61,6 +65,21 @@ describe('AuthNotice', () => {
 
     await navigateTo('/search')
     await vi.waitFor(() => expect(wrapper.find('[data-testid="auth-notice"]').exists()).toBe(false))
+  })
+
+  it('garde un avis posé avec une redirection à travers cette redirection seulement', async () => {
+    const wrapper = await mountSuspended(AuthNotice, { route: '/search' })
+    useAuthNotice().value = { key: 'auth.signedOut', tone: 'success', keepOnce: true }
+    await nextTick()
+    const isShown = () => wrapper.find('[data-testid="auth-notice"]').exists()
+
+    await navigateTo('/')
+    await vi.waitFor(() => expect(useRoute().path).toBe('/'))
+    await flushPromises()
+    expect(isShown()).toBe(true)
+
+    await navigateTo('/search?q=a')
+    await vi.waitFor(() => expect(isShown()).toBe(false))
   })
 
   it('se ferme avec la croix', async () => {

@@ -175,13 +175,15 @@ SELECT a.id, b.id, c.relation FROM (VALUES
 INSERT INTO external_link (work_id, kind, url, label)
 SELECT w.id, c.kind, c.url, c.label FROM (VALUES
   ('Les Lanternes de Brume', 'read',    'https://planche-ouverte.exemple.test/lanternes', 'Lire sur Planche Ouverte'),
-  ('Les Lanternes de Brume', 'buy',     'https://marais-bleu.exemple.test/lanternes',     'Acheter les tomes'),
-  ('Carnet de Colportage',   'website', 'https://lea-fontaine.exemple.test',             'Site de l''autrice')
+  ('Les Lanternes de Brume', 'buy',     'https://marais-bleu.exemple.test/lanternes',     'Acheter les tomes')
 ) AS c(work_title, kind, url, label) JOIN work w ON w.title = c.work_title;
 
+-- Le site et les réseaux sociaux sont ceux d'une personne, pas d'une œuvre.
 INSERT INTO external_link (person_id, kind, url, label)
-SELECT p.id, 'social','https://reseau.exemple.test/theo-marchand', 'Profil de l''auteur'
-FROM person p WHERE p.name = 'Théo Marchand';
+SELECT p.id, c.kind, c.url, c.label FROM (VALUES
+  ('Léa Fontaine',   'website', 'https://lea-fontaine.exemple.test',             'Site de l''autrice'),
+  ('Théo Marchand',  'social',  'https://reseau.exemple.test/theo-marchand',     'Profil de l''auteur')
+) AS c(person_name, kind, url, label) JOIN person p ON p.name = c.person_name;
 
 -- Suivi des lecteurs : chapitres lus et tomes lus sont indépendants ----------------------
 INSERT INTO library_entry (user_id, work_id, status, chapters_read, volumes_read, rating, started_on, finished_on)

@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import type { ZodType } from 'zod';
+import type { z, ZodType } from 'zod';
 import { AppError } from '../errors.js';
 
 type Source = 'body' | 'query' | 'params';
@@ -23,6 +23,14 @@ function toDetail(issue: { path: PropertyKey[]; code: string }) {
     if (isParamValue(value)) params[key] = value;
   }
   return { path: issue.path, code: issue.code, ...params };
+}
+
+/**
+ * Valeur déjà analysée par `validate(source, schema)` : le schéma ne sert ici qu'à la typer,
+ * ce qui évite un cast dans chaque contrôleur.
+ */
+export function validated<S extends ZodType>(_schema: S, value: unknown): z.output<S> {
+  return value as z.output<S>;
 }
 
 /** Valide `req.body`, `req.query` ou `req.params` avec un schéma Zod ; remplace la valeur par la version analysée. */

@@ -6,9 +6,8 @@ const PLANNED_ITEMS = [
   { labelKey: 'nav.proposeWork', testId: 'propose-work-link' },
   { labelKey: 'nav.mySubmissions', testId: 'my-submissions-link' },
 ]
-const ADMIN_ITEMS = [
+const PLANNED_ADMIN_ITEMS = [
   { labelKey: 'nav.admin.submissions', testId: 'admin-submissions-link' },
-  { labelKey: 'nav.admin.catalogue', testId: 'admin-catalogue-link' },
   { labelKey: 'nav.admin.reports', testId: 'admin-reports-link' },
 ]
 const initial = computed(() => props.handle.charAt(0).toUpperCase())
@@ -28,14 +27,25 @@ function askSignOut() {
   confirmingSignOut.value = true
 }
 
+// Les middlewares ne jouent qu'à la navigation : une page réservée aux membres ou aux
+// administrateurs reste affichée après la déconnexion si on n'en sort pas.
+const MEMBER_PAGE_MIDDLEWARE = new Set(['authenticated', 'admin'])
+const route = useRoute()
+const isMemberPage = () =>
+  [route.meta.middleware].flat().some((name) => MEMBER_PAGE_MIDDLEWARE.has(String(name)))
+
 // Le résultat est annoncé dans le bandeau : vert si déconnecté, rouge si l'échec laisse connecté.
+// Depuis une page réservée on revient à l'accueil : l'avis traverse cette redirection.
 async function confirmSignOut() {
   try {
     await signOut()
-    notice.value = { key: 'auth.signedOut', tone: 'success' }
   } catch {
     notice.value = { key: 'auth.signOutFailed', tone: 'error' }
+    return
   }
+  const isRedirected = isMemberPage()
+  notice.value = { key: 'auth.signedOut', tone: 'success', ...(isRedirected && { keepOnce: true }) }
+  if (isRedirected) await navigateTo(localePath('/'))
 }
 </script>
 
@@ -88,8 +98,16 @@ async function confirmSignOut() {
       </button>
       <section v-if="isAdmin" class="account-menu__group" data-testid="admin-group">
         <p class="account-menu__group-title">{{ t('nav.admin.title') }}</p>
+        <NuxtLink
+          :to="localePath('/admin/catalogue')"
+          class="account-menu__row"
+          data-testid="admin-catalogue-link"
+          @click="close()"
+        >
+          {{ t('nav.admin.catalogue') }}
+        </NuxtLink>
         <button
-          v-for="item in ADMIN_ITEMS"
+          v-for="item in PLANNED_ADMIN_ITEMS"
           :key="item.testId"
           type="button"
           class="account-menu__row"

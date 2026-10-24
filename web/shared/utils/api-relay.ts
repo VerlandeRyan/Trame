@@ -6,6 +6,13 @@ const WRITABLE_ROUTES = [
   { methods: new Set(['POST']), path: /^auth\// },
   { methods: new Set(['PUT', 'DELETE']), path: /^works\/\d+\/entry$/ },
   { methods: new Set(['PATCH']), path: /^me\/profile$/ },
+  // Administration du catalogue : création, remplacement, archivage et restauration.
+  { methods: new Set(['POST']), path: /^admin\/(people|publishers|works)$/ },
+  { methods: new Set(['PUT']), path: /^admin\/(people|publishers|works)\/\d+$/ },
+  {
+    methods: new Set(['POST']),
+    path: /^admin\/(people|publishers|works)\/\d+\/(archive|restore)$/,
+  },
 ]
 
 export type RelayVerdict = 'allowed' | 'bad-request' | 'method-not-allowed'

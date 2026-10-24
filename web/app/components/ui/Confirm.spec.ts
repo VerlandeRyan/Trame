@@ -25,6 +25,28 @@ describe('UiConfirm', () => {
     expect(wrapper.get('[data-testid="confirm-accept"]').text()).toBe('Oui, annuler')
   })
 
+  it('passe le bouton de confirmation en rouge pour une action destructrice', async () => {
+    const neutral = await mountConfirm()
+    const destructive = await mountSuspended(UiConfirm, {
+      props: {
+        modelValue: true,
+        danger: true,
+        title: 'Archiver ?',
+        text: 'Restaurable.',
+        confirmLabel: 'Archiver',
+        cancelLabel: 'Annuler',
+        closeLabel: 'Fermer',
+      },
+    })
+
+    expect(neutral.get('dialog').classes()).not.toContain('modal--danger')
+    expect(destructive.get('dialog').classes()).toContain('modal--danger')
+    expect(neutral.get('[data-testid="confirm-accept"]').classes()).toContain('btn--primary')
+    expect(destructive.get('[data-testid="confirm-accept"]').classes()).toContain(
+      'btn--danger-solid',
+    )
+  })
+
   it('se referme sans rien déclencher quand on garde les choses en l’état', async () => {
     const wrapper = await mountConfirm()
 

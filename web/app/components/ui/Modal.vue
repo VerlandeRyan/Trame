@@ -8,8 +8,10 @@ withDefaults(
     closeLabel: string
     placement?: 'center' | 'bottom'
     plain?: boolean
+    // Action destructrice : titre rouge.
+    danger?: boolean
   }>(),
-  { placement: 'center', plain: false },
+  { placement: 'center', plain: false, danger: false },
 )
 const open = defineModel<boolean>({ default: false })
 const dialog = ref<HTMLDialogElement | null>(null)
@@ -31,7 +33,7 @@ watch(open, (isOpen) => {
   <dialog
     ref="dialog"
     class="modal"
-    :class="[`modal--${placement}`, plain && 'modal--plain']"
+    :class="[`modal--${placement}`, plain && 'modal--plain', danger && 'modal--danger']"
     @close="open = false"
     @click="onDialogClick"
   >
@@ -176,6 +178,10 @@ watch(open, (isOpen) => {
 .modal__title {
   margin-right: auto;
   font-size: 1.125rem;
+}
+
+.modal--danger .modal__title {
+  color: var(--color-danger);
 }
 
 .modal__actions {

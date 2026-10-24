@@ -1,5 +1,5 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import UiTabs from './Tabs.vue'
 
 const tabs = [
@@ -23,6 +23,40 @@ describe('UiTabs', () => {
       'false',
     ])
     expect(buttons.map((button) => button.attributes('tabindex'))).toEqual(['-1', '0', '-1'])
+  })
+
+  it('passe en onglets soulignés à la demande', async () => {
+    const wrapper = await mountSuspended(UiTabs, {
+      props: { tabs, label: 'Statuts', modelValue: 'all', underline: true },
+    })
+
+    expect(wrapper.classes()).toContain('tabs--underline')
+    expect((await mountTabs()).classes()).not.toContain('tabs--underline')
+  })
+
+  it('signale par des chevrons les onglets soulignés cachés, et les fait défiler', async () => {
+    const wrapper = await mountSuspended(UiTabs, {
+      props: { tabs, label: 'Statuts', modelValue: 'all', underline: true },
+    })
+    const tablist = wrapper.get('[role="tablist"]').element as HTMLElement
+    Object.defineProperties(tablist, {
+      clientWidth: { value: 200, configurable: true },
+      scrollWidth: { value: 500, configurable: true },
+    })
+    const scrollBy = vi.fn()
+    tablist.scrollBy = scrollBy
+
+    await wrapper.get('[role="tablist"]').trigger('scroll')
+
+    expect(wrapper.find('.tabs__edge--start').exists()).toBe(false)
+    await wrapper.get('.tabs__edge--end button').trigger('click')
+    expect(scrollBy).toHaveBeenCalledWith({ left: 120 })
+  })
+
+  it('n’affiche pas de chevron hors des onglets soulignés', async () => {
+    const wrapper = await mountTabs()
+
+    expect(wrapper.find('.tabs__edge').exists()).toBe(false)
   })
 
   it('affiche les compteurs', async () => {

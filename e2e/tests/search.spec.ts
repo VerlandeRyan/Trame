@@ -164,8 +164,11 @@ test.describe('page de résultats', () => {
     await page.goto('/search')
     await page.waitForLoadState('networkidle')
 
-    await expect(page.getByTestId('search-count')).toHaveText('11 résultats')
-    await expect(page.getByTestId('search-result')).toHaveCount(11)
+    // Les 11 œuvres de démo, plus celles que les autres parcours (administration) créent en parallèle.
+    const count = page.getByTestId('search-count')
+    await expect(count).toHaveText(/^\d+ résultats$/)
+    expect(Number.parseInt((await count.textContent()) ?? '', 10)).toBeGreaterThanOrEqual(11)
+    await expect(page.getByTestId('search-result').first()).toBeVisible()
     await page.getByTestId('search-sort').click()
     await expect(page.getByRole('option', { name: 'Pertinence' })).toHaveCount(0)
   })

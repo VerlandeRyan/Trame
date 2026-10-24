@@ -1,14 +1,36 @@
 <script setup lang="ts">
 // `prefix` (ex. « @ ») précède la saisie ; `error` remplace l'aide ; `inputAttributes` complète l'`<input>`.
+// `inputAttributes.sanitize` nettoie la saisie au fil de la frappe (ex. chiffres seulement) : la
+// valeur affichée est réécrite même quand le modèle ne change pas.
 const props = defineProps<{
   label: string
   id: string
   hint?: string
   prefix?: string
   error?: string
-  inputAttributes?: { maxlength?: number; autocomplete?: string }
+  inputAttributes?: {
+    maxlength?: number
+    autocomplete?: string
+    type?: 'text' | 'url' | 'date' | 'search'
+    inputmode?: 'numeric'
+    min?: string
+    sanitize?: (value: string) => string
+  }
 }>()
 const model = defineModel<string>({ default: '' })
+const nativeAttributes = computed(() => {
+  const native = { ...props.inputAttributes }
+  delete native.sanitize
+  return native
+})
+
+function onInput(event: Event) {
+  const input = event.target as HTMLInputElement
+  const sanitize = props.inputAttributes?.sanitize
+  const value = sanitize ? sanitize(input.value) : input.value
+  if (value !== input.value) input.value = value
+  model.value = value
+}
 
 const describedBy = computed(() => {
   if (props.error) return `${props.id}-error`
@@ -23,11 +45,12 @@ const describedBy = computed(() => {
       <span v-if="prefix" class="field__prefix" aria-hidden="true">{{ prefix }}</span>
       <input
         :id="id"
-        v-model="model"
+        :value="model"
         class="field__input"
-        v-bind="inputAttributes"
+        v-bind="nativeAttributes"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="describedBy"
+        @input="onInput"
       />
     </div>
     <p v-if="error" :id="`${id}-error`" class="field__error" role="alert">
@@ -40,6 +63,8 @@ const describedBy = computed(() => {
 <style scoped lang="scss">
 .field {
   display: grid;
+  // `minmax(0, …)` : un libellé long passe à la ligne au lieu d'élargir le champ.
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1);
 }
 

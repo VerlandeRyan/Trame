@@ -46,9 +46,10 @@ useHtmlLanguage()
     --main-pad-bottom: 30px;
   }
 
-  // À l'intérieur : à l'extérieur, les bords de la fenêtre le rogneraient.
+  // `<main>` n'est pas un contrôle : un clic à vide ou le lien d'évitement le focalisent, mais son
+  // contour (un trait sur le bord de la page) n'apporte rien.
   &:focus-visible {
-    outline-offset: -3px;
+    outline: none;
   }
 }
 

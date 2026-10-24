@@ -1,24 +1,37 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router'
+
 withDefaults(
   defineProps<{
-    variant?: 'primary' | 'secondary' | 'blue'
+    variant?: 'primary' | 'secondary' | 'blue' | 'success' | 'danger' | 'danger-solid'
     size?: 'normal' | 'small'
     // Couleur de statut : œuvre déjà dans la liste (le libellé reste toujours présent).
     status?: 'reading' | 'completed' | 'plan_to_read' | 'on_hold' | 'dropped'
     // Un lien (navigation complète) à l'aspect d'un bouton.
     href?: string
+    // Un lien interne du site (navigation sans rechargement) à l'aspect d'un bouton.
+    to?: RouteLocationRaw
     // Pleine largeur, survol moins incliné.
     block?: boolean
   }>(),
-  { variant: 'primary', size: 'normal', status: undefined, href: undefined, block: false },
+  {
+    variant: 'primary',
+    size: 'normal',
+    status: undefined,
+    href: undefined,
+    to: undefined,
+    block: false,
+  },
 )
+const NuxtLink = resolveComponent('NuxtLink')
 </script>
 
 <template>
   <component
-    :is="href ? 'a' : 'button'"
-    :type="href ? undefined : 'button'"
+    :is="href ? 'a' : to ? NuxtLink : 'button'"
+    :type="href || to ? undefined : 'button'"
     :href="href"
+    :to="to"
     class="btn"
     :class="[
       `btn--${variant}`,
@@ -71,9 +84,39 @@ withDefaults(
 
 .btn--blue {
   background: var(--color-blue);
-  color: #fff;
+  color: var(--color-surface);
 
   @include tilt-on-hover(var(--color-blue-strong));
+}
+
+// Valider (enregistrer) : le vert de « En cours », texte d'encre (contraste AA).
+.btn--success {
+  background: var(--status-reading);
+
+  @include tilt-on-hover(var(--status-reading));
+  @include on-hover {
+    filter: brightness(0.92);
+  }
+}
+
+// Action destructrice : cadre et texte rouges sur fond blanc.
+.btn--danger {
+  border-color: var(--color-danger);
+  background: var(--color-surface);
+  color: var(--color-danger);
+
+  @include tilt-on-hover(var(--color-chip));
+}
+
+// Confirmation d'une action destructrice : fond rouge, texte blanc (6,3:1).
+.btn--danger-solid {
+  background: var(--color-danger);
+  color: var(--color-surface);
+
+  @include tilt-on-hover(var(--color-danger));
+  @include on-hover {
+    filter: brightness(0.9);
+  }
 }
 
 .btn--small {

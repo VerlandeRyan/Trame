@@ -6,6 +6,9 @@ const localePath = useLocalePath()
 const route = useRoute()
 const { state: auth } = useAuth()
 const signInOpen = useSignInModal()
+const isAdmin = computed(
+  () => auth.value.status === 'authenticated' && auth.value.user.role === 'admin',
+)
 
 // Dans n'importe quelle langue : au changement de langue, `localePath` suit déjà la nouvelle langue
 // alors que `route.path` est encore l'ancien, ce qui ferait clignoter le champ de recherche.
@@ -57,6 +60,9 @@ watch(
     @keydown.esc="onEscape"
   >
     <NuxtLink :to="localePath('/')" class="layout-header__logo">{{ t('app.name') }}</NuxtLink>
+    <span v-if="isAdmin" class="layout-header__badge" data-testid="admin-badge">
+      {{ t('nav.admin.badge') }}
+    </span>
     <LayoutSearchBox v-if="!onHomePage" ref="searchBox" class="layout-header__search" />
     <button
       v-if="!onSearchPage && !onHomePage"
@@ -88,7 +94,7 @@ watch(
     <LayoutAccountMenu
       v-if="auth.status === 'authenticated'"
       :handle="auth.user.handle"
-      :is-admin="auth.user.role === 'admin'"
+      :is-admin="isAdmin"
       class="layout-header__account"
     />
     <UiButton
@@ -142,6 +148,24 @@ watch(
   font-size: 1.375rem;
   font-weight: var(--weight-title);
   text-decoration: none;
+}
+
+// Pastille « ADMIN » à côté du logo : on voit d'un coup d'œil que la session est administrateur.
+.layout-header__badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  background: var(--color-ink);
+  color: var(--color-surface);
+  font-size: 0.6875rem;
+  font-weight: 800;
+}
+
+// Sur un petit écran la place revient au compte et au menu.
+@media (max-width: 479px) {
+  .layout-header__badge {
+    display: none;
+  }
 }
 
 .layout-header__search {

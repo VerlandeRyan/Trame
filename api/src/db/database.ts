@@ -1,10 +1,32 @@
 import { Kysely, PostgresDialect, type ColumnType, type Generated } from 'kysely';
 import pg from 'pg';
 
-/** Structure de l'histoire ; le format (manga, webtoon…) est dans la table `genre`. */
-export type WorkType = 'series' | 'oneshot' | 'anthology';
-export type WorkStatus = 'upcoming' | 'ongoing' | 'completed' | 'hiatus' | 'abandoned';
-export type CreditRole = 'story' | 'art' | 'colors' | 'other';
+import type {
+  CreditRole,
+  ExternalLinkKind,
+  GenreCategory,
+  PersonKind,
+  PublisherKind,
+  RelationKind,
+  SynopsisSource,
+  TitleKind,
+  WorkStatus,
+  WorkType,
+} from '../domain/catalogue-enums.js';
+
+export type {
+  CreditRole,
+  ExternalLinkKind,
+  GenreCategory,
+  PersonKind,
+  PublisherKind,
+  RelationKind,
+  SynopsisSource,
+  TitleKind,
+  WorkStatus,
+  WorkType,
+};
+
 /** Importance d'un rôle pour l'affichage (0 = en premier). Exhaustif : ajouter un rôle ici est imposé par le compilateur. */
 export const CREDIT_ROLE_RANK: Record<CreditRole, number> = {
   story: 0,
@@ -12,24 +34,6 @@ export const CREDIT_ROLE_RANK: Record<CreditRole, number> = {
   colors: 2,
   other: 3,
 };
-export type RelationKind =
-  | 'sequel'
-  | 'prequel'
-  | 'spin_off'
-  | 'side_story'
-  | 'adaptation'
-  | 'alternate_version'
-  | 'shared_universe'
-  | 'contains'
-  | 'other';
-export type PublisherKind = 'publisher' | 'platform' | 'self_published';
-export type ExternalLinkKind = 'read' | 'buy' | 'website' | 'social';
-export type PersonKind = 'person' | 'collective';
-/** `format` : manga, manhwa, bd, webtoon, webcomic… ; `theme` : fantasy, humor… */
-export type GenreCategory = 'format' | 'theme';
-export type TitleKind = 'translated' | 'international' | 'former' | 'short';
-/** `official` (éditeur, auteur) > `human` (contributeur) > `machine` (traduction automatique). */
-export type SynopsisSource = 'official' | 'human' | 'machine';
 
 export interface WorkTable {
   id: Generated<number>;
@@ -47,7 +51,9 @@ export interface WorkTable {
   cover_source_url: string | null;
   cover_consent: Generated<boolean>;
   created_at: Generated<Date>;
+  updated_at: Generated<Date>;
   deleted_at: Date | null;
+  deleted_by: number | null;
 }
 
 export interface WorkTitleTable {

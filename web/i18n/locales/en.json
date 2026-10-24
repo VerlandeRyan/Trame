@@ -19,6 +19,7 @@
     "mySubmissions": "My submissions",
     "admin": {
       "title": "Administration",
+      "badge": "ADMIN",
       "submissions": "Submissions",
       "catalogue": "Catalogue",
       "reports": "Reports"
@@ -500,9 +501,225 @@
       "notFound": "This work is no longer available."
     }
   },
+  "admin": {
+    "catalogue": {
+      "title": "Catalogue",
+      "kinds": "Record type",
+      "scopes": "Records shown"
+    },
+    "kind": { "works": "Works", "people": "People", "publishers": "Publishers and platforms" },
+    "scope": { "active": "Published", "archived": "Archives", "all": "All" },
+    "heading": {
+      "new": {
+        "works": "New work",
+        "people": "New person",
+        "publishers": "New publisher or platform"
+      }
+    },
+    "new": "New record",
+    "searchPlaceholder": {
+      "works": "Search for a work or an author…",
+      "people": "Search for a person…",
+      "publishers": "Search for a publisher or platform…"
+    },
+    "newKind": {
+      "works": "New work",
+      "people": "New person",
+      "publishers": "New publisher"
+    },
+    "filter": {
+      "title": "Filters",
+      "withCount": "Filters ({count})",
+      "all": "All",
+      "type": "Type",
+      "format": "Format",
+      "status": "Status",
+      "clear": "Clear all",
+      "reset": "Reset"
+    },
+    "sort": {
+      "label": "Sort by",
+      "title": "Title A → Z",
+      "title_desc": "Title Z → A",
+      "completeness": "Least complete first",
+      "completeness_desc": "Most complete first"
+    },
+    "empty": "No records",
+    "archived": "Archived",
+    "published": "Published",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "archivesNote": "Archived records disappear from lists and public search. They can be restored.",
+    "col": {
+      "work": "Work",
+      "typeFormat": "Type · format",
+      "author": "Author",
+      "status": "Status",
+      "completeness": "Completeness",
+      "name": "Name",
+      "kindLabel": "Kind",
+      "works": "Works"
+    },
+    "row": {
+      "updated": "Updated {age}",
+      "archivedBy": "Archived {age} by {'@'}{handle}",
+      "completeness": "Completeness: {percent}%",
+      "worksCount": "{count} work | {count} works",
+      "actions": "Actions for {name}",
+      "menu": { "edit": "Edit the record", "relations": "Relations and links" }
+    },
+    "archive": "Archive",
+    "restore": "Restore",
+    "archiveConfirm": {
+      "title": "Archive this record?",
+      "confirm": "Archive the record",
+      "cancel": "Cancel",
+      "followers": "Followed by",
+      "followersCount": "{count} member | {count} members",
+      "relations": "Relations",
+      "relationsCount": "{count} related work (kept) | {count} related works (kept)",
+      "text": {
+        "works": "The record disappears from lists and search. It can be restored from the archives. Members' reading lists are not deleted.",
+        "people": "The record disappears from lists. It can be restored from the archives. Archiving is refused while the person is credited on a published work.",
+        "publishers": "The record disappears from lists. It can be restored from the archives. Archiving is refused while the publisher has a published work."
+      }
+    },
+    "back": "Catalogue",
+    "save": "Save",
+    "leave": {
+      "title": "Leave without saving?",
+      "text": "The changes made to this record will be lost.",
+      "confirm": "Leave",
+      "cancel": "Stay"
+    },
+    "error": {
+      "validation": "Some fields are not valid. Check the totals (empty while the work is ongoing), the dates, the languages and the https addresses.",
+      "incompleteRows": "Some rows are incomplete (missing author, publisher, related work or address): complete them or remove them."
+    },
+    "links": {
+      "title": "Links",
+      "row": "Link",
+      "add": "Add a link",
+      "remove": "Remove this link",
+      "kind": "Link type",
+      "url": "Address (https)",
+      "label": "Label (optional)"
+    },
+    "person": { "name": "Display name", "kind": "Kind" },
+    "publisher": { "name": "Name", "kind": "Kind", "url": "Website (https)" },
+    "work": {
+      "sections": "Record sections",
+      "section": {
+        "info": "Information",
+        "texts": "Titles and synopsis",
+        "relations": "Relations",
+        "people": "Authors and publishers",
+        "links": "Links"
+      },
+      "title": "Original title",
+      "originalLanguage": "Original language",
+      "originalLanguageHint": "Lowercase ISO 639 code, e.g. fr, ja, ko.",
+      "type": "Type",
+      "status": "Publication status",
+      "totalsOngoing": "Chapters and volumes stay empty while the work is ongoing.",
+      "chapters": "Chapters (total)",
+      "volumes": "Volumes (total)",
+      "startedOn": "Publication start",
+      "endedOn": "Publication end",
+      "formats": "Formats",
+      "genres": "Genres",
+      "genresPlaceholder": "Add a genre…",
+      "genresNone": "No genre found",
+      "genreRemove": "Remove {name}",
+      "titles": "Alternative titles",
+      "identity": "Identity",
+      "release": "Release and classification",
+      "creditRow": "Author",
+      "publisherRow": "Publisher",
+      "relationRow": "Relation",
+      "titlesHint": "Translations and other names of the work.",
+      "titleRow": "Title",
+      "addTitle": "Add a title",
+      "removeTitle": "Remove this title",
+      "language": "Language (ISO 639)",
+      "titleKind": "Kind of title",
+      "alternativeTitle": "Title",
+      "synopses": "Synopsis",
+      "synopsesHint": "One summary per language.",
+      "synopsisRow": "Synopsis",
+      "addSynopsis": "Add a language",
+      "removeSynopsis": "Remove this synopsis",
+      "synopsisSource": "Source",
+      "synopsis": "Text",
+      "credits": "Authors",
+      "addCredit": "Add an author",
+      "removeCredit": "Remove this author",
+      "person": "Person",
+      "searchPerson": "Search for a person…",
+      "clearChoice": "Change choice",
+      "role": "Role",
+      "publishers": "Publishers and platforms",
+      "addPublisher": "Add a publisher",
+      "removePublisher": "Remove this publisher",
+      "publisher": "Publisher or platform",
+      "searchPublisher": "Search for a publisher…",
+      "relations": "Related works",
+      "addRelation": "Add a relation",
+      "removeRelation": "Remove this relation",
+      "relatedWork": "Related work",
+      "searchWork": "Search for a work…",
+      "relation": "Relation",
+      "relationHint": "Only one main relation between two works."
+    },
+    "option": {
+      "link": { "read": "Read", "buy": "Buy", "website": "Website", "social": "Social network" },
+      "person": { "person": "Person", "collective": "Collective" },
+      "publisher": {
+        "publisher": "Publishing house",
+        "platform": "Platform",
+        "self_published": "Self-published"
+      },
+      "workType": { "series": "Series", "oneshot": "One-shot", "anthology": "Anthology" },
+      "workStatus": {
+        "upcoming": "Upcoming",
+        "ongoing": "Ongoing",
+        "completed": "Completed",
+        "hiatus": "On hiatus",
+        "abandoned": "Abandoned"
+      },
+      "title": {
+        "translated": "Translated",
+        "international": "International",
+        "former": "Former title",
+        "short": "Short title"
+      },
+      "synopsis": {
+        "official": "Official",
+        "human": "Contributor",
+        "machine": "Machine translation"
+      },
+      "creditRole": { "story": "Story", "art": "Art", "colors": "Colors", "other": "Other" },
+      "relation": {
+        "sequel": "Sequel",
+        "prequel": "Prequel",
+        "spin_off": "Spin-off",
+        "side_story": "Side story",
+        "adaptation": "Adaptation",
+        "alternate_version": "Alternate version",
+        "shared_universe": "Shared universe",
+        "contains": "Contains",
+        "other": "Other"
+      }
+    }
+  },
   "error": {
     "INTERNAL_ERROR": "Something went wrong. Please try again in a moment.",
     "ADMIN_REQUIRED": "This action is reserved for administrators.",
+    "PERSON_HAS_WORKS": "This person is still credited on a published work: remove them from those works first.",
+    "PUBLISHER_HAS_WORKS": "This publisher still has a published work: remove it from those works first.",
+    "INVALID_REFERENCE": "A person, publisher, genre or work you cited no longer exists.",
+    "ARCHIVED_REFERENCE": "A person, publisher or related work is archived: remove it from the record, or restore it first.",
+    "STALE_RECORD": "This record was modified since you opened it. Reload the page to start from its latest version.",
     "HANDLE_TAKEN": "This username is already taken. Try another one.",
     "HANDLE_NOT_ALLOWED": "This username is reserved. Choose another one.",
     "VALIDATION_ERROR": "This username is not valid.",
