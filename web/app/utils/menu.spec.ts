@@ -1,5 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { shouldOpenAbove } from './menu'
+import { menuMaxHeight, MENU_PREFERRED_HEIGHT_PX, shouldOpenAbove } from './menu'
+
+describe('menuMaxHeight', () => {
+  it('garde la hauteur souhaitée quand la fenêtre a la place', () => {
+    expect(menuMaxHeight(100, 1000)).toBe(MENU_PREFERRED_HEIGHT_PX)
+  })
+
+  it('se réduit à la place restante sous le bouton', () => {
+    expect(menuMaxHeight(600, 800)).toBe(184)
+  })
+
+  it('garde au moins trois options, même contre le bas de l’écran', () => {
+    expect(menuMaxHeight(780, 800)).toBe(132)
+  })
+})
 
 describe('shouldOpenAbove', () => {
   const MENU_HEIGHT = 240

@@ -62,6 +62,12 @@ function missingUserError(req: Request): AppError {
   return new AppError(req.hasPendingSignup ? 'HANDLE_REQUIRED' : 'UNAUTHENTICATED');
 }
 
+/** Utilisateur de la requête, pour une route déjà protégée par `requireUser` ou `requireAdmin`. */
+export function currentUser(req: Request): AuthUser {
+  if (!req.user) throw missingUserError(req);
+  return req.user;
+}
+
 export const requireUser: RequestHandler = (req, _res, next) => {
   next(req.user ? undefined : missingUserError(req));
 };

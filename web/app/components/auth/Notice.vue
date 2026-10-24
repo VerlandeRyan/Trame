@@ -14,7 +14,8 @@ const notice = computed(() => postedNotice.value ?? queryNotice.value)
 watch(
   () => route.fullPath,
   () => {
-    postedNotice.value = null
+    const posted = postedNotice.value
+    postedNotice.value = posted?.keepOnce ? { ...posted, keepOnce: false } : null
   },
 )
 

@@ -142,7 +142,7 @@ PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inve
 | id | bigint identity | PK |
 | work_id | bigint FK nullable | exactement l'un de `work_id` / `person_id` est renseigné (`CHECK`) |
 | person_id | bigint FK nullable | idem |
-| kind | text | `read` \| `buy` \| `website` \| `social` |
+| kind | text | `read` \| `buy` (œuvre) · `website` \| `social` (personne), contrôlé par l'API |
 | url | text | NOT NULL, `https://` uniquement (`CHECK`) |
 | label | text | nullable |
 

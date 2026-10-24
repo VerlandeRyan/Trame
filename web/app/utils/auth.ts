@@ -45,6 +45,8 @@ export function googleLoginUrl(returnTo: string): string {
 export interface AuthNotice {
   key: string
   tone: 'info' | 'success' | 'error'
+  /** Avis posé juste avant une redirection : il survit à ce changement d'adresse, pas au suivant. */
+  keepOnce?: boolean
 }
 
 export const SIGNUP_CANCELLED = 'signup_cancelled'

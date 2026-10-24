@@ -18,6 +18,24 @@ describe('UiField', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['ryan'])
   })
 
+  it('nettoie la saisie, même quand la valeur du modèle ne change pas', async () => {
+    const wrapper = await mountSuspended(UiField, {
+      props: {
+        id: 'nombre',
+        label: 'Nombre',
+        modelValue: '',
+        inputAttributes: { sanitize: (value: string) => value.replaceAll(/\D/g, '') },
+      },
+    })
+
+    await wrapper.get('input').setValue('12a')
+    expect((wrapper.get('input').element as HTMLInputElement).value).toBe('12')
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['12'])
+
+    await wrapper.get('input').setValue('x')
+    expect((wrapper.get('input').element as HTMLInputElement).value).toBe('')
+  })
+
   it("relie l'aide au champ pour les lecteurs d'écran", async () => {
     const wrapper = await mountSuspended(UiField, {
       props: { id: 'pseudo', label: 'Pseudo', hint: '3 à 20 caractères' },

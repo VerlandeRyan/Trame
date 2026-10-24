@@ -4,12 +4,16 @@ import type { Db } from './db/database.js';
 import { attachUser, checkOrigin } from './middleware/auth.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import {
+  ADMIN_RATE_LIMIT,
   AUTH_RATE_LIMIT,
   LIBRARY_RATE_LIMIT,
   type RateLimitSettings,
 } from './middleware/rate-limit.js';
 import { buildOpenApiDocument } from './openapi/document.js';
+import { createAdminWorkRepository } from './repositories/admin-work.repository.js';
 import { createHealthRepository } from './repositories/health.repository.js';
+import { createAdminPersonRepository } from './repositories/admin-person.repository.js';
+import { createAdminPublisherRepository } from './repositories/admin-publisher.repository.js';
 import { createGenreRepository } from './repositories/genre.repository.js';
 import { createLibraryRepository } from './repositories/library.repository.js';
 import { createProfileRepository } from './repositories/profile.repository.js';
@@ -18,7 +22,10 @@ import { createHealthRouter } from './routes/health.routes.js';
 import { createApiRouter } from './routes/index.js';
 import { createSessionRepository } from './repositories/session.repository.js';
 import { createUserRepository } from './repositories/user.repository.js';
+import { createAdminWorkService } from './services/admin-work.service.js';
 import { createAuthService } from './services/auth.service.js';
+import { createAdminPersonService } from './services/admin-person.service.js';
+import { createAdminPublisherService } from './services/admin-publisher.service.js';
 import { unavailableGoogleClient, type GoogleClient } from './services/google-identity.js';
 import { createSessionMiddleware } from './session/middleware.js';
 import { SessionStore } from './session/store.js';
@@ -51,6 +58,7 @@ export function createApp({
   auth = {},
   trustProxy = 0,
   libraryRateLimit = LIBRARY_RATE_LIMIT,
+  adminRateLimit = ADMIN_RATE_LIMIT,
 }: {
   db: Db;
   docs?: RequestHandler<never, string>;
@@ -58,6 +66,8 @@ export function createApp({
   trustProxy?: number;
   /** Limite de débit des écritures de la liste de lecture (relevée par les E2E). */
   libraryRateLimit?: RateLimitSettings;
+  /** Limite de débit des écritures d'administration du catalogue. */
+  adminRateLimit?: RateLimitSettings;
 }): Express {
   const {
     google = unavailableGoogleClient,
@@ -99,6 +109,12 @@ export function createApp({
       secureCookies,
       authRateLimit: rateLimit,
       libraryRateLimit,
+      adminRateLimit,
+      adminCatalogue: {
+        people: createAdminPersonService(createAdminPersonRepository(db)),
+        publishers: createAdminPublisherService(createAdminPublisherRepository(db)),
+        works: createAdminWorkService(createAdminWorkRepository(db)),
+      },
       libraryService,
       profileService: createProfileService({
         profiles: createProfileRepository(db),

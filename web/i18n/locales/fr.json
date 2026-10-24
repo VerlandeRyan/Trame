@@ -19,6 +19,7 @@
     "mySubmissions": "Mes soumissions",
     "admin": {
       "title": "Administration",
+      "badge": "ADMIN",
       "submissions": "Soumissions",
       "catalogue": "Catalogue",
       "reports": "Signalements"
@@ -504,9 +505,230 @@
       "notFound": "Cette œuvre n'est plus disponible."
     }
   },
+  "admin": {
+    "catalogue": {
+      "title": "Catalogue",
+      "kinds": "Type de fiche",
+      "scopes": "Fiches affichées"
+    },
+    "kind": { "works": "Œuvres", "people": "Personnes", "publishers": "Éditeurs et plateformes" },
+    "scope": { "active": "Publiées", "archived": "Archives", "all": "Toutes" },
+    "heading": {
+      "new": {
+        "works": "Nouvelle œuvre",
+        "people": "Nouvelle personne",
+        "publishers": "Nouvel éditeur ou plateforme"
+      }
+    },
+    "new": "Nouvelle fiche",
+    "searchPlaceholder": {
+      "works": "Rechercher une œuvre ou un auteur…",
+      "people": "Rechercher une personne…",
+      "publishers": "Rechercher un éditeur ou une plateforme…"
+    },
+    "newKind": {
+      "works": "Nouvelle œuvre",
+      "people": "Nouvelle personne",
+      "publishers": "Nouvel éditeur"
+    },
+    "filter": {
+      "title": "Filtres",
+      "withCount": "Filtres ({count})",
+      "all": "Tous",
+      "type": "Type",
+      "format": "Format",
+      "status": "Statut",
+      "clear": "Tout effacer",
+      "reset": "Réinitialiser"
+    },
+    "sort": {
+      "label": "Trier par",
+      "title": "Titre A → Z",
+      "title_desc": "Titre Z → A",
+      "completeness": "Moins complètes d'abord",
+      "completeness_desc": "Plus complètes d'abord"
+    },
+    "empty": "Aucune fiche",
+    "archived": "Archivée",
+    "published": "Publiée",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "archivesNote": "Les fiches archivées disparaissent des listes et de la recherche publique. Elles restent restaurables.",
+    "col": {
+      "work": "Œuvre",
+      "typeFormat": "Type · format",
+      "author": "Auteur",
+      "status": "Statut",
+      "completeness": "Complétude",
+      "name": "Nom",
+      "kindLabel": "Nature",
+      "works": "Œuvres"
+    },
+    "row": {
+      "updated": "Modifiée {age}",
+      "archivedBy": "Archivée {age} par {'@'}{handle}",
+      "completeness": "Complétude : {percent} %",
+      "worksCount": "{count} œuvre | {count} œuvres",
+      "actions": "Actions pour {name}",
+      "menu": { "edit": "Modifier la fiche", "relations": "Relations et liens" }
+    },
+    "archive": "Archiver",
+    "restore": "Restaurer",
+    "archiveConfirm": {
+      "title": "Archiver cette fiche ?",
+      "confirm": "Archiver la fiche",
+      "cancel": "Annuler",
+      "followers": "Suivie par",
+      "followersCount": "{count} membre | {count} membres",
+      "relations": "Relations",
+      "relationsCount": "{count} œuvre liée (conservée) | {count} œuvres liées (conservées)",
+      "text": {
+        "works": "La fiche disparaît des listes et de la recherche. Elle reste restaurable depuis les archives. Les listes de lecture des membres ne sont pas supprimées.",
+        "people": "La fiche disparaît des listes. Elle reste restaurable depuis les archives. L'archivage est refusé tant que la personne est créditée sur une œuvre publiée.",
+        "publishers": "La fiche disparaît des listes. Elle reste restaurable depuis les archives. L'archivage est refusé tant que l'éditeur a une œuvre publiée."
+      }
+    },
+    "back": "Catalogue",
+    "save": "Enregistrer",
+    "leave": {
+      "title": "Quitter sans enregistrer ?",
+      "text": "Les modifications de cette fiche seront perdues.",
+      "confirm": "Quitter",
+      "cancel": "Rester"
+    },
+    "error": {
+      "validation": "Certains champs ne sont pas valides. Vérifie les totaux (vides tant que l'œuvre est en cours), les dates, les langues et les adresses en https.",
+      "incompleteRows": "Certaines lignes sont incomplètes (auteur, éditeur, œuvre liée ou adresse manquants) : complète-les ou retire-les."
+    },
+    "links": {
+      "title": "Liens",
+      "row": "Lien",
+      "add": "Ajouter un lien",
+      "remove": "Retirer ce lien",
+      "kind": "Type de lien",
+      "url": "Adresse (https)",
+      "label": "Libellé (facultatif)"
+    },
+    "person": { "name": "Nom d'usage", "kind": "Nature" },
+    "publisher": { "name": "Nom", "kind": "Nature", "url": "Site web (https)" },
+    "work": {
+      "sections": "Sections de la fiche",
+      "section": {
+        "info": "Informations",
+        "texts": "Titres et synopsis",
+        "relations": "Relations",
+        "people": "Auteurs et éditeurs",
+        "links": "Liens"
+      },
+      "title": "Titre original",
+      "originalLanguage": "Langue originale",
+      "originalLanguageHint": "Code ISO 639 en minuscules, ex. fr, ja, ko.",
+      "type": "Type",
+      "status": "Statut de publication",
+      "totalsOngoing": "Chapitres et tomes restent vides tant que l'œuvre est en cours.",
+      "chapters": "Chapitres (total)",
+      "volumes": "Tomes (total)",
+      "startedOn": "Début de parution",
+      "endedOn": "Fin de parution",
+      "formats": "Formats",
+      "genres": "Genres",
+      "genresPlaceholder": "Ajouter un genre…",
+      "genresNone": "Aucun genre trouvé",
+      "genreRemove": "Retirer {name}",
+      "identity": "Identité",
+      "release": "Parution et classement",
+      "creditRow": "Auteur",
+      "publisherRow": "Éditeur",
+      "relationRow": "Relation",
+      "titles": "Titres alternatifs",
+      "titlesHint": "Traductions et autres noms de l'œuvre.",
+      "titleRow": "Titre",
+      "addTitle": "Ajouter un titre",
+      "removeTitle": "Retirer ce titre",
+      "language": "Langue (ISO 639)",
+      "titleKind": "Nature du titre",
+      "alternativeTitle": "Titre",
+      "synopses": "Synopsis",
+      "synopsesHint": "Un résumé par langue.",
+      "synopsisRow": "Synopsis",
+      "addSynopsis": "Ajouter une langue",
+      "removeSynopsis": "Retirer ce synopsis",
+      "synopsisSource": "Source",
+      "synopsis": "Texte",
+      "credits": "Auteurs",
+      "addCredit": "Ajouter un auteur",
+      "removeCredit": "Retirer cet auteur",
+      "person": "Personne",
+      "searchPerson": "Rechercher une personne…",
+      "clearChoice": "Changer de choix",
+      "role": "Rôle",
+      "publishers": "Éditeurs et plateformes",
+      "addPublisher": "Ajouter un éditeur",
+      "removePublisher": "Retirer cet éditeur",
+      "publisher": "Éditeur ou plateforme",
+      "searchPublisher": "Rechercher un éditeur…",
+      "relations": "Œuvres liées",
+      "addRelation": "Ajouter une relation",
+      "removeRelation": "Retirer cette relation",
+      "relatedWork": "Œuvre liée",
+      "searchWork": "Rechercher une œuvre…",
+      "relation": "Relation",
+      "relationHint": "Une seule relation principale entre deux œuvres."
+    },
+    "option": {
+      "link": { "read": "Lire", "buy": "Acheter", "website": "Site", "social": "Réseau social" },
+      "person": { "person": "Personne", "collective": "Collectif" },
+      "publisher": {
+        "publisher": "Maison d'édition",
+        "platform": "Plateforme",
+        "self_published": "Auto-édition"
+      },
+      "workType": { "series": "Série", "oneshot": "One-shot", "anthology": "Recueil" },
+      "workStatus": {
+        "upcoming": "À venir",
+        "ongoing": "En cours",
+        "completed": "Terminée",
+        "hiatus": "En pause",
+        "abandoned": "Abandonnée"
+      },
+      "title": {
+        "translated": "Traduit",
+        "international": "International",
+        "former": "Ancien titre",
+        "short": "Titre court"
+      },
+      "synopsis": {
+        "official": "Officiel",
+        "human": "Contributeur",
+        "machine": "Traduction automatique"
+      },
+      "creditRole": {
+        "story": "Scénario",
+        "art": "Dessin",
+        "colors": "Couleurs",
+        "other": "Autre"
+      },
+      "relation": {
+        "sequel": "Suite",
+        "prequel": "Préquelle",
+        "spin_off": "Spin-off",
+        "side_story": "Histoire annexe",
+        "adaptation": "Adaptation",
+        "alternate_version": "Version alternative",
+        "shared_universe": "Même univers",
+        "contains": "Contient",
+        "other": "Autre"
+      }
+    }
+  },
   "error": {
     "INTERNAL_ERROR": "Une erreur est survenue. Réessaie dans un instant.",
     "ADMIN_REQUIRED": "Cette action est réservée aux administrateurs.",
+    "PERSON_HAS_WORKS": "Cette personne est encore créditée sur une œuvre publiée : retire-la de ces œuvres d'abord.",
+    "PUBLISHER_HAS_WORKS": "Cet éditeur a encore une œuvre publiée : retire-le de ces œuvres d'abord.",
+    "INVALID_REFERENCE": "Une personne, un éditeur, un genre ou une œuvre cités n'existe plus.",
+    "ARCHIVED_REFERENCE": "Une personne, un éditeur ou une œuvre liée est archivé : retire-le de la fiche, ou restaure-le d'abord.",
+    "STALE_RECORD": "Cette fiche a été modifiée depuis que tu l'as ouverte. Recharge la page pour repartir de sa dernière version.",
     "HANDLE_TAKEN": "Ce pseudo est déjà pris. Essaie un autre.",
     "HANDLE_NOT_ALLOWED": "Ce pseudo est réservé. Choisis-en un autre.",
     "VALIDATION_ERROR": "Ce pseudo n'est pas valide.",

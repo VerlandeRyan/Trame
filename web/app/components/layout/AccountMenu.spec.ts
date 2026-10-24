@@ -108,13 +108,16 @@ describe('LayoutAccountMenu', () => {
     expect(wrapper.find('[data-testid="admin-group"]').exists()).toBe(false)
   })
 
-  it('ajoute le groupe Administration, inactif, pour un admin', async () => {
+  it('ajoute le groupe Administration pour un admin : le catalogue est un lien, le reste inactif', async () => {
     const wrapper = await mountSuspended(LayoutAccountMenu, {
       props: { handle: 'Ryan', isAdmin: true },
     })
 
     expect(wrapper.get('[data-testid="admin-group"]').text()).toContain('Administration')
-    for (const testId of ['admin-submissions-link', 'admin-catalogue-link', 'admin-reports-link']) {
+    expect(wrapper.get('[data-testid="admin-catalogue-link"]').attributes('href')).toBe(
+      '/admin/catalogue',
+    )
+    for (const testId of ['admin-submissions-link', 'admin-reports-link']) {
       expect(wrapper.get(`[data-testid="${testId}"]`).attributes('disabled')).toBeDefined()
     }
   })
@@ -150,6 +153,37 @@ describe('LayoutAccountMenu', () => {
     await vi.waitFor(() => expect(useState('auth').value).toEqual({ status: 'anonymous' }))
     expect(loggedOut).toBe(1)
     expect(useAuthNotice().value).toEqual({ key: 'auth.signedOut', tone: 'success' })
+    useAuthNotice().value = null
+  })
+
+  async function signOutFrom(route: string, role: 'user' | 'admin' = 'admin') {
+    useState('auth').value = { status: 'authenticated', user: { id: 1, handle: 'Ryan', role } }
+    const wrapper = await mountSuspended(LayoutAccountMenu, { props: { handle: 'Ryan' }, route })
+    await wrapper.get('[data-testid="account-menu"]').trigger('click')
+    await wrapper.get('[data-testid="sign-out"]').trigger('click')
+    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+    await vi.waitFor(() => expect(useState('auth').value).toEqual({ status: 'anonymous' }))
+  }
+
+  it.each(['/admin/catalogue', '/list'])(
+    'revient à l’accueil, avec l’avis, quand on se déconnecte depuis %s',
+    async (route) => {
+      await signOutFrom(route)
+
+      await vi.waitFor(() => expect(useRouter().currentRoute.value.path).toBe('/'))
+      expect(useAuthNotice().value).toEqual({
+        key: 'auth.signedOut',
+        tone: 'success',
+        keepOnce: true,
+      })
+      useAuthNotice().value = null
+    },
+  )
+
+  it('reste sur une page publique après la déconnexion', async () => {
+    await signOutFrom('/search', 'user')
+
+    expect(useRouter().currentRoute.value.path).toBe('/search')
     useAuthNotice().value = null
   })
 })

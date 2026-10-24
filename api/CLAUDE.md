@@ -41,6 +41,17 @@ Contrat : `docs/architecture.md`. Colonne `app_user.profile_visibility` (migrati
 - Routes publiques : pas de `requireUser` ; `req.user` sert seulement à reconnaître le propriétaire.
 - Tests : `routes/profile.routes.test.ts` supprime ses utilisateurs (e-mail `@profile.test`).
 
+## Administration du catalogue (`/admin/people|publishers|works`)
+Contrat : `docs/architecture.md`. Aucune migration propre à #26.
+- Un seul contrôleur générique (`controllers/admin-resource.controller.ts`) sert les trois ressources ; `routes/admin-catalogue.routes.ts` enregistre les routes à plat (le test de contrat des routes ne descend que d'un niveau de routeur) et crée son limiteur (`ADMIN_RATE_LIMIT`).
+- Entrées validées dans `src/schemas/` : `common.ts` porte les briques partagées par **toutes** les routes (`idParams`, `genreCode`, `commaSeparatedList`, `MULTI_VALUE`, `pageQuery(libellé, taille)`) : ne pas les redéfinir dans une route ; `admin-catalogue.ts` les schémas de l'administration, liées aux `*Input` des services par `satisfies` ; les contrôleurs lisent la valeur validée avec `validated(schéma, req.body)` (un seul cast, dans `middleware/validate.ts`) et l'utilisateur avec `currentUser(req)`. Les énumérations vivent dans `domain/catalogue-enums.ts` : ne pas les redéclarer.
+- Tout ce qui sert seulement l'administration porte le préfixe `admin-` (`admin-person`, `admin-publisher`, `admin-work` : services, dépôts, types `AdminPerson*`…), pour ne pas heurter les futurs services publics (#20). Ces dépôts : lisent aussi les archives (`archiveCondition`), écrivent en transaction (listes remplacées en entier, liens par `replaceLinks`). Ils n'ajoutent rien à `work.repository.ts`.
+- Les références (personnes, éditeurs, genres, œuvres liées) sont contrôlées par le service avant l'écriture : `INVALID_REFERENCE` (inexistantes) et `ARCHIVED_REFERENCE` (archivées, sauf celles que la fiche cite déjà).
+- Archiver une personne ou un éditeur : la garde « aucune œuvre non archivée » est dans l'`UPDATE` du dépôt (`setArchived` renvoie faux), pas dans une lecture préalable.
+- Version d'une œuvre : `updatedAt` (`date_trunc('milliseconds', updated_at)`, la précision d'une date JavaScript) lu avec la fiche et renvoyé au `PUT` ; dépôt `update(id, draft, version)` faux ⇒ `STALE_RECORD`. Personne et éditeur n'ont pas d'`updated_at` : pas de contrôle.
+- Listes : `count(*) OVER()` dans la requête de la page (`FILTERED_TOTAL`, `totalOf` dans `admin-sql.ts`), un comptage à part seulement pour une page vide.
+- Tests : `routes/admin-catalogue.routes.test.ts` supprime ses fiches (préfixe `ZZ Admin test`) et ses comptes (`@admin-catalogue.test`).
+
 ## Authentification (`/auth`)
 Contrat : `docs/architecture.md`. À retenir en lisant le code :
 - Les routes ne lisent jamais `req.session` : seul `middleware/auth.ts` (`attachUser`) le fait et pose `req.user` ; on protège une route avec `requireUser` / `requireAdmin`. Un `Authorization: Bearer` (Capacitor/Expo) pourra s'ajouter dans `attachUser` sans toucher aux routes.

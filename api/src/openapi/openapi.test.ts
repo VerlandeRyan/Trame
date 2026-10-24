@@ -7,7 +7,7 @@ import type { z } from 'zod';
 import { createApp } from '../app.js';
 import { createDb } from '../db/database.js';
 import { ERROR_CODES } from '../errors.js';
-import { AUTH_RATE_LIMIT, LIBRARY_RATE_LIMIT } from '../middleware/rate-limit.js';
+import { ADMIN_RATE_LIMIT, AUTH_RATE_LIMIT, LIBRARY_RATE_LIMIT } from '../middleware/rate-limit.js';
 import { createHealthRouter } from '../routes/health.routes.js';
 import { createApiRouter } from '../routes/index.js';
 import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
@@ -109,6 +109,7 @@ describe('contrat : routes montées et spécification', () => {
     const none = {} as never;
     const api = mountedRoutes(
       createApiRouter({
+        adminCatalogue: none,
         authService: none,
         genreService: none,
         libraryService: none,
@@ -118,6 +119,7 @@ describe('contrat : routes montées et spécification', () => {
         secureCookies: false,
         authRateLimit: AUTH_RATE_LIMIT,
         libraryRateLimit: LIBRARY_RATE_LIMIT,
+        adminRateLimit: ADMIN_RATE_LIMIT,
       }),
       prefixes,
     );
