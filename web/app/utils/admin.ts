@@ -120,6 +120,17 @@ export interface AdminWork {
   updatedAt: string
 }
 
+/** Ce que l'archivage d'une œuvre laisse en place, rappelé dans la confirmation. */
+export interface ArchiveImpact {
+  followers: number
+  relations: number
+}
+
+export const archiveImpact = (work: AdminWork): ArchiveImpact => ({
+  followers: work.followerCount,
+  relations: work.relations.length,
+})
+
 /** Un enregistrement choisi dans un sélecteur : son identifiant et ce qu'on en affiche. */
 export interface RecordRef {
   id: number

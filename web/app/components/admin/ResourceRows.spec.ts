@@ -1,5 +1,6 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { describe, expect, it } from 'vitest'
+import { flushPromises } from '@vue/test-utils'
+import { describe, expect, it, vi } from 'vitest'
 import type { AdminKind, AdminListItem } from '~/utils/admin'
 import AdminResourceRows from './ResourceRows.vue'
 
@@ -99,6 +100,41 @@ describe('AdminResourceRows', () => {
 
     await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
 
+    expect(wrapper.emitted('archive')?.[0]).toEqual([WORKS[0]])
+  })
+
+  it('rappelle, comme sur la fiche, les membres et les relations d’une œuvre à archiver', async () => {
+    const loadImpact = vi.fn(async () => ({ followers: 34, relations: 2 }))
+    const wrapper = await mountSuspended(AdminResourceRows, {
+      props: { kind: 'works' as AdminKind, items: WORKS, loadImpact },
+    })
+    const [published] = wrapper.findAll('[data-testid="admin-row"]')
+
+    await published!.get('[data-testid="admin-row-menu"]').trigger('click')
+    await wrapper.get('[data-testid="admin-menu-archive"]').trigger('click')
+    await flushPromises()
+
+    expect(loadImpact).toHaveBeenCalledWith(WORKS[0])
+    const impact = wrapper.get('[data-testid="admin-archive-impact"]').text()
+    expect(impact).toContain('34 membres')
+    expect(impact).toContain('2 œuvres liées (conservées)')
+  })
+
+  it('archive quand même si le récapitulatif ne se charge pas', async () => {
+    const loadImpact = vi.fn(async () => {
+      throw new Error('indisponible')
+    })
+    const wrapper = await mountSuspended(AdminResourceRows, {
+      props: { kind: 'works' as AdminKind, items: WORKS, loadImpact },
+    })
+    const [published] = wrapper.findAll('[data-testid="admin-row"]')
+
+    await published!.get('[data-testid="admin-row-menu"]').trigger('click')
+    await wrapper.get('[data-testid="admin-menu-archive"]').trigger('click')
+    await flushPromises()
+    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+
+    expect(wrapper.find('[data-testid="admin-archive-impact"]').exists()).toBe(false)
     expect(wrapper.emitted('archive')?.[0]).toEqual([WORKS[0]])
   })
 

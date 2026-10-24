@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   adminEditPath,
+  archiveImpact,
   adminErrorKey,
   digitsOnly,
   draftToPersonBody,
@@ -262,6 +263,12 @@ describe('formulaire œuvre', () => {
       relations: [],
       links: [],
     })
+  })
+})
+
+describe('récapitulatif d’archivage', () => {
+  it('compte les membres qui suivent l’œuvre et ses relations', () => {
+    expect(archiveImpact(WORK)).toEqual({ followers: 34, relations: 1 })
   })
 })
 

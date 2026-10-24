@@ -1,9 +1,11 @@
+import type { ArchiveImpact } from '~/utils/admin'
+
 /** Ce qui s'affiche en tête de la fiche en cours d'édition. */
 export interface EditedRecord {
   archived: boolean
   heading: string
   /** Œuvre seulement : ce que l'archivage laisse en place, rappelé dans la confirmation. */
-  impact?: { followers: number; relations: number }
+  impact?: ArchiveImpact
 }
 
 // État d'édition d'une fiche du catalogue (œuvre, personne ou éditeur), nouvelle ou existante.
@@ -45,7 +47,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
       record.value = {
         archived: loaded.archived,
         heading: loaded.title,
-        impact: { followers: loaded.followerCount, relations: loaded.relations.length },
+        impact: archiveImpact(loaded),
       }
     } else if (kind === 'people') {
       const loaded = await client.get<AdminPerson>(kind, id)

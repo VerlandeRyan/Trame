@@ -1,10 +1,21 @@
 <script setup lang="ts">
-import { adminEditPath, itemLabel, type AdminKind, type AdminListItem } from '~/utils/admin'
+import {
+  adminEditPath,
+  itemLabel,
+  type AdminKind,
+  type AdminListItem,
+  type ArchiveImpact,
+} from '~/utils/admin'
 import { updateAge } from '~/utils/profile'
 
 // Tableau du catalogue (maquette 22) : une ligne par fiche, « Modifier » ou, pour une archive,
-// « Restaurer ». Archiver se fait depuis la fiche.
-const props = defineProps<{ kind: AdminKind; items: AdminListItem[] }>()
+// « Restaurer ». Archiver se fait depuis la fiche, ou depuis la feuille « ⋮ » au mobile.
+// `loadImpact` (œuvres) lit ce que l'archivage laisse en place, pour la confirmation.
+const props = defineProps<{
+  kind: AdminKind
+  items: AdminListItem[]
+  loadImpact?: (item: AdminListItem) => Promise<ArchiveImpact>
+}>()
 const emit = defineEmits<{ restore: [item: AdminListItem]; archive: [item: AdminListItem] }>()
 const { t } = useI18n()
 const localePath = useLocalePath()
@@ -73,11 +84,22 @@ function restoreFromMenu(item: AdminListItem) {
   emit('restore', item)
 }
 
-// L'archivage demande confirmation, comme depuis la fiche.
+// L'archivage demande la même confirmation que depuis la fiche, récapitulatif compris (chargé à
+// l'ouverture ; sans lui, la confirmation reste utilisable).
 const isArchiveConfirmOpen = ref(false)
-function askArchive() {
+const impact = ref<ArchiveImpact | null>(null)
+async function askArchive() {
+  const item = menuItem.value
   isMenuOpen.value = false
   isArchiveConfirmOpen.value = true
+  impact.value = null
+  if (!item || !props.loadImpact) return
+  try {
+    const loaded = await props.loadImpact(item)
+    if (menuItem.value?.id === item.id) impact.value = loaded
+  } catch {
+    impact.value = null
+  }
 }
 function archiveMenuItem() {
   if (menuItem.value) emit('archive', menuItem.value)
@@ -223,14 +245,10 @@ const editLocation = (item: AdminListItem, section?: string) =>
         </template>
       </div>
     </UiModal>
-    <UiConfirm
+    <AdminArchiveConfirm
       v-model="isArchiveConfirmOpen"
-      danger
-      :title="t('admin.archiveConfirm.title')"
-      :text="t(`admin.archiveConfirm.text.${kind}`)"
-      :confirm-label="t('admin.archiveConfirm.confirm')"
-      :cancel-label="t('admin.archiveConfirm.cancel')"
-      :close-label="t('action.close')"
+      :kind="kind"
+      :impact="impact"
       @confirm="archiveMenuItem"
     />
   </div>

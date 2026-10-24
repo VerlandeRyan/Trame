@@ -109,6 +109,12 @@ async function setArchived(item: AdminListItem, archived: boolean) {
     errorKey.value = adminErrorKey(cause, api.messageKeyFor)
   }
 }
+// Seules les œuvres ont un récapitulatif (membres qui les suivent, œuvres liées).
+const loadImpact = computed(() =>
+  query.value.kind === 'works'
+    ? async (item: AdminListItem) => archiveImpact(await client.get<AdminWork>('works', item.id))
+    : undefined,
+)
 const restore = (item: AdminListItem) => setArchived(item, false)
 const archive = (item: AdminListItem) => setArchived(item, true)
 </script>
@@ -162,6 +168,7 @@ const archive = (item: AdminListItem) => setArchived(item, true)
       v-if="page && page.items.length > 0"
       :kind="query.kind"
       :items="page.items"
+      :load-impact="loadImpact"
       @restore="restore"
       @archive="archive"
     />

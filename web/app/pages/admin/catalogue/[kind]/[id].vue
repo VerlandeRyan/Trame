@@ -141,27 +141,12 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :saving="saving"
       @submit="submit"
     />
-    <UiConfirm
+    <AdminArchiveConfirm
       v-model="confirmingArchive"
-      danger
-      :title="t('admin.archiveConfirm.title')"
-      :text="t(`admin.archiveConfirm.text.${kind}`)"
-      :confirm-label="t('admin.archiveConfirm.confirm')"
-      :cancel-label="t('admin.archiveConfirm.cancel')"
-      :close-label="t('action.close')"
+      :kind="kind"
+      :impact="record?.impact"
       @confirm="archive"
-    >
-      <dl v-if="record?.impact" class="edit__impact" data-testid="admin-archive-impact">
-        <div class="edit__impact-row">
-          <dt>{{ t('admin.archiveConfirm.followers') }}</dt>
-          <dd>{{ t('admin.archiveConfirm.followersCount', record.impact.followers) }}</dd>
-        </div>
-        <div class="edit__impact-row">
-          <dt>{{ t('admin.archiveConfirm.relations') }}</dt>
-          <dd>{{ t('admin.archiveConfirm.relationsCount', record.impact.relations) }}</dd>
-        </div>
-      </dl>
-    </UiConfirm>
+    />
     <UiConfirm
       v-model="confirmingLeave"
       danger
@@ -229,29 +214,5 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
 
 .edit__action {
   margin-left: auto;
-}
-
-// Récapitulatif de la confirmation d'archivage : libellé à gauche, valeur à droite, filets légers.
-.edit__impact {
-  margin: var(--space-3) 0 0;
-  font-size: 0.875rem;
-}
-
-.edit__impact-row {
-  display: flex;
-  gap: var(--space-3);
-  justify-content: space-between;
-  padding: var(--space-2) 0;
-  border-top: 1px solid var(--color-rule);
-
-  dt {
-    color: var(--color-ink-soft);
-  }
-
-  dd {
-    margin: 0;
-    font-weight: 700;
-    text-align: right;
-  }
 }
 </style>
