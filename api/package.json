@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=24.11.0"
+    "node": "v26.13.0"
   },
   "scripts": {
     "migrate:up": "node --env-file-if-exists=../.env node_modules/node-pg-migrate/bin/node-pg-migrate.js up --migrations-dir migrations",
