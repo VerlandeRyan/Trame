@@ -1,4 +1,4 @@
-FROM node:24-alpine AS build
+FROM node:24.22.2-alpine@sha256:8a32c8cf649a49915a66e81e7a609223c708d0adabf288ee3f4077d765542f85 AS build
 WORKDIR /app
 # npm à jour : celui embarqué dans l'image de base a des dépendances internes vulnérables.
 RUN npm install --global --ignore-scripts npm@12.2.0
@@ -9,7 +9,7 @@ COPY src ./src
 RUN npm run build
 RUN npm prune --omit=dev --ignore-scripts
 
-FROM node:24-alpine
+FROM node:24.22.2-alpine@sha256:8a32c8cf649a49915a66e81e7a609223c708d0adabf288ee3f4077d765542f85
 ENV NODE_ENV=production
 WORKDIR /app
 # Correctifs système, puis retrait de npm : l'exécution n'a besoin que de node.
