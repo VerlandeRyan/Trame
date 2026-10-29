@@ -1,4 +1,4 @@
-FROM node:24-alpine AS build
+FROM node:24.22.2-alpine@sha256:8a32c8cf649a49915a66e81e7a609223c708d0adabf288ee3f4077d765542f85 AS build
 WORKDIR /app
 RUN npm install --global --ignore-scripts npm@12.2.0
 COPY package.json package-lock.json ./
@@ -10,7 +10,7 @@ COPY server ./server
 COPY shared ./shared
 RUN npm run build
 
-FROM node:24-alpine
+FROM node:24.22.2-alpine@sha256:8a32c8cf649a49915a66e81e7a609223c708d0adabf288ee3f4077d765542f85
 ENV NODE_ENV=production
 WORKDIR /app
 RUN apk upgrade --no-cache \
