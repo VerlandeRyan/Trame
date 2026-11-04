@@ -22,6 +22,12 @@ Prérequis : Node 24 (`.nvmrc`), Docker.
 4. **Lancer** :
    - tout en conteneurs : `docker compose up -d --build`, site sur http://localhost:3001, API sur http://localhost:3000 ;
    - ou en développement, avec rechargement : `npm run dev` dans `api/`, et `npm run dev -- --port 3001` dans `web/`.
+5. **Sauvegarde** de la base de travail (conteneur `db` démarré) : renseigner `BACKUP_DIR` dans `.env` (dossier **hors du dépôt**, par exemple synchronisé par un service cloud pour avoir une copie hors machine), puis `npm run db:backup` dans `api/`. Il écrit `trame-AAAA-MM-JJ.dump` (format `pg_dump -Fc`) et garde les 7 plus récentes puis une par semaine sur 4 semaines. Restauration, sur une base jetable pour vérifier :
+   ```bash
+   docker compose exec -T db createdb -U <POSTGRES_USER> trame_restore
+   docker compose exec -T db pg_restore -U <POSTGRES_USER> -d trame_restore --no-owner < <archive>.dump
+   ```
+   Pour remplacer la base de travail, restaurer de la même façon après avoir arrêté `api` et recréé la base vide (`dropdb` puis `createdb`).
 
 ## Avant de pousser
 
