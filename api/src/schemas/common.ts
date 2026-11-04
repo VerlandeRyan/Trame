@@ -1,6 +1,12 @@
 import { z } from 'zod';
+import { SUPPORTED_LANGUAGES } from '../config.js';
 
 /** Briques de validation partagées par les routes (publiques comme d'administration). */
+
+/** Langue de l'application ; absente, titres et synopsis sont renvoyés dans la langue originale. */
+export const lang = z
+  .enum(SUPPORTED_LANGUAGES)
+  .describe('Langue de l’application ; absente, titres et synopsis sont dans la langue originale.');
 
 /** Identifiant numérique d'une ressource, lu dans l'URL. */
 export const idParams = z.object({

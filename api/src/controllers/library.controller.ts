@@ -1,10 +1,14 @@
 import type { Request, RequestHandler } from 'express';
-import type { EntryInput, LibraryService, ListEntriesInput } from '../services/library.service.js';
+import { currentUser } from '../middleware/auth.js';
+import { validated } from '../middleware/validate.js';
+import { idParams } from '../schemas/common.js';
+import { entryBody, listEntriesQuery } from '../schemas/library.js';
+import type { LibraryService } from '../services/library.service.js';
 
-/** `requireUser` a déjà écarté les visiteurs ; `workId` est validé par la route. */
+/** L'utilisateur est celui de `requireUser` ; `workId` est validé par la route. */
 function target(req: Request): { userId: number; workId: number } {
-  const { id } = req.params as unknown as { id: number };
-  return { userId: req.user!.id, workId: id };
+  const { id } = validated(idParams, req.params);
+  return { userId: currentUser(req).id, workId: id };
 }
 
 export function createLibraryController(service: LibraryService): {
@@ -15,9 +19,8 @@ export function createLibraryController(service: LibraryService): {
 } {
   return {
     async list(req, res) {
-      // Déjà validé et converti par `validate('query', …)` dans la route.
-      const input = req.query as unknown as ListEntriesInput;
-      res.json(await service.listEntries(req.user!.id, input));
+      const input = validated(listEntriesQuery, req.query);
+      res.json(await service.listEntries(currentUser(req).id, input));
     },
 
     async get(req, res) {
@@ -27,7 +30,7 @@ export function createLibraryController(service: LibraryService): {
 
     async save(req, res) {
       const { userId, workId } = target(req);
-      const entry = await service.saveEntry(userId, workId, req.body as EntryInput);
+      const entry = await service.saveEntry(userId, workId, validated(entryBody, req.body));
       res.json({ entry });
     },
 
