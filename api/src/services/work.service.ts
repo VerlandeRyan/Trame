@@ -11,7 +11,7 @@ import { searchTerms } from '../search-terms.js';
 import type {
   FeaturedWork,
   MatchMode,
-  RatedWork,
+  HomeRatedWork,
   WorkFacets,
   WorkRecord,
   WorkRepository,
@@ -71,9 +71,9 @@ export const FEATURED_MIN_ADDITIONS = 3;
 export const FEATURED_WINDOW_DAYS = 7;
 export const FEATURED_LIMIT = 3;
 /** « Mieux notées » : de quoi remplir une rangée sur grand écran. */
-export const TOP_RATED_LIMIT = 12;
+export const HOME_TOP_RATED_LIMIT = 12;
 
-export interface TopRatedWork extends Omit<RatedWork, 'ratingSum'> {
+export interface TopRatedWork extends Omit<HomeRatedWork, 'ratingSum'> {
   /** Moyenne sur une décimale. */
   ratingAverage: number;
 }
@@ -164,7 +164,7 @@ export function createWorkService(repository: WorkRepository): WorkService {
       const rated = await repository.findTopRatedWorks({
         lang,
         minRatings: MIN_RATINGS_FOR_AVERAGE,
-        limit: TOP_RATED_LIMIT,
+        limit: HOME_TOP_RATED_LIMIT,
       });
       return {
         items: rated.map(({ ratingSum, ...work }) => ({

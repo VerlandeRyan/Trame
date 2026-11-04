@@ -12,12 +12,8 @@ import {
   type ReadingEventRow,
 } from '../db/database.js';
 import { LIBRARY_STATUSES, type LibraryStatus } from '../domain/user-enums.js';
-import {
-  displayTitle,
-  searchCondition,
-  workSummaryColumns,
-  type WorkSummary,
-} from './work.repository.js';
+import type { WorkSummary } from './work.repository.js';
+import { displayTitle, searchCondition, visibleWork, workSummaryColumns } from './work-sql.js';
 
 /** Le suivi d'une œuvre par son lecteur. */
 export interface LibraryEntry {
@@ -110,7 +106,7 @@ function ownEntries(userId: number, q: string | undefined) {
   return (eb: ExpressionBuilder<Database, 'library_entry' | 'work'>): Expression<SqlBool> => {
     const conditions: Expression<SqlBool>[] = [
       eb('library_entry.user_id', '=', userId),
-      eb('work.deleted_at', 'is', null),
+      visibleWork(eb),
     ];
     if (q !== undefined) conditions.push(searchCondition(q, 'all'));
     return eb.and(conditions);
@@ -198,7 +194,7 @@ export function createLibraryRepository(db: Db): LibraryRepository {
         .selectFrom('work')
         .select('id')
         .where('id', '=', workId)
-        .where('deleted_at', 'is', null)
+        .where(visibleWork)
         .executeTakeFirst();
       return row !== undefined;
     },

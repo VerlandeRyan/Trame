@@ -6,7 +6,6 @@ import {
   type SqlBool,
 } from 'kysely';
 import {
-  CREDIT_ROLE_RANK,
   type CreditRole,
   type Database,
   type Db,
@@ -20,7 +19,16 @@ import {
   type WorkStatus,
   type WorkType,
 } from '../db/database.js';
-import { searchTerms } from '../search-terms.js';
+import {
+  COVER_PATH,
+  displayTitle,
+  searchCondition,
+  visibleWork,
+  workSummaryColumns,
+  type MatchMode,
+} from './work-sql.js';
+
+export type { MatchMode } from './work-sql.js';
 
 export interface WorkSearchCriteria {
   /** Texte déjà nettoyé (espaces) et d'au moins 2 caractères. */
@@ -43,8 +51,6 @@ export interface WorkSearchCriteria {
   limit: number;
   offset: number;
 }
-
-export type MatchMode = 'all' | 'any';
 
 /** `relevance` : proximité avec `q` ; `title` : A→Z ; `recent` : dernières ajoutées d'abord. */
 export type WorkSort = 'relevance' | 'title' | 'recent';
@@ -99,7 +105,7 @@ export interface FeaturedCriteria {
 }
 
 /** Notes brutes : la moyenne est calculée par le service. */
-export interface RatedWork extends WorkSummary {
+export interface HomeRatedWork extends WorkSummary {
   ratingCount: number;
   ratingSum: number;
 }
@@ -158,84 +164,9 @@ export interface WorkRepository {
   /** La plus ajoutée à une liste récemment d'abord. */
   findFeaturedWorks(criteria: FeaturedCriteria): Promise<FeaturedWork[]>;
   /** Triées par moyenne, puis par nombre de notes. */
-  findTopRatedWorks(criteria: RatedCriteria): Promise<RatedWork[]>;
+  findTopRatedWorks(criteria: RatedCriteria): Promise<HomeRatedWork[]>;
   /** Renvoie `undefined` si l'œuvre n'existe pas ou est archivée. */
   findById(id: number, lang?: string): Promise<WorkRecord | undefined>;
-}
-
-/**
- * Titre à afficher pour la langue `lang` : titre `translated` puis `international` de cette langue,
- * sinon titre original (aussi quand `lang` est la langue originale). `alias` : table `work`.
- */
-export function displayTitle(alias: string, lang: string | undefined): RawBuilder<string> {
-  const title = sql.ref(`${alias}.title`);
-  if (lang === undefined) return sql<string>`${title}`;
-  const id = sql.ref(`${alias}.id`);
-  const original = sql.ref(`${alias}.original_language`);
-  return sql<string>`COALESCE((
-    SELECT wt.title FROM work_title wt
-    WHERE wt.work_id = ${id} AND wt.language = ${lang} AND ${original} <> ${lang}
-      AND wt.kind IN ('translated', 'international')
-    ORDER BY CASE wt.kind WHEN 'translated' THEN 0 ELSE 1 END, wt.title
-    LIMIT 1
-  ), ${title})`;
-}
-
-/** La couverture n'est exposée qu'avec l'accord enregistré (`cover_consent`). */
-const COVER_PATH = sql<string | null>`CASE WHEN work.cover_consent THEN work.cover_path END`;
-
-/** Classement des rôles issu de `CREDIT_ROLE_RANK` (valeurs paramétrées), jamais écrit en dur ici. */
-const ROLE_RANK_SQL = sql<number>`CASE wc.role ${sql.join(
-  Object.entries(CREDIT_ROLE_RANK).map(([role, rank]) => sql`WHEN ${role} THEN ${rank}::int`),
-  sql` `,
-)} END`;
-
-const MAIN_AUTHOR = sql<string | null>`(
-  SELECT p.name FROM work_credit wc JOIN person p ON p.id = wc.person_id
-  WHERE wc.work_id = work.id AND p.deleted_at IS NULL
-  ORDER BY ${ROLE_RANK_SQL}, p.name
-  LIMIT 1
-)`;
-
-/** Insensible à la casse et aux accents ; `<%` tolère une faute légère (index trigramme). */
-function textMatch(column: string, q: string, pattern: string): RawBuilder<boolean> {
-  const ref = sql.ref(column);
-  return sql<boolean>`(
-    immutable_unaccent(${ref}) ILIKE immutable_unaccent(${pattern})
-    OR immutable_unaccent(${q}) <% immutable_unaccent(${ref})
-  )`;
-}
-
-/** Le mot est dans le titre, un titre alternatif, un auteur, un éditeur, un format ou un genre. */
-function termCondition(term: string): RawBuilder<boolean> {
-  const escaped = term.replace(/[\\%_]/g, String.raw`\$&`);
-  const pattern = `%${escaped}%`;
-  return sql<boolean>`(
-    ${textMatch('work.title', term, pattern)}
-    OR EXISTS (
-      SELECT 1 FROM work_title wt
-      WHERE wt.work_id = work.id AND ${textMatch('wt.title', term, pattern)}
-    )
-    OR EXISTS (
-      SELECT 1 FROM work_credit wc JOIN person p ON p.id = wc.person_id
-      WHERE wc.work_id = work.id AND p.deleted_at IS NULL AND ${textMatch('p.name', term, pattern)}
-    )
-    OR EXISTS (
-      SELECT 1 FROM work_publisher wp JOIN publisher pub ON pub.id = wp.publisher_id
-      WHERE wp.work_id = work.id AND pub.deleted_at IS NULL AND ${textMatch('pub.name', term, pattern)}
-    )
-    OR EXISTS (
-      SELECT 1 FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
-      WHERE wg.work_id = work.id AND replace(g.code, '_', ' ') ILIKE ${pattern}
-    )
-  )`;
-}
-
-/** `all` : chaque mot doit correspondre (« aube manga » : titre + format) ; `any` : un seul suffit. */
-export function searchCondition(q: string, match: MatchMode): RawBuilder<boolean> {
-  const conditions = searchTerms(q).map(termCondition);
-  const separator = match === 'any' ? sql` OR ` : sql` AND `;
-  return sql<boolean>`(${sql.join(conditions, separator)})`;
 }
 
 /** L'œuvre porte l'une des étiquettes `codes` de la catégorie. */
@@ -244,25 +175,6 @@ function hasGenre(codes: string[], category: GenreCategory): RawBuilder<boolean>
     SELECT 1 FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
     WHERE wg.work_id = work.id AND g.code IN (${sql.join(codes)}) AND g.category = ${category}
   )`;
-}
-
-const FORMATS = sql<string[]>`COALESCE((
-  SELECT array_agg(g.code ORDER BY g.code) FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
-  WHERE wg.work_id = work.id AND g.category = 'format'
-), '{}')`;
-
-export function workSummaryColumns(shownTitle: RawBuilder<string>) {
-  return [
-    'work.id',
-    shownTitle.as('title'),
-    'work.title as originalTitle',
-    'work.original_language as originalLanguage',
-    'work.type',
-    'work.status',
-    FORMATS.as('formats'),
-    COVER_PATH.as('coverPath'),
-    MAIN_AUTHOR.as('mainAuthor'),
-  ] as const;
 }
 
 /** Synopsis dans la langue demandée, sinon dans la langue originale. `''` : aucune langue demandée. */
@@ -277,7 +189,7 @@ function preferredSynopsis(lang = ''): RawBuilder<string | null> {
 
 function filters(criteria: WorkFacetCriteria) {
   return (eb: ExpressionBuilder<Database, 'work'>): Expression<SqlBool> => {
-    const conditions: Expression<SqlBool>[] = [eb('work.deleted_at', 'is', null)];
+    const conditions: Expression<SqlBool>[] = [visibleWork(eb)];
     if (criteria.type !== undefined) conditions.push(eb('work.type', 'in', criteria.type));
     if (criteria.status !== undefined) conditions.push(eb('work.status', 'in', criteria.status));
     if (criteria.originalLanguage !== undefined) {
@@ -394,7 +306,7 @@ export function createWorkRepository(db: Db): WorkRepository {
           preferredSynopsis(lang).as('synopsis'),
           'recent.additions',
         ])
-        .where('work.deleted_at', 'is', null)
+        .where(visibleWork)
         .orderBy('recent.additions', 'desc')
         .orderBy(shownTitle)
         .orderBy('work.id')
@@ -420,7 +332,7 @@ export function createWorkRepository(db: Db): WorkRepository {
         .selectFrom('work')
         .innerJoin(rated, 'rated.work_id', 'work.id')
         .select([...workSummaryColumns(shownTitle), 'rated.ratingCount', 'rated.ratingSum'])
-        .where('work.deleted_at', 'is', null)
+        .where(visibleWork)
         .orderBy(sql`rated."ratingSum"::numeric / rated."ratingCount"`, 'desc')
         .orderBy('rated.ratingCount', 'desc')
         .orderBy(shownTitle)
@@ -446,7 +358,7 @@ export function createWorkRepository(db: Db): WorkRepository {
           COVER_PATH.as('coverPath'),
         ])
         .where('work.id', '=', id)
-        .where('work.deleted_at', 'is', null)
+        .where(visibleWork)
         .executeTakeFirst();
       if (work === undefined) return undefined;
 

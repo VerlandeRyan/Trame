@@ -7,7 +7,8 @@ import {
   type LibraryEntry,
   type StatusCounts,
 } from './library.repository.js';
-import { displayTitle, workSummaryColumns, type WorkSummary } from './work.repository.js';
+import type { WorkSummary } from './work.repository.js';
+import { displayTitle, visibleWork, workSummaryColumns } from './work-sql.js';
 
 export interface ProfileAccount {
   id: number;
@@ -53,7 +54,7 @@ export function createProfileRepository(db: Db): ProfileRepository {
       .selectFrom('library_entry')
       .innerJoin('work', 'work.id', 'library_entry.work_id')
       .where('library_entry.user_id', '=', userId)
-      .where('work.deleted_at', 'is', null)
+      .where(visibleWork)
       .select(workSummaryColumns(displayTitle('work', lang)));
 
   return {
@@ -78,7 +79,7 @@ export function createProfileRepository(db: Db): ProfileRepository {
         .selectFrom('library_entry')
         .innerJoin('work', 'work.id', 'library_entry.work_id')
         .where('library_entry.user_id', '=', userId)
-        .where('work.deleted_at', 'is', null)
+        .where(visibleWork)
         .select([
           'library_entry.status',
           (eb) => eb.fn.countAll<number>().as('count'),
