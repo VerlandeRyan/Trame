@@ -1,27 +1,12 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
-import { z } from 'zod';
-import { PROFILE_VISIBILITIES } from '../domain/user-enums.js';
 import { createProfileController } from '../controllers/profile.controller.js';
-import { handleSchema } from '../handle-rules.js';
 import { requireUser } from '../middleware/auth.js';
 import { rateLimitOptions, type RateLimitSettings } from '../middleware/rate-limit.js';
 import { validate } from '../middleware/validate.js';
+import { listEntriesQuery } from '../schemas/library.js';
+import { profileParams, profileQuery, visibilityBody } from '../schemas/profile.js';
 import type { ProfileService } from '../services/profile.service.js';
-import { listEntriesQuery } from './library.routes.js';
-import { lang } from './work.routes.js';
-
-export const profileParams = z.object({
-  handle: handleSchema.describe('Pseudo public du membre, sans tenir compte de la casse.'),
-});
-
-export const profileQuery = z.object({ lang: lang.optional() });
-
-export const visibilityBody = z.strictObject({
-  visibility: z
-    .enum(PROFILE_VISIBILITIES)
-    .describe('`public` par défaut ; `private` masque tout sauf le pseudo.'),
-});
 
 /** Monté sous `/users` : profil public d'un membre et sa liste de lecture. */
 export function createProfileRouter(service: ProfileService): Router {

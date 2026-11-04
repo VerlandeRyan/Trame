@@ -1,5 +1,8 @@
 import type { RequestHandler } from 'express';
-import type { ListWorksInput, WorkFilterInput, WorkService } from '../services/work.service.js';
+import { validated } from '../middleware/validate.js';
+import { idParams } from '../schemas/common.js';
+import { facetsQuery, listWorksQuery, workQuery } from '../schemas/work.js';
+import type { WorkService } from '../services/work.service.js';
 
 export function createWorkController(service: WorkService): {
   list: RequestHandler;
@@ -10,29 +13,26 @@ export function createWorkController(service: WorkService): {
 } {
   return {
     async listFeaturedWorks(req, res) {
-      const { lang } = req.query as unknown as { lang?: string };
+      const { lang } = validated(workQuery, req.query);
       res.json(await service.listFeaturedWorks(lang));
     },
 
     async listTopRatedWorks(req, res) {
-      const { lang } = req.query as unknown as { lang?: string };
+      const { lang } = validated(workQuery, req.query);
       res.json(await service.listTopRatedWorks(lang));
     },
 
     async list(req, res) {
-      // Déjà validé et converti par `validate('query', …)` dans la route.
-      const input = req.query as unknown as ListWorksInput;
-      res.json(await service.list(input));
+      res.json(await service.list(validated(listWorksQuery, req.query)));
     },
 
     async facets(req, res) {
-      const input = req.query as unknown as WorkFilterInput;
-      res.json(await service.facets(input));
+      res.json(await service.facets(validated(facetsQuery, req.query)));
     },
 
     async get(req, res) {
-      const { id } = req.params as unknown as { id: number };
-      const { lang } = req.query as unknown as { lang?: string };
+      const { id } = validated(idParams, req.params);
+      const { lang } = validated(workQuery, req.query);
       res.json(await service.get(id, lang));
     },
   };

@@ -7,12 +7,12 @@ import {
   publisherBody,
   workBody,
 } from '../schemas/admin-catalogue.js';
+import { handleBody, loginQuery } from '../schemas/auth.js';
 import { idParams } from '../schemas/common.js';
-import { handleBody, loginQuery } from '../routes/auth.routes.js';
-import { entryBody, listEntriesQuery } from '../routes/library.routes.js';
-import { profileParams, profileQuery, visibilityBody } from '../routes/profile.routes.js';
+import { entryBody, listEntriesQuery } from '../schemas/library.js';
+import { profileParams, profileQuery, visibilityBody } from '../schemas/profile.js';
+import { facetsQuery, listWorksQuery, workQuery } from '../schemas/work.js';
 import { sessionCookieName } from '../session/middleware.js';
-import { facetsQuery, listWorksQuery, workQuery } from '../routes/work.routes.js';
 import {
   adminPersonPageSchema,
   adminPersonSchema,

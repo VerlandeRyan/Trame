@@ -2,7 +2,7 @@ import type { Request, RequestHandler } from 'express';
 import { SUPPORTED_LANGUAGES } from '../config.js';
 import { AppError } from '../errors.js';
 import { validated } from '../middleware/validate.js';
-import { callbackQuery } from '../schemas/auth.js';
+import { callbackQuery, handleBody, loginQuery } from '../schemas/auth.js';
 import {
   PENDING_SIGNUP_TTL_MS,
   type AuthService,
@@ -58,7 +58,7 @@ export function createAuthController(
 
   return {
     async startGoogleLogin(req, res) {
-      const { returnTo } = req.query as { returnTo?: string };
+      const { returnTo } = validated(loginQuery, req.query);
       const { url, state, ...secrets } = await service.startLogin();
       req.session.oauth = { state, secrets, returnTo };
       await saveSession(req);
@@ -101,7 +101,7 @@ export function createAuthController(
     async createAccount(req, res) {
       const { pending } = req.session;
       if (!pending) throw new AppError('SIGNUP_EXPIRED');
-      const { handle } = req.body as { handle: string };
+      const { handle } = validated(handleBody, req.body);
       const user = await service.createAccount(pending, handle);
       await openSession(req, { userId: user.id }, SESSION_TTL_MS);
       res.status(201).json({ status: 'authenticated', user });
