@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { sql } from 'kysely';
 import pg from 'pg';
 import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -6,6 +7,11 @@ import { createApp } from '../app.js';
 import { createDb } from '../db/database.js';
 import { AppError } from '../errors.js';
 import { libraryPageSchema } from '../openapi/schemas.js';
+import {
+  createLibraryRepository,
+  type EntryChange,
+  type LibraryEntry,
+} from '../repositories/library.repository.js';
 import type { GoogleClient } from '../services/google-identity.js';
 import { testDatabaseUrl as connectionString } from '../testing/test-database.js';
 
@@ -153,6 +159,38 @@ describe('PUT /works/:id/entry', () => {
       { kind: 'chapters', chapters_added: 5, volumes_added: null, new_status: null },
       { kind: 'volumes', chapters_added: null, volumes_added: 2, new_status: null },
     ]);
+  });
+
+  it("n'écrit qu'un événement de statut pour des ajouts simultanés", async () => {
+    await newReader('lectrice');
+    const user = await client.query("SELECT id FROM app_user WHERE handle = 'lectrice'");
+    const repository = createLibraryRepository(db);
+    const addToReading = (current: LibraryEntry | null): EntryChange => ({
+      entry: current ?? {
+        status: 'reading',
+        chaptersRead: 0,
+        volumesRead: 0,
+        rating: null,
+        startedOn: null,
+        finishedOn: null,
+      },
+      events: current ? [] : [{ kind: 'status', status: 'reading' }],
+    });
+    // Connexions ouvertes d'avance : sinon la première écriture finit avant que les autres démarrent.
+    await Promise.all(Array.from({ length: 8 }, () => sql`SELECT 1`.execute(db)));
+    await Promise.all(
+      Array.from({ length: 8 }, () =>
+        repository.save(Number(user.rows[0].id), workId, addToReading),
+      ),
+    );
+
+    const events = await client.query(
+      `SELECT count(*)::int AS n FROM reading_event
+       WHERE kind = 'status' AND work_id = $1
+         AND user_id IN (SELECT id FROM app_user WHERE handle = 'lectrice')`,
+      [workId],
+    );
+    expect(events.rows[0].n).toBe(1);
   });
 
   it('note puis retire la note', async () => {

@@ -92,8 +92,9 @@ export interface LibraryRepository {
   isWorkAvailable(workId: number): Promise<boolean>;
   find(userId: number, workId: number): Promise<LibraryEntry | null>;
   /**
-   * Enregistre l'entrée et son journal dans une même transaction. `decide` reçoit l'entrée
-   * actuelle (verrouillée), ce qui garde le journal exact même si deux requêtes se croisent.
+   * Enregistre l'entrée et son journal dans une même transaction. Les écritures d'un même lecteur
+   * sont sérialisées : `decide` reçoit l'entrée actuelle à jour, ce qui garde le journal exact
+   * même si deux requêtes se croisent, y compris sur une œuvre pas encore dans la liste.
    */
   save(
     userId: number,
@@ -215,6 +216,8 @@ export function createLibraryRepository(db: Db): LibraryRepository {
 
     async save(userId, workId, decide) {
       return db.transaction().execute(async (trx) => {
+        // `FOR UPDATE` ne verrouille rien tant que l'entrée n'existe pas : on sérialise le lecteur.
+        await sql`SELECT pg_advisory_xact_lock(${userId})`.execute(trx);
         const currentRow = await trx
           .selectFrom('library_entry')
           .select(ENTRY_COLUMNS)
