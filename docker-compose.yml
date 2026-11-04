@@ -2,7 +2,7 @@
 # Configuration : copier .env.example en .env (ignoré par git).
 services:
   db:
-    image: postgres:18
+    image: postgres:18@sha256:3a4264520e121176619f54ff867d12774bc81e95e7b84db58d63bccdb6144b81
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB manquant, voir .env.example}
