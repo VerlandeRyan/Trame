@@ -1,2 +1,6 @@
 # Les scripts shell restent en LF (exécutés par sh, y compris sous Windows).
 *.sh text eol=lf
+
+# Fichiers générés comparés octet pour octet à leur générateur (tests, `--check`) : LF partout.
+api/openapi.json text eol=lf
+web/app/contract/api-schema.ts text eol=lf
