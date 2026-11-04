@@ -45,6 +45,12 @@ const limitedApp = createApp({
   auth: { ...authOptions, rateLimit: { windowMs: 60_000, limit: 3 } },
 });
 const appWithoutGoogle = createApp({ db });
+// Derrière un proxy HTTPS, comme en production : le cookie est Secure et porte le préfixe __Host-.
+const secureApp = createApp({
+  db,
+  trustProxy: 1,
+  auth: { ...authOptions, secureCookies: true, rateLimit: { windowMs: 60_000, limit: 10_000 } },
+});
 
 beforeAll(() => client.connect());
 afterAll(async () => {
@@ -81,6 +87,15 @@ describe('GET /auth/google', () => {
     expect(cookie).toMatch(/^trame\.sid=/);
     expect(cookie).toContain('HttpOnly');
     expect(cookie).toContain('SameSite=Lax');
+  });
+
+  it('pose un cookie __Host- Secure, Path=/ et sans Domain en production', async () => {
+    const res = await request(secureApp).get(`${BASE}/google`).set('X-Forwarded-Proto', 'https');
+    const cookie = (res.headers['set-cookie'] as unknown as string[])[0];
+    expect(cookie).toMatch(/^__Host-trame\.sid=/);
+    expect(cookie).toContain('Secure');
+    expect(cookie).toContain('Path=/');
+    expect(cookie).not.toContain('Domain');
   });
 
   it('répond AUTH_UNAVAILABLE quand Google n’est pas configuré', async () => {
@@ -384,6 +399,17 @@ describe('déconnexion et contrôle d’origine', () => {
     expect((res.headers['set-cookie'] as unknown as string[])[0]).toMatch(/^trame\.sid=;/);
     expect((await agent.get(`${BASE}/me`)).body).toEqual({ status: 'anonymous' });
     expect((await client.query('SELECT 1 FROM session')).rowCount).toBe(0);
+  });
+
+  it('efface le cookie __Host- avec les mêmes attributs en production', async () => {
+    const res = await request(secureApp)
+      .post(`${BASE}/logout`)
+      .set('Origin', WEB)
+      .set('X-Forwarded-Proto', 'https');
+    const cookie = (res.headers['set-cookie'] as unknown as string[])[0];
+    expect(cookie).toMatch(/^__Host-trame\.sid=;/);
+    expect(cookie).toContain('Secure');
+    expect(cookie).toContain('Path=/');
   });
 
   it('refuse une requête qui modifie des données depuis une autre origine', async () => {

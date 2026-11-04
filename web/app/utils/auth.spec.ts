@@ -49,10 +49,16 @@ describe('hasSessionCookie', () => {
     expect(hasSessionCookie('a=1; trame.sid=s%3Aabc; b=2')).toBe(true)
   })
 
+  it('reconnaît le cookie à préfixe __Host- posé en production', () => {
+    expect(hasSessionCookie('__Host-trame.sid=s%3Aabc')).toBe(true)
+    expect(hasSessionCookie('a=1; __Host-trame.sid=s%3Aabc')).toBe(true)
+  })
+
   it('ne confond pas avec un autre cookie ou son absence', () => {
     expect(hasSessionCookie(undefined)).toBe(false)
     expect(hasSessionCookie('')).toBe(false)
     expect(hasSessionCookie('other.trame.sid=1; tramexsid=2')).toBe(false)
+    expect(hasSessionCookie('other.__Host-trame.sid=1')).toBe(false)
   })
 })
 
