@@ -17,8 +17,18 @@ const WRITABLE_ROUTES = [
 
 export type RelayVerdict = 'allowed' | 'bad-request' | 'method-not-allowed'
 
+/** Chemin décodé : `%2e%2e` et `%2f` doivent être vus comme `..` et `/` avant le contrôle. */
+function decodePath(path: string): string | undefined {
+  try {
+    return decodeURIComponent(path)
+  } catch {
+    return undefined
+  }
+}
+
 export function judgeRelayRequest(method: string, path: string): RelayVerdict {
-  if (path.split('/').includes('..')) return 'bad-request'
+  const decoded = decodePath(path)
+  if (decoded === undefined || decoded.split('/').includes('..')) return 'bad-request'
   if (READ_METHODS.has(method)) return 'allowed'
   const writable = WRITABLE_ROUTES.some(
     (route) => route.methods.has(method) && route.path.test(path),

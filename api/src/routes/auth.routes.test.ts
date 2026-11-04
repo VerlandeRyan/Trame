@@ -312,6 +312,14 @@ describe('retour de Google en échec', () => {
     expect(res.headers.location).toBe(`${WEB}/?auth_error=AUTH_STATE_INVALID`);
   });
 
+  it('ne prend pas un paramètre répété pour une annulation', async () => {
+    const agent = request.agent(app);
+    await agent.get(`${BASE}/google`);
+    const res = await agent.get(`${BASE}/google/callback?error=a&error=b&code=c&code=d`);
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe(`${WEB}/?auth_error=AUTH_STATE_INVALID`);
+  });
+
   it('refuse un retour sans connexion démarrée', async () => {
     const res = await request(app)
       .get(`${BASE}/google/callback`)

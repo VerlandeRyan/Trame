@@ -213,9 +213,18 @@ export type Db = Kysely<Database>;
 
 const { INT8, DATE } = pg.types.builtins;
 
-export function createDb(connectionString: string): Db {
+export const POOL_MAX = 10;
+export const CONNECTION_TIMEOUT_MS = 5_000;
+export const STATEMENT_TIMEOUT_MS = 30_000;
+export const IDLE_TIMEOUT_MS = 30_000;
+
+export function createPool(connectionString: string): pg.Pool {
   const pool = new pg.Pool({
     connectionString,
+    max: POOL_MAX,
+    connectionTimeoutMillis: CONNECTION_TIMEOUT_MS,
+    statement_timeout: STATEMENT_TIMEOUT_MS,
+    idleTimeoutMillis: IDLE_TIMEOUT_MS,
     types: {
       getTypeParser: ((oid: number, format?: 'text' | 'binary') => {
         // Identifiants et compteurs bigint : des nombres (bien en deçà de 2^53).
@@ -226,5 +235,13 @@ export function createDb(connectionString: string): Db {
       }) as typeof pg.types.getTypeParser,
     },
   });
-  return new Kysely<Database>({ dialect: new PostgresDialect({ pool }) });
+  // Sans écouteur, la coupure d'un client inactif (base redémarrée) ferait tomber le processus.
+  pool.on('error', (err) => console.error(err));
+  return pool;
+}
+
+export function createDb(connectionString: string): Db {
+  return new Kysely<Database>({
+    dialect: new PostgresDialect({ pool: createPool(connectionString) }),
+  });
 }

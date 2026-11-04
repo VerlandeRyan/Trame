@@ -5,6 +5,7 @@ import { createAuthController } from '../controllers/auth.controller.js';
 import { handleSchema } from '../handle-rules.js';
 import { rateLimitOptions, type RateLimitSettings } from '../middleware/rate-limit.js';
 import { validate } from '../middleware/validate.js';
+import { callbackQuery } from '../schemas/auth.js';
 import type { AuthService } from '../services/auth.service.js';
 
 export const handleBody = z.strictObject({
@@ -34,7 +35,12 @@ export function createAuthRouter(
   const controller = createAuthController(service, options);
   const router = Router();
   router.get('/google', limiter, validate('query', loginQuery), controller.startGoogleLogin);
-  router.get('/google/callback', limiter, controller.finishGoogleLogin);
+  router.get(
+    '/google/callback',
+    limiter,
+    validate('query', callbackQuery),
+    controller.finishGoogleLogin,
+  );
   router.get('/me', controller.getAuthStatus);
   router.post('/handle', limiter, validate('body', handleBody), controller.createAccount);
   router.post('/cancel', controller.signOut);

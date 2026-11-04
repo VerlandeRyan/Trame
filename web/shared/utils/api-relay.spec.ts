@@ -47,6 +47,22 @@ describe('judgeRelayRequest', () => {
     expect(judgeRelayRequest('GET', 'works/../admin')).toBe('bad-request')
     expect(judgeRelayRequest('POST', 'auth/../works')).toBe('bad-request')
   })
+
+  it('refuse un chemin qui remonte écrit avec des octets encodés', () => {
+    expect(judgeRelayRequest('GET', 'works/%2e%2e/admin')).toBe('bad-request')
+    expect(judgeRelayRequest('GET', 'works/%2E%2E/admin')).toBe('bad-request')
+    expect(judgeRelayRequest('GET', 'works/.%2e/admin')).toBe('bad-request')
+    expect(judgeRelayRequest('POST', 'auth/%2e%2e/works')).toBe('bad-request')
+    expect(judgeRelayRequest('GET', 'works%2f..%2fadmin')).toBe('bad-request')
+  })
+
+  it('refuse un segment mal encodé au lieu de lever une exception', () => {
+    expect(judgeRelayRequest('GET', 'works/%E0%A4%A')).toBe('bad-request')
+  })
+
+  it('laisse passer un segment encodé sans danger', () => {
+    expect(judgeRelayRequest('GET', 'users/jean%20dupont')).toBe('allowed')
+  })
 })
 
 describe('forwardedFor', () => {
