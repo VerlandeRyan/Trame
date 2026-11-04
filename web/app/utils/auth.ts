@@ -66,13 +66,14 @@ export function authNoticeFor(raw: unknown, hasKey: (key: string) => boolean): A
     : { key: errorMessageKey(reason, hasKey), tone: 'error' }
 }
 
-const SESSION_COOKIE_PREFIX = 'trame.sid='
+// L'API pose `__Host-trame.sid` en production (cookie Secure) et `trame.sid` en HTTP local.
+const SESSION_COOKIE_PREFIXES = ['trame.sid=', '__Host-trame.sid=']
 
 /** Sans cookie de session, inutile de demander à l'API qui est connecté. */
 export function hasSessionCookie(cookieHeader: string | undefined): boolean {
   return (cookieHeader ?? '')
     .split(';')
-    .some((cookie) => cookie.trim().startsWith(SESSION_COOKIE_PREFIX))
+    .some((cookie) => SESSION_COOKIE_PREFIXES.some((prefix) => cookie.trim().startsWith(prefix)))
 }
 
 /** Une API lente ne doit pas bloquer le rendu des pages. */

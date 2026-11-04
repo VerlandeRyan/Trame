@@ -9,7 +9,7 @@ import {
   type AuthStatus,
 } from '../services/auth.service.js';
 import type { GoogleIdentity } from '../services/google-identity.js';
-import { SESSION_COOKIE_NAME, SESSION_TTL_MS, cookieOptions } from '../session/middleware.js';
+import { SESSION_TTL_MS, cookieOptions, sessionCookieName } from '../session/middleware.js';
 import { destroySession, regenerateSession, saveSession } from '../session/session-actions.js';
 
 const HOME_PATH = '/';
@@ -110,7 +110,7 @@ export function createAuthController(
     /** Déconnexion, ou abandon d'une inscription en attente. */
     async signOut(req, res) {
       await destroySession(req);
-      res.clearCookie(SESSION_COOKIE_NAME, cookieOptions(secureCookies));
+      res.clearCookie(sessionCookieName(secureCookies), cookieOptions(secureCookies));
       res.status(204).end();
     },
   };

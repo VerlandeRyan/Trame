@@ -11,7 +11,7 @@ import { idParams } from '../schemas/common.js';
 import { handleBody, loginQuery } from '../routes/auth.routes.js';
 import { entryBody, listEntriesQuery } from '../routes/library.routes.js';
 import { profileParams, profileQuery, visibilityBody } from '../routes/profile.routes.js';
-import { SESSION_COOKIE_NAME } from '../session/middleware.js';
+import { sessionCookieName } from '../session/middleware.js';
 import { facetsQuery, listWorksQuery, workQuery } from '../routes/work.routes.js';
 import {
   adminPersonPageSchema,
@@ -596,8 +596,9 @@ export function buildOpenApiDocument() {
         sessionCookie: {
           type: 'apiKey',
           in: 'cookie',
-          name: SESSION_COOKIE_NAME,
-          description: 'Cookie de session `httpOnly`, posé par la connexion Google.',
+          name: sessionCookieName(true),
+          description:
+            'Cookie de session `httpOnly`, posé par la connexion Google. Nommé `trame.sid` seulement en HTTP local (sans `Secure`).',
         },
       },
       schemas: {

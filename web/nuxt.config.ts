@@ -19,6 +19,17 @@ export default defineNuxtConfig({
     },
   },
 
+  // Socle d'en-têtes sur toutes les réponses, relais `/api/v1` compris. La CSP viendra à part (nonce).
+  routeRules: {
+    '/**': {
+      headers: {
+        'X-Frame-Options': 'DENY',
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin',
+      },
+    },
+  },
+
   i18n: {
     defaultLocale: 'fr',
     strategy: 'prefix_except_default',
