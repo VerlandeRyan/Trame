@@ -16,6 +16,11 @@
   "lockFileMaintenance": { "enabled": true },
   "packageRules": [
     {
+      "description": "engines.node reste une plage (>=24.11.0) : l'épingler la ferait diverger de .nvmrc et des Dockerfiles",
+      "matchDepTypes": ["engines"],
+      "rangeStrategy": "auto"
+    },
+    {
       "description": "Mises à jour mineures et correctifs npm regroupés",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch"],
