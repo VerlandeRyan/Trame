@@ -1,6 +1,5 @@
-import type { ApiError } from '~/utils/api-error'
 import { incrementUnit } from '~/utils/home'
-import { libraryErrorKey, type LibraryEntry, type LibraryEntryChanges } from '~/utils/library'
+import type { LibraryEntry, LibraryEntryChanges } from '~/utils/library'
 import type { ListedEntry } from '~/utils/reading-list'
 
 /**
@@ -12,19 +11,10 @@ import type { ListedEntry } from '~/utils/reading-list'
 export function useContinueReading(initialItems: () => ListedEntry[]) {
   const api = useApi()
   const items = ref<ListedEntry[]>([])
-  const errorKey = ref<string | null>(null)
   const readingPrompt = useReadingPrompt()
+  const { run, errorKey } = useOptimisticWrite()
 
   watch(initialItems, (entries) => (items.value = entries), { immediate: true })
-
-  const { enqueue, isLatest } = useRequestQueue({
-    onStart: () => {
-      errorKey.value = null
-    },
-    onError: (cause) => {
-      errorKey.value = libraryErrorKey((cause as ApiError).code)
-    },
-  })
 
   function replaceEntry(workId: number, entry: LibraryEntry) {
     items.value = items.value.map((item) => (item.work.id === workId ? { ...item, entry } : item))
@@ -34,23 +24,24 @@ export function useContinueReading(initialItems: () => ListedEntry[]) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
     const after = { ...before, ...changes }
-    replaceEntry(workId, after)
-    if (after.status !== 'reading') {
-      items.value = items.value.filter((each) => each.work.id !== workId)
-    }
-    return enqueue(async () => {
-      try {
-        const saved = (
+    return run({
+      apply: () => {
+        replaceEntry(workId, after)
+        if (after.status !== 'reading') {
+          items.value = items.value.filter((each) => each.work.id !== workId)
+        }
+      },
+      send: async () =>
+        (
           await api.request<{ entry: LibraryEntry }>(`/works/${workId}/entry`, {
             method: 'PUT',
             body: { status: before.status, ...changes },
           })
-        ).entry
-        if (isLatest()) replaceEntry(workId, saved)
-      } catch (cause) {
+        ).entry,
+      reconcile: (saved) => replaceEntry(workId, saved),
+      revert: () => {
         if (items.value.some((each) => each.work.id === workId)) replaceEntry(workId, before)
-        throw cause
-      }
+      },
     })
   }
 

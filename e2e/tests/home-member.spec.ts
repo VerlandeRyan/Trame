@@ -62,6 +62,31 @@ test('un membre avec une lecture en cours la reprend d’un +1, sans panneau vis
   await expect(page).toHaveURL('/list')
 })
 
+test('un +1 perdu par une panne réseau revient à la valeur d’avant et prévient le membre', async ({
+  page,
+  context,
+}) => {
+  await signUp(context)
+  const added = await context.request.put(`/api/v1/works/${CHRONIQUES}/entry`, {
+    data: { status: 'reading', chaptersRead: 5 },
+  })
+  expect(added.status()).toBe(200)
+  await openHome(page)
+  const progress = page.getByTestId('continue-reading-progress')
+  await expect(progress).toHaveText('Manga · Chapitre 5')
+
+  await page.route('**/api/v1/works/*/entry', (route) =>
+    route.request().method() === 'PUT' ? route.abort('connectionfailed') : route.continue(),
+  )
+  await page.getByTestId('continue-reading-add-one').click()
+
+  await expect(page.getByTestId('continue-reading-error')).toBeVisible()
+  await expect(progress).toHaveText('Manga · Chapitre 5')
+  await page.unroute('**/api/v1/works/*/entry')
+  const stored = await context.request.get(`/api/v1/works/${CHRONIQUES}/entry`)
+  expect((await stored.json()).entry.chaptersRead).toBe(5)
+})
+
 test('un membre sans œuvre est accueilli et part d’un format', async ({ page, context }) => {
   const handle = await signUp(context)
 

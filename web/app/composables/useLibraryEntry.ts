@@ -17,29 +17,14 @@ export function useLibraryEntry(workId: number) {
   const api = useApi()
   const entry = useState<LibraryEntry | null>(`library-entry-${workId}`, () => null)
   const isLoaded = useState(`library-loaded-${workId}`, () => false)
-  const errorKey = ref<string | null>(null)
   const path = `/works/${workId}/entry`
 
   async function fetchEntry() {
     entry.value = (await api.request<{ entry: LibraryEntry | null }>(path)).entry
   }
 
-  /** Après un échec, l'écran a pu s'écarter du serveur : on le relit. */
-  async function resyncAfter(cause: unknown) {
-    errorKey.value = libraryErrorKey((cause as ApiError).code)
-    try {
-      await fetchEntry()
-    } catch {
-      // Le message d'erreur est déjà affiché ; l'entrée reste telle qu'elle est.
-    }
-  }
-
-  const { enqueue, isBusy, isLatest } = useRequestQueue({
-    onStart: () => {
-      errorKey.value = null
-    },
-    onError: resyncAfter,
-  })
+  // Après un échec, l'écran a pu s'écarter du serveur : on relit l'entrée.
+  const { run, isBusy, errorKey } = useOptimisticWrite({ resync: fetchEntry })
 
   async function load() {
     let hasFailed = false
@@ -55,20 +40,26 @@ export function useLibraryEntry(workId: number) {
 
   /** Ajoute l'œuvre (statut « À lire ») ou applique `changes` à l'entrée existante. */
   function save(changes: LibraryEntryChanges) {
-    if (entry.value) entry.value = { ...entry.value, ...changes }
-    return enqueue(async () => {
-      const body = { status: entry.value?.status ?? DEFAULT_LIBRARY_STATUS, ...changes }
-      const saved = (await api.request<{ entry: LibraryEntry }>(path, { method: 'PUT', body }))
-        .entry
-      // Une demande plus récente est en route : sa réponse fera foi.
-      if (isLatest()) entry.value = saved
+    return run({
+      apply: () => {
+        if (entry.value) entry.value = { ...entry.value, ...changes }
+      },
+      send: async () => {
+        const body = { status: entry.value?.status ?? DEFAULT_LIBRARY_STATUS, ...changes }
+        return (await api.request<{ entry: LibraryEntry }>(path, { method: 'PUT', body })).entry
+      },
+      reconcile: (saved) => {
+        entry.value = saved
+      },
     })
   }
 
   function remove() {
-    return enqueue(async () => {
-      await api.request(path, { method: 'DELETE' })
-      if (isLatest()) entry.value = null
+    return run({
+      send: () => api.request(path, { method: 'DELETE' }),
+      reconcile: () => {
+        entry.value = null
+      },
     })
   }
 
