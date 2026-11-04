@@ -179,7 +179,9 @@ describe('PUT /works/:id/entry', () => {
     // Connexions ouvertes d'avance : sinon la première écriture finit avant que les autres démarrent.
     await Promise.all(Array.from({ length: 8 }, () => sql`SELECT 1`.execute(db)));
     await Promise.all(
-      Array.from({ length: 8 }, () => repository.save(Number(user.rows[0].id), workId, addToReading)),
+      Array.from({ length: 8 }, () =>
+        repository.save(Number(user.rows[0].id), workId, addToReading),
+      ),
     );
 
     const events = await client.query(
