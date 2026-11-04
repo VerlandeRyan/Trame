@@ -6,7 +6,7 @@ import tseslint from 'typescript-eslint';
 // Règles de SonarCloud (eslint-plugin-sonarjs) vérifiées avant le push ; lint typé pour que les
 // règles qui lisent les types (promesses, `void`…) répondent comme dans l'analyse Sonar.
 export default defineConfig(
-  { ignores: ['dist/**', 'dist-e2e/**', 'coverage/**', 'migrations/**', 'scripts/**'] },
+  { ignores: ['dist/**', 'dist-e2e/**', 'coverage/**', 'migrations/**', 'scripts/**', 'src/db/generated.ts'] },
   {
     files: ['**/*.ts'],
     extends: [js.configs.recommended, tseslint.configs.recommended, sonarjs.configs.recommended],

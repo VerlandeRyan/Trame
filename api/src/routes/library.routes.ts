@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
-import { LIBRARY_STATUSES } from '../db/database.js';
+import { LIBRARY_STATUSES } from '../domain/user-enums.js';
 import { createLibraryController } from '../controllers/library.controller.js';
 import { requireUser } from '../middleware/auth.js';
 import { rateLimitOptions, type RateLimitSettings } from '../middleware/rate-limit.js';

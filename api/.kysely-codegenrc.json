@@ -1,0 +1,44 @@
+{
+  "$schema": "https://raw.githubusercontent.com/RobinBlomberg/kysely-codegen/v0.20.0/src/cli/config.schema.json",
+  "dialect": "postgres",
+  "outFile": "src/db/generated.ts",
+  "dateParser": "string",
+  "numericParser": "number",
+  "typeMapping": { "int8": "number" },
+  "excludePattern": "pgmigrations",
+  "customImports": {
+    "CreditRole": "../domain/catalogue-enums.js#CreditRole",
+    "ExternalLinkKind": "../domain/catalogue-enums.js#ExternalLinkKind",
+    "GenreCategory": "../domain/catalogue-enums.js#GenreCategory",
+    "PersonKind": "../domain/catalogue-enums.js#PersonKind",
+    "PublisherKind": "../domain/catalogue-enums.js#PublisherKind",
+    "RelationKind": "../domain/catalogue-enums.js#RelationKind",
+    "SynopsisSource": "../domain/catalogue-enums.js#SynopsisSource",
+    "TitleKind": "../domain/catalogue-enums.js#TitleKind",
+    "WorkStatus": "../domain/catalogue-enums.js#WorkStatus",
+    "WorkType": "../domain/catalogue-enums.js#WorkType",
+    "LibraryStatus": "../domain/user-enums.js#LibraryStatus",
+    "ProfileVisibility": "../domain/user-enums.js#ProfileVisibility",
+    "ReadingEventKind": "../domain/user-enums.js#ReadingEventKind",
+    "UserRole": "../domain/user-enums.js#UserRole"
+  },
+  "overrides": {
+    "columns": {
+      "work.type": "WorkType",
+      "work.status": "WorkStatus",
+      "work_title.kind": "TitleKind",
+      "work_synopsis.source": "SynopsisSource",
+      "work_relation.relation": "RelationKind",
+      "person.kind": "Generated<PersonKind>",
+      "work_credit.role": "CreditRole",
+      "publisher.kind": "PublisherKind",
+      "genre.category": "GenreCategory",
+      "external_link.kind": "ExternalLinkKind",
+      "library_entry.status": "LibraryStatus",
+      "reading_event.kind": "ReadingEventKind",
+      "reading_event.new_status": "LibraryStatus | null",
+      "app_user.role": "Generated<UserRole>",
+      "app_user.profile_visibility": "Generated<ProfileVisibility>"
+    }
+  }
+}

@@ -1,5 +1,5 @@
 import { sql, type Selectable } from 'kysely';
-import type { Db, PersonKind, PersonTable } from '../db/database.js';
+import type { Db, PersonKind, PersonRow } from '../db/database.js';
 import {
   archiveCondition,
   FILTERED_TOTAL,
@@ -45,7 +45,7 @@ export interface AdminPersonRepository {
   setArchived(id: number, archived: boolean): Promise<boolean>;
 }
 
-type SummaryRow = Pick<Selectable<PersonTable>, 'id' | 'name' | 'kind' | 'deleted_at'> & {
+type SummaryRow = Pick<Selectable<PersonRow>, 'id' | 'name' | 'kind' | 'deleted_at'> & {
   activeWorkCount: number;
 };
 

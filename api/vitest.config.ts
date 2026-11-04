@@ -24,6 +24,7 @@ export default defineConfig({
         'src/server.e2e.ts',
         'src/bootstrap.ts',
         'src/backup/run-backup.ts',
+        'src/db/generated.ts',
         'src/**/*.test.ts',
         'src/testing/**',
       ],
