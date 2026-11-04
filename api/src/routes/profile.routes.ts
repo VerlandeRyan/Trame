@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { z } from 'zod';
-import { PROFILE_VISIBILITIES } from '../db/database.js';
+import { PROFILE_VISIBILITIES } from '../domain/user-enums.js';
 import { createProfileController } from '../controllers/profile.controller.js';
 import { handleSchema } from '../handle-rules.js';
 import { requireUser } from '../middleware/auth.js';

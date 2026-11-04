@@ -7,7 +7,7 @@ Express 5 + Kysely sur `pg`, Zod, node-pg-migrate (voir `docs/adr/0006-choix-tec
 - `routes/` : URL et validation d'entrée (`middleware/validate.ts`) ; montées sous `/api/v1` via `routes/index.ts`. `/health` reste hors préfixe.
 - `controllers/` : lecture HTTP, appel du service, statut de réponse.
 - `services/` : règles métier, sans HTTP ni SQL.
-- `repositories/` : seule couche qui écrit du SQL (Kysely, toujours paramétré). Types de tables dans `db/database.ts`, ajoutés au besoin.
+- `repositories/` : seule couche qui écrit du SQL (Kysely, toujours paramétré). Types de tables dans `db/generated.ts`, **généré** depuis la base migrée (`npm run db:codegen`, config `.kysely-codegenrc.json`) : ne jamais l'éditer à la main, le régénérer après toute migration (la CI lance `kysely-codegen --verify` et échoue s'il diffère). Les colonnes à énumération y reçoivent leur union par `overrides` ; ajouter une énumération = tableau `as const` dans `domain/catalogue-enums.ts` ou `domain/user-enums.ts` (jamais de `z.enum([...])` littéral, `domain/enums-single-source.test.ts` le vérifie), entrée `customImports` + `overrides` dans la config, ligne dans `db/enums-match-database.test.ts` (compare le code aux CHECK de la base). `db/database.ts` réexporte les types utiles et crée le pool.
 - Chaque brique est une fabrique (`createXxx(dépendance)`) ; `app.ts` assemble, `bootstrap.ts` démarre (écoute, purge des sessions, arrêt) et `server.ts` en est le point d'entrée réel. `server.e2e.ts` (E2E seulement) démarre la même API avec `e2e/fake-google.ts` à la place de Google ; il est exclu du build de production (`tsconfig.build.json`) et compilé à part par `npm run build:e2e` dans `dist-e2e/`, qui n'entre pas dans l'image Docker.
 
 ## Tests

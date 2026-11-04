@@ -8,7 +8,7 @@ L'ADR 0001 laissait trois points ouverts : framework, accès à la base, authent
 
 ## Décision
 - **Framework** : **Express 5** (déjà pratiqué, très répandu).
-- **Accès à la base** : **Kysely** au-dessus du pilote **`pg`**, sans ORM. Types générés depuis la base (`kysely-codegen`) ; requêtes toujours paramétrées. Tout le SQL reste dans la couche « repositories ».
+- **Accès à la base** : **Kysely** au-dessus du pilote **`pg`**, sans ORM. Types générés depuis la base (`kysely-codegen`, fichier `api/src/db/generated.ts` commité, vérifié par la CI) ; les colonnes `text` à `CHECK` y sont typées par les énumérations du code (`domain/*-enums.ts`), contrôlées contre la base par un test ; requêtes toujours paramétrées. Tout le SQL reste dans la couche « repositories ».
 - **Migrations** : **`node-pg-migrate`**, fichiers SQL horodatés écrits à la main ; la base est la définition de référence des champs et contraintes.
 - **Validation** : schémas **Zod** à l'entrée de l'API ; documentation OpenAPI générée à partir des mêmes schémas.
 - **Authentification** : **`google-auth-library`** (connexion Google, vérification du jeton) + **`express-session`** avec stockage PostgreSQL ; cookie `httpOnly`, `Secure`, `SameSite`. Aucun mot de passe stocké ; sessions révocables côté serveur.

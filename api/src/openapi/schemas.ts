@@ -1,5 +1,17 @@
 import { z } from 'zod';
-import { LIBRARY_STATUSES, PROFILE_VISIBILITIES } from '../db/database.js';
+import {
+  CREDIT_ROLES,
+  EXTERNAL_LINK_KINDS,
+  GENRE_CATEGORIES,
+  PERSON_KINDS,
+  PUBLISHER_KINDS,
+  RELATION_KINDS,
+  SYNOPSIS_SOURCES,
+  TITLE_KINDS,
+  WORK_STATUSES,
+  WORK_TYPES,
+} from '../domain/catalogue-enums.js';
+import { LIBRARY_STATUSES, PROFILE_VISIBILITIES, USER_ROLES } from '../domain/user-enums.js';
 import { ERROR_CODES, type ErrorBody } from '../errors.js';
 import type { GenreRecord } from '../repositories/genre.repository.js';
 import type { LibraryEntry } from '../repositories/library.repository.js';
@@ -13,24 +25,14 @@ import type { TopRatedWork, WorkDetail, WorkPage } from '../services/work.servic
 // `satisfies` lie chaque schéma au type du service ; `strictObject` fait échouer le test de contrat
 // si une réponse gagne un champ non décrit.
 
-const workType = z.enum(['series', 'oneshot', 'anthology']);
-const workStatus = z.enum(['upcoming', 'ongoing', 'completed', 'hiatus', 'abandoned']);
-const externalLinkKind = z.enum(['read', 'buy', 'website', 'social']);
-const personKind = z.enum(['person', 'collective']);
-const publisherKind = z.enum(['publisher', 'platform', 'self_published']);
-const creditRole = z.enum(['story', 'art', 'colors', 'other']);
-const titleKind = z.enum(['translated', 'international', 'former', 'short']);
-const relationKind = z.enum([
-  'sequel',
-  'prequel',
-  'spin_off',
-  'side_story',
-  'adaptation',
-  'alternate_version',
-  'shared_universe',
-  'contains',
-  'other',
-]);
+const workType = z.enum(WORK_TYPES);
+const workStatus = z.enum(WORK_STATUSES);
+const externalLinkKind = z.enum(EXTERNAL_LINK_KINDS);
+const personKind = z.enum(PERSON_KINDS);
+const publisherKind = z.enum(PUBLISHER_KINDS);
+const creditRole = z.enum(CREDIT_ROLES);
+const titleKind = z.enum(TITLE_KINDS);
+const relationKind = z.enum(RELATION_KINDS);
 
 const workSummary = z.strictObject({
   id: z.number().int(),
@@ -115,7 +117,7 @@ export const workDetailSchema = z.strictObject({
   status: workStatus,
   synopsis: z.string().nullable(),
   synopsisLanguage: z.string().nullable(),
-  synopsisSource: z.enum(['official', 'human', 'machine']).nullable(),
+  synopsisSource: z.enum(SYNOPSIS_SOURCES).nullable(),
   chapters: z.number().int().nullable(),
   volumes: z.number().int().nullable(),
   startedOn: z.string().nullable().describe('Date ISO.'),
@@ -167,7 +169,7 @@ export const genreListSchema = z.strictObject({
   items: z.array(
     z.strictObject({
       code: z.string(),
-      category: z.enum(['format', 'theme']),
+      category: z.enum(GENRE_CATEGORIES),
     }) satisfies z.ZodType<GenreRecord>,
   ),
 });
@@ -190,7 +192,7 @@ export const authStatusSchema = z
       user: z.strictObject({
         id: z.number().int(),
         handle: z.string().describe('Pseudo public, avec la casse choisie.'),
-        role: z.enum(['user', 'admin']),
+        role: z.enum(USER_ROLES),
       }),
     }),
   ])

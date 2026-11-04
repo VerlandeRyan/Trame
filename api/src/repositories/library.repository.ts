@@ -6,13 +6,12 @@ import {
   type SqlBool,
 } from 'kysely';
 import {
-  LIBRARY_STATUSES,
   type Database,
   type Db,
-  type LibraryEntryTable,
-  type LibraryStatus,
-  type ReadingEventTable,
+  type LibraryEntryRow,
+  type ReadingEventRow,
 } from '../db/database.js';
+import { LIBRARY_STATUSES, type LibraryStatus } from '../domain/user-enums.js';
 import {
   displayTitle,
   searchCondition,
@@ -132,7 +131,7 @@ const ENTRY_COLUMNS = [
 ] as const;
 
 function toEntry(
-  row: Pick<Selectable<LibraryEntryTable>, (typeof ENTRY_COLUMNS)[number]>,
+  row: Pick<Selectable<LibraryEntryRow>, (typeof ENTRY_COLUMNS)[number]>,
 ): LibraryEntry {
   return {
     status: row.status,
@@ -171,7 +170,7 @@ function toEventRow(
   userId: number,
   workId: number,
   event: NewReadingEvent,
-): Omit<ReadingEventTable, 'id' | 'occurred_at'> {
+): Omit<ReadingEventRow, 'id' | 'occurred_at'> {
   const row = {
     user_id: userId,
     work_id: workId,

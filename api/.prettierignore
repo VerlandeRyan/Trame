@@ -1,0 +1,2 @@
+# Généré par kysely-codegen (`npm run db:codegen`) : tel quel, sinon la vérification CI échoue.
+src/db/generated.ts
