@@ -1,0 +1,7 @@
+# Fichiers lus ou exécutés par l'assistant de code, et CI : toute modification se relit (voir docs/conventions-projet.md §10).
+/.claude/ @VerlandeRyan
+/CLAUDE.md @VerlandeRyan
+/api/CLAUDE.md @VerlandeRyan
+/web/CLAUDE.md @VerlandeRyan
+/.github/ @VerlandeRyan
+/docs/adr/ @VerlandeRyan
