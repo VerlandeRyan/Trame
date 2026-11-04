@@ -33,7 +33,6 @@ const member = computed(() =>
   auth.state.value.status === 'authenticated' ? auth.state.value.user : null,
 )
 const memberHandle = computed(() => (member.value ? `@${member.value.handle}` : ''))
-const cookieHeaders = import.meta.server ? useRequestHeaders(['cookie']) : undefined
 
 // Un bloc dont l'appel échoue est masqué : une panne ne casse pas l'accueil.
 async function loadOrFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
@@ -51,7 +50,6 @@ async function loadContinueReading(lang: string): Promise<ContinueReadingData | 
     api
       .request<ListPage>('/me/entries', {
         query: { lang, status: 'reading', sort: 'updated', pageSize: CONTINUE_READING_SIZE },
-        headers: cookieHeaders,
       })
       .then((page) => ({
         items: page.items,

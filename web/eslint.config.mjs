@@ -5,6 +5,8 @@ import withNuxt from './.nuxt/eslint.config.mjs'
 // de SonarCloud (eslint-plugin-sonarjs) vérifiées avant le push ; lint typé pour que les règles
 // qui lisent les types (promesses, `void`…) répondent comme dans l'analyse Sonar.
 export default withNuxt(
+  // Types de l'API générés par openapi-typescript : jamais édités ni analysés.
+  { ignores: ['app/contract/api-schema.ts'] },
   sonarjs.configs.recommended,
   {
     files: ['**/*.ts', '**/*.vue'],

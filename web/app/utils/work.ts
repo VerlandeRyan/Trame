@@ -1,65 +1,17 @@
 // Fiche œuvre : types de la réponse `GET /works/:id` et logique pure d'affichage (testée sans Nuxt).
 
-export type WorkType = 'series' | 'oneshot' | 'anthology'
-export type WorkStatus = 'upcoming' | 'ongoing' | 'completed' | 'hiatus' | 'abandoned'
-export type CreditRole = 'story' | 'art' | 'colors' | 'other'
-export type RelationKind =
-  | 'sequel'
-  | 'prequel'
-  | 'spin_off'
-  | 'side_story'
-  | 'adaptation'
-  | 'alternate_version'
-  | 'shared_universe'
-  | 'contains'
-  | 'other'
+import type { RelationKind, WorkDetail, WorkRelation } from '../contract/api'
 
-export interface ExternalLink {
-  kind: 'read' | 'buy' | 'website' | 'social'
-  url: string
-  label: string | null
-}
-
-export interface WorkCredit {
-  personId: number
-  name: string
-  kind: 'person' | 'collective'
-  roles: CreditRole[]
-  links: ExternalLink[]
-}
-
-export interface WorkRelation {
-  relation: RelationKind
-  direction: 'outgoing' | 'incoming'
-  work: { id: number; title: string; type: WorkType }
-}
-
-export interface WorkDetail {
-  id: number
-  title: string
-  originalTitle: string
-  originalLanguage: string
-  type: WorkType
-  status: WorkStatus
-  synopsis: string | null
-  synopsisLanguage: string | null
-  synopsisSource: 'official' | 'human' | 'machine' | null
-  chapters: number | null
-  volumes: number | null
-  startedOn: string | null
-  endedOn: string | null
-  coverPath: string | null
-  alternativeTitles: { language: string; kind: string; title: string }[]
-  credits: WorkCredit[]
-  publishers: { id: number; name: string; kind: string; url: string | null }[]
-  formats: string[]
-  genres: string[]
-  links: ExternalLink[]
-  relations: WorkRelation[]
-  memberCount: number
-  ratingCount: number
-  ratingAverage: number | null
-}
+export type {
+  CreditRole,
+  ExternalLink,
+  RelationKind,
+  WorkCredit,
+  WorkDetail,
+  WorkRelation,
+  WorkStatus,
+  WorkType,
+} from '../contract/api'
 
 const MAX_SLUG_LENGTH = 60
 

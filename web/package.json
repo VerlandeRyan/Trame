@@ -10,6 +10,8 @@
     "build": "nuxt build",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
+    "api:types": "openapi-typescript ../api/openapi.json -o app/contract/api-schema.ts",
+    "api:types:check": "openapi-typescript ../api/openapi.json -o app/contract/api-schema.ts --check",
     "typecheck": "nuxt typecheck",
     "lint": "eslint .",
     "format": "prettier --write \"app/**/*.{ts,vue,scss}\" \"i18n/**/*.{ts,json}\" \"*.{ts,mjs,json}\"",
@@ -27,7 +29,10 @@
     "vue-router": "5.4.0"
   },
   "overrides": {
-    "esbuild": "0.28.2"
+    "esbuild": "0.28.2",
+    "openapi-typescript": {
+      "typescript": "$typescript"
+    }
   },
   "devDependencies": {
     "@nuxt/eslint": "1.17.0",
@@ -37,6 +42,7 @@
     "eslint": "10.12.0",
     "eslint-plugin-sonarjs": "4.2.2",
     "happy-dom": "21.0.4",
+    "openapi-typescript": "7.13.0",
     "prettier": "3.9.10",
     "sass": "1.105.1",
     "typescript": "6.0.3",

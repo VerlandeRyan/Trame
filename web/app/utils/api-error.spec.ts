@@ -17,6 +17,14 @@ describe('toApiError', () => {
     expect(error.details).toEqual(details)
   })
 
+  it('est idempotent : une erreur déjà normalisée est rendue telle quelle', () => {
+    const normalized = { status: 404, code: 'NOT_FOUND', details: undefined }
+    expect(toApiError(normalized)).toBe(normalized)
+    expect(
+      toApiError(toApiError({ response: { status: 403, _data: { code: 'ADMIN_REQUIRED' } } })),
+    ).toEqual({ status: 403, code: 'ADMIN_REQUIRED', details: undefined })
+  })
+
   it('retombe sur INTERNAL_ERROR sans corps exploitable', () => {
     expect(toApiError(new Error('réseau'))).toEqual({
       status: 0,

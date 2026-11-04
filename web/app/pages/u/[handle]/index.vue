@@ -18,7 +18,6 @@ const { t, n, locale } = useI18n()
 const localePath = useLocalePath()
 const api = useApi()
 const auth = useAuth()
-const cookieHeaders = import.meta.server ? useRequestHeaders(['cookie']) : undefined
 
 const handle = String(route.params.handle ?? '')
 const profileKey = `profile-${handle}-${locale.value}-${auth.state.value.status}`
@@ -27,7 +26,6 @@ async function loadProfile(): Promise<Profile> {
   try {
     return await api.request<Profile>(`/users/${encodeURIComponent(handle)}`, {
       query: { lang: locale.value },
-      headers: cookieHeaders,
     })
   } catch (cause) {
     const { status } = cause as ApiError

@@ -104,6 +104,9 @@ jobs:
         working-directory: web
       - run: npx --no-install nuxt prepare
         working-directory: web
+      - name: Types de l'API à jour (échoue si api-schema.ts diffère de api/openapi.json)
+        run: npm run api:types:check
+        working-directory: web
       - run: npm run typecheck
         working-directory: web
       - run: npm run lint

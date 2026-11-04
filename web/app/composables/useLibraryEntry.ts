@@ -19,12 +19,9 @@ export function useLibraryEntry(workId: number) {
   const isLoaded = useState(`library-loaded-${workId}`, () => false)
   const errorKey = ref<string | null>(null)
   const path = `/works/${workId}/entry`
-  const cookieHeaders = import.meta.server ? useRequestHeaders(['cookie']) : undefined
 
   async function fetchEntry() {
-    entry.value = (
-      await api.request<{ entry: LibraryEntry | null }>(path, { headers: cookieHeaders })
-    ).entry
+    entry.value = (await api.request<{ entry: LibraryEntry | null }>(path)).entry
   }
 
   /** Après un échec, l'écran a pu s'écarter du serveur : on le relit. */

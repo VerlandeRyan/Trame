@@ -1,45 +1,15 @@
 // Profil public : types de `GET /users/{handle}` et logique pure de la page (testée sans Nuxt).
+import type { LibraryEntry, LibraryStatus, StatusCounts } from '../contract/api'
 import { incrementUnit } from './home'
-import type { LibraryEntry, LibraryStatus } from './library'
-import type { StatusCounts } from './reading-list'
-import type { WorkSummary } from './search'
 
-export type ProfileVisibility = 'public' | 'private'
-
-export interface ProfileStats {
-  worksFollowed: number
-  ratingAverage: number | null
-  statusCounts: StatusCounts
-  /** Chapitres et tomes lus : deux totaux, jamais additionnés. */
-  chaptersRead: number
-  volumesRead: number
-}
-
-export interface ProfileUpdate {
-  work: WorkSummary
-  entry: LibraryEntry
-  updatedAt: string
-}
-
-export interface ProfileRatedWork {
-  work: WorkSummary
-  rating: number
-}
-
-export interface ProfileDetails {
-  memberSince: string
-  stats: ProfileStats
-  recentUpdates: ProfileUpdate[]
-  topRated: ProfileRatedWork[]
-}
-
-/** `details` est `null` quand le profil est privé et que le lecteur n'en est pas le propriétaire. */
-export interface Profile {
-  handle: string
-  visibility: ProfileVisibility
-  isOwner: boolean
-  details: ProfileDetails | null
-}
+export type {
+  Profile,
+  ProfileDetails,
+  ProfileRatedWork,
+  ProfileStats,
+  ProfileUpdate,
+  ProfileVisibility,
+} from '../contract/api'
 
 /** Premières lettres du pseudo, pour le monogramme sans photo. */
 export function monogram(handle: string): string {

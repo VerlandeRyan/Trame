@@ -1,37 +1,23 @@
 // Ma liste de lecture : types de `GET /me/entries` et logique pure de la page (testée sans Nuxt).
-import { LIBRARY_STATUSES, type LibraryEntry, type LibraryStatus } from './library'
-import type { WorkSummary } from './search'
+import type {
+  LibraryEntry,
+  LibraryStatus,
+  ListedEntry,
+  ReadingTotals,
+  StatusCounts,
+} from '../contract/api'
+import { LIBRARY_STATUSES } from './library'
+
+export type {
+  ListedEntry,
+  ListedWork,
+  ListPage,
+  ReadingTotals,
+  StatusCounts,
+} from '../contract/api'
 
 /** Œuvres demandées par page (limite de l'API). */
 export const LIST_PAGE_SIZE = 50
-
-/** Une œuvre de la liste, avec ses totaux parus (`null` : inconnu ou en cours de publication). */
-export interface ListedWork extends WorkSummary {
-  chapters: number | null
-  volumes: number | null
-}
-
-export interface ListedEntry {
-  work: ListedWork
-  entry: LibraryEntry
-}
-
-export type StatusCounts = Record<LibraryStatus, number>
-
-/** Chapitres et tomes lus sur toute la liste : deux totaux, jamais additionnés. */
-export interface ReadingTotals {
-  chaptersRead: number
-  volumesRead: number
-}
-
-export interface ListPage {
-  items: ListedEntry[]
-  page: number
-  pageSize: number
-  total: number
-  statusCounts: StatusCounts
-  totals: ReadingTotals
-}
 
 export type ListSort = 'updated' | 'title' | 'rating'
 export const LIST_SORTS: ListSort[] = ['updated', 'title', 'rating']

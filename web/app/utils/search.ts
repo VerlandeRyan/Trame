@@ -1,39 +1,13 @@
 // Recherche : types des réponses de l'API et logique pure de la page de résultats.
-import type { WorkStatus, WorkType } from './work'
+import type { FacetCount, WorkSummary } from '../contract/api'
+
+export type { FacetCount, WorkFacets, WorkPage, WorkSummary } from '../contract/api'
 
 export const MIN_QUERY_LENGTH = 2
 export const PAGE_SIZE = 20
 export const SUGGESTION_COUNT = 3
 
-export interface WorkSummary {
-  id: number
-  title: string
-  originalTitle: string
-  originalLanguage: string
-  type: WorkType
-  status: WorkStatus
-  formats: string[]
-  coverPath: string | null
-  mainAuthor: string | null
-}
-
-export interface WorkPage {
-  items: WorkSummary[]
-  page: number
-  pageSize: number
-  total: number
-  /** Aucune œuvre ne contient tous les mots : la liste donne celles qui en ont au moins un. */
-  approximate: boolean
-}
-
-export interface FacetCount {
-  code: string
-  count: number
-}
-
 export type FilterKey = 'type' | 'format' | 'genre' | 'status' | 'originalLanguage'
-
-export type WorkFacets = Record<FilterKey, FacetCount[]>
 
 export const FILTER_KEYS: FilterKey[] = ['type', 'format', 'genre', 'status', 'originalLanguage']
 
