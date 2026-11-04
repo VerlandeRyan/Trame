@@ -6,9 +6,13 @@ export function saveSession(req: Request): Promise<void> {
   });
 }
 
+/** Une erreur du store est journalisée mais ne bloque pas : la session est de toute façon abandonnée. */
 export function destroySession(req: Request): Promise<void> {
   return new Promise((resolve) => {
-    req.session.destroy(() => resolve());
+    req.session.destroy((err: unknown) => {
+      if (err) console.error(err);
+      resolve();
+    });
   });
 }
 

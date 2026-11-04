@@ -1,6 +1,8 @@
 import type { Request, RequestHandler } from 'express';
 import { SUPPORTED_LANGUAGES } from '../config.js';
 import { AppError } from '../errors.js';
+import { validated } from '../middleware/validate.js';
+import { callbackQuery } from '../schemas/auth.js';
 import {
   PENDING_SIGNUP_TTL_MS,
   type AuthService,
@@ -64,7 +66,7 @@ export function createAuthController(
     },
 
     async finishGoogleLogin(req, res) {
-      const { code, state, error } = req.query as Record<string, string | undefined>;
+      const { code, state, error } = validated(callbackQuery, req.query);
       const attempt = req.session.oauth;
       const backToFront = (path: string) => res.redirect(`${webOrigin}${path}`);
       const fail = (reason: string) =>

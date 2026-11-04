@@ -83,5 +83,6 @@ Réponse unique `{ code, message, details? }` ; `message` est un texte technique
 - `npm run db:seed:bulk` / `db:seed:bulk:remove` : 48 œuvres fictives marquées « [Démo] » (+ personnes et éditeurs « (démo) », genres thématiques) **ajoutées** à la base de travail locale pour essayer pagination, genres et tri (`db/demo-bulk.sql`). Rien n'est vidé ; le retrait ne supprime que les lignes marquées.
 
 ## Règles
+- Pool PostgreSQL : `createPool` (`db/database.ts`) fixe la taille et les délais en constantes (`POOL_MAX`, `CONNECTION_TIMEOUT_MS`, `STATEMENT_TIMEOUT_MS`, `IDLE_TIMEOUT_MS`) et journalise l'erreur d'un client inactif. Valeurs estimées, à ajuster avec #86 ; elles deviendront des variables d'environnement avec l'hébergeur (#36) si besoin.
 - Migration fusionnée dans `main` : on n'y touche plus, on en ajoute une.
 - Tout changement de comportement ⇒ test ; toute évolution de schéma ⇒ migration + `docs/modele-de-donnees.md`.

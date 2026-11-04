@@ -400,11 +400,7 @@ export function createWorkRepository(db: Db): WorkRepository {
         .orderBy('work.id')
         .limit(limit)
         .execute();
-      // `count` revient de pg en texte (bigint).
-      return rows.map(({ additions, ...work }) => ({
-        ...work,
-        recentAdditions: Number(additions),
-      }));
+      return rows.map(({ additions, ...work }) => ({ ...work, recentAdditions: additions }));
     },
 
     async findTopRatedWorks({ lang, minRatings, limit }) {
