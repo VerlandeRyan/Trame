@@ -14,5 +14,7 @@ export function useApi() {
     baseURL: import.meta.server ? config.apiBase : '',
     fetcher,
     hasTranslation: te,
+    // Au rendu serveur, l'API reconnaît le visiteur par son cookie : il est transmis à chaque appel.
+    defaultHeaders: import.meta.server ? useRequestHeaders(['cookie']) : undefined,
   })
 }

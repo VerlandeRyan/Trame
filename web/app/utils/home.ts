@@ -1,22 +1,8 @@
 // Accueil : types des réponses de l'API et logique pure.
-import type { LibraryEntry } from './library'
+import type { FacetCount, LibraryEntry, WorkFacets } from '../contract/api'
 import type { ListUnit } from './reading-list'
-import type { FacetCount, WorkFacets, WorkSummary } from './search'
 
-export interface FeaturedWork extends WorkSummary {
-  synopsis: string | null
-  recentAdditions: number
-}
-
-export interface RatedWork extends WorkSummary {
-  ratingAverage: number
-  ratingCount: number
-}
-
-export interface GenreItem {
-  code: string
-  category: 'format' | 'theme'
-}
+export type { FeaturedWork, GenreItem, RatedWork } from '../contract/api'
 
 /** Demandées à l'API pour remplir une ligne sur grand écran ; l'affichage coupe selon la largeur. */
 export const SHELF_SIZE = 12

@@ -4,9 +4,8 @@ import { ANONYMOUS, AUTH_STATUS_TIMEOUT_MS, type AuthState } from '~/utils/auth'
 export function useAuth() {
   const api = useApi()
   const state = useState<AuthState>('auth', () => ANONYMOUS)
-  // Au rendu serveur : transmettre le cookie du visiteur à l'API et, en retour, sa prolongation.
+  // Au rendu serveur : renvoyer au navigateur la prolongation du cookie posée par l'API.
   const event = import.meta.server ? useRequestEvent() : undefined
-  const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined
 
   function passCookiesToBrowser({ response }: { response: Response }) {
     if (!event) return
@@ -18,7 +17,6 @@ export function useAuth() {
   async function refresh() {
     try {
       state.value = await api.request<AuthState>('/auth/me', {
-        headers,
         timeout: AUTH_STATUS_TIMEOUT_MS,
         onResponse: import.meta.server ? passCookiesToBrowser : undefined,
       })

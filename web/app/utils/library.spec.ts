@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, expectTypeOf, it } from 'vitest'
 import {
+  LIBRARY_STATUSES,
   countersToTotals,
   exceedsKnownTotal,
   keepsChangesOnDecline,
@@ -8,6 +9,7 @@ import {
   withPromptStatus,
   type LibraryEntry,
   type LibraryEntryChanges,
+  type LibraryStatus,
 } from './library'
 
 const TO_READ: LibraryEntry = {
@@ -18,6 +20,14 @@ const TO_READ: LibraryEntry = {
   startedOn: null,
   finishedOn: null,
 }
+
+describe('LIBRARY_STATUSES', () => {
+  it('liste exactement les statuts du contrat de l’API', () => {
+    // Échoue au typecheck si l'API ajoute, retire ou renomme un statut.
+    expectTypeOf<(typeof LIBRARY_STATUSES)[number]>().toEqualTypeOf<LibraryStatus>()
+    expect(LIBRARY_STATUSES).toHaveLength(5)
+  })
+})
 
 describe('readingPrompt', () => {
   const NO_TOTALS = { chapters: null, volumes: null }

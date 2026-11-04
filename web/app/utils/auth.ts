@@ -1,14 +1,8 @@
+import type { AuthState } from '../contract/api'
 import { errorMessageKey } from './api-error'
 
-export interface AuthUser {
-  id: number
-  handle: string
-  role: 'user' | 'admin'
-}
-
-/** Réponse de `GET /auth/me` ; `pending` : identité Google validée, pseudo à choisir. */
-export type AuthState =
-  { status: 'anonymous' } | { status: 'pending' } | { status: 'authenticated'; user: AuthUser }
+/** `GET /auth/me` ; `pending` : identité Google validée, pseudo à choisir. */
+export type { AuthState, AuthUser } from '../contract/api'
 
 export const ANONYMOUS: AuthState = { status: 'anonymous' }
 

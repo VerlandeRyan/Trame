@@ -7,8 +7,19 @@ export interface ApiError {
 
 const FALLBACK_CODE = 'INTERNAL_ERROR'
 
-/** Normalise une erreur de `$fetch` (ou toute erreur) en `ApiError`. */
+/** Une erreur déjà normalisée : `status` numérique et `code` texte, sans réponse HTTP brute. */
+function isApiError(error: unknown): error is ApiError {
+  const candidate = error as Partial<ApiError> & { response?: unknown }
+  return (
+    typeof candidate?.status === 'number' &&
+    typeof candidate.code === 'string' &&
+    candidate.response === undefined
+  )
+}
+
+/** Normalise une erreur de `$fetch` (ou toute erreur) en `ApiError` ; idempotent. */
 export function toApiError(error: unknown): ApiError {
+  if (isApiError(error)) return error
   const candidate = error as {
     status?: number
     statusCode?: number

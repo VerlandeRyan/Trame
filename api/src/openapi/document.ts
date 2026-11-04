@@ -88,7 +88,7 @@ const rateLimited = errorResponse(
 interface AdminResource {
   /** Segment d'URL sous `/admin`. */
   path: string;
-  /** Nom de la ressource dans les `operationId` (`listPeople` → `People`). */
+  /** Nom de la ressource dans les `operationId` d'administration (`listAdminPeople` → `People`). */
   plural: string;
   singular: string;
   /** Composants de réponse : un enregistrement et une page. */
@@ -142,7 +142,7 @@ function adminResourcePaths(resource: AdminResource) {
     [base]: {
       get: {
         summary: `Lister : ${resource.plural}`,
-        operationId: `list${resource.plural}`,
+        operationId: `listAdmin${resource.plural}`,
         tags: ['admin'],
         security: adminSecurity,
         parameters: toParameters(resource.listQuery, 'query'),
@@ -155,7 +155,7 @@ function adminResourcePaths(resource: AdminResource) {
       post: {
         ...writeBase,
         summary: `Créer : ${resource.singular}`,
-        operationId: `create${resource.singular}`,
+        operationId: `createAdmin${resource.singular}`,
         requestBody: writeBody,
         responses: {
           '201': jsonResponse(resource.record, 'Créé.'),
@@ -168,7 +168,7 @@ function adminResourcePaths(resource: AdminResource) {
     [`${base}/{id}`]: {
       get: {
         summary: `Lire : ${resource.singular}`,
-        operationId: `get${resource.singular}`,
+        operationId: `getAdmin${resource.singular}`,
         tags: ['admin'],
         security: adminSecurity,
         parameters: idParameters,
@@ -182,7 +182,7 @@ function adminResourcePaths(resource: AdminResource) {
       put: {
         ...writeBase,
         summary: `Remplacer : ${resource.singular}`,
-        operationId: `replace${resource.singular}`,
+        operationId: `replaceAdmin${resource.singular}`,
         parameters: idParameters,
         requestBody: writeBody,
         responses: {
@@ -199,7 +199,7 @@ function adminResourcePaths(resource: AdminResource) {
       post: {
         ...writeBase,
         summary: `Archiver : ${resource.singular}`,
-        operationId: `archive${resource.singular}`,
+        operationId: `archiveAdmin${resource.singular}`,
         parameters: idParameters,
         responses: {
           '200': jsonResponse(resource.record, 'Archivée (sans effet si elle l’est déjà).'),
@@ -215,7 +215,7 @@ function adminResourcePaths(resource: AdminResource) {
       post: {
         ...writeBase,
         summary: `Restaurer : ${resource.singular}`,
-        operationId: `restore${resource.singular}`,
+        operationId: `restoreAdmin${resource.singular}`,
         parameters: idParameters,
         responses: {
           '200': jsonResponse(resource.record, 'Restaurée (sans effet si elle ne l’est pas).'),

@@ -1,25 +1,23 @@
 // Liste de lecture : types de la réponse `GET /works/:id/entry` et logique pure (testée sans Nuxt).
 
+import type { LibraryEntry, LibraryStatus } from '../contract/api'
+
+export type { LibraryEntry, LibraryStatus } from '../contract/api'
+
+/**
+ * Valeurs d'exécution du statut (menus, onglets). `satisfies` refuse un statut que l'API ne connaît
+ * plus ; un statut ajouté par l'API est détecté par le test de type de `library.spec.ts`.
+ */
 export const LIBRARY_STATUSES = [
   'reading',
   'completed',
   'plan_to_read',
   'on_hold',
   'dropped',
-] as const
-export type LibraryStatus = (typeof LIBRARY_STATUSES)[number]
+] as const satisfies readonly LibraryStatus[]
 
 /** Statut d'une œuvre qu'on vient d'ajouter à sa liste. */
 export const DEFAULT_LIBRARY_STATUS: LibraryStatus = 'plan_to_read'
-
-export interface LibraryEntry {
-  status: LibraryStatus
-  chaptersRead: number
-  volumesRead: number
-  rating: number | null
-  startedOn: string | null
-  finishedOn: string | null
-}
 
 /** Corps de `PUT /works/:id/entry` : le statut est toujours envoyé, le reste seulement s'il change. */
 export type LibraryEntryChanges = Partial<LibraryEntry>

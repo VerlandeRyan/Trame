@@ -1,5 +1,4 @@
-// Branche le client d'administration sur Nuxt ; le rendu serveur transmet le cookie du visiteur.
+// Branche le client d'administration sur Nuxt ; `useApi()` transmet le cookie du visiteur au rendu serveur.
 export function useAdminClient() {
-  const headers = import.meta.server ? useRequestHeaders(['cookie']) : undefined
-  return createAdminClient(useApi().request, headers)
+  return createAdminClient(useApi().request)
 }

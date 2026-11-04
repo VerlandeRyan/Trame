@@ -15,18 +15,17 @@ type Request = <T>(path: string, options?: Record<string, unknown>) => Promise<T
 
 const PICKER_RESULTS = 8
 
-/** Appels de `/admin/*` ; `headers` porte le cookie de session quand l'appel part du serveur. */
-export function createAdminClient(request: Request, headers?: Record<string, string>) {
+/** Appels de `/admin/*` ; le cookie de session au rendu serveur est ajouté par `useApi()`. */
+export function createAdminClient(request: Request) {
   const base = (kind: AdminKind) => `/admin/${kind}`
 
   /** `pageSize` : 1 suffit quand seul `total` intéresse (compteur d'un onglet). */
   const list = (query: AdminListQuery, pageSize = ADMIN_PAGE_SIZE) =>
     request<AdminPage<AdminListItem>>(base(query.kind), {
       query: toAdminApiQuery(query, pageSize),
-      headers,
     })
 
-  const get = <T>(kind: AdminKind, id: number) => request<T>(`${base(kind)}/${id}`, { headers })
+  const get = <T>(kind: AdminKind, id: number) => request<T>(`${base(kind)}/${id}`)
 
   const create = <T>(kind: AdminKind, body: unknown) =>
     request<T>(base(kind), { method: 'POST', body })

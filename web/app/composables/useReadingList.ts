@@ -34,7 +34,6 @@ export async function useReadingList(
 ) {
   const api = useApi()
   const { locale } = useI18n()
-  const cookieHeaders = import.meta.server ? useRequestHeaders(['cookie']) : undefined
 
   const items = ref<ListedEntry[]>([])
   const total = ref(0)
@@ -48,7 +47,6 @@ export async function useReadingList(
   const fetchPage = (page: number) =>
     api.request<ListPage>(source, {
       query: toListApiQuery(state.value, { lang: locale.value, page }),
-      headers: cookieHeaders,
     })
 
   // Relue seulement quand la requête change (onglet, recherche, tri, langue) : basculer entre liste

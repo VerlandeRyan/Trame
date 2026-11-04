@@ -4,7 +4,7 @@ import { createAdminClient } from './admin-client'
 
 function setup(respond: (path: string) => unknown = () => ({})) {
   const request = vi.fn(async (path: string) => respond(path))
-  return { request, client: createAdminClient(request as never, { cookie: 'sid=1' }) }
+  return { request, client: createAdminClient(request as never) }
 }
 
 const page = (items: AdminListItem[]): AdminPage<AdminListItem> => ({
@@ -15,14 +15,13 @@ const page = (items: AdminListItem[]): AdminPage<AdminListItem> => ({
 })
 
 describe('client d’administration', () => {
-  it('liste avec la recherche, la portée, la page et le cookie du rendu serveur', async () => {
+  it('liste avec la recherche, la portée et la page', async () => {
     const { client, request } = setup()
     await client.list(
       parseAdminListQuery({ kind: 'people', scope: 'archived', q: 'léa', page: '2' }),
     )
     expect(request).toHaveBeenCalledWith('/admin/people', {
       query: { q: 'léa', scope: 'archived', page: 2, pageSize: 20 },
-      headers: { cookie: 'sid=1' },
     })
   })
 

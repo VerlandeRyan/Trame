@@ -15,7 +15,7 @@ export default defineVitestConfig({
       reporter: ['lcov', 'text'],
       include: ['app/**/*.{ts,vue}', 'shared/**/*.ts'],
       // `useApi.ts` est un adaptateur sans logique (la logique testée est `utils/api-client.ts`).
-      exclude: ['**/*.spec.ts', 'app/composables/useApi.ts'],
+      exclude: ['**/*.spec.ts', 'app/composables/useApi.ts', 'app/contract/api-schema.ts'],
       // Seuil volontairement en dessous du niveau actuel (~90 %) : il bloque les régressions franches.
       thresholds: { lines: 80, statements: 80, functions: 80, branches: 80 },
     },

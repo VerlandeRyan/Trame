@@ -36,6 +36,36 @@ describe('createApiClient().request', () => {
     })
   })
 
+  it('ajoute les en-têtes par défaut (cookie du visiteur au rendu serveur) à chaque appel', async () => {
+    fetcher.mockResolvedValue({})
+    const client = createApiClient({
+      baseURL: 'http://api.test',
+      fetcher,
+      hasTranslation: () => false,
+      defaultHeaders: { cookie: 'trame.sid=abc' },
+    })
+
+    await client.request('/me/entries')
+    await client.request('/works', { headers: { 'x-test': '1' } })
+
+    expect(fetcher).toHaveBeenNthCalledWith(1, '/api/v1/me/entries', {
+      baseURL: 'http://api.test',
+      headers: { cookie: 'trame.sid=abc' },
+    })
+    expect(fetcher).toHaveBeenNthCalledWith(2, '/api/v1/works', {
+      baseURL: 'http://api.test',
+      headers: { cookie: 'trame.sid=abc', 'x-test': '1' },
+    })
+  })
+
+  it("n'ajoute aucun en-tête sans en-têtes par défaut", async () => {
+    fetcher.mockResolvedValue({})
+
+    await makeClient().request('/works')
+
+    expect(fetcher).toHaveBeenCalledWith('/api/v1/works', { baseURL: 'http://api.test' })
+  })
+
   it("lève une erreur normalisée avec le code stable de l'API", async () => {
     fetcher.mockRejectedValue({ response: { status: 403, _data: { code: 'ADMIN_REQUIRED' } } })
 
