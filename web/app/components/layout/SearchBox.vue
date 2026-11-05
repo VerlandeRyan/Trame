@@ -336,7 +336,7 @@ watch(
 }
 
 .search-box__option--active {
-  background: var(--color-field-soft);
+  background: var(--color-cover-empty);
   box-shadow: inset 3px 0 0 var(--color-blue);
 }
 
@@ -345,6 +345,13 @@ watch(
   background: var(--color-field-soft);
   font-size: 0.875rem;
   font-weight: 800;
+
+  // Survol ou sélection au clavier : même fond que les autres lignes, libellé souligné. Redéclaré
+  // ici car `--all` est écrit après `--active` et lui reprendrait son fond.
+  &.search-box__option--active {
+    background: var(--color-cover-empty);
+    text-decoration: underline;
+  }
 }
 
 .search-box__option .search-box__cover {

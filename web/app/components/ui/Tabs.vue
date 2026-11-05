@@ -138,6 +138,8 @@ function registerButton(element: unknown, index: number) {
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .tabs {
   display: flex;
   gap: var(--space-2);
@@ -158,6 +160,15 @@ function registerButton(element: unknown, index: number) {
   font-weight: 700;
   white-space: nowrap;
   cursor: pointer;
+
+  // Jamais sur l'onglet courant : un survol ne doit pas ressembler à une sélection.
+  &:not(.tabs__tab--active) {
+    @include on-hover {
+      background: var(--color-cover-empty);
+    }
+
+    @include press-background(var(--color-cover-empty));
+  }
 }
 
 .tabs__tab--active {
@@ -181,6 +192,19 @@ function registerButton(element: unknown, index: number) {
     border-color: transparent;
     border-radius: 0;
     background: transparent;
+
+    // Au survol seul le trait apparaît, à l'emplacement du trait actif.
+    &:not(.tabs__tab--active) {
+      @include on-hover {
+        border-color: var(--color-blue-line);
+        background: transparent;
+      }
+
+      &:active {
+        border-color: var(--color-blue-line);
+        background: transparent;
+      }
+    }
   }
 
   .tabs__tab--active {

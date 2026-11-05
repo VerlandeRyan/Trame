@@ -139,27 +139,7 @@ watch(open, (isOpen) => {
     }
 
     // Même mouvement que les flèches du carrousel.
-    @media (prefers-reduced-motion: no-preference) {
-      transition:
-        transform 0.12s ease-out,
-        box-shadow 0.12s ease-out,
-        background-color 0.15s;
-    }
-
-    @include on-hover {
-      background: var(--color-rose);
-
-      @media (prefers-reduced-motion: no-preference) {
-        box-shadow: var(--shadow-small);
-        transform: translate(-1px, -1px);
-      }
-    }
-
-    &:active {
-      background: var(--color-rose);
-      box-shadow: none;
-      transform: translate(1px, 1px);
-    }
+    @include lift-on-hover;
   }
 
   .modal__body {

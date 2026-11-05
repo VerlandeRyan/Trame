@@ -1,3 +1,5 @@
+@use 'sass:map';
+
 // Survol à la souris seulement : sur écran tactile `:hover` reste collé après un toucher.
 // Jamais sur un élément désactivé.
 @mixin on-hover {
@@ -8,9 +10,31 @@
   }
 }
 
+// Trois paliers d'inclinaison selon la largeur de l'élément, pour qu'un coin bouge à peu près de
+// la même distance (3 à 6 px) sans déborder sur les voisins du dessus et du dessous. Le palier
+// small convient aux boutons étroits (60 à 120 px), medium aux boutons courants, wide aux cartes,
+// aux boutons larges et à la pleine largeur.
+$tilt-tiers: (
+  small: (
+    angle: -2.5deg,
+    scale: 1.05,
+  ),
+  medium: (
+    angle: -1.6deg,
+    scale: 1.04,
+  ),
+  wide: (
+    angle: -1.2deg,
+    scale: 1.03,
+  ),
+);
+
 // Inclinaison « autocollant » avec rebond et fond plus soutenu. Le mouvement disparaît si
-// l'animation est réduite, pas la couleur. `$angle` plus faible pour les éléments larges.
-@mixin tilt-on-hover($hover-background: null, $scale: 1.05, $angle: -2.5deg) {
+// l'animation est réduite, pas la couleur.
+@mixin tilt-on-hover($hover-background: null, $tier: medium) {
+  $angle: map.get($tilt-tiers, $tier, angle);
+  $scale: map.get($tilt-tiers, $tier, scale);
+
   @media (prefers-reduced-motion: no-preference) {
     transition:
       transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -28,6 +52,53 @@
     @media (prefers-reduced-motion: no-preference) {
       transform: rotate($angle) scale($scale);
     }
+  }
+
+  @if $hover-background != null {
+    @include press-background($hover-background);
+  }
+}
+
+// Enfoncement d'un bouton qui a une ombre au repos : il se décale de 2 px sur elle. Le sélecteur
+// est doublé (`.btn.btn`) pour l'emporter sur l'inclinaison du survol, où qu'il soit déclaré.
+@mixin press-down {
+  &#{&}:active:not(:disabled, [aria-disabled='true']) {
+    box-shadow: 1px 1px 0 var(--color-ink);
+    transform: translate(2px, 2px);
+  }
+}
+
+// Appui (souris et doigt) : le fond du survol. L'enfoncement de 2 px est posé par le composant.
+@mixin press-background($background) {
+  &:active:not(:disabled, [aria-disabled='true']) {
+    background: $background;
+  }
+}
+
+// Petits boutons carrés (flèches, −/+, croix) : trop petits pour s'incliner, ils montent d'1 px.
+// Fond du survol et de l'appui : `--color-cover-empty`. Sans ombre au repos, ils ne s'enfoncent pas :
+// l'appui les ramène à plat, à leur place.
+@mixin lift-on-hover {
+  @media (prefers-reduced-motion: no-preference) {
+    transition:
+      transform 0.12s ease-out,
+      box-shadow 0.12s ease-out,
+      background-color 0.15s;
+  }
+
+  @include on-hover {
+    background: var(--color-cover-empty);
+
+    @media (prefers-reduced-motion: no-preference) {
+      box-shadow: var(--shadow-small);
+      transform: translate(-1px, -1px);
+    }
+  }
+
+  &:active:not(:disabled, [aria-disabled='true']) {
+    background: var(--color-cover-empty);
+    box-shadow: none;
+    transform: none;
   }
 }
 

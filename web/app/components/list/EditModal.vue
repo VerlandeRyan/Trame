@@ -184,7 +184,7 @@ function removeFromListAndClose() {
       <div class="edit__footer">
         <button
           type="button"
-          class="edit__remove"
+          class="edit__remove link-underlined"
           data-testid="list-edit-remove"
           @click="confirmingRemoval = true"
         >
@@ -202,6 +202,7 @@ function removeFromListAndClose() {
 
   <UiConfirm
     v-model="confirmingRemoval"
+    danger
     :title="t('library.removeTitle')"
     :text="t('library.removeText')"
     :confirm-label="t('library.remove')"
@@ -359,9 +360,9 @@ function removeFromListAndClose() {
   border: 0;
   background: transparent;
   color: var(--color-crimson);
+  --link-hover-color: var(--color-crimson);
   font-size: 0.8125rem;
   font-weight: 700;
-  text-decoration: underline;
   cursor: pointer;
 }
 </style>

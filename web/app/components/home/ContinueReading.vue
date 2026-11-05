@@ -50,7 +50,7 @@ const addOneLabel = (item: ListedEntry) =>
       </h2>
       <NuxtLink
         :to="localePath('/list')"
-        class="continue-reading__see-list"
+        class="continue-reading__see-list link-underlined"
         data-testid="home-continue-reading-list-link"
       >
         {{ t('home.continueReading.seeList') }}
@@ -122,6 +122,8 @@ const addOneLabel = (item: ListedEntry) =>
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 // Au bureau la bande ne dépasse pas la largeur de ses cartes (trois colonnes de 12 px d'écart) :
 // avec une ou deux œuvres, « Voir ma liste » reste collé à la dernière carte.
 .continue-reading__header,
@@ -198,6 +200,10 @@ const addOneLabel = (item: ListedEntry) =>
 .continue-reading__link {
   color: var(--color-blue);
   text-decoration: none;
+
+  @include on-hover {
+    text-decoration: underline;
+  }
 }
 
 .continue-reading__progress {
@@ -223,6 +229,13 @@ const addOneLabel = (item: ListedEntry) =>
   flex: none;
   min-width: var(--touch);
   padding: 0 var(--space-2);
+
+  // Bouton carré de 44 px : palier le plus fort. `.btn` double la spécificité pour l'emporter
+  // sur le palier de `UiButton`, donc aussi sur son enfoncement, à redéclarer ici.
+  &.btn {
+    @include tilt-on-hover(null, small);
+    @include press-down;
+  }
 }
 
 .continue-reading__error {

@@ -109,7 +109,7 @@ const selectedCount = computed(() => props.selected.length)
       <button
         v-if="hiddenCount > 0 || expanded"
         type="button"
-        class="filter-group__more"
+        class="filter-group__more link-underlined"
         :aria-expanded="expanded"
         @click="expanded = !expanded"
       >

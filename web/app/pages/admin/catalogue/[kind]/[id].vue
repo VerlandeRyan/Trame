@@ -82,7 +82,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
 <template>
   <div class="edit">
     <AdminNav />
-    <NuxtLink :to="listLocation" class="edit__back" data-testid="admin-back">
+    <NuxtLink :to="listLocation" class="edit__back link-underlined" data-testid="admin-back">
       <Icon name="tabler:chevron-left" size="16" aria-hidden="true" />{{ t('admin.back') }}
     </NuxtLink>
     <header class="edit__head">

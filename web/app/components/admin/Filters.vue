@@ -136,7 +136,7 @@ const sheetGroups = computed(
       <template #actions>
         <button
           type="button"
-          class="filters__collapse"
+          class="filters__collapse link-underlined"
           data-testid="filters-sheet-collapse"
           @click="setAllGroups(!areAllGroupsOpen)"
         >

@@ -141,7 +141,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
         </p>
         <button
           type="button"
-          class="profile__link-button"
+          class="profile__link-button link-underlined"
           :disabled="isSavingVisibility"
           data-testid="profile-visibility-toggle"
           @click="changeVisibility(nextVisibility)"
@@ -151,7 +151,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
         <button
           v-if="isPublic"
           type="button"
-          class="profile__link-button profile__copy-link"
+          class="profile__link-button profile__copy-link link-underlined"
           data-testid="profile-copy-link"
           @click="copyProfileLink"
         >
@@ -734,6 +734,13 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   gap: var(--space-2);
   width: 100%;
   text-decoration: none;
+
+  // Toute la carte est le lien : le titre se souligne quand on la survole.
+  @include on-hover {
+    .profile__work {
+      text-decoration: underline;
+    }
+  }
 }
 
 .profile__rating {

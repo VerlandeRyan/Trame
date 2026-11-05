@@ -42,7 +42,7 @@ defineExpose({ allOpen, setAll })
   <div class="filters">
     <div v-if="!sheet" class="filters__head">
       <h2 class="filters__title">{{ t('search.filters') }}</h2>
-      <button type="button" class="filters__collapse" @click="setAll(!allOpen)">
+      <button type="button" class="filters__collapse link-underlined" @click="setAll(!allOpen)">
         {{ allOpen ? t('search.collapseAll') : t('search.expandAll') }}
       </button>
     </div>
@@ -56,7 +56,12 @@ defineExpose({ allOpen, setAll })
       :searchable="key === 'genre'"
       @toggle="(code) => emit('toggle', key, code)"
     />
-    <button v-if="!sheet" type="button" class="filters__reset" @click="emit('reset')">
+    <button
+      v-if="!sheet"
+      type="button"
+      class="filters__reset link-underlined"
+      @click="emit('reset')"
+    >
       {{ t('search.reset') }}
     </button>
   </div>

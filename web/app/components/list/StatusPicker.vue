@@ -132,8 +132,10 @@ function choose(status: LibraryStatus) {
   cursor: pointer;
 
   @include on-hover {
-    background: var(--color-field-soft);
+    background: var(--color-cover-empty);
   }
+
+  @include press-background(var(--color-cover-empty));
 }
 
 .status-picker__dot {

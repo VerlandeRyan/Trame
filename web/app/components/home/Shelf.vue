@@ -31,7 +31,7 @@ function ratingLabel(work: ShelfWork): string | null {
       <NuxtLink
         v-if="seeAllTo"
         :to="seeAllTo"
-        class="shelf__all"
+        class="shelf__all link-underlined"
         :aria-label="t('home.seeAllOf', { section: title })"
       >
         {{ t('home.seeAll') }}
@@ -80,15 +80,6 @@ function ratingLabel(work: ShelfWork): string | null {
   color: var(--color-ink);
   font-size: 0.75rem;
   font-weight: 700;
-  text-decoration: underline;
-
-  @media (prefers-reduced-motion: no-preference) {
-    transition: color 0.15s;
-  }
-
-  @include on-hover {
-    color: var(--color-blue-light);
-  }
 }
 
 // Une seule ligne : autant d'œuvres que la largeur en permet, qui se la partagent. Les suivantes

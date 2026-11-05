@@ -242,12 +242,6 @@ function archiveMenuItem() {
   border-top: 1px dashed var(--color-ink-soft);
 }
 
-.rows__row {
-  @include on-hover {
-    background: var(--color-field-soft);
-  }
-}
-
 .rows__main {
   display: flex;
   gap: var(--space-3);
@@ -270,6 +264,11 @@ function archiveMenuItem() {
   color: var(--color-blue);
   font-weight: 800;
   text-decoration: none;
+
+  // Comme le titre d'une ligne de Ma liste.
+  @include on-hover {
+    text-decoration: underline;
+  }
 }
 
 .rows__sub {

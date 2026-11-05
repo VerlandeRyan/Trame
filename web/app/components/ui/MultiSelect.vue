@@ -67,7 +67,7 @@ const clear = () => {
       </label>
       <button
         type="button"
-        class="multi-select__clear"
+        class="multi-select__clear link-underlined"
         :disabled="model.length === 0"
         @click="clear"
       >
@@ -99,8 +99,10 @@ const clear = () => {
   cursor: pointer;
 
   @include on-hover {
-    background: var(--field-hover-bg, var(--color-field-soft));
+    background: var(--color-cover-empty);
   }
+
+  @include press-background(var(--color-cover-empty));
 }
 
 .multi-select__trigger--active {
@@ -151,8 +153,10 @@ const clear = () => {
   cursor: pointer;
 
   @include on-hover {
-    background: var(--color-field-soft);
+    background: var(--color-cover-empty);
   }
+
+  @include press-background(var(--color-cover-empty));
 
   & + & {
     border-top: 1px dashed var(--color-rule);

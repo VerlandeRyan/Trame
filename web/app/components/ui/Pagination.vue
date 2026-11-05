@@ -64,6 +64,8 @@ const items = computed(() => pageItems(props.page, props.pages))
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .pagination__list {
   display: flex;
   flex-wrap: wrap;
@@ -93,6 +95,11 @@ const items = computed(() => pageItems(props.page, props.pages))
     min-width: 0;
     min-height: 0;
     padding: 4px 11px;
+  }
+
+  // Petit bouton : même montée d'1 px que −/+ et les flèches (pas la page courante, qui n'est pas un lien).
+  &:not(.pagination__item--current) {
+    @include lift-on-hover;
   }
 }
 

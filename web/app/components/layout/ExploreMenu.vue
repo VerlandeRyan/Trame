@@ -322,7 +322,7 @@ watch(
   color: var(--color-ink);
   text-decoration: none;
 
-  @include tilt-on-hover(null, 1.03, -1.2deg);
+  @include tilt-on-hover(null, wide);
 
   &:active {
     transform: scale(0.97);
@@ -399,7 +399,7 @@ watch(
     font-weight: 400;
   }
 
-  @include tilt-on-hover(var(--color-rose-soft), 1.03, -1.2deg);
+  @include tilt-on-hover(var(--color-rose-soft), wide);
 
   &:active {
     background: var(--color-rose-soft);
@@ -422,7 +422,7 @@ watch(
   font-weight: 800;
   text-decoration: none;
 
-  @include tilt-on-hover(var(--color-rose-strong), 1.03, -1.2deg);
+  @include tilt-on-hover(var(--color-rose-strong), wide);
 
   &:active {
     background: var(--color-rose-strong);

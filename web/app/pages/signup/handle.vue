@@ -107,7 +107,7 @@ async function abandonSignup() {
     </form>
     <button
       type="button"
-      class="handle__cancel"
+      class="handle__cancel link-underlined"
       data-testid="handle-cancel"
       @click="confirmingCancel = true"
     >

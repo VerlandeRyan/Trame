@@ -190,8 +190,10 @@ function askRemoval() {
   cursor: pointer;
 
   @include on-hover {
-    background: var(--color-field-soft);
+    background: var(--color-cover-empty);
   }
+
+  @include press-background(var(--color-cover-empty));
 }
 
 .status-menu__item--danger {

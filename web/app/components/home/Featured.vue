@@ -204,28 +204,7 @@ const descriptionLine = computed(() => {
     }
   }
 
-  @media (prefers-reduced-motion: no-preference) {
-    transition:
-      transform 0.12s ease-out,
-      box-shadow 0.12s ease-out,
-      background-color 0.15s;
-  }
-
-  @include on-hover {
-    background: var(--color-rose);
-
-    @media (prefers-reduced-motion: no-preference) {
-      box-shadow: var(--shadow-small);
-      transform: translate(-1px, -1px);
-    }
-  }
-
-  // Au doigt, l'appui remplace le survol.
-  &:active:not(:disabled) {
-    background: var(--color-rose);
-    box-shadow: none;
-    transform: translate(1px, 1px);
-  }
+  @include lift-on-hover;
 }
 
 // `pan-y` : le défilement vertical reste au navigateur. `overflow-x: clip` empêche la carte qui
@@ -373,10 +352,7 @@ const descriptionLine = computed(() => {
 
   @include tilt-on-hover(var(--color-rose-strong));
 
-  &:active:not(:disabled) {
-    box-shadow: 1px 1px 0 var(--color-ink);
-    transform: translate(2px, 2px);
-  }
+  @include press-down;
 }
 
 // Boutons côte à côte, sans recouvrement : 32 × 28 px à la souris, 32 × 44 px au doigt. Le rond de
@@ -427,12 +403,12 @@ const descriptionLine = computed(() => {
   &:not(.featured__dot--active) {
     @include on-hover {
       &::before {
-        background: var(--color-rose);
+        background: var(--color-cover-empty);
       }
     }
 
     &:active::before {
-      background: var(--color-rose);
+      background: var(--color-cover-empty);
     }
   }
 }
