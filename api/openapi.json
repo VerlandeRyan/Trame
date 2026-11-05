@@ -5236,7 +5236,11 @@
                   "type": "integer",
                   "minimum": -9007199254740991,
                   "maximum": 9007199254740991,
-                  "description": "Ajouts à une liste depuis 7 jours (au moins 3), pour « N lecteurs l’ont ajoutée »."
+                  "description": "Ajouts à une liste depuis 7 jours (0 si aucun), pour « N lecteurs l’ont ajoutée »."
+                },
+                "isPopular": {
+                  "type": "boolean",
+                  "description": "Vrai à partir de 3 ajouts récents : pastille « Populaire cette semaine »."
                 }
               },
               "required": [
@@ -5250,7 +5254,8 @@
                 "coverPath",
                 "mainAuthor",
                 "synopsis",
-                "recentAdditions"
+                "recentAdditions",
+                "isPopular"
               ],
               "additionalProperties": false
             }

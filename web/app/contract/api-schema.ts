@@ -729,8 +729,10 @@ export interface components {
                 mainAuthor: string | null;
                 /** @description Synopsis dans la langue demandée, sinon dans la langue originale. */
                 synopsis: string | null;
-                /** @description Ajouts à une liste depuis 7 jours (au moins 3), pour « N lecteurs l’ont ajoutée ». */
+                /** @description Ajouts à une liste depuis 7 jours (0 si aucun), pour « N lecteurs l’ont ajoutée ». */
                 recentAdditions: number;
+                /** @description Vrai à partir de 3 ajouts récents : pastille « Populaire cette semaine ». */
+                isPopular: boolean;
             }[];
         };
         /** @description Jusqu’à 12 œuvres ayant au moins 10 notes, les mieux notées d’abord ; vide si aucune. */

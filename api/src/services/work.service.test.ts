@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AppError } from '../errors.js';
 import type {
   FeaturedCriteria,
+  FeaturedWork,
   RatedCriteria,
   WorkFacetCriteria,
   WorkFacets,
@@ -217,20 +218,37 @@ describe('WorkService.get', () => {
 });
 
 describe('WorkService.listFeaturedWorks et listTopRatedWorks', () => {
-  it('transmet la fenêtre de 7 jours, le seuil de 3 ajouts et la langue', async () => {
+  it('transmet la fenêtre de 7 jours, la limite et la langue, sans seuil minimal', async () => {
     const calls: FeaturedCriteria[] = [];
     const service = createWorkService({
       ...NO_REPOSITORY,
       findFeaturedWorks: (criteria) => {
         calls.push(criteria);
-        return Promise.resolve([{ ...summary, synopsis: 'Texte fictif.', recentAdditions: 4 }]);
+        return Promise.resolve([]);
       },
     });
 
-    const result = await service.listFeaturedWorks('en');
+    await service.listFeaturedWorks('en');
 
-    expect(calls).toEqual([{ lang: 'en', minAdditions: 3, sinceDays: 7, limit: 3 }]);
-    expect(result.items).toEqual([{ ...summary, synopsis: 'Texte fictif.', recentAdditions: 4 }]);
+    expect(calls).toEqual([{ lang: 'en', sinceDays: 7, limit: 3 }]);
+  });
+
+  it('marque populaire une œuvre à partir de 3 ajouts récents', async () => {
+    const featured = (recentAdditions: number): FeaturedWork => ({
+      ...summary,
+      synopsis: null,
+      recentAdditions,
+    });
+    const service = createWorkService({
+      ...NO_REPOSITORY,
+      findFeaturedWorks: () =>
+        Promise.resolve([featured(4), featured(3), featured(2), featured(0)]),
+    });
+
+    const { items } = await service.listFeaturedWorks();
+
+    expect(items.map((item) => item.isPopular)).toEqual([true, true, false, false]);
+    expect(items[0]).toEqual({ ...featured(4), isPopular: true });
   });
 
   it('calcule la moyenne sur une décimale et applique le seuil de notes du dépôt', async () => {

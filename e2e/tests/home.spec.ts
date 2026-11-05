@@ -440,9 +440,12 @@ test('mobile : trois œuvres par rangée, sans défilement horizontal', async ({
   expect(overflow).toBeLessThanOrEqual(0)
 })
 
-test('« À la une » : le nombre de lecteurs de la semaine est affiché', async ({ page }) => {
+test('« À la une » : œuvre populaire, pastille et nombre de lecteurs de la semaine', async ({
+  page,
+}) => {
   await page.goto('/')
 
+  await expect(page.locator('.featured__badge')).toHaveText('Populaire cette semaine')
   await expect(page.getByTestId('featured-readers')).toHaveText(
     /^\d+ lecteurs? l’(a|ont) ajoutée cette semaine$/,
   )

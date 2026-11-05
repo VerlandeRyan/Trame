@@ -113,6 +113,7 @@
     "featured": {
       "title": "Featured",
       "badge": "Popular this week",
+      "badgeDiscover": "To discover",
       "synopsis": "Synopsis:",
       "readers": "{count} reader added it this week | {count} readers added it this week",
       "open": "View the page",

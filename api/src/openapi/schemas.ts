@@ -15,12 +15,12 @@ import { LIBRARY_STATUSES, PROFILE_VISIBILITIES, USER_ROLES } from '../domain/us
 import { ERROR_CODES, type ErrorBody } from '../errors.js';
 import type { GenreRecord } from '../repositories/genre.repository.js';
 import type { LibraryEntry } from '../repositories/library.repository.js';
-import type { FeaturedWork, WorkFacets, WorkSummary } from '../repositories/work.repository.js';
+import type { WorkFacets, WorkSummary } from '../repositories/work.repository.js';
 import type { AuthStatus } from '../services/auth.service.js';
 import type { HealthStatus } from '../services/health.service.js';
 import type { LibraryPage } from '../services/library.service.js';
 import type { Profile } from '../services/profile.service.js';
-import type { TopRatedWork, WorkDetail, WorkPage } from '../services/work.service.js';
+import type { FeaturedItem, TopRatedWork, WorkDetail, WorkPage } from '../services/work.service.js';
 
 // `satisfies` lie chaque schéma au type du service ; `strictObject` fait échouer le test de contrat
 // si une réponse gagne un champ non décrit.
@@ -82,9 +82,12 @@ export const featuredListSchema = z
           .number()
           .int()
           .describe(
-            'Ajouts à une liste depuis 7 jours (au moins 3), pour « N lecteurs l’ont ajoutée ».',
+            'Ajouts à une liste depuis 7 jours (0 si aucun), pour « N lecteurs l’ont ajoutée ».',
           ),
-      }) satisfies z.ZodType<FeaturedWork>,
+        isPopular: z
+          .boolean()
+          .describe('Vrai à partir de 3 ajouts récents : pastille « Populaire cette semaine ».'),
+      }) satisfies z.ZodType<FeaturedItem>,
     ),
   })
   .describe('Jusqu’à 3 œuvres, la plus ajoutée à une liste récemment d’abord ; vide si aucune.');
