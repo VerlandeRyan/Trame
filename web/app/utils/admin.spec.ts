@@ -28,7 +28,6 @@ import {
   workToDraft,
   type AdminListQuery,
   type AdminWork,
-  type WorkLabels,
 } from './admin'
 
 const WORK: AdminWork = {
@@ -49,14 +48,13 @@ const WORK: AdminWork = {
   genres: ['manga'],
   relations: [{ relatedWorkId: 9, relation: 'sequel' }],
   links: [{ kind: 'read', url: 'https://exemple.test', label: null }],
+  labels: {
+    people: [{ id: 2, label: 'Léa Auteure' }],
+    publishers: [{ id: 3, label: 'Maison Fictive' }],
+    works: [],
+  },
   followerCount: 34,
   updatedAt: '2026-10-24T10:00:00.000Z',
-}
-
-const LABELS: WorkLabels = {
-  people: new Map([[2, 'Léa Auteure']]),
-  publishers: new Map([[3, 'Maison Fictive']]),
-  works: new Map(),
 }
 
 /** La liste par défaut, avec les valeurs voulues par le test. */
@@ -207,7 +205,7 @@ describe('adresse d’édition', () => {
 
 describe('formulaire œuvre', () => {
   it('remplit le brouillon avec les libellés, `#id` à défaut', () => {
-    const draft = workToDraft(WORK, LABELS)
+    const draft = workToDraft(WORK)
     expect(draft).toMatchObject({
       chapters: '86',
       volumes: '',
@@ -221,7 +219,7 @@ describe('formulaire œuvre', () => {
   })
 
   it('renvoie le corps d’origine après un aller-retour', () => {
-    const body = draftToWorkBody(workToDraft(WORK, LABELS))
+    const body = draftToWorkBody(workToDraft(WORK))
     expect(body).toMatchObject({
       title: 'Aube Fictive',
       chapters: 86,
@@ -236,7 +234,7 @@ describe('formulaire œuvre', () => {
   })
 
   it('garde la version lue pour le remplacement, et n’en envoie pas à la création', () => {
-    expect(draftToWorkBody(workToDraft(WORK, LABELS)).updatedAt).toBe(WORK.updatedAt)
+    expect(draftToWorkBody(workToDraft(WORK)).updatedAt).toBe(WORK.updatedAt)
     expect(draftToWorkBody(emptyWorkDraft()).updatedAt).toBeUndefined()
   })
 
@@ -273,7 +271,7 @@ describe('récapitulatif d’archivage', () => {
 })
 
 describe('lignes incomplètes', () => {
-  const complete = workToDraft(WORK, LABELS)
+  const complete = workToDraft(WORK)
 
   it('accepte une fiche dont toutes les lignes sont choisies, ou vides', () => {
     expect(hasIncompleteRows(complete)).toBe(false)

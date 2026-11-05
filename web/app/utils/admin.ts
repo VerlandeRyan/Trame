@@ -115,6 +115,8 @@ export interface AdminWork {
   genres: string[]
   relations: { relatedWorkId: number; relation: (typeof RELATION_KINDS)[number] }[]
   links: AdminLink[]
+  /** Noms des personnes, éditeurs et œuvres liées cités (archivés compris). */
+  labels: { people: RecordRef[]; publishers: RecordRef[]; works: RecordRef[] }
   followerCount: number
   /** Version de la fiche : renvoyée avec le remplacement pour détecter une modification entre-temps. */
   updatedAt: string
@@ -304,19 +306,12 @@ const textOrNull = (value: string) => (value.trim() === '' ? null : value.trim()
 const textOrUndefined = (value: string) => textOrNull(value) ?? undefined
 const numberOrNull = (value: string) => (value.trim() === '' ? null : Number(value))
 
-/** Libellés des enregistrements cités par une œuvre, pour remplir les sélecteurs. */
-export interface WorkLabels {
-  people: Map<number, string>
-  publishers: Map<number, string>
-  works: Map<number, string>
-}
+/** Choix d'un sélecteur pour `id` ; sans nom connu, repli sur `#id`. */
+const refOf = (labels: RecordRef[], id: number): RecordRef =>
+  labels.find((ref) => ref.id === id) ?? { id, label: `#${id}` }
 
-const refOf = (labels: Map<number, string>, id: number): RecordRef => ({
-  id,
-  label: labels.get(id) ?? `#${id}`,
-})
-
-export function workToDraft(work: AdminWork, labels: WorkLabels): WorkDraft {
+export function workToDraft(work: AdminWork): WorkDraft {
+  const { labels } = work
   return {
     title: work.title,
     originalLanguage: work.originalLanguage,

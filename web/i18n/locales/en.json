@@ -507,6 +507,7 @@
       "kinds": "Record type",
       "scopes": "Records shown"
     },
+    "filterSelectedCount": "{count} selected | {count} selected",
     "kind": { "works": "Works", "people": "People", "publishers": "Publishers and platforms" },
     "scope": { "active": "Published", "archived": "Archives", "all": "All" },
     "heading": {

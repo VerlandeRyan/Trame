@@ -73,8 +73,9 @@ useHtmlLanguage()
     padding: var(--space-8) 22px;
   }
 
+  // Comme le layout par défaut : `<main>` n'est pas un contrôle, son contour n'apporte rien.
   &:focus-visible {
-    outline-offset: -3px;
+    outline: none;
   }
 }
 </style>

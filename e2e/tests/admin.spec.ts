@@ -158,7 +158,7 @@ test('enregistrer une fiche modifiée entre-temps est refusé', async ({ page, c
 
   // Une autre session enregistre la fiche pendant qu'elle est ouverte ici.
   const body = await (await context.request.get(url)).json()
-  for (const readOnly of ['id', 'archived', 'followerCount']) delete body[readOnly]
+  for (const readOnly of ['id', 'archived', 'followerCount', 'labels']) delete body[readOnly]
   const other = await context.request.put(url, { data: body })
   expect(other.status()).toBe(200)
 

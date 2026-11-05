@@ -43,7 +43,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     if (id === 'new') return
     if (kind === 'works') {
       const loaded = await client.get<AdminWork>(kind, id)
-      work.value = workToDraft(loaded, await client.loadLabels(loaded))
+      work.value = workToDraft(loaded)
       record.value = {
         archived: loaded.archived,
         heading: loaded.title,

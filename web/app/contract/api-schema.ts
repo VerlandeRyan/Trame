@@ -641,6 +641,21 @@ export interface components {
                 url: string;
                 label: string | null;
             }[];
+            /** @description Noms des personnes, éditeurs et œuvres liées cités, triés par identifiant. */
+            labels: {
+                people: {
+                    id: number;
+                    label: string;
+                }[];
+                publishers: {
+                    id: number;
+                    label: string;
+                }[];
+                works: {
+                    id: number;
+                    label: string;
+                }[];
+            };
             /** @description Membres qui ont l’œuvre dans leur liste de lecture. */
             followerCount: number;
             /**

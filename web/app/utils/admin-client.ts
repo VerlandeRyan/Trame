@@ -6,9 +6,7 @@ import {
   type AdminListItem,
   type AdminListQuery,
   type AdminPage,
-  type AdminWork,
   type RecordRef,
-  type WorkLabels,
 } from './admin'
 
 type Request = <T>(path: string, options?: Record<string, unknown>) => Promise<T>
@@ -47,32 +45,7 @@ export function createAdminClient(request: Request) {
     return page.items.map((item) => ({ id: item.id, label: itemLabel(item) }))
   }
 
-  /** Noms des personnes, éditeurs et œuvres cités par une fiche (illisibles : repli sur `#id`). */
-  async function loadLabels(work: AdminWork): Promise<WorkLabels> {
-    const labelOf = async (kind: AdminKind, id: number): Promise<[number, string]> => {
-      try {
-        return [id, itemLabel(await get<AdminListItem>(kind, id))]
-      } catch {
-        return [id, `#${id}`]
-      }
-    }
-    const labelsOf = async (kind: AdminKind, ids: number[]) =>
-      new Map(await Promise.all([...new Set(ids)].map((id) => labelOf(kind, id))))
-    const [people, publishers, works] = await Promise.all([
-      labelsOf(
-        'people',
-        work.credits.map((credit) => credit.personId),
-      ),
-      labelsOf('publishers', work.publisherIds),
-      labelsOf(
-        'works',
-        work.relations.map((relation) => relation.relatedWorkId),
-      ),
-    ])
-    return { people, publishers, works }
-  }
-
-  return { list, get, create, replace, archive, restore, search, loadLabels }
+  return { list, get, create, replace, archive, restore, search }
 }
 
 export type AdminClient = ReturnType<typeof createAdminClient>

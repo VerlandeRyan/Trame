@@ -163,7 +163,7 @@ async function abandonSignup() {
 
 .handle__step--current .handle__step-number {
   background: var(--color-blue);
-  color: #fff;
+  color: var(--color-surface);
 }
 
 .handle__title {

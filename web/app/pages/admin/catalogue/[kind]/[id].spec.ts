@@ -88,15 +88,20 @@ const WORK_9 = {
     { relatedWorkId: 12, relation: 'spin_off' },
   ],
   links: [],
+  labels: {
+    people: [],
+    publishers: [],
+    works: [
+      { id: 11, label: 'Suite' },
+      { id: 12, label: 'Dérivé' },
+    ],
+  },
   followerCount: 34,
   updatedAt: '2026-10-24T10:00:00.000Z',
 }
 
-/** Une œuvre en cours de modification et les deux œuvres qu'elle cite. */
+/** Une œuvre en cours de modification : ses libellés viennent avec elle. */
 function registerWork9() {
-  const related = { id: 11, archived: false, title: 'Suite' }
-  registerEndpoint('/api/v1/admin/works/11', () => related)
-  registerEndpoint('/api/v1/admin/works/12', () => ({ ...related, id: 12 }))
   registerEndpoint('/api/v1/admin/works/9', { method: 'GET', handler: () => WORK_9 })
 }
 

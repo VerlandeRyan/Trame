@@ -85,9 +85,23 @@ export interface AdminWorkListItem extends AdminWorkSummary {
   completeness: number;
 }
 
+/** Nom d'une fiche citée par une œuvre (archivée ou non), pour remplir les sélecteurs. */
+export interface RecordLabel {
+  id: number;
+  label: string;
+}
+
+export interface WorkReferenceLabels {
+  people: RecordLabel[];
+  publishers: RecordLabel[];
+  works: RecordLabel[];
+}
+
 export interface AdminWorkRecord extends WorkDraft {
   id: number;
   archived: boolean;
+  /** Noms des personnes, éditeurs et œuvres liées citées, triés par identifiant. */
+  labels: WorkReferenceLabels;
   /** Membres qui ont l'œuvre dans leur liste de lecture. */
   followerCount: number;
   /** Version de la fiche (date ISO 8601, à la milliseconde) : à renvoyer avec le remplacement. */
@@ -267,6 +281,40 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
     return query;
   }
 
+  async function findReferenceLabels(
+    personIds: number[],
+    publisherIds: number[],
+    workIds: number[],
+  ): Promise<WorkReferenceLabels> {
+    const [people, publishers, works] = await Promise.all([
+      personIds.length === 0
+        ? []
+        : db
+            .selectFrom('person')
+            .select(['id', 'name as label'])
+            .where('id', 'in', personIds)
+            .orderBy('id')
+            .execute(),
+      publisherIds.length === 0
+        ? []
+        : db
+            .selectFrom('publisher')
+            .select(['id', 'name as label'])
+            .where('id', 'in', publisherIds)
+            .orderBy('id')
+            .execute(),
+      workIds.length === 0
+        ? []
+        : db
+            .selectFrom('work')
+            .select(['id', 'title as label'])
+            .where('id', 'in', workIds)
+            .orderBy('id')
+            .execute(),
+    ]);
+    return { people, publishers, works };
+  }
+
   async function findExistingIds(table: 'person' | 'publisher' | 'work', ids: number[]) {
     if (ids.length === 0) return new Set<number>();
     const rows = await db.selectFrom(table).select('id').where('id', 'in', ids).execute();
@@ -402,6 +450,12 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
             .where('work_id', '=', id)
             .executeTakeFirstOrThrow(),
         ]);
+      const publisherIds = publishers.map((row) => row.publisher_id);
+      const labels = await findReferenceLabels(
+        [...new Set(credits.map((credit) => credit.personId))],
+        publisherIds,
+        relations.map((relation) => relation.relatedWorkId),
+      );
       return {
         id: work.id,
         title: work.title,
@@ -413,10 +467,11 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         startedOn: work.started_on,
         endedOn: work.ended_on,
         archived: work.deleted_at !== null,
+        labels,
         titles,
         synopses,
         credits,
-        publisherIds: publishers.map((row) => row.publisher_id),
+        publisherIds,
         genres: genres.map((row) => row.code),
         relations,
         links,
