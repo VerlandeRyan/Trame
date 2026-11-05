@@ -511,6 +511,7 @@
       "kinds": "Type de fiche",
       "scopes": "Fiches affichées"
     },
+    "filterSelectedCount": "{count} choix | {count} choix",
     "kind": { "works": "Œuvres", "people": "Personnes", "publishers": "Éditeurs et plateformes" },
     "scope": { "active": "Publiées", "archived": "Archives", "all": "Toutes" },
     "heading": {

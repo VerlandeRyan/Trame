@@ -9,7 +9,7 @@ import {
 import { updateAge } from '~/utils/profile'
 
 // Tableau du catalogue (maquette 22) : une ligne par fiche, « Modifier » ou, pour une archive,
-// « Restaurer ». Archiver se fait depuis la fiche, ou depuis la feuille « ⋮ » au mobile.
+// « Restaurer ». Archiver se fait depuis la fiche, ou depuis la feuille « ⋮ » (`admin/RowMenu`) au mobile.
 // `loadImpact` (œuvres) lit ce que l'archivage laisse en place, pour la confirmation.
 const props = defineProps<{
   kind: AdminKind
@@ -79,21 +79,15 @@ function openMenu(item: AdminListItem) {
   menuItem.value = item
   isMenuOpen.value = true
 }
-function restoreFromMenu(item: AdminListItem) {
-  isMenuOpen.value = false
-  emit('restore', item)
-}
 
 // L'archivage demande la même confirmation que depuis la fiche, récapitulatif compris (chargé à
 // l'ouverture ; sans lui, la confirmation reste utilisable).
 const isArchiveConfirmOpen = ref(false)
 const impact = ref<ArchiveImpact | null>(null)
-async function askArchive() {
-  const item = menuItem.value
-  isMenuOpen.value = false
+async function askArchive(item: AdminListItem) {
   isArchiveConfirmOpen.value = true
   impact.value = null
-  if (!item || !props.loadImpact) return
+  if (!props.loadImpact) return
   try {
     const loaded = await props.loadImpact(item)
     if (menuItem.value?.id === item.id) impact.value = loaded
@@ -104,8 +98,6 @@ async function askArchive() {
 function archiveMenuItem() {
   if (menuItem.value) emit('archive', menuItem.value)
 }
-const editLocation = (item: AdminListItem, section?: string) =>
-  localePath({ path: adminEditPath(props.kind, item.id), query: section ? { section } : {} })
 </script>
 
 <template>
@@ -198,53 +190,13 @@ const editLocation = (item: AdminListItem, section?: string) =>
         </button>
       </li>
     </ul>
-    <UiModal
+    <AdminRowMenu
       v-model="isMenuOpen"
-      placement="bottom"
-      :title="menuItem ? itemLabel(menuItem) : ''"
-      :close-label="t('action.close')"
-    >
-      <div v-if="menuItem" class="rows__menu">
-        <UiButton
-          v-if="menuItem.archived"
-          variant="secondary"
-          class="rows__menu-item"
-          data-testid="admin-menu-restore"
-          @click="restoreFromMenu(menuItem)"
-        >
-          <Icon name="tabler:restore" size="16" aria-hidden="true" />{{ t('admin.restore') }}
-        </UiButton>
-        <template v-else>
-          <UiButton
-            variant="secondary"
-            class="rows__menu-item"
-            :to="editLocation(menuItem)"
-            data-testid="admin-menu-edit"
-          >
-            <Icon name="tabler:pencil" size="16" aria-hidden="true" />{{ t('admin.row.menu.edit') }}
-          </UiButton>
-          <UiButton
-            v-if="isWorks"
-            variant="secondary"
-            class="rows__menu-item"
-            :to="editLocation(menuItem, 'relations')"
-            data-testid="admin-menu-relations"
-          >
-            <Icon name="tabler:link" size="16" aria-hidden="true" />{{
-              t('admin.row.menu.relations')
-            }}
-          </UiButton>
-          <UiButton
-            variant="danger"
-            class="rows__menu-item"
-            data-testid="admin-menu-archive"
-            @click="askArchive"
-          >
-            <Icon name="tabler:archive" size="16" aria-hidden="true" />{{ t('admin.archive') }}
-          </UiButton>
-        </template>
-      </div>
-    </UiModal>
+      :kind="kind"
+      :item="menuItem"
+      @restore="emit('restore', $event)"
+      @archive="askArchive"
+    />
     <AdminArchiveConfirm
       v-model="isArchiveConfirmOpen"
       :kind="kind"
@@ -374,15 +326,6 @@ const editLocation = (item: AdminListItem, section?: string) =>
 .rows__summary,
 .rows__more {
   display: none;
-}
-
-.rows__menu {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.rows__menu-item {
-  justify-content: flex-start;
 }
 
 // Mobile (maquette 6) : titre, une ligne d'information et la complétude ; « ⋮ » ouvre les actions.

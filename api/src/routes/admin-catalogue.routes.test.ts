@@ -354,6 +354,39 @@ describe('œuvres', () => {
     expect(after.body.followerCount).toBe(1);
   });
 
+  it('nomme les personnes, éditeurs et œuvres liées citées par la fiche', async () => {
+    const admin = await newAdmin();
+    const personId = await createPerson(admin, `${PREFIX} Autrice`);
+    const publisherId = await createPublisher(admin, `${PREFIX} Maison`);
+    const relatedId = await createWork(admin, { title: `${PREFIX} Voisine` });
+    const id = await createWork(admin, {
+      credits: [
+        { personId, role: 'story' },
+        { personId, role: 'art' },
+      ],
+      publisherIds: [publisherId],
+      relations: [{ relatedWorkId: relatedId, relation: 'sequel' }],
+    });
+
+    const res = await admin.get(`${ADMIN}/works/${id}`);
+
+    expectMatches(adminWorkSchema, res.body);
+    expect(res.body.labels).toEqual({
+      people: [{ id: personId, label: `${PREFIX} Autrice` }],
+      publishers: [{ id: publisherId, label: `${PREFIX} Maison` }],
+      works: [{ id: relatedId, label: `${PREFIX} Voisine` }],
+    });
+  });
+
+  it('donne des libellés vides pour une fiche sans personne, éditeur ni relation', async () => {
+    const admin = await newAdmin();
+    const id = await createWork(admin);
+
+    const res = await admin.get(`${ADMIN}/works/${id}`);
+
+    expect(res.body.labels).toEqual({ people: [], publishers: [], works: [] });
+  });
+
   it('remplace les listes de la fiche', async () => {
     const admin = await newAdmin();
     const personId = await createPerson(admin);

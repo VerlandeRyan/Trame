@@ -58,6 +58,7 @@ const record = (archived = false): AdminWorkRecord => ({
   ...draft,
   id: 1,
   archived,
+  labels: { people: [], publishers: [], works: [] },
   followerCount: 0,
   updatedAt: VERSION,
 });

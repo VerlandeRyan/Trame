@@ -1,6 +1,8 @@
 <script setup lang="ts">
-// Groupe repliable de cases à cocher de la feuille de filtres mobile (même forme que `search/FilterGroup`,
-// sans compteurs). L'état ouvert/fermé appartient au parent (`v-model:open`), pour « Tout replier ».
+// Groupe repliable de cases à cocher de la feuille de filtres mobile. Volontairement distinct de
+// `search/FilterGroup` (facettes, compteurs par valeur, recherche, « Voir les N autres ») : celui-ci
+// reçoit des options toutes prêtes. L'état ouvert/fermé appartient au parent (`v-model:open`),
+// pour « Tout replier ».
 const props = defineProps<{
   /** Nom du groupe, repris dans les `data-testid` des cases. */
   name: string
@@ -35,7 +37,7 @@ const selectedCount = computed(() => props.selected.length)
         <span
           v-if="selectedCount > 0"
           class="filter-group__badge"
-          :aria-label="t('search.selectedCount', selectedCount)"
+          :aria-label="t('admin.filterSelectedCount', selectedCount)"
         >
           {{ selectedCount }}
         </span>

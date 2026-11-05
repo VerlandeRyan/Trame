@@ -73,7 +73,7 @@ async function dismiss() {
 // Blanc sur `crimson` : 4,5:1 au moins (`contrast.spec.ts`).
 .auth-notice--error {
   background: var(--color-crimson);
-  color: #fff;
+  color: var(--color-surface);
 }
 
 .auth-notice__text {

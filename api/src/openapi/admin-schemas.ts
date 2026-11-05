@@ -77,6 +77,8 @@ const workSummary = z.strictObject({
   archived: z.boolean(),
 }) satisfies z.ZodType<AdminWorkSummary>;
 
+const recordLabel = z.strictObject({ id: z.number().int(), label: z.string() });
+
 export const adminWorkSchema = workSummary.extend({
   chapters: z.number().int().nullable(),
   volumes: z.number().int().nullable(),
@@ -95,6 +97,13 @@ export const adminWorkSchema = workSummary.extend({
     z.strictObject({ relatedWorkId: z.number().int(), relation: z.enum(RELATION_KINDS) }),
   ),
   links: z.array(link),
+  labels: z
+    .strictObject({
+      people: z.array(recordLabel),
+      publishers: z.array(recordLabel),
+      works: z.array(recordLabel),
+    })
+    .describe('Noms des personnes, éditeurs et œuvres liées cités, triés par identifiant.'),
   followerCount: z.number().int().describe('Membres qui ont l’œuvre dans leur liste de lecture.'),
   updatedAt: z.iso
     .datetime()
