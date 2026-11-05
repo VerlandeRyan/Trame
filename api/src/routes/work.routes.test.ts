@@ -572,7 +572,7 @@ describe('GET /api/v1/works/:id', () => {
 });
 
 describe('GET /api/v1/works/featured', () => {
-  it('renvoie les œuvres ajoutées au moins 3 fois cette semaine, la plus ajoutée d’abord', async () => {
+  it('renvoie d’abord les œuvres populaires (au moins 3 ajouts cette semaine), la plus ajoutée en tête', async () => {
     const res = await request(app).get('/api/v1/works/featured');
     expect(res.status).toBe(200);
     // Histoires de Cendre n'a que 2 ajouts récents ; Étoile Vagabonde et le Recueil sont plus anciens.
@@ -602,11 +602,38 @@ describe('GET /api/v1/works/featured', () => {
     );
   });
 
-  it('donne le nombre d’ajouts récents, décroissant et d’au moins 3', async () => {
+  it('donne le nombre d’ajouts récents, décroissant, et la pastille populaire', async () => {
     const res = await request(app).get('/api/v1/works/featured');
-    const counts = (res.body.items as { recentAdditions: number }[]).map((i) => i.recentAdditions);
+    const items = res.body.items as { recentAdditions: number; isPopular: boolean }[];
+    const counts = items.map((i) => i.recentAdditions);
     expect(counts.every((count) => Number.isInteger(count) && count >= 3)).toBe(true);
     expect(counts).toEqual([...counts].sort((a, b) => b - a));
+    expect(items.every((i) => i.isPopular)).toBe(true);
+  });
+
+  it('complète avec les œuvres les moins ajoutées, sans jamais laisser le bloc vide', async () => {
+    // Seul Hollow Tide reste populaire ; Histoires de Cendre (2 ajouts) suit, puis une œuvre moins ajoutée.
+    await client.query(
+      `UPDATE library_entry SET created_at = created_at - interval '60 days'
+       WHERE work_id IN (SELECT id FROM work WHERE title LIKE 'Étoile Vagabonde – %')`,
+    );
+    try {
+      const res = await request(app).get('/api/v1/works/featured');
+      const items = res.body.items as {
+        title: string;
+        recentAdditions: number;
+        isPopular: boolean;
+      }[];
+      expect(items).toHaveLength(3);
+      expect(items.map((i) => [i.title, i.recentAdditions, i.isPopular]).slice(0, 2)).toEqual([
+        ['Hollow Tide', 12, true],
+        ['Basalte – Histoires de Cendre', 2, false],
+      ]);
+      expect(items[2]).toMatchObject({ isPopular: false });
+      expect(items[2]?.recentAdditions).toBeLessThanOrEqual(2);
+    } finally {
+      await client.query(seed);
+    }
   });
 
   it('refuse une langue inconnue', async () => {

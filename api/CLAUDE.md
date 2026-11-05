@@ -23,6 +23,7 @@ Contrat complet : `docs/architecture.md`. À retenir en lisant le code :
 - Ne jamais interpoler une valeur de la requête dans le SQL : paramètres Kysely (`sql.join`), seul `sql.ref` reçoit des constantes écrites dans le code.
 
 ## Accueil (`GET /works/featured`, `GET /works/top-rated`)
+- « À la une » : pas de seuil de sélection (jointure gauche, ajouts sur 7 jours puis nouveauté) ; le service ajoute `isPopular` (≥ `FEATURED_POPULAR_MIN_ADDITIONS`), qui pilote la pastille du front.
 - Seuils et tailles dans `services/work.service.ts` (`FEATURED_*`, `HOME_TOP_RATED_LIMIT`, `MIN_RATINGS_FOR_AVERAGE`), passés au dépôt en paramètres : le dépôt ne connaît pas les règles. Le dépôt joint un sous-ensemble agrégé de `library_entry` (ajouts récents, notes) à `work` ; la moyenne est calculée dans le service.
 - `library_entry.created_at` (migration `…_library_entry_created_at`) date l'ajout ; `updated_at` bouge à chaque progression. Le jeu de démo (`db/demo-data.sql`) pose des ajouts relatifs à `now()` pour que « 7 jours » reste vrai à chaque rechargement ; les tests de ces routes en dépendent.
 

@@ -8,10 +8,10 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 
 ### Découverte
 **US-15 — Consulter l'accueil** (visiteur, utilisateur)
-- Blocs : hero avec recherche ; « À la une » (carrousel de 3 œuvres « populaires cette semaine ») ; récemment ajoutées ; mieux notées (seuil RG-04) ; « Une œuvre manque à Trame ? » (lien vers US-09).
+- Blocs : hero avec recherche ; « À la une » (carrousel de 3 œuvres, populaires de la semaine puis nouveautés) ; récemment ajoutées ; mieux notées (seuil RG-04) ; « Une œuvre manque à Trame ? » (lien vers US-09).
 - **Deux accueils selon la connexion.** Visiteur : hero (titre, tampons de formats non cliquables, recherche) et panneau « Pourquoi Trame ? » (trois engagements) avec le bouton « Créer ma liste de lecture ». Connecté : pas de panneau ; hero « Bon retour, @handle » avec la recherche et une bande « Reprendre la lecture » (œuvres en cours, bouton +1, lien « Voir ma liste »). Si la liste est vide, un message d'accueil remplace la bande, avec les formats cliquables.
 - **Explorer** n'est pas un bloc de la page : c'est un bouton de l'en-tête de toutes les pages (masqué sur la page de recherche). Il ouvre une fenêtre avec les formats puis les genres, **avec le nombre d'œuvres**, et un lien « Voir tout le catalogue ». Seuls les formats et genres qui ont au moins une œuvre sont affichés. Au mobile, le menu ☰ ne contient qu'Explorer.
-- « Populaire cette semaine » : œuvres les plus ajoutées à une liste sur les 7 derniers jours, avec au moins 3 ajouts ; les 3 premières sont affichées.
+- « À la une » : les 3 œuvres les plus ajoutées à une liste sur les 7 derniers jours, complétées au besoin par les plus récentes du catalogue, de sorte que le bloc n'est jamais vide. Pastille « Populaire cette semaine » (et nombre de lecteurs) à partir de 3 ajouts, sinon « À découvrir ».
 - Le carrousel n'a pas de défilement automatique et reste utilisable au clavier. Mise en avant éditoriale ou sponsorisée : hors MVP.
 
 **US-01 — Rechercher une œuvre** (visiteur, utilisateur)

@@ -38,7 +38,7 @@ Comportement côté front (Nuxt) des écrans `/`, `/search` et de la page d'erre
 
 ### Blocs
 - Icônes du panneau aux couleurs de l'app : vert « En cours » (suivi), lavande « À lire » (tout au même endroit), jaune de « À la une » (découverte). Jetons `--color-yellow`, `--color-cyan`, `--color-crimson` (contrastes dans `contrast.spec.ts`).
-- `home/Featured` : carrousel sans défilement automatique (précédent/suivant, pastilles ; badge jaune doré).
+- `home/Featured` : carrousel sans défilement automatique (précédent/suivant, pastilles ; badge jaune doré). Badge « Populaire cette semaine » et ligne des lecteurs si `isPopular`, sinon badge « À découvrir » sans ligne des lecteurs.
 - `home/Shelf` : rangée sur une seule ligne, 12 œuvres demandées, autant affichées que la largeur le permet, chacune d'au moins 136 px / 104 px au mobile, qui se partagent toute la largeur ; « Tout voir » facultatif, absent pour « Mieux notées » faute de tri par note.
 - « Une œuvre manque » (bouton inactif, US-09).
 - L'accueil porte son propre champ de recherche (`LayoutSearchBox` + bouton « Rechercher » au bureau) : **l'en-tête n'en a pas sur `/`** (`layout-header--plain`).

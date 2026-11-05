@@ -112,14 +112,16 @@ const descriptionLine = computed(() => {
           <WorkCover :url="coverUrl(work.coverPath)" class="featured__cover" />
           <div class="featured__body">
             <div class="featured__head">
-              <span class="featured__badge">{{ t('home.featured.badge') }}</span>
+              <span class="featured__badge">{{
+                t(work.isPopular ? 'home.featured.badge' : 'home.featured.badgeDiscover')
+              }}</span>
               <h3 class="featured__work" data-testid="featured-title">{{ work.title }}</h3>
               <p class="featured__meta">{{ descriptionLine }}</p>
             </div>
             <p v-if="work.synopsis" class="featured__synopsis">
               <strong>{{ t('home.featured.synopsis') }}</strong> {{ work.synopsis }}
             </p>
-            <p class="featured__readers" data-testid="featured-readers">
+            <p v-if="work.isPopular" class="featured__readers" data-testid="featured-readers">
               {{
                 t(
                   'home.featured.readers',

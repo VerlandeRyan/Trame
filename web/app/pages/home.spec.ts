@@ -45,7 +45,14 @@ describe("page d'accueil", () => {
       respond('featured', {
         items: empty
           ? []
-          : [{ ...summary(1, 'Aube Fictive'), synopsis: 'Résumé fictif.', recentAdditions: 4 }],
+          : [
+              {
+                ...summary(1, 'Aube Fictive'),
+                synopsis: 'Résumé fictif.',
+                recentAdditions: 4,
+                isPopular: true,
+              },
+            ],
       }),
     )
     registerEndpoint('/api/v1/works/top-rated', () =>

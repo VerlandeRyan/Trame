@@ -28,7 +28,8 @@ const sampleFeatured = [1, 2].map((id) => ({
   originalTitle: `Œuvre fictive ${id}`,
   type: 'series' as const,
   synopsis: 'Résumé fictif de l’œuvre mise en avant, sur deux ou trois lignes.',
-  recentAdditions: 5,
+  recentAdditions: id === 1 ? 5 : 1,
+  isPopular: id === 1,
 }))
 const sampleRated = [1, 2, 3].map((id) => ({
   ...sampleSummary,

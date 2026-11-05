@@ -92,14 +92,13 @@ export interface WorkFacets {
 
 export interface FeaturedWork extends WorkSummary {
   synopsis: string | null;
-  /** Ajouts à une liste dans la fenêtre « populaire » (au moins `minAdditions`). */
+  /** Ajouts à une liste dans la fenêtre « récente » (0 si aucun). */
   recentAdditions: number;
 }
 
-/** Populaire : au moins `minAdditions` ajouts à une liste depuis `sinceDays` jours. */
+/** Classement : ajouts à une liste depuis `sinceDays` jours (0 compris), puis œuvres les plus récentes. */
 export interface FeaturedCriteria {
   lang?: string;
-  minAdditions: number;
   sinceDays: number;
   limit: number;
 }
@@ -289,25 +288,25 @@ export function createWorkRepository(db: Db): WorkRepository {
       return { type, status, format, genre, originalLanguage };
     },
 
-    async findFeaturedWorks({ lang, minAdditions, sinceDays, limit }) {
+    async findFeaturedWorks({ lang, sinceDays, limit }) {
       const shownTitle = displayTitle('work', lang);
       const recent = db
         .selectFrom('library_entry')
         .select(['work_id', (eb) => eb.fn.countAll<number>().as('additions')])
         .where('created_at', '>=', sql<Date>`now() - make_interval(days => ${sinceDays})`)
         .groupBy('work_id')
-        .having((eb) => eb.fn.countAll(), '>=', minAdditions)
         .as('recent');
       const rows = await db
         .selectFrom('work')
-        .innerJoin(recent, 'recent.work_id', 'work.id')
+        .leftJoin(recent, 'recent.work_id', 'work.id')
         .select([
           ...workSummaryColumns(shownTitle),
           preferredSynopsis(lang).as('synopsis'),
-          'recent.additions',
+          sql<number>`COALESCE(recent.additions, 0)::int`.as('additions'),
         ])
         .where(visibleWork)
-        .orderBy('recent.additions', 'desc')
+        .orderBy(sql`COALESCE(recent.additions, 0)`, 'desc')
+        .orderBy('work.created_at', 'desc')
         .orderBy(shownTitle)
         .orderBy('work.id')
         .limit(limit)

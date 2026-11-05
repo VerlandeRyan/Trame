@@ -66,12 +66,20 @@ export type WorkDetail = Omit<WorkRecord, 'credits' | 'personLinks' | 'ratingSum
   ratingAverage: number | null;
 };
 
-/** « À la une » : 3 œuvres au plus, au moins 3 ajouts à une liste sur 7 jours. */
-export const FEATURED_MIN_ADDITIONS = 3;
+/**
+ * « À la une » : 3 œuvres au plus, classées par ajouts à une liste sur 7 jours puis par nouveauté.
+ * À partir de `FEATURED_POPULAR_MIN_ADDITIONS` ajouts, l'œuvre est dite populaire.
+ */
+export const FEATURED_POPULAR_MIN_ADDITIONS = 3;
 export const FEATURED_WINDOW_DAYS = 7;
 export const FEATURED_LIMIT = 3;
 /** « Mieux notées » : de quoi remplir une rangée sur grand écran. */
 export const HOME_TOP_RATED_LIMIT = 12;
+
+export interface FeaturedItem extends FeaturedWork {
+  /** Vrai à partir de `FEATURED_POPULAR_MIN_ADDITIONS` ajouts récents. */
+  isPopular: boolean;
+}
 
 export interface TopRatedWork extends Omit<HomeRatedWork, 'ratingSum'> {
   /** Moyenne sur une décimale. */
@@ -81,7 +89,7 @@ export interface TopRatedWork extends Omit<HomeRatedWork, 'ratingSum'> {
 export interface WorkService {
   list(input: ListWorksInput): Promise<WorkPage>;
   facets(input: WorkFilterInput): Promise<WorkFacets>;
-  listFeaturedWorks(lang?: string): Promise<{ items: FeaturedWork[] }>;
+  listFeaturedWorks(lang?: string): Promise<{ items: FeaturedItem[] }>;
   listTopRatedWorks(lang?: string): Promise<{ items: TopRatedWork[] }>;
   /** Lève `NOT_FOUND` si l'œuvre n'existe pas ou est archivée. `lang` : langue de l'application. */
   get(id: number, lang?: string): Promise<WorkDetail>;
@@ -151,13 +159,17 @@ export function createWorkService(repository: WorkRepository): WorkService {
     },
 
     async listFeaturedWorks(lang) {
-      const items = await repository.findFeaturedWorks({
+      const works = await repository.findFeaturedWorks({
         lang,
-        minAdditions: FEATURED_MIN_ADDITIONS,
         sinceDays: FEATURED_WINDOW_DAYS,
         limit: FEATURED_LIMIT,
       });
-      return { items };
+      return {
+        items: works.map((work) => ({
+          ...work,
+          isPopular: work.recentAdditions >= FEATURED_POPULAR_MIN_ADDITIONS,
+        })),
+      };
     },
 
     async listTopRatedWorks(lang) {

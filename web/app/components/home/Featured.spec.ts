@@ -19,6 +19,7 @@ const work = (
   mainAuthor: 'Autrice Inventée',
   synopsis,
   recentAdditions: id === 1 ? 1 : 5,
+  isPopular: id !== 1,
 })
 
 const works = [work(1, 'Aube Fictive'), work(2, 'Brume Fictive'), work(3, 'Crépuscule Fictif')]
@@ -28,17 +29,29 @@ describe('HomeFeatured', () => {
     const wrapper = await mountSuspended(HomeFeatured, { props: { works } })
 
     expect(wrapper.get('[data-testid="featured-title"]').text()).toBe('Aube Fictive')
-    expect(wrapper.text()).toContain('Populaire cette semaine')
     expect(wrapper.text()).toContain('Autrice Inventée · Série · Manga · En cours')
     expect(wrapper.get('.featured__synopsis').text()).toBe('Synopsis : Résumé fictif.')
-    expect(wrapper.get('[data-testid="featured-readers"]').text()).toBe(
-      '1 lecteur l’a ajoutée cette semaine',
-    )
     expect(wrapper.get('[data-testid="featured-open"]').attributes('href')).toBe(
       '/work/1-aube-fictive',
     )
     expect(wrapper.get('[data-testid="featured-slide"]').attributes('aria-label')).toBe(
       'Œuvre 1 sur 3',
+    )
+  })
+
+  it('affiche « À découvrir » sans la ligne des lecteurs pour une œuvre peu ajoutée', async () => {
+    const wrapper = await mountSuspended(HomeFeatured, { props: { works } })
+
+    expect(wrapper.get('.featured__badge').text()).toBe('À découvrir')
+    expect(wrapper.find('[data-testid="featured-readers"]').exists()).toBe(false)
+  })
+
+  it('affiche « Populaire cette semaine » et le nombre de lecteurs pour une œuvre populaire', async () => {
+    const wrapper = await mountSuspended(HomeFeatured, { props: { works: [works[1]!] } })
+
+    expect(wrapper.get('.featured__badge').text()).toBe('Populaire cette semaine')
+    expect(wrapper.get('[data-testid="featured-readers"]').text()).toBe(
+      '5 lecteurs l’ont ajoutée cette semaine',
     )
   })
 
