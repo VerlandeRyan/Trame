@@ -3,7 +3,7 @@
 Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `<UiButton>`). **Réutiliser avant d'en créer** ; la page `/components` (galerie) les présente. Un nouveau composant ajoute ici sa ligne (règle du `CLAUDE.md` racine), avec son `.spec.ts`, son entrée dans la galerie et ses clés i18n `fr` et `en`. Le comportement des écrans est dans les autres fichiers de [docs/web/](.) ; les règles de conception (survol, zones de clic, contraste) dans [conventions §12](../conventions-projet.md).
 
 ## `ui/` — génériques
-- `Button` : avec `href`, un lien à l'aspect d'un bouton ; `block` : pleine largeur, survol à −0,6° au lieu de −2,5° pour ne pas déborder sur les voisins. La règle `:active` est déclarée **après** les variantes, sinon l'inclinaison du survol l'emporte et le bouton ne s'enfonce pas au clic.
+- `Button` : avec `href`, un lien à l'aspect d'un bouton ; `block` : pleine largeur, survol au palier `wide` (−1,2°) au lieu de `medium` (−1,6°) pour ne pas déborder sur les voisins. La règle `:active` est déclarée **après** les variantes, sinon l'inclinaison du survol l'emporte et le bouton ne s'enfonce pas au clic.
 - `Chip`.
 - `Counter` : − / saisie / +.
 - `EmptyState`.

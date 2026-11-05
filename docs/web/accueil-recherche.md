@@ -14,7 +14,7 @@ Comportement côté front (Nuxt) des écrans `/`, `/search` et de la page d'erre
 - `ui/Pagination` par liens, `search/ResultItem`.
 - Tri par `ui/Select` (menu stylé, texte « Trier par Pertinence ▾ » ; `relevance`, `title`, `recent`) : `sort` dans l'URL seulement s'il diffère de la pertinence, envoyé à la liste mais jamais aux compteurs ; le menu de suggestions se rouvre au clic ou au focus du champ.
 - Page en `noindex`.
-- Le bouton « Ajouter » des résultats et « Proposer cette œuvre » (US-09) sont visibles mais inactifs : l'ajout depuis la recherche reste à faire (la fiche œuvre porte déjà `library/EntryCard`).
+- Le bouton « Ajouter » des résultats et « Proposer cette œuvre » (US-09) sont visibles mais inactifs : l'ajout depuis la recherche reste à faire (#190 ; la fiche œuvre porte déjà `library/EntryCard`).
 - Logique pure dans `utils/search.ts`.
 
 ## Explorer (#97)

@@ -24,6 +24,42 @@ describe('contrastRatio', () => {
   })
 })
 
+// Boutons colorés : au survol et à l'appui seul le fond s'assombrit (10 % de noir), le texte reste.
+// Exception assumée (#164) : « Terminé » et « Abandonné » passent sous 4,5:1 le temps du survol.
+describe('boutons colorés au survol', () => {
+  const ink = token('color-ink')
+
+  it.each([
+    ['reading', 4.5],
+    ['completed', 4.4],
+    ['plan_to_read', 4.5],
+    ['on_hold', 4.5],
+    ['dropped', 3.5],
+  ])(
+    'texte d’encre lisible sur le fond de survol du statut %s, plus foncé que son repos',
+    (status, minimumRatio) => {
+      const strong = token(`status-${status}-strong`)
+      expect(contrastRatio(ink, strong)).toBeGreaterThanOrEqual(minimumRatio)
+      expect(strong).not.toBe(token(`status-${status}`))
+    },
+  )
+
+  it('texte blanc lisible sur le rouge de confirmation, au repos et au survol', () => {
+    expect(contrastRatio('#ffffff', token('color-danger'))).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio('#ffffff', token('color-danger-strong'))).toBeGreaterThanOrEqual(
+      contrastRatio('#ffffff', token('color-danger')),
+    )
+  })
+
+  it('rouge de « Archiver » lisible au survol sur le rose pâle', () => {
+    expect(contrastRatio(token('color-danger'), token('color-chip'))).toBeGreaterThanOrEqual(4.5)
+  })
+
+  it('trait des onglets soulignés visible sur le papier (3:1, élément graphique)', () => {
+    expect(contrastRatio(token('color-blue-line'), token('color-paper'))).toBeGreaterThanOrEqual(3)
+  })
+})
+
 // Texte courant sur les fonds de survol : au moins le seuil AA (4,5:1). Si un rose devient trop
 // foncé pour le texte d'encre, ce test le dit avant l'œil.
 describe('couleurs de survol', () => {

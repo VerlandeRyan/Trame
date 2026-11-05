@@ -91,6 +91,8 @@ describe('ListEditModal', () => {
     await wrapper.get('[data-testid="list-edit-remove"]').trigger('click')
     expect(wrapper.emitted('remove')).toBeUndefined()
 
+    // Perte de données : confirmation en rouge (règle 8 de #164).
+    expect(wrapper.get('[data-testid="confirm-accept"]').classes()).toContain('btn--danger-solid')
     await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
     expect(wrapper.emitted('remove')).toHaveLength(1)
   })

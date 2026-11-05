@@ -246,13 +246,7 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
     cursor: default;
   }
 
-  @include on-hover {
-    background: var(--color-rose);
-  }
-
-  &:active:not(:disabled) {
-    background: var(--color-rose);
-  }
+  @include lift-on-hover;
 }
 
 .grid-item__step--down {

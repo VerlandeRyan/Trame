@@ -86,10 +86,6 @@ function choose(value: string) {
   &:has(input:checked) {
     background: var(--color-ink);
     color: var(--color-surface);
-
-    @include on-hover {
-      background: var(--color-blue-strong);
-    }
   }
 
   &:has(input:focus-visible) {

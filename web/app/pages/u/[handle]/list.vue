@@ -64,7 +64,11 @@ const sentinel = useLoadMoreOnScroll(list)
   <div class="member-list" :aria-busy="isLoading" data-testid="member-list">
     <header class="member-list__head">
       <div>
-        <NuxtLink :to="profilePath" class="member-list__back" data-testid="member-list-back">
+        <NuxtLink
+          :to="profilePath"
+          class="member-list__back link-underlined"
+          data-testid="member-list-back"
+        >
           {{ t('profile.list.back') }}
         </NuxtLink>
         <h1 class="member-list__title">{{ t('profile.list.title', { handle }) }}</h1>
@@ -201,11 +205,6 @@ const sentinel = useLoadMoreOnScroll(list)
   color: var(--color-ink);
   font-size: 0.875rem;
   font-weight: 700;
-  text-decoration: underline;
-
-  @include on-hover {
-    color: var(--color-blue);
-  }
 }
 
 .member-list__title {

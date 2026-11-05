@@ -339,7 +339,38 @@ test('survol à la souris : la pastille sélectionnée du carrousel reste bleue'
   await dots.nth(0).hover()
   await expect.poll(() => circle(0)).toBe('rgb(35, 64, 184)')
   await dots.nth(1).hover()
-  await expect.poll(() => circle(1)).toBe('rgb(240, 122, 156)')
+  await expect.poll(() => circle(1)).toBe('rgb(207, 216, 255)')
+})
+
+test('survol à la souris : « Tout voir » épaissit son trait, « Voir tout le catalogue » est au palier wide', async ({
+  page,
+  hasTouch,
+}) => {
+  test.skip(hasTouch, 'Pas de survol sur écran tactile')
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
+
+  const seeAll = page.locator('.shelf__all').first()
+  await expect(seeAll).toHaveCSS('text-decoration-thickness', 'auto')
+  await seeAll.hover()
+  await expect(seeAll).toHaveCSS('text-decoration-thickness', '3px')
+
+  await page
+    .getByRole('button', { name: /Explorer/ })
+    .first()
+    .click()
+  const catalogue = page.locator('.explore-menu__all')
+  await catalogue.hover()
+  await expect
+    .poll(async () => {
+      const transform = await catalogue.evaluate((element) => getComputedStyle(element).transform)
+      const [a, b] = transform
+        .replace(/matrix\(|\)/g, '')
+        .split(',')
+        .map(Number)
+      return Math.round((Math.atan2(b!, a!) * 1800) / Math.PI) / 10
+    })
+    .toBe(-1.2)
 })
 
 test('écran tactile : aucun état de survol ne reste collé après un toucher', async ({ page }) => {

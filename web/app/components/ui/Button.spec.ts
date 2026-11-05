@@ -52,6 +52,17 @@ describe('UiButton', () => {
     expect((await mountSuspended(UiButton)).classes()).not.toContain('btn--block')
   })
 
+  it('choisit le palier d’inclinaison selon la largeur : medium, small, wide', async () => {
+    const tilt = async (props: Record<string, unknown>) =>
+      (await mountSuspended(UiButton, { props }))
+        .classes()
+        .find((name) => name.startsWith('btn--tilt-'))
+
+    expect(await tilt({})).toBe('btn--tilt-medium')
+    expect(await tilt({ size: 'small' })).toBe('btn--tilt-small')
+    expect(await tilt({ block: true })).toBe('btn--tilt-wide')
+  })
+
   it('prend la couleur du statut de lecture', async () => {
     const wrapper = await mountSuspended(UiButton, { props: { status: 'on_hold' } })
 

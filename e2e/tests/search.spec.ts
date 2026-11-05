@@ -334,6 +334,48 @@ test.describe('page de résultats', () => {
   })
 })
 
+// La démo n'a que 11 œuvres (une page de 20) : la liste est simulée côté navigateur pour obtenir
+// 45 résultats, sans toucher aux données partagées par les autres tests. La recherche part de
+// l'accueil, pour que la page de résultats charge sa liste depuis le navigateur.
+test('pagination : les pages montent d’1 px au survol, la page courante ne change pas', async ({
+  page,
+  hasTouch,
+}) => {
+  test.skip(hasTouch, 'Pas de survol sur écran tactile')
+  await page.route(
+    (url) => url.pathname === '/api/v1/works',
+    async (route) => {
+      const items = Array.from({ length: 20 }, (_, index) => ({
+        id: index + 1,
+        title: `Œuvre ${index + 1}`,
+        originalTitle: `Œuvre ${index + 1}`,
+        originalLanguage: 'fr',
+        type: 'oneshot',
+        status: 'completed',
+        formats: [],
+        coverPath: null,
+        mainAuthor: null,
+      }))
+      await route.fulfill({ json: { items, page: 1, pageSize: 20, total: 45, approximate: false } })
+    },
+  )
+  await page.goto('/')
+  await page.waitForLoadState('networkidle')
+  const input = page.getByTestId('search-input').first()
+  await input.fill('œuvre')
+  await input.press('Enter')
+
+  const secondPage = page.locator('.pagination__item', { hasText: /^2$/ })
+  await secondPage.hover()
+  await expect(secondPage).toHaveCSS('background-color', 'rgb(207, 216, 255)')
+  await expect(secondPage).toHaveCSS('transform', 'matrix(1, 0, 0, 1, -1, -1)')
+
+  const currentPage = page.locator('.pagination__item--current')
+  await currentPage.hover()
+  await expect(currentPage).toHaveCSS('background-color', 'rgb(35, 64, 184)')
+  await expect(currentPage).toHaveCSS('transform', 'none')
+})
+
 test('la page occupe toute la hauteur de la fenêtre', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto('/search?q=xyzqw')

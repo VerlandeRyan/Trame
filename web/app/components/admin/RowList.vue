@@ -104,8 +104,6 @@ const emit = defineEmits<{ add: []; remove: [index: number] }>()
   border: 2px dashed var(--color-ink-soft);
   border-radius: var(--radius);
   background: var(--color-field-soft);
-  // Les champs de la carte survolent un cran plus soutenu que son fond.
-  --field-hover-bg: var(--color-field);
 
   .row-list__fields {
     grid-column: 1 / -1;

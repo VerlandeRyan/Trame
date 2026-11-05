@@ -62,6 +62,30 @@ test('un membre avec une lecture en cours la reprend d’un +1, sans panneau vis
   await expect(page).toHaveURL('/list')
 })
 
+// #164 : le « +1 » est incliné au survol (palier small) et, appuyé, s'enfonce de 2 px sur son
+// ombre comme tout bouton qui en a une.
+test('le +1 s’incline au survol et s’enfonce de 2 px à l’appui', async ({
+  page,
+  context,
+  hasTouch,
+}) => {
+  test.skip(hasTouch, 'Pas de survol sur écran tactile')
+  await signUp(context)
+  await context.request.put(`/api/v1/works/${CHRONIQUES}/entry`, {
+    data: { status: 'reading', chaptersRead: 5 },
+  })
+  await openHome(page)
+
+  const addOne = page.getByTestId('continue-reading-add-one')
+  await addOne.hover()
+  await expect(addOne).not.toHaveCSS('transform', 'none')
+
+  await page.mouse.down()
+  await expect(addOne).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 2, 2)')
+  await expect(addOne).toHaveCSS('box-shadow', 'rgb(27, 42, 92) 1px 1px 0px 0px')
+  await page.mouse.up()
+})
+
 test('un +1 perdu par une panne réseau revient à la valeur d’avant et prévient le membre', async ({
   page,
   context,

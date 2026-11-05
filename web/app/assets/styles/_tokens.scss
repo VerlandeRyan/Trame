@@ -30,6 +30,9 @@
   --color-cyan: #8ff3fa;
   --color-crimson: #a3174f;
   --color-danger: #b3263e;
+  --color-danger-strong: #8f1e32;
+  // Trait d'un onglet souligné survolé (3:1 sur le papier).
+  --color-blue-line: #6f86e6;
   --color-rule: rgb(27 42 92 / 27%);
 
   // Cartes de formats du menu « Explorer » (un format inconnu garde --color-field-soft)
@@ -45,6 +48,13 @@
   --status-plan_to_read: #cfc2f5;
   --status-on_hold: #f6d36b;
   --status-dropped: #e8707c;
+  // Fond d'un bouton de statut au survol et à l'appui : 10 % de noir. « Terminé » et « Abandonné »
+  // passent sous 4,5:1 avec le texte d'encre le temps du survol (exception assumée, `contrast.spec.ts`).
+  --status-reading-strong: #44b07c;
+  --status-completed-strong: #7290e6;
+  --status-plan_to_read-strong: #baafdd;
+  --status-on_hold-strong: #ddbe60;
+  --status-dropped-strong: #d16570;
 
   // Forme
   --border: 3px solid var(--color-ink);

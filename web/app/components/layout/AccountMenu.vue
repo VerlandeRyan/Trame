@@ -238,17 +238,24 @@ async function confirmSignOut() {
 
   // Même fond que le menu des langues, débordant de 8 px de chaque côté sans toucher aux filets.
   &:focus-visible {
-    background: var(--color-field);
+    background: var(--color-cover-empty);
     box-shadow:
-      -8px 0 0 var(--color-field),
-      8px 0 0 var(--color-field);
+      -8px 0 0 var(--color-cover-empty),
+      8px 0 0 var(--color-cover-empty);
   }
 
   @include on-hover {
-    background: var(--color-field);
+    background: var(--color-cover-empty);
     box-shadow:
-      -8px 0 0 var(--color-field),
-      8px 0 0 var(--color-field);
+      -8px 0 0 var(--color-cover-empty),
+      8px 0 0 var(--color-cover-empty);
+  }
+
+  &:active:not(:disabled) {
+    background: var(--color-cover-empty);
+    box-shadow:
+      -8px 0 0 var(--color-cover-empty),
+      8px 0 0 var(--color-cover-empty);
   }
 }
 

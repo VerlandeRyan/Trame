@@ -217,7 +217,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
   }
 
   .select__option--active:not(.select__option--selected) {
-    background: var(--color-field-soft);
+    background: var(--color-cover-empty);
   }
 
   .select__option--active {
@@ -248,10 +248,11 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
     cursor: pointer;
   }
 
-  // `--field-hover-bg` : un parent à fond bleu pâle le renforce, sinon le survol disparaîtrait.
   @include on-hover {
-    background: var(--field-hover-bg, var(--color-field-soft));
+    background: var(--color-cover-empty);
   }
+
+  @include press-background(var(--color-cover-empty));
 }
 
 .select__prefix {

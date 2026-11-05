@@ -3,7 +3,7 @@
 Plateforme de suivi de lecture et de découverte pour la **création européenne, FR d'abord** (manga, BD, webtoons, webcomics, d'auteurs indépendants comme d'éditeurs établis). Un « MyAnimeList » de cette scène. Projet personnel, solo, gratuit au démarrage. **Phase actuelle : MVP en développement (web et suivi de lecture).**
 
 ## Démarrage de session
-1. Lire ce fichier puis `private/etat-courant.md` (privé, ignoré par git). N'ouvrir d'autres documents que si la tâche l'exige.
+1. Lire ce fichier, `private/etat-courant.md` (privé, ignoré par git) puis `docs/conventions-projet.md` (les bonnes manières de faire). N'ouvrir d'autres documents que si la tâche l'exige.
 2. Dès que le sujet est connu (demandé par Ryan, ou déduit de `private/etat-courant.md` § Prochaine tâche), nommer la conversation d'un titre court et explicite (≤ 6 mots, ex. « Issues et GitHub Project ») avec l'outil de titre de session, puis le réajuster si le sujet change.
 3. **Ordre à l'ouverture, avant toute modification** : titre de la conversation → contrôle git en lecture seule → nom de branche, puis attendre que Ryan l'ait créée → ticket en « In progress » → plan court dans la liste de tâches de l'app. Les détails de chaque étape sont dans « Façon de travailler ».
 4. Mettre à jour `private/etat-courant.md` **une seule fois, en fin de session ou si Ryan le demande**, jamais après chaque décision (coût en tokens). Décision technique structurante : un ADR. Réflexions et décisions stratégiques : `private/docs/genese.md`, seulement si Ryan le demande.

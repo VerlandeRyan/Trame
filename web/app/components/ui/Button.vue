@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router'
 
-withDefaults(
+type Tilt = 'small' | 'medium' | 'wide'
+
+const props = withDefaults(
   defineProps<{
     variant?: 'primary' | 'secondary' | 'blue' | 'success' | 'danger' | 'danger-solid'
     size?: 'normal' | 'small'
@@ -23,6 +25,13 @@ withDefaults(
     block: false,
   },
 )
+// Palier d'inclinaison au survol (`_mixins.scss`) selon la largeur : `wide` en pleine largeur,
+// `small` pour la petite taille, sinon `medium`. Un bouton très étroit (« +1 ») le surcharge
+// avec `tilt-on-hover` dans le style de son parent.
+const tiltTier = computed<Tilt>(() => {
+  if (props.block) return 'wide'
+  return props.size === 'small' ? 'small' : 'medium'
+})
 const NuxtLink = resolveComponent('NuxtLink')
 </script>
 
@@ -38,6 +47,7 @@ const NuxtLink = resolveComponent('NuxtLink')
       `btn--${size}`,
       status && `btn--status-${status}`,
       block && 'btn--block',
+      `btn--tilt-${tiltTier}`,
     ]"
   >
     <slot />
@@ -62,6 +72,9 @@ const NuxtLink = resolveComponent('NuxtLink')
   text-decoration: none;
   cursor: pointer;
 
+  // Appui (souris et doigt, même fond que le survol).
+  @include press-down;
+
   // Sans cela un bouton inactif a l'air actif.
   &:disabled {
     opacity: 0.5;
@@ -69,7 +82,8 @@ const NuxtLink = resolveComponent('NuxtLink')
   }
 }
 
-// Survol : inclinaison et fond plus soutenu de la couleur d'origine.
+// Survol et appui : inclinaison ; bouton blanc → `--color-cover-empty`, bouton coloré → fond plus
+// foncé, texte intact.
 .btn--primary {
   background: var(--color-rose);
 
@@ -93,10 +107,7 @@ const NuxtLink = resolveComponent('NuxtLink')
 .btn--success {
   background: var(--status-reading);
 
-  @include tilt-on-hover(var(--status-reading));
-  @include on-hover {
-    filter: brightness(0.92);
-  }
+  @include tilt-on-hover(var(--status-reading-strong));
 }
 
 // Action destructrice : cadre et texte rouges sur fond blanc.
@@ -105,6 +116,7 @@ const NuxtLink = resolveComponent('NuxtLink')
   background: var(--color-surface);
   color: var(--color-danger);
 
+  // Le survol reste rouge : fond rose pâle, cadre et texte rouges.
   @include tilt-on-hover(var(--color-chip));
 }
 
@@ -113,10 +125,7 @@ const NuxtLink = resolveComponent('NuxtLink')
   background: var(--color-danger);
   color: var(--color-surface);
 
-  @include tilt-on-hover(var(--color-danger));
-  @include on-hover {
-    filter: brightness(0.9);
-  }
+  @include tilt-on-hover(var(--color-danger-strong));
 }
 
 .btn--small {
@@ -132,26 +141,21 @@ const NuxtLink = resolveComponent('NuxtLink')
     background: var(--status-#{$status});
 
     // Le fond du statut l'emporte sur le survol de la variante.
-    @include tilt-on-hover(var(--status-#{$status}));
-    @include on-hover {
-      filter: brightness(0.92);
-    }
+    @include tilt-on-hover(var(--status-#{$status}-strong));
   }
 }
 
-// Pleine largeur : une inclinaison de −2,5° ferait déborder les coins sur les éléments voisins.
+// Palier d'inclinaison selon la largeur (voir `_mixins.scss`). Après les variantes et les statuts,
+// pour l'emporter sur leur palier courant.
+@each $tier in (small, medium, wide) {
+  .btn--tilt-#{$tier} {
+    @include tilt-on-hover(null, $tier);
+  }
+}
+
 .btn--block {
   display: flex;
   width: 100%;
-
-  @include tilt-on-hover(null, 1.015, -0.6deg);
-}
-
-// Appui (seul retour au doigt) : déclaré en dernier pour l'emporter sur l'inclinaison du survol,
-// de même spécificité.
-.btn:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 var(--color-ink);
 }
 
 .btn--small:active:not(:disabled) {

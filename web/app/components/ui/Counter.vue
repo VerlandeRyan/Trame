@@ -120,6 +120,9 @@ function commitTypedValue(event: Event) {
   background: var(--color-surface);
   cursor: pointer;
 
+  // Même mouvement que les flèches du carrousel de l'accueil.
+  @include lift-on-hover;
+
   &:disabled {
     opacity: 0.4;
     cursor: default;
@@ -176,30 +179,6 @@ function commitTypedValue(event: Event) {
       @media (pointer: coarse) {
         inset: calc((var(--counter-size) - var(--touch)) / 2) calc(-1 * var(--counter-gap, 10px));
       }
-    }
-
-    // Même mouvement que les flèches du carrousel de l'accueil.
-    @media (prefers-reduced-motion: no-preference) {
-      transition:
-        transform 0.12s ease-out,
-        box-shadow 0.12s ease-out,
-        background-color 0.15s;
-    }
-
-    @include on-hover {
-      background: var(--color-rose);
-
-      @media (prefers-reduced-motion: no-preference) {
-        box-shadow: var(--shadow-small);
-        transform: translate(-1px, -1px);
-      }
-    }
-
-    // Au doigt, l'appui remplace le survol.
-    &:active:not(:disabled) {
-      background: var(--color-rose);
-      box-shadow: none;
-      transform: translate(1px, 1px);
     }
   }
 

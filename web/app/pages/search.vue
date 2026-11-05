@@ -285,7 +285,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
         <template #actions>
           <button
             type="button"
-            class="search-page__sheet-collapse"
+            class="search-page__sheet-collapse link-underlined"
             data-testid="sheet-collapse"
             @click="sheetFilters?.setAll(!sheetFilters.allOpen)"
           >

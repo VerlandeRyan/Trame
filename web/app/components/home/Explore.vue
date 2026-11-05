@@ -120,7 +120,7 @@ function genreLabel(code: string) {
   }
 
   // 1,2° et non 2,5° : une pastille large dévie plus qu'un bouton pour le même angle.
-  @include tilt-on-hover(var(--color-rose-soft), 1.03, -1.2deg);
+  @include tilt-on-hover(var(--color-rose-soft), wide);
 
   // Au doigt, l'appui remplace le survol.
   &:active:not(:disabled) {
@@ -135,7 +135,7 @@ function genreLabel(code: string) {
   background: var(--color-surface);
   font-size: 0.8125rem;
 
-  @include tilt-on-hover(var(--color-rose), 1.03, -1.2deg);
+  @include tilt-on-hover(var(--color-rose), wide);
 
   &:active:not(:disabled) {
     background: var(--color-rose);
@@ -146,7 +146,7 @@ function genreLabel(code: string) {
   box-shadow: none;
   background: var(--color-field-soft);
 
-  @include tilt-on-hover(var(--color-cover-empty), 1.03, -1.2deg);
+  @include tilt-on-hover(var(--color-cover-empty), wide);
 
   &:active:not(:disabled) {
     background: var(--color-cover-empty);
