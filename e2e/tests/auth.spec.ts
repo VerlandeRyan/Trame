@@ -157,14 +157,21 @@ test.describe('boutons', () => {
     test.skip(isMobile, 'Le survol n’existe pas au doigt.')
     await page.goto('/')
     await page.waitForLoadState('networkidle')
-    const tilt = async (testId: string) => Math.abs((await transformOf(page, testId))[1] ?? 0)
+    // Mesure l'inclinaison une fois la transition (avec rebond) terminée, pas en cours de route.
+    const settledTilt = (testId: string) =>
+      page.getByTestId(testId).evaluate(async (el) => {
+        await Promise.all(el.getAnimations().map((animation) => animation.finished))
+        return Math.abs(new DOMMatrix(getComputedStyle(el).transform).b)
+      })
 
     await page.getByTestId('sign-in').hover()
-    await expect.poll(() => tilt('sign-in')).toBeGreaterThan(0.03)
+    expect(await settledTilt('sign-in')).toBeGreaterThan(0.03)
 
     await page.getByTestId('home-create-list').hover()
-    await expect.poll(() => tilt('home-create-list')).toBeGreaterThan(0.005)
-    await expect.poll(() => tilt('home-create-list')).toBeLessThan(0.02)
+    // Palier `wide` (−1,2°, échelle 1,03) ≈ 0,0216 ; `medium` donnerait ≈ 0,029.
+    const wideTilt = await settledTilt('home-create-list')
+    expect(wideTilt).toBeGreaterThan(0.015)
+    expect(wideTilt).toBeLessThan(0.025)
   })
 })
 
