@@ -1,0 +1,37 @@
+# Web — Catalogue des composants
+
+Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `<UiButton>`). **Réutiliser avant d'en créer** ; la page `/components` (galerie) les présente. Un nouveau composant ajoute ici sa ligne (règle du `CLAUDE.md` racine), avec son `.spec.ts`, son entrée dans la galerie et ses clés i18n `fr` et `en`. Le comportement des écrans est dans les autres fichiers de [docs/web/](.) ; les règles de conception (survol, zones de clic, contraste) dans [conventions §12](../conventions-projet.md).
+
+## `ui/` — génériques
+- `Button` : avec `href`, un lien à l'aspect d'un bouton ; `block` : pleine largeur, survol à −0,6° au lieu de −2,5° pour ne pas déborder sur les voisins. La règle `:active` est déclarée **après** les variantes, sinon l'inclinaison du survol l'emporte et le bouton ne s'enfonce pas au clic.
+- `Chip`.
+- `Counter` : − / saisie / +.
+- `EmptyState`.
+- `Field` : préfixe, erreur annoncée, `inputAttributes`.
+- `Modal`.
+- `Panel` : bloc blanc à ombre.
+- `Rule` : frise.
+- `Tabs` : `underline` : pas de barre de défilement, des chevrons collés aux bords signalent les onglets cachés.
+
+## `work/` — œuvres
+- `Card` : fiche résumée (couverture, titre, type).
+- `Cover` : avec/sans image, `small` ; sans image : trame rose vif `--color-rose-vivid` sur bleu pâle `--color-cover-blank`.
+- Blocs de la fiche : `Actions` (Lire/Acheter), `Info`, `People` (auteurs sur le web, repli au-delà de 3), `Rating` (note et membres), `Synopsis`, `Related`. Voir [fiche-oeuvre.md](fiche-oeuvre.md).
+
+## `layout/` — structure du site
+- `Header`.
+- `LanguageSwitcher` : bouton sur toute la carte + menu de liens `useSwitchLocalePath`, pas de `<select>` natif ; menu pleine largeur sous l'en-tête sur mobile, aligné à droite au bureau ; fermeture par Échap, clic extérieur ou changement de route.
+- `ExploreMenu`, `SearchBox` : voir [accueil-recherche.md](accueil-recherche.md). `AccountMenu` : voir [connexion-compte.md](connexion-compte.md).
+
+## Autres dossiers
+- `library/` (`StatusMenu`, `Progress`) : [fiche-oeuvre.md](fiche-oeuvre.md).
+- `list/` (`Summary`, `StatusPicker`, `Row`, `GridItem`, `EditModal`, `UnitToggle`) : [liste-et-profil.md](liste-et-profil.md).
+- `admin/` (`WorkForm`, `PersonForm`, `PublisherForm`, `RowList`, `RecordPicker`, `LinksFields`, `PillGroup`, `TagPicker`, `Nav`, `Filters`, `FilterGroup`, `ResourceRows`, `RowMenu`, `ArchiveConfirm`) : [administration.md](administration.md).
+- `home/` (`Pitch`, `ContinueReading`, `Featured`, `Shelf`, `Explore`) et `search/` (`Filters`, `FilterGroup`, `ResultItem`) : [accueil-recherche.md](accueil-recherche.md).
+- `auth/` (`SignInModal`, `Notice`) : [connexion-compte.md](connexion-compte.md).
+
+## Galerie `/components`
+404 en production (`NODE_ENV=production`), sauf `NUXT_PUBLIC_COMPONENT_GALLERY=true` (les E2E et docker-compose l'activent) ; indicateur unique `runtimeConfig.public.componentGallery`.
+
+## Layouts (`app/layouts/`)
+Convention Nuxt : ce sont les coquilles qui entourent les pages. `default.vue` s'applique à toutes les pages (lien d'évitement, en-tête, zone de contenu `<slot />` qui s'étire sur toute la hauteur de la fenêtre : le contour de focus de `<main>` entoure toute la page) ; un autre layout (ex. connexion sans en-tête) se choisit par page avec `definePageMeta({ layout })`.

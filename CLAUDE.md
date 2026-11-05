@@ -31,7 +31,7 @@ Plateforme de suivi de lecture et de découverte pour la **création européenne
 - Regrouper les modifications liées puis faire **une** vérification ; ne pas relire ce qui est déjà en contexte.
 - Rester sur la tâche demandée. **Poser une question courte avant de choisir** dès que le besoin est ambigu (licence, hébergement, périmètre, droits, mais aussi quel élément, quelle couleur, quel comportement) : ne jamais deviner ; sur « montre-moi », faire un mockup. Un composant partagé (`Field`, `Select`, `Tabs`…) ne change que sur demande ; si l'effet touche d'autres écrans, le dire et demander.
 - **Tests d'abord pour la logique et l'API** (`utils/`, services, routes, composables, émissions et accessibilité d'un composant) : un test rouge, puis le code. **Interface visuelle** : mockup validé par Ryan, implémentation, puis capture dans un vrai navigateur (Playwright en session admin, spec temporaire supprimée ensuite) ; ne jamais écrire « vérifié » sans avoir regardé, sinon « non vérifié visuellement ».
-- **Nouveau composant** : son `.spec.ts`, son entrée dans la galerie `/components`, sa ligne dans `web/CLAUDE.md`, ses clés i18n `fr` **et** `en`.
+- **Nouveau composant** : son `.spec.ts`, son entrée dans la galerie `/components`, sa ligne dans `docs/web/composants.md`, ses clés i18n `fr` **et** `en`.
 - Tout changement de comportement ⇒ test E2E ; toute évolution de schéma ⇒ migration + `docs/modele-de-donnees.md`.
 - Tests E2E : lancer seulement les nouveaux/modifiés en local ; la CI exécute la suite complète.
 - **Vérifier soi-même** : typecheck, lint, tests et couverture sont lancés par Claude avant de proposer un commit, jamais laissés à Ryan ; le résultat chiffré fait partie du compte rendu.
@@ -47,4 +47,4 @@ Plateforme de suivi de lecture et de découverte pour la **création européenne
 `api/` et `web/` ont chacun leur `CLAUDE.md` (commandes et règles du dossier).
 
 ## Documentation
-Cadrage : `docs/cadrage.md`. Modèle de données : `docs/modele-de-donnees.md`. Spécifications : `docs/specifications-fonctionnelles.md`. Architecture et ADR : `docs/architecture.md`. Conventions : `docs/conventions-projet.md`.
+Cadrage : `docs/cadrage.md`. Modèle de données : `docs/modele-de-donnees.md`. Spécifications : `docs/specifications-fonctionnelles.md`. Architecture et ADR : `docs/architecture.md`. Conventions (dont la conception du front) : `docs/conventions-projet.md`. Comportement des écrans web et catalogue des composants : `docs/web/` (`composants.md` en premier).

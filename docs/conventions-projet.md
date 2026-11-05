@@ -62,8 +62,8 @@ GitHub Issues + Projects. Labels `type:*` (feature, bug, docs, chore) et `area:*
 ## 6 bis. Budget de documentation
 La documentation doit rester petite pour rester juste et peu coûteuse à lire.
 - **Un fait, un seul endroit** : valeurs énumérées (types, statuts, rôles) uniquement dans le [modèle de données](modele-de-donnees.md) ; comportements dans les [spécifications](specifications-fonctionnelles.md) ; choix techniques difficiles à défaire dans un ADR. Les autres documents renvoient au lieu de recopier.
-- **Plafonds** : `CLAUDE.md` ≤ 150 lignes ; `private/etat-courant.md` ≤ 25 lignes ; un ADR ≤ 25 lignes ; tout autre document ≤ 250 lignes ; `docs/` ≤ 60 Ko au total.
-- **Ajouter un document impose d'en fusionner ou d'en supprimer un.** Un backlog vit dans GitHub Issues, pas dans `docs/`.
+- **Plafonds** : chaque `CLAUDE.md` ≤ 150 lignes ; `web/CLAUDE.md` ≤ 10 Ko (règles et pièges seulement, le comportement des écrans va dans `docs/web/`) ; `private/etat-courant.md` ≤ 25 lignes ; un ADR ≤ 25 lignes ; tout autre document ≤ 250 lignes ; `docs/` ≤ 140 Ko au total (relevé de 60 à 140 Ko avec l'arrivée de la spécification fine du front, `docs/web/`).
+- **Au-delà du budget, on fusionne avant d'ajouter.** Ajouter un document impose d'en fusionner ou d'en supprimer un ; si un plafond est dépassé, on dédoublonne ou on fusionne d'abord. Un backlog vit dans GitHub Issues, pas dans `docs/`.
 - Un ADR n'est écrit que pour une décision difficile à défaire ; sinon la règle va dans les spécifications ou le modèle.
 
 ## 7. Definition of Done
@@ -110,3 +110,34 @@ Aucune fonction du produit n'appelle un modèle aujourd'hui. Le jour où l'une l
 - tout contenu d'utilisateur (soumissions, signalements, synopsis, pseudos) est transmis comme **donnée**, jamais mêlé aux instructions ;
 - le modèle n'a accès ni aux outils, ni aux secrets, ni à la base ;
 - sa sortie n'est ni exécutée, ni rendue en HTML (pas de `v-html`), ni écrite en base sans validation ; une décision de modération reste humaine.
+
+## 12. Conception du front
+Règles de conception communes à tous les écrans (comportement écran par écran : [docs/web/](web/composants.md)).
+
+### Jetons, textes, icônes
+- **Jetons d'abord** : couleurs, ombres, espacements viennent de `app/assets/styles/_tokens.scss` (variables CSS). Jamais de valeur de couleur en dur dans un composant.
+- **Contour** : `--border` (3 px d'encre, relevé des 2 px des maquettes qui paraissaient trop fins à l'écran) pour tous les cadres, champs, boutons et séparateurs : ne jamais écrire une épaisseur en dur.
+- **Icônes** : `<Icon name="tabler:…" />` uniquement ; aucune police d'icônes ni CDN.
+- **Listes** : `ul`/`ol` sans puces ni retrait par défaut (`main.scss`).
+- **Pas de pied de page** tant qu'il n'est pas maquetté ; à définir en temps voulu (mentions légales : #35).
+- **Lisibilité** : noms explicites (pas d'abréviations d'une lettre), classes BEM par composant (`counter__button`), pas de ternaires imbriqués, un fichier = une responsabilité.
+
+### Survol
+Système unique, validé sur maquette interactive. **Souris seulement**, via les mixins `on-hover` (`@media (hover: hover) and (pointer: fine)`, jamais sur un élément désactivé) et `tilt-on-hover` de `_mixins.scss` ; sur écran tactile seul `:active` répond (sinon `:hover` reste collé après un toucher).
+- Deux mouvements seulement : l'**inclinaison** « autocollant » (`rotate(-2.5deg) scale(1.05–1.06)`, rebond) pour les boutons (`UiButton`, « Voir la fiche ») et les pastilles, et le **soulèvement** de 3 px des couvertures ; flèches du carrousel : rose franc + montée d'1 px ; pastilles du carrousel : rose franc sauf la sélectionnée.
+- Couleurs : boutons vers `--color-rose-strong` / `--color-blue-strong` / `--color-cover-empty` ; formats `--color-rose` ; genres `--color-rose-soft` ; « Tous les… » `--color-cover-empty`.
+- `utils/contrast.spec.ts` lit `_tokens.scss` et garde ces fonds au seuil AA avec le texte d'encre (`rose-strong` est le rose le plus foncé qui passe : 4,55:1).
+- Tout survol, y compris sur les composants plus anciens (`LanguageSwitcher`, `ResultItem`), suit cette règle.
+
+### Zones de clic
+- Une zone tactile invisible de 44 px (`::after`, ou un bouton de 32 × 44 px pour les pastilles du carrousel) **ne doit jamais en recouvrir une autre** : la dernière dans le DOM capte le clic de sa voisine. Écarts qui en découlent : 14 px entre les flèches, boutons de pastilles côte à côte, 16 px entre les pastilles d'Explorer.
+- **La zone dépend de l'appareil** : à la souris (`pointer: fine`) elle épouse l'élément (pastille de carrousel : 32 × 28 px, flèche : ses 30 px, pastille d'Explorer : son cadre) pour que le curseur n'active pas un bouton situé à côté ; au doigt (`pointer: coarse`) elle monte à 44 px. Le test E2E `elementFromPoint` de l'accueil le contrôle à 1280 et 390 px.
+- Boutons inactifs (`UiButton disabled`) : opacité 0,5, ombre conservée, curseur d'interdiction. « Tout voir » passe au bleu `--color-blue-light` au survol.
+
+### Animations
+Toute transition ou animation se déclare dans `@media (prefers-reduced-motion: no-preference)`, jamais de `!important` ni de règle globale « reduce » (Sonar le signale).
+
+### Accessibilité et appareils
+- **Contraste AA** (mesuré le 2026-10-14) : encre `#1b2a5c` sur les cinq couleurs de statut ≥ 4,59:1, sur le rose 5,20:1 ; blanc sur bleu 8,41:1. Ne jamais mettre de texte blanc sur une couleur de statut (1,45 à 2,98:1).
+- **Appareils** : zones tactiles ≥ 44 px (`--touch`), champs à 16 px minimum (Safari iOS), pas de défilement horizontal, `100dvh` plutôt que `100vh` seul. Points de rupture : 768 et 1024 px.
+- Pas de `v-html` sur du contenu utilisateur ; données de démo fictives uniquement.
