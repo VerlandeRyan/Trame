@@ -1,10 +1,4 @@
-import type { ApiError } from '~/utils/api-error'
-import {
-  libraryErrorKey,
-  LIBRARY_STATUSES,
-  type LibraryEntry,
-  type LibraryEntryChanges,
-} from '~/utils/library'
+import { LIBRARY_STATUSES, type LibraryEntry, type LibraryEntryChanges } from '~/utils/library'
 import {
   applyEntryChangeToCounts,
   hasMorePages,
@@ -39,7 +33,6 @@ export async function useReadingList(
   const total = ref(0)
   const statusCounts = ref<StatusCounts>({ ...NO_STATUS_COUNTS })
   const totals = ref<ReadingTotals>({ chaptersRead: 0, volumesRead: 0 })
-  const errorKey = ref<string | null>(null)
   const isLoadingMore = ref(false)
   const hasLoadMoreFailed = ref(false)
   let loadedPages = 0
@@ -91,15 +84,8 @@ export async function useReadingList(
     }
   }
 
-  const { enqueue, isBusy, isLatest } = useRequestQueue({
-    onStart: () => {
-      errorKey.value = null
-    },
-    onError: async (cause) => {
-      errorKey.value = libraryErrorKey((cause as ApiError).code)
-      await refresh()
-    },
-  })
+  // Après un échec, la liste a pu s'écarter du serveur : on relit la première page.
+  const { run, isBusy, errorKey } = useOptimisticWrite({ resync: () => refresh() })
 
   function replaceEntryInView(workId: number, entry: LibraryEntry) {
     items.value = items.value.map((item) => (item.work.id === workId ? { ...item, entry } : item))
@@ -127,31 +113,37 @@ export async function useReadingList(
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
     const after = { ...before, ...changes }
-    updateStatusCountsAndTotals(before, after)
-    replaceEntryInView(workId, after)
-    if (!isInTab(after, state.value.status)) removeFromView(workId)
-    return enqueue(async () => {
-      const body = { status: before.status, ...changes }
-      const saved = (
-        await api.request<{ entry: LibraryEntry }>(`/works/${workId}/entry`, {
-          method: 'PUT',
-          body,
-        })
-      ).entry
+    return run({
+      apply: () => {
+        updateStatusCountsAndTotals(before, after)
+        replaceEntryInView(workId, after)
+        if (!isInTab(after, state.value.status)) removeFromView(workId)
+      },
+      send: async () => {
+        const body = { status: before.status, ...changes }
+        return (
+          await api.request<{ entry: LibraryEntry }>(`/works/${workId}/entry`, {
+            method: 'PUT',
+            body,
+          })
+        ).entry
+      },
       // Seules les dates peuvent différer de ce qui est affiché (le serveur les propose).
-      if (isLatest() && items.value.some((each) => each.work.id === workId)) {
-        replaceEntryInView(workId, saved)
-      }
+      reconcile: (saved) => {
+        if (items.value.some((each) => each.work.id === workId)) replaceEntryInView(workId, saved)
+      },
     })
   }
 
   function removeEntry(item: ListedEntry) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
-    updateStatusCountsAndTotals(before, null)
-    removeFromView(workId)
-    return enqueue(async () => {
-      await api.request(`/works/${workId}/entry`, { method: 'DELETE' })
+    return run({
+      apply: () => {
+        updateStatusCountsAndTotals(before, null)
+        removeFromView(workId)
+      },
+      send: () => api.request(`/works/${workId}/entry`, { method: 'DELETE' }),
     })
   }
 
