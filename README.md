@@ -42,6 +42,7 @@ Dans chaque dossier touché : `npm run typecheck`, `npm run lint` (ESLint avec l
 | Modèle de données | [docs/modele-de-donnees.md](docs/modele-de-donnees.md) |
 | Architecture et décisions | [docs/architecture.md](docs/architecture.md) |
 | Conventions (git, tests, qualité) | [docs/conventions-projet.md](docs/conventions-projet.md) |
+| Comportement des écrans web et composants | [docs/web/composants.md](docs/web/composants.md) |
 | Commandes et règles par dossier | [api/CLAUDE.md](api/CLAUDE.md), [web/CLAUDE.md](web/CLAUDE.md) |
 | Règles de travail (humain et assistant) | [CLAUDE.md](CLAUDE.md) |
 

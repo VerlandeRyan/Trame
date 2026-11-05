@@ -61,7 +61,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Les dates de début et de fin sont proposées automatiquement lors des changements de statut vers En cours / Terminé, et modifiables.
 - Progresser sur une œuvre « À lire », « En pause » ou « Abandonné » demande avant de la passer en « En cours » (rien n'est enregistré si on annule). Atteindre le total connu de chapitres ou de tomes (« ? » tant que l'œuvre est en cours) propose de la passer en « Terminé » ; refuser garde le statut et enregistre quand même le compteur.
 - Passer en « Terminé » à la main (fiche œuvre, liste, fenêtre de modification) avec un compteur sous le total paru connu propose de le mettre à ce total (« Compteurs au total ? ») : confirmer met seulement les compteurs en dessous et le statut, « Garder mes compteurs » enregistre le statut seul, fermer n'enregistre rien. Rien n'est proposé sans total connu ni si les compteurs y sont déjà.
-- Un seul composant « fiche de lecture » (statut, chapitres lus, tomes lus, note, dates, retirer de ma liste), réutilisé sur la fiche œuvre et dans la liste.
+- La saisie de lecture (statut, chapitres lus, tomes lus, note, dates, retirer de ma liste) existe en plusieurs briques, qui partagent leur logique de confirmation (`useReadingPrompt`) et d'écriture immédiate (`useOptimisticWrite`) : sur la fiche œuvre, le menu de statut et le panneau « Ma progression » ; dans la liste, le sélecteur de statut, la fenêtre « Modifier ma lecture » et la grille ; sur l'accueil, le +1 de « Reprendre la lecture ». Détail dans [docs/web/fiche-oeuvre.md](web/fiche-oeuvre.md) et [docs/web/liste-et-profil.md](web/liste-et-profil.md).
 
 **US-07 — Consulter ma liste de lecture**
 - Filtre par statut, tri (dernière mise à jour, titre, note), recherche dans ma liste ; bascule Liste / Grille.
@@ -71,7 +71,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 - Une œuvre archivée disparaît de la liste mais l'entrée est conservée ; elle réapparaît si l'œuvre est restaurée.
 
 **US-08 — Profil public**
-- URL `/u/{handle}` ; affiche les statistiques séparées (œuvres suivies, note moyenne donnée, répartition par statut), les œuvres les mieux notées et les dernières mises à jour (les entrées de la liste modifiées le plus récemment, une ligne par œuvre ; le journal de lecture servira à l'historique détaillé).
+- URL `/u/{handle}` ; affiche les statistiques séparées (œuvres suivies, note moyenne donnée, répartition par statut), les œuvres les mieux notées et les dernières mises à jour (les entrées de la liste classées par `library_entry.updated_at` décroissant, une ligne par œuvre ; le journal de lecture servira à l'historique détaillé).
 - Un lien mène à la page « Ma liste de lecture » : même page que US-07, en lecture seule pour un tiers, et seulement si le profil est public (la visibilité est celle du profil entier, pas par entrée).
 - Le profil est **public par défaut** ; l'utilisateur peut le passer en privé à tout moment.
 - Son propre profil, s'il est public, propose de copier son lien de partage ; le menu du compte (« @handle ») y mène par « Mon profil ». Trouver et consulter le profil d'un autre membre (recherche de membres, page communauté) est hors MVP.
@@ -142,6 +142,7 @@ Décidés au démarrage du ticket concerné :
 - Soumission : règles de la limite de fréquence, motifs de refus et de signalement prédéfinis, preuve du retrait (#31, #32, #33).
 - Le proposant voit-il le motif de refus et peut-il le contester ? (#32).
 - Textes légaux (#35).
+- Faut-il faire converger les briques de saisie de lecture (US-06) en un seul composant, ou garder une brique par écran ?
 
 Le reste relève de choix techniques, traités en ADR au démarrage du code.
 

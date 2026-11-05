@@ -67,7 +67,7 @@ Connexion Google par code d'autorisation avec PKCE (périmètre `openid email`) 
 
 ## 4. Flux principaux
 - **Page de fiche** : le visiteur demande `/work/42-aube-fictive` (ou `/en/work/42-aube-fictive`) → Nuxt appelle l'API → HTML rendu côté serveur → hydratation côté navigateur.
-- **Mise à jour de progression** : navigateur → API (`PUT` sur l'entrée de liste) → vérification de session → base ; le journal de lecture est alimenté si activé.
+- **Mise à jour de progression** : navigateur → API (`PUT` sur l'entrée de liste) → vérification de session → base ; chaque changement de statut, de compteur ou de note alimente le journal de lecture (`reading_event`, dans le MVP).
 - **Soumission** : formulaire → API → table `submission` → revue par l'administrateur → création de la fiche.
 - **Image** : upload par l'administrateur → génération de 2–3 tailles WebP → stockage ; la base ne garde que le chemin.
 
@@ -95,4 +95,6 @@ Voir [conventions-projet.md](conventions-projet.md) (CI, hooks, tests) et [exige
 ## 8. Format d'un ADR
 Chaque décision structurante a un fichier `adr/NNNN-titre.md` : **Statut, Date, Contexte, Décision, Alternatives, Conséquences**. Un ADR ne se réécrit pas : on le remplace par un nouvel ADR qui le déclare « remplacé ».
 
-Index : [0001 Stack](adr/0001-stack.md) · [0002 Données hors git](adr/0002-donnees-hors-git.md) · [0003 Mobile : PWA d'abord](adr/0003-mobile-pwa-d-abord.md) · [0005 Modèle calqué sur MAL](adr/0005-modele-calque-sur-mal.md)
+Index : [0001 Stack](adr/0001-stack.md) · [0002 Données hors git](adr/0002-donnees-hors-git.md) · [0003 Mobile : PWA d'abord](adr/0003-mobile-pwa-d-abord.md) · [0005 Modèle calqué sur MAL](adr/0005-modele-calque-sur-mal.md) (remplacé en partie par 0007) · [0006 Choix techniques de l'API](adr/0006-choix-techniques-api.md) · [0007 i18n et contenu multilingue](adr/0007-i18n-et-contenu-multilingue.md) · [0008 Choix techniques du web](adr/0008-choix-techniques-web.md)
+
+Il n'y a pas d'ADR 0004 (numéro non utilisé).

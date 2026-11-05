@@ -1,6 +1,6 @@
 # ADR 0005 — Modèle de données calqué sur MyAnimeList
 
-- **Statut** : accepté
+- **Statut** : accepté, remplacé en partie par [0007](0007-i18n-et-contenu-multilingue.md) (types d'œuvre : `series`, `oneshot`, `anthology`, formats et genres dans la table `genre`)
 - **Date** : 2026-10-09
 
 ## Contexte

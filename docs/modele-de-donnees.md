@@ -188,7 +188,7 @@ Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce s
 - **Pas d'ISBN, pas d'édition** dans le MVP.
 - **Statistiques** : ne jamais additionner chapitres et tomes.
 - **Recherche** : `pg_trgm` + `unaccent` sur `work.title`, `work_title.title` (toutes langues, quelle que soit la langue demandée), `person.name`, `publisher.name`.
-- **Erreurs API** : codes stables (ex. `WORK_NOT_FOUND`, `ADMIN_REQUIRED`, `HANDLE_TAKEN`).
+- **Erreurs API** : codes stables (ex. `NOT_FOUND`, `ADMIN_REQUIRED`, `HANDLE_TAKEN`).
 - **Jeu de démonstration** : `db/demo-data.sql` reproduit les cas structurels de la section 7 avec des données **entièrement fictives** (titres, auteurs, comptes en `@exemple.test`) ; il se charge avec `npm run db:seed` depuis `api/`. Les données réelles du catalogue ne vont jamais dans git.
 
 ## 5. Hors MVP mais compatible
