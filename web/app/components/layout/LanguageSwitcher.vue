@@ -77,6 +77,8 @@ watch(
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .language-switcher {
   position: relative;
 }
@@ -119,19 +121,8 @@ watch(
   box-shadow: var(--shadow);
   background: var(--color-surface);
   overflow: hidden;
-}
 
-@media (prefers-reduced-motion: no-preference) {
-  .language-switcher__menu {
-    animation: language-menu-in 0.12s ease-out;
-  }
-
-  @keyframes language-menu-in {
-    from {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
-  }
+  @include menu-open-animation;
 }
 
 // Chaque ligne est un lien sur toute la largeur du menu.

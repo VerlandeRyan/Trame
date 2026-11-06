@@ -144,6 +144,7 @@ Système unique (#164). **Souris seulement**, via les mixins de `_mixins.scss` :
 - Boutons inactifs (`UiButton disabled`) : opacité 0,5, ombre conservée, curseur d'interdiction.
 ### Animations
 Toute transition ou animation se déclare dans `@media (prefers-reduced-motion: no-preference)`, jamais de `!important` ni de règle globale « reduce » (Sonar le signale).
+**Ouverture d'un menu déroulant** : un seul mixin, `menu-open-animation` (`_mixins.scss`) : fondu et glissement de 4 px (0,12 s) depuis le côté du bouton, `($above: true)` pour un menu qui s'ouvre au-dessus. Tout nouveau menu l'inclut ; `utils/menu-rules.spec.ts` le contrôle.
 
 ### Accessibilité et appareils
 - **Contraste AA** (mesuré le 2026-10-14) : encre `#1b2a5c` sur les cinq couleurs de statut ≥ 4,59:1, sur le rose 5,20:1 ; blanc sur bleu 8,41:1. Ne jamais mettre de texte blanc sur une couleur de statut (1,45 à 2,98:1).

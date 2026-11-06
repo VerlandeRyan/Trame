@@ -203,11 +203,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
             {{ t('search.approximate') }}
           </p>
 
-          <!-- Pastilles des filtres actifs, puis « Filtres (n) » à droite (mobile). -->
-          <ul
-            class="search-page__filterbar"
-            :class="{ 'search-page__filterbar--empty': chips.length === 0 }"
-          >
+          <ul v-if="chips.length > 0" class="search-page__filterbar">
             <li v-for="chip in chips" :key="`${chip.key}-${chip.code}`">
               <button
                 type="button"
@@ -221,25 +217,25 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
                 <Icon name="tabler:x" size="12" aria-hidden="true" />
               </button>
             </li>
-            <li v-if="hasFilterColumn" class="search-page__filters-item">
-              <UiButton
-                variant="secondary"
-                size="small"
-                class="search-page__filters-button"
-                @click="filtersOpen = true"
-              >
-                {{
-                  chips.length > 0
-                    ? t('search.filtersCount', { count: chips.length })
-                    : t('search.filters')
-                }}
-                <Icon name="tabler:adjustments-horizontal" size="16" aria-hidden="true" />
-              </UiButton>
-            </li>
           </ul>
 
-          <div v-if="total > 0" class="search-page__toolbar">
+          <!-- « Filtres (n) » (mobile) et tri, de même taille côte à côte. -->
+          <div v-if="hasFilterColumn" class="search-page__toolbar">
+            <UiButton
+              variant="secondary"
+              size="small"
+              class="search-page__filters-button"
+              @click="filtersOpen = true"
+            >
+              {{
+                chips.length > 0
+                  ? t('search.filtersCount', { count: chips.length })
+                  : t('search.filters')
+              }}
+              <Icon name="tabler:adjustments-horizontal" size="16" aria-hidden="true" />
+            </UiButton>
             <UiSelect
+              v-if="total > 0"
               boxed
               :model-value="state.sort"
               :options="sortOptions"
@@ -409,44 +405,38 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   --rule-gap: 10px;
 }
 
-// Ligne des filtres actifs ; masquée au bureau quand il n'y en a pas.
+// Pastilles des filtres actifs.
 .search-page__filterbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: var(--space-2);
-  margin: 0 0 var(--space-1);
+  margin: 0 0 var(--space-2);
   padding: 0;
-
-  @media (min-width: 768px) {
-    &.search-page__filterbar--empty {
-      display: none;
-    }
-  }
 }
 
-// « Filtres » reste à droite ; absent au bureau.
-.search-page__filters-item {
-  margin-left: auto;
-
-  @media (min-width: 768px) {
-    display: none;
-  }
-}
-
+// Comme le catalogue admin : « Filtres » à gauche, le tri à droite (mobile) ; le tri seul à droite (bureau).
 .search-page__toolbar {
   display: flex;
-  justify-content: flex-end;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: var(--space-1);
-}
-
-.search-page__filters-button {
-  min-height: 36px;
-  padding: 0 10px;
-  font-size: 0.875rem;
 
   @media (min-width: 768px) {
-    display: none;
+    justify-content: flex-end;
+  }
+}
+
+// Bureau d'abord : le bouton mobile ne doit jamais apparaître, même avant que tous les styles soient
+// chargés. `.search-page__toolbar` en plus pour l'emporter sur le `display` de `UiButton`.
+.search-page__toolbar .search-page__filters-button {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .search-page__toolbar .search-page__filters-button {
+    display: inline-flex;
   }
 }
 

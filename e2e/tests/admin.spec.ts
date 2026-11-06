@@ -107,6 +107,8 @@ test('les filtres et le tri de la liste des œuvres se combinent', async ({ page
   await page.goto(`/admin/catalogue?q=${author}&sort=completeness_desc`)
   await expect(rows).toHaveCount(1)
   await page.getByTestId('admin-search').fill('')
+  // La recherche s'applique après une pause : on l'attend, sinon elle écrase le filtre coché ensuite.
+  await expect(page).not.toHaveURL(/q=/)
   // Au mobile, les filtres sont dans la feuille « Filtres » ; au bureau, dans la barre.
   if (isMobile(page)) {
     await page.getByTestId('filters-open').click()

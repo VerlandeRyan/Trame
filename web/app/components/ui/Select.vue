@@ -124,10 +124,12 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
 </script>
 
 <template>
-  <div ref="root" class="select" :class="{ 'select--boxed': boxed }">
-    <span v-if="prefixText" class="select__prefix" aria-hidden="true" @click="toggle">{{
-      prefixText
-    }}</span>
+  <div
+    ref="root"
+    class="select"
+    :class="{ 'select--boxed': boxed, 'select--labelled': prefixText }"
+  >
+    <span v-if="prefixText" class="select__prefix" aria-hidden="true">{{ prefixText }}</span>
     <button
       ref="trigger"
       type="button"
@@ -236,10 +238,26 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
     align-self: stretch;
     justify-content: space-between;
     padding: 0 var(--space-3) 0 0;
+
+    // Toute la surface du cadre (marges et préfixe compris) ouvre le menu ; le menu, posé après
+    // dans le DOM, reste au-dessus.
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
   }
 
-  .select__prefix {
-    cursor: pointer;
+  // Au mobile, un tri encadré se réduit à « Trier par ▾ » : la valeur reste lue, pas affichée.
+  @media (max-width: 767px) {
+    &.select--labelled .select__value {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
   }
 
   @include on-hover {
@@ -288,10 +306,14 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
   border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
+
+  @include menu-open-animation;
 }
 
 .select__menu--above {
   inset: auto 0 calc(100% - 4px) auto;
+
+  @include menu-open-animation($above: true);
 }
 
 .select__option {

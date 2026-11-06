@@ -124,7 +124,7 @@ const archive = (item: AdminListItem) => setArchived(item, true)
     <AdminNav />
     <div class="catalogue__heading">
       <h1 class="catalogue__title">{{ t('admin.catalogue.title') }}</h1>
-      <UiButton v-if="!isArchives" :to="newLocation" data-testid="admin-new">
+      <UiButton v-if="!isArchives" :to="newLocation" class="catalogue__new" data-testid="admin-new">
         <Icon name="tabler:plus" size="16" aria-hidden="true" />{{
           t(`admin.newKind.${query.kind}`)
         }}
@@ -198,6 +198,11 @@ const archive = (item: AdminListItem) => setArchived(item, true)
 .catalogue__title {
   margin: 0;
   color: var(--color-blue);
+}
+
+// Reste à droite, même quand il passe sous le titre sur un écran étroit.
+.catalogue__new {
+  margin-left: auto;
 }
 
 .catalogue__tools {

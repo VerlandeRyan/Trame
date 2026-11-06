@@ -102,6 +102,25 @@ $tilt-tiers: (
   }
 }
 
+// Ouverture d'un menu déroulant : fondu et glissement de 4 px depuis le côté du bouton
+// (`$above` : le menu s'ouvre au-dessus, il vient donc du bas).
+@mixin menu-open-animation($above: false) {
+  $offset: if($above, 4px, -4px);
+
+  @media (prefers-reduced-motion: no-preference) {
+    animation: 0.12s ease-out menu-open-#{if($above, 'above', 'below')};
+
+    @at-root {
+      @keyframes menu-open-#{if($above, 'above', 'below')} {
+        from {
+          opacity: 0;
+          transform: translateY($offset);
+        }
+      }
+    }
+  }
+}
+
 // Trame (screentone) : points ronds en fondu, comme dans les maquettes.
 // À inclure dans un pseudo-élément ::before d'un parent `position: relative`.
 // $angle : direction depuis laquelle la trame est la plus dense (270deg = depuis la droite).

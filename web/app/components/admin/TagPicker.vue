@@ -147,10 +147,14 @@ const remove = (value: string) => (model.value = model.value.filter((code) => co
   border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
+
+  @include menu-open-animation;
 }
 
 .tags__proposals--above {
   inset: auto 0 calc(100% + var(--space-1));
+
+  @include menu-open-animation($above: true);
 }
 
 .tags__option {
