@@ -11,11 +11,11 @@ const { t, n } = useI18n()
   <div class="summary" data-testid="list-summary">
     <dl class="summary__totals">
       <div class="summary__total" data-testid="list-total-chapters">
-        <dt class="summary__label">{{ t('list.totalChapters') }}</dt>
+        <dt class="summary__label">{{ t('counter.chapters.label') }}</dt>
         <dd class="summary__value">{{ n(totals.chaptersRead) }}</dd>
       </div>
       <div class="summary__total" data-testid="list-total-volumes">
-        <dt class="summary__label">{{ t('list.totalVolumes') }}</dt>
+        <dt class="summary__label">{{ t('counter.volumes.label') }}</dt>
         <dd class="summary__value">{{ n(totals.volumesRead) }}</dd>
       </div>
     </dl>

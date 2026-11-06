@@ -30,7 +30,7 @@ Comportement côté front (Nuxt) des écrans `/`, `/search` et de la page d'erre
 
 ### Accueil connecté (#96, maquettes finales 3 à 6 d'`accueil-v2`)
 - Un membre (`useAuth` `authenticated`, lu au rendu serveur : pas de clignotement ; `pending` garde l'accueil visiteur) n'a ni panneau, ni tampons, ni sous-titre à mots clés.
-- Hero « Bon retour, @pseudo » + « Où en es-tu dans tes lectures ? » + recherche + bande `home/ContinueReading` (« Reprendre la lecture » : `GET /me/entries?status=reading&sort=updated&pageSize=3`, cartes couverture/titre/« Format · Chapitre N »/pastille de statut, bouton **+1** de 44 px, lien « Voir ma liste ›»).
+- Hero « Bon retour, @pseudo » + « Où en es-tu dans tes lectures ? » + recherche + bande `home/ContinueReading` (« Reprendre la lecture » : `GET /me/entries?status=reading&sort=updated&pageSize=3`, cartes couverture (`sm`)/titre/« Format · Chapitre N »/pastille de statut (en 3e ligne au mobile), bouton **+1** de 44 px, lien « Voir ma liste ›»).
 - Le +1 compte un chapitre (un tome pour une œuvre suivie par tomes, `incrementUnit`), passe par `useContinueReading` (file `useRequestQueue`, `PUT /works/:id/entry`, affichage immédiat, retour à l'état d'avant en cas d'échec) et par `useReadingPrompt` : atteindre le total connu demande « Tu as fini cette œuvre ? » ; une œuvre qui n'est plus « En cours » quitte la bande, sans être remplacée.
 - **Liste vide** (aucune œuvre, tous statuts : somme de `statusCounts`) : hero centré « Bienvenue sur Trame, @pseudo », « Ta liste est vide… », recherche, « Ou pars d'un format » et formats cliquables vers `/search?format=`.
 - Une panne de `/me/entries` masque la bande (`null`) sans jamais afficher « liste vide » ; rien en cours mais une liste non vide : « Bon retour » sans bande.
@@ -38,7 +38,7 @@ Comportement côté front (Nuxt) des écrans `/`, `/search` et de la page d'erre
 
 ### Blocs
 - Icônes du panneau aux couleurs de l'app : vert « En cours » (suivi), lavande « À lire » (tout au même endroit), jaune de « À la une » (découverte). Jetons `--color-yellow`, `--color-cyan`, `--color-crimson` (contrastes dans `contrast.spec.ts`).
-- `home/Featured` : carrousel sans défilement automatique (précédent/suivant, pastilles ; badge jaune doré). Badge « Populaire cette semaine » et ligne des lecteurs si `isPopular`, sinon badge « À découvrir » sans ligne des lecteurs.
+- `home/Featured` : carrousel sans défilement automatique (précédent/suivant, pastilles ; badge jaune doré). Couverture `xl` au mobile, `hero` au bureau, où le texte tient en trois blocs sur la hauteur de la couverture (en-tête en haut, synopsis au milieu, bouton en bas). Badge « Populaire cette semaine » et ligne des lecteurs si `isPopular`, sinon badge « À découvrir » sans ligne des lecteurs.
 - `home/Shelf` : rangée sur une seule ligne, 12 œuvres demandées, autant affichées que la largeur le permet, chacune d'au moins 136 px / 104 px au mobile, qui se partagent toute la largeur ; « Tout voir » facultatif, absent pour « Mieux notées » faute de tri par note.
 - « Une œuvre manque » (bouton inactif, US-09).
 - L'accueil porte son propre champ de recherche (`LayoutSearchBox` + bouton « Rechercher » au bureau) : **l'en-tête n'en a pas sur `/`** (`layout-header--plain`).

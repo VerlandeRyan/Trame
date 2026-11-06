@@ -109,7 +109,7 @@ const descriptionLine = computed(() => {
           :aria-label="t('home.featured.slide', { current: position + 1, total: works.length })"
           data-testid="featured-slide"
         >
-          <WorkCover :url="coverUrl(work.coverPath)" class="featured__cover" />
+          <WorkCover :url="coverUrl(work.coverPath)" size="xl" wide-size="hero" />
           <div class="featured__body">
             <div class="featured__head">
               <span class="featured__badge">{{
@@ -232,20 +232,15 @@ const descriptionLine = computed(() => {
   }
 }
 
-.featured__cover {
-  width: 96px;
-  flex: none;
-
-  @media (min-width: 768px) {
-    width: 110px;
-  }
-}
-
 .featured__body {
   display: contents;
 
+  // Bureau, trois blocs sur la hauteur de la couverture : en-tête en haut, bouton en bas,
+  // synopsis (et lecteurs) répartis entre les deux.
   @media (min-width: 768px) {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
     min-width: 0;
   }
 
@@ -331,6 +326,11 @@ const descriptionLine = computed(() => {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   line-clamp: 3;
+
+  // Bureau : le synopsis reste près de l'en-tête, le blanc libre est avant le bouton.
+  @media (min-width: 768px) {
+    margin-top: var(--space-6);
+  }
 }
 
 // Même apparence que `UiButton`, mais c'est un lien.
@@ -349,6 +349,12 @@ const descriptionLine = computed(() => {
   color: var(--color-ink);
   font-weight: 700;
   text-decoration: none;
+
+  // Bureau : bouton en bas du corps, sa largeur naturelle.
+  @media (min-width: 768px) {
+    align-self: flex-start;
+    margin-top: auto;
+  }
 
   @include tilt-on-hover(var(--color-rose-strong));
 

@@ -76,7 +76,7 @@ function changeDate(field: 'startedOn' | 'finishedOn', event: Event) {
             :key="`chapters-${counterKey}`"
             compact
             :model-value="entry.chaptersRead"
-            :label="t('library.chaptersRead')"
+            :label="t('counter.chapters.label')"
             @update:model-value="changeProgress({ chaptersRead: $event })"
           />
           <small class="progress__total">{{ totalLabel(totalChapters) }}</small>
@@ -90,7 +90,7 @@ function changeDate(field: 'startedOn' | 'finishedOn', event: Event) {
             :key="`volumes-${counterKey}`"
             compact
             :model-value="entry.volumesRead"
-            :label="t('library.volumesRead')"
+            :label="t('counter.volumes.label')"
             @update:model-value="changeProgress({ volumesRead: $event })"
           />
           <small class="progress__total">{{ totalLabel(totalVolumes) }}</small>

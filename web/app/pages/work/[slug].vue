@@ -132,7 +132,7 @@ onMounted(() => {
     <!-- Colonne de gauche au bureau ; sur mobile, les wrappers disparaissent (display: contents) et
          les blocs s'enchaînent dans l'ordre de la maquette grâce à `order`. -->
     <div class="work__side">
-      <WorkCover class="work__cover" :url="cover" />
+      <WorkCover class="work__cover" size="xl" wide-size="hero" :url="cover" />
       <LibraryStatusMenu
         class="work__status"
         :entry="entry"

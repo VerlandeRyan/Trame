@@ -482,6 +482,27 @@ test('« À la une » : œuvre populaire, pastille et nombre de lecteurs de la s
   )
 })
 
+test('« À la une » au bureau : en-tête en haut, synopsis au milieu, bouton aligné en bas de la couverture', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 })
+  await page.goto('/')
+
+  const slide = page.getByTestId('featured-slide')
+  const cover = (await slide.locator('.cover').boundingBox())!
+  const badge = (await slide.locator('.featured__badge').boundingBox())!
+  const meta = (await slide.locator('.featured__meta').boundingBox())!
+  const synopsis = (await slide.locator('.featured__synopsis').boundingBox())!
+  const open = (await page.getByTestId('featured-open').boundingBox())!
+
+  expect(cover.width).toBe(210)
+  expect(Math.abs(badge.y - cover.y)).toBeLessThanOrEqual(2)
+  expect(synopsis.y).toBeGreaterThan(meta.y + meta.height)
+  expect(open.y).toBeGreaterThan(synopsis.y + synopsis.height)
+  // Le bas du bouton (hors ombre) rejoint le bas de la couverture.
+  expect(Math.abs(open.y + open.height - (cover.y + cover.height))).toBeLessThanOrEqual(8)
+})
+
 test('« À la une » mobile : badge, titre et auteur à côté de la couverture, le reste dessous', async ({
   page,
 }) => {
@@ -489,7 +510,7 @@ test('« À la une » mobile : badge, titre et auteur à côté de la couverture
   await page.goto('/')
 
   const slide = page.getByTestId('featured-slide')
-  const cover = (await slide.locator('.featured__cover').boundingBox())!
+  const cover = (await slide.locator('.cover').boundingBox())!
   const badge = (await slide.locator('.featured__badge').boundingBox())!
   const title = (await page.getByTestId('featured-title').boundingBox())!
   const meta = (await slide.locator('.featured__meta').boundingBox())!

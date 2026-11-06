@@ -115,7 +115,7 @@ function archiveMenuItem() {
         data-testid="admin-row"
       >
         <div class="rows__main">
-          <WorkCover v-if="isWorks" size="small" class="rows__cover" />
+          <WorkCover v-if="isWorks" size="sm" class="rows__cover" />
           <div class="rows__title">
             <NuxtLink :to="localePath(adminEditPath(kind, item.id))" class="rows__name">
               {{ itemLabel(item) }}
@@ -177,7 +177,7 @@ function archiveMenuItem() {
           :to="localePath(adminEditPath(kind, item.id))"
           data-testid="admin-edit"
         >
-          <Icon name="tabler:pencil" size="16" aria-hidden="true" />{{ t('admin.edit') }}
+          <Icon name="tabler:pencil" size="16" aria-hidden="true" />{{ t('action.edit') }}
         </UiButton>
         <button
           type="button"
@@ -247,11 +247,6 @@ function archiveMenuItem() {
   gap: var(--space-3);
   align-items: center;
   min-width: 0;
-}
-
-.rows__cover {
-  flex: none;
-  width: 40px;
 }
 
 .rows__title {
@@ -365,8 +360,6 @@ function archiveMenuItem() {
     grid-column: 1;
     grid-row: 1 / span 3;
     align-self: center;
-    // Même format 2 / 3 sur toutes les lignes (jamais étirée) : elle donne sa hauteur à la ligne.
-    width: 52px;
   }
 
   .rows__more {

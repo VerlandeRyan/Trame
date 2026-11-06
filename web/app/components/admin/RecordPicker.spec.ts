@@ -17,7 +17,7 @@ function mountPicker(modelValue: RecordRef | null = null, search = vi.fn(async (
         modelValue,
         label: 'Personne',
         placeholder: 'Rechercher…',
-        clearLabel: 'Changer',
+        clearLabel: 'Effacer le choix',
         search,
       },
     }),

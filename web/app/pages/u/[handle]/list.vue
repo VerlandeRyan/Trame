@@ -87,7 +87,6 @@ const sentinel = useLoadMoreOnScroll(list)
     <UiStatePanel
       v-else-if="list.error.value && !list.items.value.length"
       tone="error"
-      compact
       :title="t('errorPage.title')"
       :text="t('list.loadError')"
     >
@@ -96,7 +95,6 @@ const sentinel = useLoadMoreOnScroll(list)
 
     <UiStatePanel
       v-else-if="isEmpty"
-      compact
       :title="t('profile.list.empty')"
       data-testid="member-list-empty"
     />
@@ -134,7 +132,6 @@ const sentinel = useLoadMoreOnScroll(list)
 
       <UiStatePanel
         v-if="!list.items.value.length"
-        compact
         :title="t('list.noMatch')"
         :text="t('list.noMatchText')"
       />
@@ -155,8 +152,8 @@ const sentinel = useLoadMoreOnScroll(list)
         <div class="member-list__columns" aria-hidden="true">
           <span>{{ t('list.headerWork') }}</span>
           <span>{{ t('list.headerStatus') }}</span>
-          <span class="member-list__center">{{ t('library.chaptersRead') }}</span>
-          <span class="member-list__center">{{ t('library.volumesRead') }}</span>
+          <span class="member-list__center">{{ t('counter.chapters.label') }}</span>
+          <span class="member-list__center">{{ t('counter.volumes.label') }}</span>
           <span>{{ t('list.headerRating') }}</span>
         </div>
         <ListRow v-for="item in list.items.value" :key="item.work.id" :item="item" is-read-only />

@@ -209,7 +209,7 @@ watch(
         @mouseenter="activeIndex = index"
         @click="navigateTo(workPath(work.id, work.title))"
       >
-        <WorkCover :url="coverUrl(work.coverPath)" size="small" class="search-box__cover" />
+        <WorkCover :url="coverUrl(work.coverPath)" size="sm" />
         <span class="search-box__text">
           <span class="search-box__title">{{ work.title }}</span>
           <span class="search-box__meta">{{ formatWorkSummary(work) }}</span>
@@ -352,10 +352,6 @@ watch(
     background: var(--color-cover-empty);
     text-decoration: underline;
   }
-}
-
-.search-box__option .search-box__cover {
-  width: 40px;
 }
 
 .search-box__text {

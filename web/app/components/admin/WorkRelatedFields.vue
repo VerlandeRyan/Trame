@@ -39,7 +39,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             v-model="item.person"
             :label="t('admin.work.person')"
             :placeholder="t('admin.work.searchPerson')"
-            :clear-label="t('admin.work.clearChoice')"
+            :clear-label="t('action.clearChoice')"
             :search="searchIn('people')"
           />
           <AdminSelectField
@@ -64,7 +64,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             v-model="item.publisher"
             :label="t('admin.work.publisher')"
             :placeholder="t('admin.work.searchPublisher')"
-            :clear-label="t('admin.work.clearChoice')"
+            :clear-label="t('action.clearChoice')"
             :search="searchIn('publishers')"
           />
         </template>
@@ -85,7 +85,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             v-model="item.work"
             :label="t('admin.work.relatedWork')"
             :placeholder="t('admin.work.searchWork')"
-            :clear-label="t('admin.work.clearChoice')"
+            :clear-label="t('action.clearChoice')"
             :search="searchIn('works')"
           />
           <AdminSelectField

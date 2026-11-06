@@ -24,6 +24,15 @@ test('le compteur est borné et saisissable', async ({ page }) => {
   await expect(volumes).toHaveValue('99')
 })
 
+// Norme #160 : cinq largeurs de couverture, pas une de plus.
+test('les couvertures de la galerie ont les cinq largeurs normalisées', async ({ page }) => {
+  const widths = await page
+    .locator('.gallery__progress .cover')
+    .evaluateAll((covers) => covers.map((cover) => Math.round(cover.getBoundingClientRect().width)))
+
+  expect(widths).toEqual([64, 72, 96, 112, 210])
+})
+
 test('les onglets se parcourent au clavier', async ({ page }) => {
   const tabs = page.getByRole('tab')
   await tabs.first().focus()

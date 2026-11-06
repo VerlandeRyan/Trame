@@ -15,7 +15,7 @@ describe('ListSummary', () => {
     expect(wrapper.text()).not.toContain('1326')
     // Une ligne par total, au mobile : singulier et pluriel.
     expect(wrapper.get('[data-testid="list-totals-line"]').text()).toMatch(
-      /chapitres · 86 tomes lus/,
+      /chapitres lus · 86 tomes lus/,
     )
   })
 
@@ -24,6 +24,6 @@ describe('ListSummary', () => {
       props: { totals: { chaptersRead: 1, volumesRead: 1 } },
     })
 
-    expect(wrapper.get('[data-testid="list-totals-line"]').text()).toBe('1 chapitre · 1 tome lus')
+    expect(wrapper.get('[data-testid="list-totals-line"]').text()).toBe('1 chapitre lu · 1 tome lu')
   })
 })

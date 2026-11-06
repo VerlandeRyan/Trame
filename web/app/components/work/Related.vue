@@ -24,7 +24,7 @@ const localePath = useLocalePath()
               :aria-label="work.title"
               :title="work.title"
             >
-              <WorkCover size="small" />
+              <WorkCover size="md" wide-size="lg" />
             </NuxtLink>
           </li>
         </ul>
@@ -45,21 +45,25 @@ const localePath = useLocalePath()
   row-gap: var(--space-4);
 }
 
-// Groupes côte à côte, séparés par un filet (maquettes).
+// Groupes côte à côte, séparés par un filet à droite de chacun (maquettes) : à la ligne, un groupe
+// reste collé au bord gauche et son filet reste de son côté droit.
 .related__group {
   display: grid;
   align-content: start;
   gap: var(--space-2);
-  padding: 0 10px;
-  border-left: var(--border);
+  margin-right: 10px;
+  padding-right: 10px;
+  border-right: var(--border);
 
-  &:first-child {
-    padding-left: 0;
-    border-left: 0;
+  &:last-child {
+    margin-right: 0;
+    padding-right: 0;
+    border-right: 0;
   }
 
   @media (min-width: 768px) {
-    padding: 0 20px;
+    margin-right: 20px;
+    padding-right: 20px;
   }
 }
 
@@ -82,18 +86,8 @@ const localePath = useLocalePath()
   }
 }
 
-// La couverture prend la largeur du lien : 58 px sur mobile, 72 px au bureau (maquettes).
 .related__link {
   display: block;
-  width: 58px;
   color: inherit;
-
-  @media (min-width: 768px) {
-    width: 72px;
-  }
-
-  :deep(.cover) {
-    width: 100%;
-  }
 }
 </style>

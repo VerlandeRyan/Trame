@@ -11,12 +11,12 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 - `Modal`.
 - `Panel` : bloc blanc à ombre.
 - `Rule` : frise.
-- `StatePanel` : panneau d'état (liste vide, aucun résultat, erreur de chargement, profil privé) construit sur `Panel`, avec pastille ronde et icône (`book-off` par défaut, `alert-triangle` pour `tone="error"` qui ajoute `role="alert"`, `icon` pour un autre pictogramme), titre bleu de 1,25 rem, texte et bouton en slot ; `compact` resserre les marges (listes, recherche).
+- `StatePanel` : panneau d'état (liste vide, aucun résultat, erreur de chargement, profil privé) construit sur `Panel`, avec pastille ronde et icône (`book-off` par défaut, `alert-triangle` pour `tone="error"` qui ajoute `role="alert"`, `icon` pour un autre pictogramme), titre bleu de 1,25 rem, texte et bouton en slot ; une seule taille (pastille de 4 rem, marges de 24 px), pas de variante compacte.
 - `Tabs` : `underline` : pas de barre de défilement, des chevrons collés aux bords signalent les onglets cachés.
 
 ## `work/` — œuvres
 - `Card` : fiche résumée (couverture, titre, type).
-- `Cover` : avec/sans image, `small` ; sans image : trame rose vif `--color-rose-vivid` sur bleu pâle `--color-cover-blank`.
+- `Cover` : avec/sans image ; `size` = `sm` 64 · `md` 72 · `lg` 96 · `xl` 112 · `hero` 210 px (fluide sans `size`), `wideSize` à partir de 768 px ; jamais de `:deep(.cover)` pour la largeur (`utils/cover.spec.ts`) ; sans image : trame rose vif `--color-rose-vivid` sur bleu pâle `--color-cover-blank`.
 - Blocs de la fiche : `Actions` (Lire/Acheter), `Info`, `People` (auteurs sur le web, repli au-delà de 3), `Rating` (note et membres), `Synopsis`, `Related`. Voir [fiche-oeuvre.md](fiche-oeuvre.md).
 
 ## `layout/` — structure du site

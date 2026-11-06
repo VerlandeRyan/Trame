@@ -26,6 +26,26 @@ async function expectNoAccessibilityViolation(page: Page): Promise<void> {
   expect(results.violations.map((violation) => violation.id)).toEqual([])
 }
 
+test('« Reprendre la lecture » au mobile : titre, format · chapitre, puis le statut en 3e ligne', async ({
+  page,
+  context,
+}) => {
+  await signUp(context)
+  await context.request.put(`/api/v1/works/${CHRONIQUES}/entry`, {
+    data: { status: 'reading', chaptersRead: 5 },
+  })
+  await page.setViewportSize({ width: 390, height: 844 })
+  await openHome(page)
+
+  const item = page.getByTestId('continue-reading-work')
+  const title = (await item.locator('.continue-reading__work-title').boundingBox())!
+  const progress = (await item.getByTestId('continue-reading-progress').boundingBox())!
+  const status = (await item.locator('.continue-reading__status').boundingBox())!
+
+  expect(progress.y).toBeGreaterThanOrEqual(title.y + title.height)
+  expect(status.y).toBeGreaterThanOrEqual(progress.y + progress.height)
+})
+
 test('un membre avec une lecture en cours la reprend d’un +1, sans panneau visiteur', async ({
   page,
   context,

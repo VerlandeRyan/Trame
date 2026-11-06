@@ -166,8 +166,6 @@
     "relatedWorks": "Related works",
     "home": "Home",
     "tabAll": "All",
-    "chaptersRead": "Chapters read",
-    "volumesRead": "Volumes read",
     "emptyTitle": "Nothing to show yet",
     "emptyText": "The catalogue will appear here.",
     "modalText": "Window content."
@@ -175,11 +173,25 @@
   "action": {
     "addToList": "Add to my list",
     "add": "Add",
-    "close": "Close"
+    "close": "Close",
+    "edit": "Edit",
+    "clearChoice": "Clear the choice"
   },
   "counter": {
     "decrease": "Decrease: {label}",
-    "increase": "Increase: {label}"
+    "increase": "Increase: {label}",
+    "chapters": {
+      "label": "Chapters read",
+      "unit": "Chapters",
+      "compact": "Ch. {value}",
+      "position": "Chapter {value}"
+    },
+    "volumes": {
+      "label": "Volumes read",
+      "unit": "Volumes",
+      "compact": "Vol. {value}",
+      "position": "Volume {value}"
+    }
   },
   "workType": {
     "series": "Series",
@@ -334,8 +346,6 @@
     "seoDescription": "{'@'}{handle}'s reading profile on Trame: statistics, latest updates and top-rated works.",
     "memberSince": "Member since {date}",
     "stats": "Statistics",
-    "chaptersRead": "Chapters read",
-    "volumesRead": "Volumes read",
     "worksFollowed": "Works followed",
     "ratingAverage": "Average rating given",
     "ratingAverageValue": "{value} / 10",
@@ -389,8 +399,6 @@
   },
   "list": {
     "title": "My reading list",
-    "totalChapters": "Chapters read",
-    "totalVolumes": "Volumes read",
     "neverAdded": "Chapters and volumes are counted separately: they are never added together.",
     "tabsLabel": "Reading status",
     "tabAll": "All",
@@ -410,10 +418,6 @@
     "headerWork": "Work",
     "headerStatus": "Status",
     "headerRating": "Rating",
-    "chapters": "Chapters",
-    "volumes": "Volumes",
-    "badgeChapters": "Ch. {value}",
-    "badgeVolumes": "Vol. {value}",
     "gridHint": "Swipe left: +1 {unit} · right: −1 · tap: opens the page",
     "gridHintMouse": "−1 / +1: one {unit} less or more · click a cover: opens the page",
     "unitPrefix": "Count",
@@ -422,11 +426,10 @@
     "chaptersShort": "Ch.",
     "volumesShort": "Vol.",
     "workCount": "{count} work | {count} works",
-    "chaptersCount": "{count} chapter | {count} chapters",
-    "volumesCount": "{count} volume | {count} volumes",
-    "totalsLine": "{chapters} · {volumes} read",
+    "chaptersCount": "{count} chapter read | {count} chapters read",
+    "volumesCount": "{count} volume read | {count} volumes read",
+    "totalsLine": "{chapters} · {volumes}",
     "changeStatus": "Change the status of “{title}”",
-    "edit": "Edit",
     "editTitle": "Edit my reading of “{title}”",
     "modalTitle": "Edit my reading",
     "status": "Status",
@@ -462,8 +465,6 @@
   },
   "library": {
     "progress": "My progress",
-    "chaptersRead": "Chapters read",
-    "volumesRead": "Volumes read",
     "of": "of {total}",
     "ofUnknown": "of ?",
     "ofTen": "out of 10",
@@ -551,7 +552,6 @@
     "archived": "Archived",
     "published": "Published",
     "cancel": "Cancel",
-    "edit": "Edit",
     "archivesNote": "Archived records disappear from lists and public search. They can be restored.",
     "col": {
       "work": "Work",
@@ -659,7 +659,6 @@
       "removeCredit": "Remove this author",
       "person": "Person",
       "searchPerson": "Search for a person…",
-      "clearChoice": "Change choice",
       "role": "Role",
       "publishers": "Publishers and platforms",
       "addPublisher": "Add a publisher",
