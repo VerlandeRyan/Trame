@@ -159,11 +159,16 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   <div class="search-page">
     <LayoutSearchBox class="search-page__field" />
 
-    <UiEmptyState v-if="error" :title="t('search.title')" :text="t('search.loadError')">
+    <UiStatePanel
+      v-if="error"
+      tone="error"
+      :title="t('search.title')"
+      :text="t('search.loadError')"
+    >
       <UiButton variant="primary" data-testid="search-retry" @click="refresh()">
         {{ t('search.retry') }}
       </UiButton>
-    </UiEmptyState>
+    </UiStatePanel>
 
     <template v-else-if="data">
       <div class="search-page__layout" :class="{ 'search-page__layout--single': !hasFilterColumn }">
@@ -244,20 +249,23 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
             />
           </div>
 
-          <UiPanel v-if="total === 0" class="search-page__empty" data-testid="search-empty">
-            <h2 class="search-page__empty-title">
-              {{
-                chips.length > 0 && query === ''
-                  ? t('search.noResultFilters')
-                  : t('search.noResultTitle')
-              }}
-            </h2>
-            <p class="search-page__empty-text">{{ t('search.noResultText') }}</p>
+          <UiStatePanel
+            v-if="total === 0"
+            compact
+            :title="
+              chips.length > 0 && query === ''
+                ? t('search.noResultFilters')
+                : t('search.noResultTitle')
+            "
+            :text="t('search.noResultText')"
+            class="search-page__empty"
+            data-testid="search-empty"
+          >
             <!-- Inactif jusqu'à US-09. -->
             <UiButton variant="primary" disabled data-testid="search-propose">
               {{ t('search.proposeSignIn') }}
             </UiButton>
-          </UiPanel>
+          </UiStatePanel>
 
           <UiPanel v-else class="search-page__list">
             <ul class="search-page__items">
@@ -480,25 +488,9 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
 
 // Carte « aucun résultat » centrée.
 .search-page__empty {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-3);
   width: 100%;
   max-width: 780px;
   margin: var(--space-6) auto 0;
-  padding: var(--space-8) var(--space-4);
-  text-align: center;
-}
-
-.search-page__empty-title {
-  font-size: 1.25rem;
-}
-
-.search-page__empty-text {
-  max-width: 420px;
-  margin: 0;
-  color: var(--color-ink-soft);
-  font-size: 0.875rem;
 }
 
 // « Tout replier » dans l'en-tête de la feuille ; zone tactile de 44 px.

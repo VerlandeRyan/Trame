@@ -53,9 +53,7 @@ const describedBy = computed(() => {
         @input="onInput"
       />
     </div>
-    <p v-if="error" :id="`${id}-error`" class="field__error" role="alert">
-      <Icon name="tabler:alert-circle" size="16" aria-hidden="true" />{{ error }}
-    </p>
+    <UiFormError v-if="error" :id="`${id}-error`">{{ error }}</UiFormError>
     <p v-else-if="hint" :id="`${id}-hint`" class="field__hint">{{ hint }}</p>
   </div>
 </template>
@@ -117,15 +115,5 @@ const describedBy = computed(() => {
   margin: 0;
   color: var(--color-ink-soft);
   font-size: 0.875rem;
-}
-
-.field__error {
-  display: flex;
-  gap: var(--space-1);
-  align-items: center;
-  margin: 0;
-  color: var(--color-crimson);
-  font-size: 0.875rem;
-  font-weight: 700;
 }
 </style>

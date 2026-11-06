@@ -76,24 +76,30 @@ const sentinel = useLoadMoreOnScroll(list)
       <ListViewToggle v-if="!isPrivate && !isEmpty" :view="state.view" @change="changeView" />
     </header>
 
-    <UiPanel v-if="isPrivate" class="member-list__notice" data-testid="member-list-private">
-      <Icon name="tabler:lock" size="32" aria-hidden="true" />
-      <h2>{{ t('profile.private.title') }}</h2>
-      <p>{{ t('profile.private.text') }}</p>
-    </UiPanel>
+    <UiStatePanel
+      v-if="isPrivate"
+      icon="tabler:lock"
+      :title="t('profile.private.title')"
+      :text="t('profile.private.text')"
+      data-testid="member-list-private"
+    />
 
-    <div
+    <UiStatePanel
       v-else-if="list.error.value && !list.items.value.length"
-      class="member-list__notice"
-      role="alert"
+      tone="error"
+      compact
+      :title="t('errorPage.title')"
+      :text="t('list.loadError')"
     >
-      <p>{{ t('list.loadError') }}</p>
       <UiButton @click="list.refresh()">{{ t('list.retry') }}</UiButton>
-    </div>
+    </UiStatePanel>
 
-    <UiPanel v-else-if="isEmpty" class="member-list__notice" data-testid="member-list-empty">
-      <p>{{ t('profile.list.empty') }}</p>
-    </UiPanel>
+    <UiStatePanel
+      v-else-if="isEmpty"
+      compact
+      :title="t('profile.list.empty')"
+      data-testid="member-list-empty"
+    />
 
     <template v-else>
       <ListSummary :totals="list.totals.value" />
@@ -126,8 +132,9 @@ const sentinel = useLoadMoreOnScroll(list)
         <ListUnitToggle v-model="unit" />
       </div>
 
-      <UiEmptyState
+      <UiStatePanel
         v-if="!list.items.value.length"
+        compact
         :title="t('list.noMatch')"
         :text="t('list.noMatchText')"
       />
@@ -159,9 +166,9 @@ const sentinel = useLoadMoreOnScroll(list)
         <p v-if="list.hasMore.value" class="member-list__progress">
           {{ t('list.loadingMore', { loaded: list.items.value.length, total: list.total.value }) }}
         </p>
-        <p v-if="list.hasLoadMoreFailed.value" class="member-list__progress" role="alert">
+        <UiFormError v-if="list.hasLoadMoreFailed.value">
           {{ t('list.loadMoreError') }}
-        </p>
+        </UiFormError>
         <UiButton
           v-if="list.hasMore.value"
           variant="secondary"
@@ -218,14 +225,6 @@ const sentinel = useLoadMoreOnScroll(list)
   @media (min-width: 768px) {
     font-size: 1.75rem;
   }
-}
-
-.member-list__notice {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-2);
-  padding: var(--space-8) var(--space-4);
-  text-align: center;
 }
 
 // Pastilles de statut basses, comme « Ma liste » : sans filet dessous, 44 px au doigt seulement.

@@ -100,17 +100,25 @@ const sentinel = useLoadMoreOnScroll(list)
       <ListViewToggle v-if="!isEmptyList" :view="state.view" @change="changeView" />
     </header>
 
-    <div v-if="list.error.value && !list.items.value.length" class="list__problem" role="alert">
-      <p>{{ t('list.loadError') }}</p>
+    <UiStatePanel
+      v-if="list.error.value && !list.items.value.length"
+      tone="error"
+      compact
+      :title="t('errorPage.title')"
+      :text="t('list.loadError')"
+    >
       <UiButton data-testid="list-retry" @click="list.refresh()">{{ t('list.retry') }}</UiButton>
-    </div>
+    </UiStatePanel>
 
-    <!-- Maquette 09, état 3 : panneau blanc à ombre, texte resserré, sans icône. -->
-    <UiPanel v-else-if="isEmptyList" class="list__empty" data-testid="list-empty">
-      <h2 class="list__empty-title">{{ t('list.emptyTitle') }}</h2>
-      <p class="list__empty-text">{{ t('list.emptyText') }}</p>
+    <UiStatePanel
+      v-else-if="isEmptyList"
+      compact
+      :title="t('list.emptyTitle')"
+      :text="t('list.emptyText')"
+      data-testid="list-empty"
+    >
       <UiButton :href="localePath('/search')">{{ t('list.explore') }}</UiButton>
-    </UiPanel>
+    </UiStatePanel>
 
     <template v-else>
       <ListSummary :totals="list.totals.value" />
@@ -137,9 +145,9 @@ const sentinel = useLoadMoreOnScroll(list)
         />
       </div>
 
-      <p v-if="list.errorKey.value" class="list__error" role="alert" data-testid="list-error">
+      <UiFormError v-if="list.errorKey.value" data-testid="list-error">
         {{ t(list.errorKey.value) }}
-      </p>
+      </UiFormError>
 
       <!-- Grille : le nombre d'œuvres à gauche, ce que la grille compte à droite, puis l'aide. -->
       <div v-if="state.view === 'grid'" class="list__grid-head">
@@ -157,8 +165,9 @@ const sentinel = useLoadMoreOnScroll(list)
       </div>
 
       <div class="list__results" :class="{ 'list__results--loading': isLoading }">
-        <UiEmptyState
+        <UiStatePanel
           v-if="!list.items.value.length"
+          compact
           :title="t('list.noMatch')"
           :text="t('list.noMatchText')"
           data-testid="list-no-match"
@@ -198,9 +207,9 @@ const sentinel = useLoadMoreOnScroll(list)
         <p v-if="list.hasMore.value" class="list__progress">
           {{ t('list.loadingMore', { loaded: list.items.value.length, total: list.total.value }) }}
         </p>
-        <p v-if="list.hasLoadMoreFailed.value" class="list__error" role="alert">
+        <UiFormError v-if="list.hasLoadMoreFailed.value">
           {{ t('list.loadMoreError') }}
-        </p>
+        </UiFormError>
         <UiButton
           v-if="list.hasMore.value"
           variant="secondary"
@@ -241,26 +250,6 @@ const sentinel = useLoadMoreOnScroll(list)
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
-}
-
-.list__empty {
-  display: grid;
-  justify-items: center;
-  gap: var(--space-3);
-  padding: var(--space-8) var(--space-4);
-  text-align: center;
-}
-
-.list__empty-title {
-  color: var(--color-ink);
-  font-size: 1.25rem;
-}
-
-.list__empty-text {
-  max-width: 28rem;
-  margin: 0;
-  color: var(--color-ink-soft);
-  font-size: 0.875rem;
 }
 
 .list__head {
@@ -393,24 +382,6 @@ const sentinel = useLoadMoreOnScroll(list)
   margin: 0;
   color: var(--color-ink-soft);
   font-size: 0.75rem;
-}
-
-.list__error {
-  margin: 0;
-  color: var(--color-crimson);
-  font-size: 0.875rem;
-  font-weight: 700;
-}
-
-.list__problem {
-  display: grid;
-  justify-items: start;
-  gap: var(--space-2);
-  padding: var(--space-4);
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  font-weight: 700;
 }
 
 // Pendant le chargement, la liste précédente reste affichée, estompée.

@@ -8,7 +8,7 @@ const { location } = useAdminListLocation()
 
 <template>
   <div class="actions">
-    <p v-if="errorKey" class="actions__error" role="alert">{{ t(errorKey) }}</p>
+    <UiFormError v-if="errorKey">{{ t(errorKey) }}</UiFormError>
     <div class="actions__buttons">
       <UiButton type="submit" variant="success" :disabled="saving" data-testid="admin-save">
         {{ t('admin.save') }}
@@ -30,11 +30,5 @@ const { location } = useAdminListLocation()
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
-}
-
-.actions__error {
-  margin: 0;
-  color: var(--color-crimson);
-  font-weight: 700;
 }
 </style>

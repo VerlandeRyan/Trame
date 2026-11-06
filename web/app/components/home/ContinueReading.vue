@@ -99,14 +99,9 @@ const addOneLabel = (item: ListedEntry) =>
       </li>
     </ul>
 
-    <p
-      v-if="errorKey"
-      class="continue-reading__error"
-      role="alert"
-      data-testid="continue-reading-error"
-    >
-      {{ t(errorKey) }}
-    </p>
+    <div v-if="errorKey" class="continue-reading__error">
+      <UiFormError data-testid="continue-reading-error">{{ t(errorKey) }}</UiFormError>
+    </div>
 
     <UiConfirm
       v-model="readingPrompt.isOpen.value"
@@ -239,8 +234,6 @@ const addOneLabel = (item: ListedEntry) =>
 }
 
 .continue-reading__error {
-  margin: var(--space-2) 0 0;
-  color: var(--color-crimson);
-  font-weight: 700;
+  margin-top: var(--space-2);
 }
 </style>

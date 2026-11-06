@@ -56,7 +56,7 @@ Comportement côté front (Nuxt) des écrans `/`, `/search` et de la page d'erre
 - Au doigt, flèches, pastilles et chips prennent leur couleur de survol à l'appui (`:active`).
 
 ## Page 404 (`app/error.vue`, maquettes 24/25)
-Grand « 404 », titre, même texte d'aide au bureau et au mobile, champ de recherche (`LayoutSearchBox`), bouton « Retour à l'accueil ». Les autres erreurs gardent `UiEmptyState`. La « fiche archivée » (maquette 24, état 6) attend un code d'erreur API dédié.
+Grand « 404 », titre, même texte d'aide au bureau et au mobile, champ de recherche (`LayoutSearchBox`), bouton « Retour à l'accueil », le tout dans un cadre (`UiPanel`) au titre bleu. Les autres erreurs passent par `UiStatePanel tone="error"`. La « fiche archivée » (maquette 24, état 6) attend un code d'erreur API dédié.
 
 ## Trame du bord droit
 - Sur l'accueil (`definePageMeta({ trame: 'hero' })`), elle vit seulement dans la bande du hero (`.home__hero::before`, même motif, coupée au filet, opacité 0,4 : il n'y a pas de texte courant dessous).

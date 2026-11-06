@@ -513,7 +513,7 @@ useHead({ title: () => t('app.name') })
 }
 
 .home__missing-title {
-  color: var(--color-ink);
+  color: var(--color-blue);
   font-size: 1rem;
 }
 

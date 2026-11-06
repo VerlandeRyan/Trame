@@ -6,11 +6,12 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 - `Button` : avec `href`, un lien à l'aspect d'un bouton ; `block` : pleine largeur, survol au palier `wide` (−1,2°) au lieu de `medium` (−1,6°) pour ne pas déborder sur les voisins. La règle `:active` est déclarée **après** les variantes, sinon l'inclinaison du survol l'emporte et le bouton ne s'enfonce pas au clic.
 - `Chip`.
 - `Counter` : − / saisie / +.
-- `EmptyState`.
 - `Field` : préfixe, erreur annoncée, `inputAttributes`.
+- `FormError` : ligne d'erreur `role="alert"` avec l'icône d'alerte de 18 px ; seule forme d'erreur en ligne (champs, formulaires admin, fiche, liste, profil).
 - `Modal`.
 - `Panel` : bloc blanc à ombre.
 - `Rule` : frise.
+- `StatePanel` : panneau d'état (liste vide, aucun résultat, erreur de chargement, profil privé) construit sur `Panel`, avec pastille ronde et icône (`book-off` par défaut, `alert-triangle` pour `tone="error"` qui ajoute `role="alert"`, `icon` pour un autre pictogramme), titre bleu de 1,25 rem, texte et bouton en slot ; `compact` resserre les marges (listes, recherche).
 - `Tabs` : `underline` : pas de barre de défilement, des chevrons collés aux bords signalent les onglets cachés.
 
 ## `work/` — œuvres

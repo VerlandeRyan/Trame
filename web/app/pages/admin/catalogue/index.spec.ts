@@ -38,7 +38,8 @@ beforeEach(() => {
     registerEndpoint(`/api/v1/admin/${kind}`, (event) => {
       const query = Object.fromEntries(new URL(event.path, 'http://localhost').searchParams)
       requests.push({ path: kind, query })
-      if (query.scope === 'archived') return { ...WORKS, total: ARCHIVES_TOTAL }
+      if (query.scope === 'archived' && kind !== 'publishers')
+        return { ...WORKS, total: ARCHIVES_TOTAL }
       return kind === 'works' ? WORKS : { ...WORKS, items: [], total: 0 }
     })
   }
@@ -194,6 +195,14 @@ describe('page Catalogue d’administration', () => {
 
     expect(wrapper.find('[data-testid="admin-rows"]').exists()).toBe(false)
     expect(wrapper.text()).toContain('Aucune fiche')
+    expect(wrapper.text()).toContain('« Nouvel éditeur »')
+  })
+
+  it("ne renvoie pas vers le bouton d'ajout dans les archives vides", async () => {
+    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived&kind=publishers')
+
+    expect(wrapper.text()).toContain('Aucune fiche')
+    expect(wrapper.text()).not.toContain('Nouvel éditeur')
   })
 
   it('restaure une archive, puis relit la liste', async () => {

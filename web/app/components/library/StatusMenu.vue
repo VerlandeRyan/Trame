@@ -120,9 +120,7 @@ function askRemoval() {
       </div>
     </template>
 
-    <p v-if="errorKey" class="status-menu__error" role="alert" data-testid="library-error">
-      {{ t(errorKey) }}
-    </p>
+    <UiFormError v-if="errorKey" data-testid="library-error">{{ t(errorKey) }}</UiFormError>
 
     <LibraryRemoveConfirm v-model="confirmingRemoval" @confirm="emit('remove')" />
   </div>
@@ -236,12 +234,5 @@ function askRemoval() {
   border: 0;
   border-top: var(--border);
   border-top-color: var(--color-blue);
-}
-
-.status-menu__error {
-  margin: 0;
-  color: var(--color-crimson);
-  font-size: 0.875rem;
-  font-weight: 700;
 }
 </style>
