@@ -133,13 +133,10 @@ const archive = (item: AdminListItem) => setArchived(item, true)
     <UiTabs v-model="tabModel" underline :tabs="tabs" :label="t('admin.catalogue.kinds')" />
     <div class="catalogue__tools">
       <form class="catalogue__search" role="search" @submit.prevent="search(true)">
-        <Icon name="tabler:search" size="18" aria-hidden="true" />
-        <input
+        <UiSearchField
           v-model="searchText"
-          type="search"
-          class="catalogue__search-input"
           maxlength="100"
-          :aria-label="t(`admin.searchPlaceholder.${query.kind}`)"
+          :label="t(`admin.searchPlaceholder.${query.kind}`)"
           :placeholder="t(`admin.searchPlaceholder.${query.kind}`)"
           data-testid="admin-search"
           @input="search()"
@@ -215,41 +212,14 @@ const archive = (item: AdminListItem) => setArchived(item, true)
 }
 
 .catalogue__search {
-  display: flex;
   flex: 1;
-  gap: var(--space-2);
-  align-items: center;
   min-width: 14rem;
   max-width: 28rem;
-  min-height: var(--touch);
-  padding: 0 var(--space-3);
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
 
   // Au mobile la recherche prend toute la ligne, les filtres passent dessous.
   @media (max-width: 767px) {
     flex-basis: 100%;
     max-width: none;
-  }
-
-  &:focus-within {
-    outline: 3px solid var(--color-ink);
-    outline-offset: 2px;
-  }
-}
-
-.catalogue__search-input {
-  flex: 1;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  // 16 px minimum : évite le zoom automatique de Safari iOS à la prise de focus.
-  font-size: 1rem;
-
-  &:focus {
-    outline: none;
   }
 }
 

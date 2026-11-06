@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Galerie des composants de base, avec des données fictives (aucune donnée réelle du catalogue).
 import { COVER_SIZES, type CoverSize } from '~/utils/cover'
+import type { ListUnit, ListView } from '~/utils/reading-list'
 
 definePageMeta({ middleware: 'component-gallery' })
 
@@ -57,6 +58,26 @@ const sampleHandle = ref('lecteur')
 const searchText = ref('')
 const chaptersRead = ref(12)
 const volumesRead = ref(2)
+const listView = ref<ListView>('list')
+const listUnit = ref<ListUnit>('chapters')
+const viewOptions = computed(() => [
+  { value: 'list' as const, label: t('list.viewList'), icon: 'tabler:list' },
+  { value: 'grid' as const, label: t('list.viewGrid'), icon: 'tabler:layout-grid' },
+])
+const unitOptions = computed(() => [
+  {
+    value: 'chapters' as const,
+    label: t('counter.chapters.unit'),
+    icon: 'tabler:bookmark',
+    shortLabel: t('list.chaptersShort'),
+  },
+  {
+    value: 'volumes' as const,
+    label: t('counter.volumes.unit'),
+    icon: 'tabler:books',
+    shortLabel: t('list.volumesShort'),
+  },
+])
 const activeTab = ref('all')
 const tabs = computed(() => [
   { id: 'all', label: t('gallery.tabAll'), count: 53 },
@@ -94,6 +115,22 @@ const tabs = computed(() => [
         <WorkCover v-for="size in coverSizes" :key="size" :size="size" />
       </UiPanel>
       <UiField id="gallery-search" v-model="searchText" :label="t('nav.search')" />
+      <UiSearchField v-model="searchText" :label="t('nav.search')" :placeholder="t('nav.search')" />
+      <UiSearchField
+        v-model="searchText"
+        small
+        :label="t('nav.search')"
+        :placeholder="t('nav.search')"
+      />
+      <div class="gallery__row">
+        <UiSegmented v-model="listView" :options="viewOptions" :label="t('list.viewLabel')" />
+        <UiSegmented
+          v-model="listUnit"
+          :options="unitOptions"
+          :label="t('list.unitLabel')"
+          :prefix="t('list.unitPrefix')"
+        />
+      </div>
     </section>
 
     <section class="gallery__section">

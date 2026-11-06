@@ -11,6 +11,8 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 - `Modal`.
 - `Panel` : bloc blanc à ombre.
 - `Rule` : frise.
+- `SearchField` : champ `type="search"` à loupe (20 px, 14 px en `small`, qui ne s'abaisse qu'à partir de 768 px), jetons de `Field`, nom accessible masqué (`label`) ; attributs natifs transmis au champ, évènement `input` émis après le modèle ; `focus()` et `getBoundingClientRect()` (le cadre) exposés pour les listes de propositions. Utilisé par `/list`, la liste d'un membre, le catalogue admin, `search/FilterGroup`, `admin/RecordPicker` et `admin/TagPicker` ; `layout/SearchBox` garde sa liste de suggestions.
+- `Segmented` : choix unique en boutons accolés (`<fieldset>` de vrais `<input type="radio">` invisibles, `v-model` : le clavier est celui du navigateur), options `{ value, label, icon, shortLabel?, testId? }` ; au mobile le libellé court remplace l'icône, sans lui l'icône reste seule ; `prefix` (« Compter ») au bureau seulement. Options de `/list` et de la liste d'un membre : `useListControls`. Pas de segmenté dans l'admin (`PillGroup`).
 - `StatePanel` : panneau d'état (liste vide, aucun résultat, erreur de chargement, profil privé) construit sur `Panel`, avec pastille ronde et icône (`book-off` par défaut, `alert-triangle` pour `tone="error"` qui ajoute `role="alert"`, `icon` pour un autre pictogramme), titre bleu de 1,25 rem, texte et bouton en slot ; une seule taille (pastille de 4 rem, marges de 24 px), pas de variante compacte.
 - `Tabs` : `underline` : pas de barre de défilement, des chevrons collés aux bords signalent les onglets cachés.
 
@@ -26,7 +28,7 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 
 ## Autres dossiers
 - `library/` (`StatusMenu`, `Progress`, `RemoveConfirm` : confirmation rouge du retrait, partagée par la fiche et « Modifier ma lecture ») : [fiche-oeuvre.md](fiche-oeuvre.md).
-- `list/` (`Summary`, `StatusPicker`, `Row`, `GridItem`, `EditModal`, `UnitToggle`) : [liste-et-profil.md](liste-et-profil.md).
+- `list/` (`Summary`, `StatusPicker`, `Row`, `GridItem`, `EditModal`) : [liste-et-profil.md](liste-et-profil.md).
 - `admin/` (`WorkForm`, `PersonForm`, `PublisherForm`, `RowList`, `RecordPicker`, `LinksFields`, `PillGroup`, `TagPicker`, `Nav`, `Filters`, `FilterGroup`, `ResourceRows`, `RowMenu`, `ArchiveConfirm`) : [administration.md](administration.md).
 - `home/` (`Pitch`, `ContinueReading`, `Featured`, `Shelf`, `Explore`) et `search/` (`Filters`, `FilterGroup`, `ResultItem`) : [accueil-recherche.md](accueil-recherche.md).
 - `auth/` (`SignInModal`, `Notice`) : [connexion-compte.md](connexion-compte.md).

@@ -20,7 +20,7 @@ Comportement côté front (Nuxt) des écrans `/list` et `/u/{handle}`. Le « quo
   - La couverture suit le doigt (`dragOffset`, amorti à 0,8 et borné à 84 px), laisse voir la couleur du statut et « +1 » / « −1 » dessous (`dragProgress` règle l'opacité), puis revient en rebondissant au relâchement ; la pastille rebondit à chaque −1 / +1.
   - Ressort et rebond sous `prefers-reduced-motion: no-preference` ; `touch-action: pan-y`, un glissement n'ouvre pas la fiche.
 - `EditModal` (« Modifier ma lecture ») : le brouillon repart de l'entrée à chaque ouverture, seuls les champs modifiés sont envoyés, une date vide l'efface ; émettre **avant** de fermer, la fermeture fait oublier l'œuvre à la page.
-- `list/UnitToggle` : la grille compte au choix les chapitres ou les tomes (état local) par « Compter [Chapitres | Tomes] » (avec icônes au bureau, « Ch. | Tomes » au mobile) posé sur la ligne « N œuvres » au-dessus de la grille. L'aide (sous « N œuvres », **au-dessus** des couvertures) suit l'unité et l'appareil : le glisser n'existe qu'au doigt, à la souris elle parle des boutons −1 / +1.
+- `ui/Segmented` (options de `useListControls`) : la grille compte au choix les chapitres ou les tomes (état local) par « Compter [Chapitres | Tomes] » (avec icônes au bureau, « Ch. | Tomes » au mobile) posé sur la ligne « N œuvres » au-dessus de la grille. L'aide (sous « N œuvres », **au-dessus** des couvertures) suit l'unité et l'appareil : le glisser n'existe qu'au doigt, à la souris elle parle des boutons −1 / +1.
 
 ### Apparence
 - Ombre de la couverture = couleur du statut (`--grid-status`) cernée d'un filet d'encre.

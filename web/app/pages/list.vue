@@ -33,11 +33,8 @@ const list = await useReadingList(state)
 
 useSeoMeta({ title: () => t('list.title'), robots: 'noindex, nofollow' })
 
-const { tabs, tab, sortOptions, sort, changeView, searchText, onSearchInput } = useListControls(
-  state,
-  list.statusCounts,
-  '/list',
-)
+const { tabs, tab, sortOptions, sort, view, viewOptions, unitOptions, searchText, onSearchInput } =
+  useListControls(state, list.statusCounts, '/list')
 
 // La grille compte les chapitres ou les tomes, au choix.
 const unit = ref<ListUnit>('chapters')
@@ -97,7 +94,13 @@ const sentinel = useLoadMoreOnScroll(list)
   <div class="list" :aria-busy="isLoading">
     <header class="list__head">
       <h1 class="list__title">{{ t('list.title') }}</h1>
-      <ListViewToggle v-if="!isEmptyList" :view="state.view" @change="changeView" />
+      <UiSegmented
+        v-if="!isEmptyList"
+        v-model="view"
+        class="list__view"
+        :options="viewOptions"
+        :label="t('list.viewLabel')"
+      />
     </header>
 
     <UiStatePanel
@@ -124,11 +127,10 @@ const sentinel = useLoadMoreOnScroll(list)
       <UiTabs v-model="tab" :tabs="tabs" :label="t('list.tabsLabel')" class="list__tabs" />
 
       <div class="list__tools">
-        <input
+        <UiSearchField
           v-model="searchText"
-          type="search"
           class="list__search"
-          :aria-label="t('list.searchLabel')"
+          :label="t('list.searchLabel')"
           :placeholder="searchPlaceholder"
           data-testid="list-search"
           @input="onSearchInput"
@@ -153,7 +155,12 @@ const sentinel = useLoadMoreOnScroll(list)
           <p class="list__count" data-testid="list-count">
             {{ t('list.workCount', { count: list.total.value }, list.total.value) }}
           </p>
-          <ListUnitToggle v-model="unit" />
+          <UiSegmented
+            v-model="unit"
+            :options="unitOptions"
+            :label="t('list.unitLabel')"
+            :prefix="t('list.unitPrefix')"
+          />
         </div>
         <!-- Le glissement n'existe qu'au doigt : à la souris l'aide parle des boutons. -->
         <p v-if="list.items.value.length" class="list__hint" data-testid="list-grid-hint">
@@ -263,6 +270,11 @@ const sentinel = useLoadMoreOnScroll(list)
   font-size: 1.75rem;
 }
 
+// Sur un écran étroit le titre prend la ligne : la bascule passe dessous, mais reste à droite.
+.list__view {
+  margin-left: auto;
+}
+
 // Pastilles de la maquette : basses, sans filet dessous ; 44 px au doigt seulement.
 .list__tabs.list__tabs {
   padding-bottom: 0;
@@ -287,13 +299,14 @@ const sentinel = useLoadMoreOnScroll(list)
   }
 }
 
-// Une seule rangée au mobile : recherche, tri, bascule (maquette 10).
+// Une seule rangée au mobile : recherche et tri de même hauteur (le tri encadré est plus haut que 44 px).
 .list__tools {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: var(--space-2);
 
   @media (min-width: 768px) {
+    align-items: center;
     gap: var(--space-3);
   }
 }
@@ -331,13 +344,6 @@ const sentinel = useLoadMoreOnScroll(list)
 .list__search {
   flex: 1 1 0;
   min-width: 0;
-  min-height: var(--touch);
-  padding: 0 var(--space-3);
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font-size: 1rem;
 }
 
 .list__grid-head {

@@ -115,7 +115,7 @@ describe('page Liste de lecture d’un membre', () => {
       .trigger('click')
     await vi.waitFor(() => expect(requests.at(-1)).toMatchObject({ sort: 'rating' }))
 
-    await wrapper.get('[data-testid="list-view-grid"]').trigger('click')
+    await wrapper.get('[data-testid="list-view-grid"]').setValue(true)
     await vi.waitFor(() => expect(useRoute().query).toEqual({ sort: 'rating', view: 'grid' }))
   })
 
@@ -126,7 +126,7 @@ describe('page Liste de lecture d’un membre', () => {
     expect(wrapper.find('[data-testid="list-grid-plus"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="list-grid-badge"]').text()).toBe('Ch. 12/86')
 
-    await wrapper.get('[data-testid="list-unit-volumes"]').trigger('click')
+    await wrapper.get('[data-testid="list-unit-volumes"]').setValue(true)
     expect(wrapper.get('[data-testid="list-grid-badge"]').text()).toBe('T. 0')
   })
 

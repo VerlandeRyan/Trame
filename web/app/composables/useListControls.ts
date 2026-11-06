@@ -1,3 +1,4 @@
+import type { UiSegment } from '~/components/ui/Segmented.vue'
 import type { UiTab } from '~/components/ui/Tabs.vue'
 import { LIBRARY_STATUSES, type LibraryStatus } from '~/utils/library'
 import {
@@ -7,16 +8,19 @@ import {
   toListRouteQuery,
   type ListSort,
   type ListState,
+  type ListUnit,
   type ListView,
   type StatusCounts,
 } from '~/utils/reading-list'
+import { counterKey } from '~/utils/units'
 
 const ALL_TAB = 'all'
 const SEARCH_DELAY_MS = 250
 
 /**
  * Commandes d'une page de liste de lecture, toutes portées par l'adresse `path` : onglets de
- * statut, tri, vue et recherche (appliquée une fois la frappe finie).
+ * statut, tri, vue et recherche (appliquée une fois la frappe finie). Fournit aussi les options des
+ * boutons segmentés Liste / Grille et Chapitres / Tomes.
  */
 export function useListControls(
   state: ComputedRef<ListState>,
@@ -59,9 +63,38 @@ export function useListControls(
     },
   })
 
-  function changeView(view: ListView) {
-    void navigateToList({ ...state.value, view })
-  }
+  const viewOptions = computed<UiSegment<ListView>[]>(() => [
+    { value: 'list', label: t('list.viewList'), icon: 'tabler:list', testId: 'list-view-list' },
+    {
+      value: 'grid',
+      label: t('list.viewGrid'),
+      icon: 'tabler:layout-grid',
+      testId: 'list-view-grid',
+    },
+  ])
+  const view = computed({
+    get: () => state.value.view,
+    set: (value: ListView) => {
+      void navigateToList({ ...state.value, view: value })
+    },
+  })
+
+  const unitOptions = computed<UiSegment<ListUnit>[]>(() => [
+    {
+      value: 'chapters',
+      label: t(counterKey('chapters', 'unit')),
+      icon: 'tabler:bookmark',
+      shortLabel: t('list.chaptersShort'),
+      testId: 'list-unit-chapters',
+    },
+    {
+      value: 'volumes',
+      label: t(counterKey('volumes', 'unit')),
+      icon: 'tabler:books',
+      shortLabel: t('list.volumesShort'),
+      testId: 'list-unit-volumes',
+    },
+  ])
 
   const searchText = ref(parseListQuery(route.query).q)
   let searchTimer: ReturnType<typeof setTimeout> | undefined
@@ -73,5 +106,15 @@ export function useListControls(
   }
   onBeforeUnmount(() => clearTimeout(searchTimer))
 
-  return { tabs, tab, sortOptions, sort, changeView, searchText, onSearchInput }
+  return {
+    tabs,
+    tab,
+    sortOptions,
+    sort,
+    view,
+    viewOptions,
+    unitOptions,
+    searchText,
+    onSearchInput,
+  }
 }
