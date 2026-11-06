@@ -82,7 +82,7 @@ function search(immediately = false) {
   clearTimeout(searchTimer)
   const run = () => {
     const text = searchText.value.trim()
-    if (text !== query.value.q) go({ ...query.value, q: text, page: 1 })
+    if (text !== query.value.q) void go({ ...query.value, q: text, page: 1 })
   }
   if (immediately) run()
   else searchTimer = setTimeout(run, SEARCH_DELAY_MS)

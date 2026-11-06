@@ -10,8 +10,8 @@ useHead({
   title: t(props.error.status === 404 ? 'errorPage.notFoundTitle' : 'errorPage.title'),
 })
 
-function goHome() {
-  clearError({ redirect: localePath('/') })
+async function goHome() {
+  await clearError({ redirect: localePath('/') })
 }
 </script>
 
