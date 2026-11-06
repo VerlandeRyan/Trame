@@ -102,6 +102,23 @@ $tilt-tiers: (
   }
 }
 
+// Zone tactile de 44 px autour d'un petit lien, sans changer son aspect. Au doigt seulement : à la
+// souris, une zone invisible déclencherait le lien quand le curseur passe à côté. Elle ne grandit
+// qu'en hauteur et ne doit recouvrir aucun autre élément cliquable. `z-index` : elle passe devant
+// un filet ou une puce positionnés plus bas dans le DOM, qui la rogneraient sinon.
+@mixin touch-target {
+  position: relative;
+
+  @media (pointer: coarse) {
+    &::after {
+      content: '';
+      position: absolute;
+      z-index: 1;
+      inset: min(0px, calc((100% - var(--touch)) / 2)) 0;
+    }
+  }
+}
+
 // Barre d'onglets soulignés : le filet d'encre est une ombre interne (un défilement horizontal du
 // conteneur ne la coupe pas) ; le trait de l'onglet actif est posé juste au-dessus.
 @mixin underline-tab-bar {

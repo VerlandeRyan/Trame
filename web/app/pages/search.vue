@@ -437,6 +437,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
 @media (max-width: 767px) {
   .search-page__toolbar .search-page__filters-button {
     display: inline-flex;
+    min-height: var(--touch);
   }
 }
 
