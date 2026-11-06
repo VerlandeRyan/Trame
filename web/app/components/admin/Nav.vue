@@ -25,14 +25,17 @@ const localePath = useLocalePath()
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 // Bande blanche pleine largeur sous l'en-tête : elle annule les marges de `<main>` comme l'accueil.
 .admin-nav {
   display: flex;
   gap: 0;
   margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--main-pad-x)) var(--space-2);
   padding: var(--space-1) var(--main-pad-x) 0;
-  border-bottom: var(--border);
   background: var(--color-surface);
+
+  @include underline-tab-bar;
 }
 
 .admin-nav__item {
@@ -44,15 +47,13 @@ const localePath = useLocalePath()
   flex: 1 1 auto;
   justify-content: center;
   padding: 0 var(--space-1);
-  border: 0;
-  border-bottom: var(--border);
-  border-color: transparent;
-  background: transparent;
   color: var(--color-ink);
   font: inherit;
   font-size: 0.875rem;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
+
+  @include underline-tab('admin-nav__item--current');
 
   @media (min-width: 768px) {
     flex: 0 1 auto;
@@ -64,10 +65,5 @@ const localePath = useLocalePath()
     opacity: 0.5;
     cursor: not-allowed;
   }
-}
-
-.admin-nav__item--current {
-  border-color: var(--color-blue);
-  color: var(--color-blue);
 }
 </style>
