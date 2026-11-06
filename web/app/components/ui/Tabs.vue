@@ -185,50 +185,30 @@ function registerButton(element: unknown, index: number) {
   color: var(--color-surface);
 }
 
-// Le filet d'encre est une ombre interne (le défilement horizontal du conteneur ne le coupe pas) ;
-// le trait bleu de l'onglet actif est posé juste au-dessus : deux lignes superposées, comme la maquette.
+// Deux lignes superposées, comme la maquette : filet d'encre de la barre, trait bleu de l'onglet.
 .tabs--underline {
+  @include underline-tab-bar;
+
   gap: 0;
-  padding-bottom: 3px;
-  border-bottom: 0;
-  box-shadow: inset 0 -3px 0 var(--color-ink);
 
   .tabs__tab {
     // Le trait de l'onglet actif couvre l'onglet entier, pas seulement son texte.
     padding: 0 var(--space-4);
-    border: 0;
-    border-bottom: var(--border);
-    border-color: transparent;
-    border-radius: 0;
-    background: transparent;
 
-    // Au survol seul le trait apparaît, à l'emplacement du trait actif.
+    @include underline-tab('tabs__tab--active');
+
+    // Le fond reste celui du papier : la pastille garde sa teinte de repos.
     &:not(.tabs__tab--active) {
       @include on-hover {
-        border-color: var(--color-blue-line);
-        background: transparent;
-
-        // Le fond reste celui du papier : la pastille garde sa teinte de repos.
         .tabs__count {
           background: var(--color-cover-blank);
         }
       }
 
-      &:active {
-        border-color: var(--color-blue-line);
-        background: transparent;
-
-        .tabs__count {
-          background: var(--color-cover-blank);
-        }
+      &:active .tabs__count {
+        background: var(--color-cover-blank);
       }
     }
-  }
-
-  .tabs__tab--active {
-    border-color: var(--color-blue);
-    background: transparent;
-    color: var(--color-blue);
   }
 
   // Les chevrons remplacent la barre de défilement.
