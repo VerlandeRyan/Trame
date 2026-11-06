@@ -105,10 +105,10 @@ describe('LibraryStatusMenu', () => {
 
     const current = wrapper.get('[data-testid="library-status-reading"]')
     expect(current.attributes('aria-checked')).toBe('true')
-    expect(current.element.firstElementChild?.classList.contains('status-menu__check')).toBe(true)
+    expect(current.element.firstElementChild?.classList.contains('status-list__check')).toBe(true)
     expect(
       wrapper.get('[data-testid="library-remove"]').element.firstElementChild?.classList,
-    ).toContain('status-menu__check')
+    ).toContain('status-list__check')
     expect(wrapper.get('[data-testid="library-status-completed"]').attributes('aria-checked')).toBe(
       'false',
     )

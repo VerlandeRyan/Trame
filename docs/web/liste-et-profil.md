@@ -13,7 +13,7 @@ Comportement côté front (Nuxt) des écrans `/list` et `/u/{handle}`. Le « quo
 
 ### Composants `list/`
 - `Summary` (deux totaux séparés).
-- `StatusPicker` : menu des statuts d'une ligne, qui s'ouvre au-dessus du bouton près du bas de l'écran (`shouldOpenAbove` dans `utils/menu.ts`).
+- `StatusButton` : bouton de statut d'une ligne, enveloppe de `library/StatusList` (qui s'ouvre au-dessus du bouton près du bas de l'écran, `shouldOpenAbove` dans `utils/menu.ts`).
 - `Row` : carte au mobile, ligne au bureau (colonnes `--list-columns` posées par la page, libellés des compteurs lus par les lecteurs d'écran mais masqués au bureau).
 - `GridItem` : couverture à liseré de statut, pastille « Ch. 12 » ou « Ch. 86/86 », boutons −1/+1 de 44 px.
   - Au doigt, glisser vers la **gauche** fait +1 (la suite, comme le carrousel : `swipeDirection` tel quel) et vers la droite −1.
