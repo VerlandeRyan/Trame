@@ -129,6 +129,7 @@ const sentinel = useLoadMoreOnScroll(list)
         />
         <UiSelect
           v-model="sort"
+          boxed
           :options="sortOptions"
           :label="t('list.sortLabel')"
           trigger-test-id="list-sort"

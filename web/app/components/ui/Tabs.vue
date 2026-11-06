@@ -165,9 +165,18 @@ function registerButton(element: unknown, index: number) {
   &:not(.tabs__tab--active) {
     @include on-hover {
       background: var(--color-cover-empty);
+
+      // La pastille de nombre, de la même teinte que ce fond, passe en blanc pour rester visible.
+      .tabs__count {
+        background: var(--color-surface);
+      }
     }
 
     @include press-background(var(--color-cover-empty));
+
+    &:active .tabs__count {
+      background: var(--color-surface);
+    }
   }
 }
 
@@ -198,11 +207,20 @@ function registerButton(element: unknown, index: number) {
       @include on-hover {
         border-color: var(--color-blue-line);
         background: transparent;
+
+        // Le fond reste celui du papier : la pastille garde sa teinte de repos.
+        .tabs__count {
+          background: var(--color-cover-blank);
+        }
       }
 
       &:active {
         border-color: var(--color-blue-line);
         background: transparent;
+
+        .tabs__count {
+          background: var(--color-cover-blank);
+        }
       }
     }
   }
@@ -280,7 +298,7 @@ function registerButton(element: unknown, index: number) {
 .tabs__count {
   padding: 0 6px;
   border-radius: var(--radius);
-  background: var(--color-field);
+  background: var(--color-cover-blank);
   color: var(--color-ink);
   font-size: 0.75rem;
 }

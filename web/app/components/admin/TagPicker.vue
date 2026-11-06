@@ -181,11 +181,11 @@ const remove = (value: string) => (model.value = model.value.filter((code) => co
   cursor: pointer;
 
   @include on-hover {
-    background: var(--color-field-soft);
+    background: var(--color-cover-empty);
   }
 
   &:focus-visible {
-    background: var(--color-field-soft);
+    background: var(--color-cover-empty);
   }
 }
 

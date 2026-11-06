@@ -65,12 +65,6 @@ function choose(status: LibraryStatus) {
         :data-testid="`list-status-${candidate}`"
         @click="choose(candidate)"
       >
-        <span
-          class="status-picker__dot"
-          :style="{ background: `var(--status-${candidate})` }"
-          aria-hidden="true"
-        />
-        {{ t(`readingStatus.${candidate}`) }}
         <Icon
           v-if="candidate === status"
           name="tabler:check"
@@ -78,6 +72,13 @@ function choose(status: LibraryStatus) {
           aria-hidden="true"
           class="status-picker__check"
         />
+        <span v-else class="status-picker__check" aria-hidden="true" />
+        <span
+          class="status-picker__dot"
+          :style="{ background: `var(--status-${candidate})` }"
+          aria-hidden="true"
+        />
+        {{ t(`readingStatus.${candidate}`) }}
       </button>
     </div>
   </div>
@@ -103,8 +104,9 @@ function choose(status: LibraryStatus) {
   left: 0;
   z-index: 20;
   min-width: 10rem;
-  padding: var(--space-1);
+  overflow: hidden;
   border: var(--border);
+  border-color: var(--color-blue);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   background: var(--color-surface);
@@ -121,9 +123,9 @@ function choose(status: LibraryStatus) {
   gap: var(--space-2);
   width: 100%;
   min-height: var(--touch);
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: var(--radius);
+  border-radius: 0;
   background: transparent;
   color: var(--color-ink);
   font-size: 0.8125rem;
@@ -131,11 +133,23 @@ function choose(status: LibraryStatus) {
   text-align: left;
   cursor: pointer;
 
-  @include on-hover {
-    background: var(--color-cover-empty);
+  // Le survol et l'appui ne changent pas le choix courant (bleu plein).
+  &:not([aria-checked='true']) {
+    @include on-hover {
+      background: var(--color-cover-empty);
+    }
+
+    @include press-background(var(--color-cover-empty));
   }
 
-  @include press-background(var(--color-cover-empty));
+  & + & {
+    border-top: 1px dashed var(--color-rule);
+  }
+
+  &[aria-checked='true'] {
+    background: var(--color-blue);
+    color: var(--color-surface);
+  }
 }
 
 .status-picker__dot {
@@ -147,6 +161,8 @@ function choose(status: LibraryStatus) {
 }
 
 .status-picker__check {
-  margin-left: auto;
+  display: inline-block;
+  flex: none;
+  width: 16px;
 }
 </style>

@@ -79,8 +79,11 @@ function choose(value: string) {
     cursor: pointer;
   }
 
-  @include on-hover {
-    background: var(--color-cover-empty);
+  // Le survol ne change pas une pastille cochée.
+  &:not(:has(input:checked)) {
+    @include on-hover {
+      background: var(--color-cover-empty);
+    }
   }
 
   &:has(input:checked) {

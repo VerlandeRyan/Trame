@@ -91,12 +91,6 @@ function askRemoval() {
           :data-testid="`library-status-${status}`"
           @click="chooseStatus(status)"
         >
-          <span
-            class="status-menu__dot"
-            :style="{ background: `var(--status-${status})` }"
-            aria-hidden="true"
-          />
-          {{ t(`readingStatus.${status}`) }}
           <Icon
             v-if="status === entry.status"
             name="tabler:check"
@@ -104,6 +98,13 @@ function askRemoval() {
             aria-hidden="true"
             class="status-menu__check"
           />
+          <span v-else class="status-menu__check" aria-hidden="true" />
+          <span
+            class="status-menu__dot"
+            :style="{ background: `var(--status-${status})` }"
+            aria-hidden="true"
+          />
+          {{ t(`readingStatus.${status}`) }}
         </button>
         <hr class="status-menu__separator" />
         <button
@@ -113,6 +114,7 @@ function askRemoval() {
           data-testid="library-remove"
           @click="askRemoval"
         >
+          <Icon name="tabler:trash" size="16" aria-hidden="true" class="status-menu__check" />
           {{ t('library.remove') }}
         </button>
       </div>
@@ -122,15 +124,7 @@ function askRemoval() {
       {{ t(errorKey) }}
     </p>
 
-    <UiConfirm
-      v-model="confirmingRemoval"
-      :title="t('library.removeTitle')"
-      :text="t('library.removeText')"
-      :confirm-label="t('library.remove')"
-      :cancel-label="t('library.keep')"
-      :close-label="t('action.close')"
-      @confirm="emit('remove')"
-    />
+    <LibraryRemoveConfirm v-model="confirmingRemoval" @confirm="emit('remove')" />
   </div>
 </template>
 
@@ -166,22 +160,25 @@ function askRemoval() {
   right: 0;
   left: 0;
   z-index: 20;
-  padding: var(--space-1);
+  overflow: hidden;
   border: var(--border);
+  border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
   box-shadow: var(--shadow);
 }
 
+// Style unique des menus de choix : lignes pleine largeur séparées d'un pointillé, choix courant
+// en bleu plein avec la coche à gauche.
 .status-menu__item {
   display: flex;
   align-items: center;
   gap: var(--space-2);
   width: 100%;
   min-height: var(--touch);
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-3);
   border: 0;
-  border-radius: var(--radius);
+  border-radius: 0;
   background: transparent;
   color: var(--color-ink);
   font-size: 0.8125rem;
@@ -189,15 +186,34 @@ function askRemoval() {
   text-align: left;
   cursor: pointer;
 
-  @include on-hover {
-    background: var(--color-cover-empty);
+  // Le survol et l'appui ne changent pas le choix courant (bleu plein).
+  &:not([aria-checked='true'], .status-menu__item--danger) {
+    @include on-hover {
+      background: var(--color-cover-empty);
+    }
+
+    @include press-background(var(--color-cover-empty));
   }
 
-  @include press-background(var(--color-cover-empty));
+  & + & {
+    border-top: 1px dashed var(--color-rule);
+  }
+
+  &[aria-checked='true'] {
+    background: var(--color-blue);
+    color: var(--color-surface);
+  }
 }
 
+// Texte rouge : survol rose pâle, comme « Archiver » (conventions § survol et appui).
 .status-menu__item--danger {
   color: var(--color-crimson);
+
+  @include on-hover {
+    background: var(--color-chip);
+  }
+
+  @include press-background(var(--color-chip));
 }
 
 .status-menu__dot {
@@ -209,13 +225,17 @@ function askRemoval() {
 }
 
 .status-menu__check {
-  margin-left: auto;
+  display: inline-block;
+  flex: none;
+  width: 16px;
 }
 
+// Trait plein : l'action de retrait se détache des statuts.
 .status-menu__separator {
-  margin: var(--space-1) 0;
+  margin: 0;
   border: 0;
   border-top: var(--border);
+  border-top-color: var(--color-blue);
 }
 
 .status-menu__error {

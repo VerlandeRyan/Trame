@@ -19,7 +19,9 @@
   // Couverture sans image : fond bleu pâle et trame rose vif (`work/Cover.vue`).
   --color-cover-blank: #bcc8ff;
   --color-rose-vivid: #ff2f9e;
-  --color-field: #e3e7ff;
+  // Carte d'une ligne de formulaire admin : gris froid, pour que le survol `cover-empty` des
+  // boutons et sélecteurs qu'elle contient reste visible.
+  --color-row-card: #e2e2ea;
   // Trame décorative du bord droit (layouts/default.vue, hero de l'accueil) : même rose vif que la
   // trame des couvertures sans image.
   --color-trame-side: var(--color-rose-vivid);

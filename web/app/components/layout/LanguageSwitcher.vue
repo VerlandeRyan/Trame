@@ -60,15 +60,16 @@ watch(
           :lang="item.language"
           :aria-current="item.isCurrent ? 'true' : undefined"
         >
-          <span class="language-switcher__name">{{ item.name }}</span>
-          <span class="language-switcher__item-code">{{ item.code.toUpperCase() }}</span>
           <Icon
             v-if="item.isCurrent"
             name="tabler:check"
-            size="18"
+            size="14"
             aria-hidden="true"
             class="language-switcher__check"
           />
+          <span v-else class="language-switcher__check" aria-hidden="true" />
+          <span class="language-switcher__name">{{ item.name }}</span>
+          <span class="language-switcher__item-code">{{ item.code.toUpperCase() }}</span>
         </NuxtLink>
       </li>
     </ul>
@@ -113,6 +114,7 @@ watch(
   z-index: 20;
   min-width: 200px;
   border: var(--border);
+  border-color: var(--color-blue);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   background: var(--color-surface);
@@ -136,34 +138,49 @@ watch(
 .language-switcher__item {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   width: 100%;
   min-height: var(--touch);
-  padding: 0 var(--space-4);
+  padding: 0 var(--space-3);
   color: var(--color-ink);
   font-weight: 700;
   text-decoration: none;
 
-  // Survol et focus : seul signal de fond. La langue courante se reconnaît à la coche et au gras,
-  // sans fond propre, pour ne pas être confondue avec la ligne survolée.
-  &:focus-visible {
+  // Même signal de sélection que le menu de tri (`ui/Select.vue`) : fond bleu plein, coche à gauche.
+  &:focus-visible:not(.language-switcher__item--current) {
     background: var(--color-cover-empty);
   }
 
   // Le survol n'existe qu'à la souris : sur écran tactile il resterait collé après un toucher.
   @media (hover: hover) and (pointer: fine) {
-    &:hover {
+    &:hover:not(.language-switcher__item--current) {
       background: var(--color-cover-empty);
     }
   }
 
-  &:active {
+  &:active:not(.language-switcher__item--current) {
     background: var(--color-cover-empty);
   }
 }
 
 .language-switcher__item--current {
+  background: var(--color-blue);
+  color: var(--color-surface);
   font-weight: 800;
+
+  .language-switcher__item-code,
+  .language-switcher__check {
+    color: var(--color-surface);
+  }
+
+  &:focus-visible {
+    outline: 3px solid var(--color-ink);
+    outline-offset: -3px;
+  }
+}
+
+li + li .language-switcher__item {
+  border-top: 1px dashed var(--color-rule);
 }
 
 .language-switcher__name {
@@ -176,6 +193,8 @@ watch(
 }
 
 .language-switcher__check {
+  display: inline-block;
+  width: 14px;
   color: var(--color-blue);
 }
 </style>

@@ -200,16 +200,7 @@ function removeFromListAndClose() {
     </template>
   </UiModal>
 
-  <UiConfirm
-    v-model="confirmingRemoval"
-    danger
-    :title="t('library.removeTitle')"
-    :text="t('library.removeText')"
-    :confirm-label="t('library.remove')"
-    :cancel-label="t('library.keep')"
-    :close-label="t('action.close')"
-    @confirm="removeFromListAndClose"
-  />
+  <LibraryRemoveConfirm v-model="confirmingRemoval" @confirm="removeFromListAndClose" />
 </template>
 
 <style scoped lang="scss">

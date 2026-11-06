@@ -138,7 +138,9 @@ const clear = () => {
   min-width: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
   border: var(--border);
+  border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
