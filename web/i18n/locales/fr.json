@@ -625,7 +625,6 @@
       },
       "title": "Titre original",
       "originalLanguage": "Langue originale",
-      "originalLanguageHint": "Code ISO 639 en minuscules, ex. fr, ja, ko.",
       "type": "Type",
       "status": "Statut de publication",
       "totalsOngoing": "Chapitres et tomes restent vides tant que l'œuvre est en cours.",

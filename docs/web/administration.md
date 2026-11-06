@@ -11,7 +11,7 @@ Comportement côté front (Nuxt) de l'administration (#26, US-11, maquette 22). 
 
 ## Formulaires
 - `admin/WorkForm` (sections en onglets, toutes dans le formulaire, une seule visible), `PersonForm`, `PublisherForm`, construits sur `admin/RowList` (lignes modifiables), `RecordPicker` (recherche d'une fiche, `search` fourni par la page) et `LinksFields`.
-- Saisie sécurisée par `inputAttributes.sanitize` de `UiField` (`digitsOnly`, `languageCode`).
+- Saisie sécurisée par `inputAttributes.sanitize` de `UiField` (`digitsOnly`). Les langues (origine, titres, synopsis) se choisissent dans un `AdminSelectField` (`useLanguageOptions`, liste courte `ADMIN_LANGUAGES`, code ISO affiché ; une langue déjà enregistrée hors liste reste proposée).
 - `admin/PillGroup` : choix en pastilles (type, statut, formats, natures). `admin/TagPicker` : choix multiple dans une longue liste (les genres), cherchée dans un champ, valeurs choisies en pastilles retirables.
 - Libellé d'un code de genre : `useGenreLabel()`.
 - Une fiche neuve repart toujours vide (l'état `useState` survit à la navigation). Une ligne d'auteur, d'éditeur ou d'œuvre liée sans fiche choisie, ou un lien avec libellé sans adresse, bloque l'enregistrement (`hasIncompleteRows`) au lieu d'être ignorée.

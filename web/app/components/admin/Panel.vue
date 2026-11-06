@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Panneau d'une section de formulaire : titre de section en bleu, phrase d'aide facultative, puis le
-// contenu. Les noms de champ qu'il contient sont plus petits et plus discrets que le titre.
+// contenu. Les champs gardent leur gabarit commun (libellé gras, 44 px).
 defineProps<{ title: string; hint?: string }>()
 const titleId = useId()
 </script>
@@ -24,14 +24,6 @@ const titleId = useId()
   border: var(--border);
   border-radius: var(--radius);
   background: var(--color-surface);
-
-  :deep(.field__label),
-  :deep(.pills__legend),
-  :deep(.picker__name) {
-    color: var(--color-ink-soft);
-    font-size: 0.875rem;
-    font-weight: 700;
-  }
 }
 
 .panel__title {

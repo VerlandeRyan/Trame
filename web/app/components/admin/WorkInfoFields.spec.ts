@@ -37,18 +37,32 @@ describe('AdminWorkInfoFields', () => {
     expect((wrapper.get('#work-chapters').element as HTMLInputElement).value).toBe('86')
   })
 
-  it('saisit le titre, une langue en minuscules et les dates', async () => {
+  it('saisit le titre et les dates', async () => {
     const { wrapper, draft } = await mountFields()
 
     await wrapper.get('#work-title').setValue('Aube Fictive')
-    await wrapper.get('#work-language').setValue('JA1p')
     await wrapper.get('#work-started').setValue('2020-01-01')
 
-    expect(draft).toMatchObject({
-      title: 'Aube Fictive',
-      originalLanguage: 'jap',
-      startedOn: '2020-01-01',
-    })
+    expect(draft).toMatchObject({ title: 'Aube Fictive', startedOn: '2020-01-01' })
+  })
+
+  it('choisit la langue d’origine dans une liste avec son code ISO', async () => {
+    const { wrapper, draft } = await mountFields({ originalLanguage: 'fr' })
+    const language = wrapper.get('[role="combobox"][aria-label^="Langue originale"]')
+
+    await language.trigger('click')
+    const german = wrapper.findAll('[role="option"]').find((item) => item.text().includes('(de)'))
+    await german!.trigger('click')
+
+    expect(draft.originalLanguage).toBe('de')
+  })
+
+  it('garde une langue d’origine absente de la liste', async () => {
+    const { wrapper } = await mountFields({ originalLanguage: 'sw' })
+
+    expect(wrapper.get('[role="combobox"][aria-label^="Langue originale"]').text()).toContain(
+      '(sw)',
+    )
   })
 
   it('interdit une date de fin avant le début', async () => {

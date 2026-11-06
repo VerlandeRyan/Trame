@@ -41,6 +41,24 @@ describe('AdminRecordPicker', () => {
     expect(wrapper.get('[data-testid="picker-results"]').text()).toContain('Léo Dessin')
   })
 
+  it('ancre la liste au champ, au-dessus de lui près du bas de la fenêtre', async () => {
+    const bottom = window.innerHeight - 10
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      top: bottom - 40,
+      bottom,
+    } as DOMRect)
+    const wrapper = await mountPicker().wrapper
+
+    await wrapper.get('[data-testid="picker-input"]').setValue('lé')
+    await vi.advanceTimersByTimeAsync(250)
+    await flushPromises()
+
+    const results = wrapper.get('[data-testid="picker-results"]')
+    expect(results.classes()).toContain('picker__results--above')
+    expect(results.element.parentElement?.classList.contains('picker__search')).toBe(true)
+    vi.restoreAllMocks()
+  })
+
   it('ne cherche rien pour un texte vide', async () => {
     const { wrapper: pending, search } = mountPicker()
     const wrapper = await pending

@@ -185,8 +185,9 @@ const sheetGroups = computed(
   align-items: center;
 }
 
-// Bureau d'abord : avant le chargement des styles, la version mobile ne doit pas apparaître.
-.filters__open {
+// Bureau d'abord : la version mobile ne doit jamais apparaître, même avant que tous les styles soient
+// chargés. `.filters` en plus pour l'emporter sur le `display` de `UiButton`, quel que soit l'ordre.
+.filters .filters__open {
   display: none;
 }
 
@@ -232,7 +233,7 @@ const sheetGroups = computed(
     display: none;
   }
 
-  .filters__open {
+  .filters .filters__open {
     display: inline-flex;
   }
 }

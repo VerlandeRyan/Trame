@@ -33,6 +33,18 @@ describe('AdminWorkTextFields', () => {
     expect(draft.synopses[0]!.text).toBe('Un résumé.')
   })
 
+  it('choisit la langue d’un titre dans une liste', async () => {
+    const { wrapper, draft } = await mountFields()
+    draft.titles.push({ language: 'en', kind: 'short', title: 'A' })
+    await wrapper.vm.$nextTick()
+
+    await wrapper.get('[role="combobox"][aria-label^="Langue"]').trigger('click')
+    const spanish = wrapper.findAll('[role="option"]').find((item) => item.text().includes('(es)'))
+    await spanish!.trigger('click')
+
+    expect(draft.titles[0]!.language).toBe('es')
+  })
+
   it('retire une ligne', async () => {
     const { wrapper, draft } = await mountFields()
     draft.titles.push({ language: 'en', kind: 'short', title: 'A' })

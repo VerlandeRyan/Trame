@@ -1,12 +1,5 @@
 <script setup lang="ts">
-import {
-  digitsOnly,
-  languageCode,
-  optionsOf,
-  WORK_STATUSES,
-  WORK_TYPES,
-  type WorkDraft,
-} from '~/utils/admin'
+import { digitsOnly, optionsOf, WORK_STATUSES, WORK_TYPES, type WorkDraft } from '~/utils/admin'
 
 // Informations d'une œuvre sur deux colonnes : identité et publication à gauche, dates, formats et
 // genres à droite. Chaque champ n'accepte que ce que l'API accepte (chiffres, lettres, date).
@@ -14,6 +7,7 @@ const props = defineProps<{ genres: { code: string; category: string }[] }>()
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
 const genreLabel = useGenreLabel()
+const languageOptionsFor = useLanguageOptions()
 const typeOptions = optionsOf(WORK_TYPES, (code) => t(`admin.option.workType.${code}`))
 const statusOptions = optionsOf(WORK_STATUSES, (code) => t(`admin.option.workStatus.${code}`))
 // RG-18 : les totaux restent vides tant que l'œuvre est en cours.
@@ -43,12 +37,10 @@ const chosenIn = (options: { value: string }[]) =>
         :label="t('admin.work.title')"
         :input-attributes="{ maxlength: 200 }"
       />
-      <UiField
-        id="work-language"
+      <AdminSelectField
         v-model="draft.originalLanguage"
         :label="t('admin.work.originalLanguage')"
-        :hint="t('admin.work.originalLanguageHint')"
-        :input-attributes="{ maxlength: 3, autocomplete: 'off', sanitize: languageCode }"
+        :options="languageOptionsFor(draft.originalLanguage)"
       />
       <AdminPillGroup v-model="draft.type" :label="t('admin.work.type')" :options="typeOptions" />
       <AdminPillGroup
@@ -73,7 +65,7 @@ const chosenIn = (options: { value: string }[]) =>
       </div>
     </AdminPanel>
     <AdminPanel :title="t('admin.work.release')">
-      <div class="info__pair">
+      <div class="info__dates">
         <UiField
           id="work-started"
           v-model="draft.startedOn"
@@ -124,6 +116,16 @@ const chosenIn = (options: { value: string }[]) =>
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
+}
+
+// Les deux dates l'une sous l'autre au mobile : côte à côte, le champ date est rogné.
+.info__dates {
+  display: grid;
+  gap: var(--space-3);
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .info__note {

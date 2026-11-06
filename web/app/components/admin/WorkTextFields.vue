@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import {
-  languageCode,
-  optionsOf,
-  SYNOPSIS_SOURCES,
-  TITLE_KINDS,
-  type WorkDraft,
-} from '~/utils/admin'
+import { optionsOf, SYNOPSIS_SOURCES, TITLE_KINDS, type WorkDraft } from '~/utils/admin'
 
 // Titres alternatifs (par langue) et synopsis (un par langue, avec sa source), chacun dans son panneau.
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
 const uid = useId()
+const languageOptionsFor = useLanguageOptions()
 const titleKindOptions = optionsOf(TITLE_KINDS, (code) => t(`admin.option.title.${code}`))
 const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.synopsis.${code}`))
 </script>
@@ -28,11 +23,10 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
         @remove="draft.titles.splice($event, 1)"
       >
         <template #default="{ item, index }">
-          <UiField
-            :id="`${uid}-title-language-${index}`"
+          <AdminSelectField
             v-model="item.language"
             :label="t('admin.work.language')"
-            :input-attributes="{ maxlength: 3, autocomplete: 'off', sanitize: languageCode }"
+            :options="languageOptionsFor(item.language)"
           />
           <AdminSelectField
             v-model="item.kind"
@@ -60,11 +54,10 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
         @remove="draft.synopses.splice($event, 1)"
       >
         <template #default="{ item, index }">
-          <UiField
-            :id="`${uid}-synopsis-language-${index}`"
+          <AdminSelectField
             v-model="item.language"
             :label="t('admin.work.language')"
-            :input-attributes="{ maxlength: 3, autocomplete: 'off', sanitize: languageCode }"
+            :options="languageOptionsFor(item.language)"
           />
           <AdminSelectField
             v-model="item.source"
@@ -105,8 +98,6 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
 }
 
 .texts__label {
-  color: var(--color-ink-soft);
-  font-size: 0.875rem;
   font-weight: 700;
 }
 

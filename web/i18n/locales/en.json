@@ -621,7 +621,6 @@
       },
       "title": "Original title",
       "originalLanguage": "Original language",
-      "originalLanguageHint": "Lowercase ISO 639 code, e.g. fr, ja, ko.",
       "type": "Type",
       "status": "Publication status",
       "totalsOngoing": "Chapters and volumes stay empty while the work is ongoing.",

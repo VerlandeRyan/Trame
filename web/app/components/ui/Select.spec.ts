@@ -1,5 +1,5 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import UiSelect from './Select.vue'
 
 const options = [
@@ -44,6 +44,26 @@ describe('UiSelect', () => {
       'true',
       'false',
     ])
+  })
+
+  it('ouvre le menu au-dessus du bouton quand le bas de la fenêtre est trop court', async () => {
+    const wrapper = await mountSelect()
+    const bottom = window.innerHeight - 10
+    vi.spyOn(wrapper.element, 'getBoundingClientRect').mockReturnValue({
+      top: bottom - 40,
+      bottom,
+    } as DOMRect)
+
+    await wrapper.get('[data-testid="sort"]').trigger('click')
+    expect(wrapper.get('[role="listbox"]').classes()).toContain('select__menu--above')
+
+    await wrapper.get('[data-testid="sort"]').trigger('click')
+    vi.spyOn(wrapper.element, 'getBoundingClientRect').mockReturnValue({
+      top: 10,
+      bottom: 50,
+    } as DOMRect)
+    await wrapper.get('[data-testid="sort"]').trigger('click')
+    expect(wrapper.get('[role="listbox"]').classes()).not.toContain('select__menu--above')
   })
 
   it('émet la valeur cliquée et referme le menu', async () => {

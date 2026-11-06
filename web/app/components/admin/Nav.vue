@@ -40,18 +40,23 @@ const localePath = useLocalePath()
   align-items: center;
   min-height: calc(var(--touch) + var(--space-2));
   min-width: 0;
-  // Au mobile les trois entrées doivent tenir dans la largeur, sans faire défiler la page.
-  padding: 0 var(--space-2);
+  // Au mobile les trois entrées se partagent la largeur (dès 320 px), sans faire défiler la page.
+  flex: 1 1 auto;
+  justify-content: center;
+  padding: 0 var(--space-1);
   border: 0;
   border-bottom: var(--border);
   border-color: transparent;
   background: transparent;
   color: var(--color-ink);
   font: inherit;
+  font-size: 0.875rem;
   font-weight: 800;
   text-decoration: none;
 
   @media (min-width: 768px) {
+    flex: 0 1 auto;
+    font-size: 1rem;
     padding: 0 var(--space-4);
   }
 

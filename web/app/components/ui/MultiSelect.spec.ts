@@ -1,5 +1,5 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import MultiSelect from './MultiSelect.vue'
 
 const OPTIONS = [
@@ -33,6 +33,19 @@ describe('UiMultiSelect', () => {
 
     expect(wrapper.get('[data-testid="type"]').text()).toContain('One-shot')
     expect(wrapper.get('[data-testid="multi-select-count"]').text()).toBe('+2')
+  })
+
+  it('ouvre le panneau au-dessus du bouton quand le bas de la fenêtre est trop court', async () => {
+    const wrapper = await mountSelect()
+    const bottom = window.innerHeight - 10
+    vi.spyOn(wrapper.element, 'getBoundingClientRect').mockReturnValue({
+      top: bottom - 40,
+      bottom,
+    } as DOMRect)
+
+    await wrapper.get('[data-testid="type"]').trigger('click')
+
+    expect(wrapper.get('fieldset').classes()).toContain('multi-select__panel--above')
   })
 
   it('ouvre et ferme le panneau au clic sur le bouton', async () => {

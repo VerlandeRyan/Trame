@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { MENU_PREFERRED_HEIGHT_PX, MENU_ROW_HEIGHT_PX } from '~/utils/menu'
+
 // Filtre à choix multiples : bouton à cadre qui ouvre un panneau de cases à cocher. Le cadre le
 // distingue du tri (`UiSelect`, texte plat) ; aucune sélection veut dire « tous ».
 const props = defineProps<{
@@ -17,6 +19,23 @@ const panelId = `${uid}-panel`
 const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
 const { isOpen, close } = useDismissableMenu(root, () => trigger.value?.focus())
+
+// Le panneau s'ouvre sous le bouton (il défile si la place manque), et au-dessus seulement quand le
+// dessous est trop court.
+const panelHeight = ref(MENU_PREFERRED_HEIGHT_PX)
+const isAbove = ref(false)
+const placeMenu = useMenuPlacement()
+function toggle() {
+  if (!isOpen.value && root.value) {
+    const placement = placeMenu(
+      root.value.getBoundingClientRect(),
+      (props.options.length + 1) * MENU_ROW_HEIGHT_PX,
+    )
+    isAbove.value = placement.isAbove
+    panelHeight.value = placement.maxHeight
+  }
+  isOpen.value = !isOpen.value
+}
 
 const firstLabel = computed(
   () => props.options.find((option) => option.value === model.value[0])?.label ?? '',
@@ -44,7 +63,7 @@ const clear = () => {
       :aria-expanded="isOpen"
       :aria-controls="panelId"
       :data-testid="triggerTestId"
-      @click="isOpen = !isOpen"
+      @click="toggle"
     >
       <span class="multi-select__label">{{ label }}</span>
       <span class="multi-select__value">{{ summary }}</span>
@@ -54,7 +73,14 @@ const clear = () => {
       <Icon name="tabler:chevron-down" size="14" aria-hidden="true" class="multi-select__caret" />
     </button>
 
-    <fieldset v-show="isOpen" :id="panelId" class="multi-select__panel" :aria-label="label">
+    <fieldset
+      v-show="isOpen"
+      :id="panelId"
+      class="multi-select__panel"
+      :class="{ 'multi-select__panel--above': isAbove }"
+      :style="{ maxHeight: `${panelHeight}px` }"
+      :aria-label="label"
+    >
       <label v-for="option in options" :key="option.value" class="multi-select__option">
         <input
           type="checkbox"
@@ -138,11 +164,16 @@ const clear = () => {
   min-width: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   border: var(--border);
   border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
+}
+
+.multi-select__panel--above {
+  inset: auto auto calc(100% + var(--space-1)) 0;
 }
 
 .multi-select__option {

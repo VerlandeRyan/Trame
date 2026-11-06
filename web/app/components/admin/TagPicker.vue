@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { menuMaxHeight, MENU_PREFERRED_HEIGHT_PX, shouldOpenAbove } from '~/utils/menu'
+import { MENU_PREFERRED_HEIGHT_PX } from '~/utils/menu'
 import { foldAccents } from '~/utils/work'
 
 // Choisit plusieurs valeurs dans une longue liste : un champ de recherche propose celles qui restent,
@@ -21,17 +21,16 @@ const root = ref<HTMLElement | null>(null)
 const field = ref<{ focus: () => void; getBoundingClientRect: () => DOMRect } | null>(null)
 const { isOpen, close } = useDismissableMenu(root, () => field.value?.focus())
 
-// La liste défile dans la place restante, sous le champ ou au-dessus s'il y en a plus : elle ne
-// rallonge jamais la page.
+// La liste s'ouvre sous le champ (elle défile si la place manque), et au-dessus seulement quand le
+// dessous est trop court : elle ne rallonge jamais la page.
 const proposalsHeight = ref(MENU_PREFERRED_HEIGHT_PX)
 const isAbove = ref(false)
+const placeMenu = useMenuPlacement()
 function openProposals() {
   if (field.value) {
-    const rect = field.value.getBoundingClientRect()
-    isAbove.value = shouldOpenAbove(rect, window.innerHeight, MENU_PREFERRED_HEIGHT_PX)
-    proposalsHeight.value = isAbove.value
-      ? menuMaxHeight(window.innerHeight - rect.top, window.innerHeight)
-      : menuMaxHeight(rect.bottom, window.innerHeight)
+    const placement = placeMenu(field.value.getBoundingClientRect())
+    isAbove.value = placement.isAbove
+    proposalsHeight.value = placement.maxHeight
   }
   isOpen.value = true
 }
@@ -129,7 +128,6 @@ const remove = (value: string) => (model.value = model.value.filter((code) => co
 }
 
 .tags__name {
-  font-size: 0.875rem;
   font-weight: 700;
 }
 
