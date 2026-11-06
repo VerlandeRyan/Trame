@@ -178,6 +178,8 @@ async function confirmSignOut() {
   border-radius: var(--radius);
   background: var(--color-paper);
   box-shadow: var(--shadow);
+
+  @include menu-open-animation;
 }
 
 .account-menu__who {
@@ -262,19 +264,6 @@ async function confirmSignOut() {
 // Le filet de la dernière ligne ferait double trait avec le titre du groupe.
 .account-menu__row:has(+ .account-menu__group) {
   border-bottom: 0;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .account-menu__panel {
-    animation: account-menu-in 0.12s ease-out;
-  }
-
-  @keyframes account-menu-in {
-    from {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
-  }
 }
 
 .account-menu__row--sign-out {

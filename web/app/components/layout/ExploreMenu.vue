@@ -247,6 +247,8 @@ watch(
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   background: var(--color-paper);
+
+  @include menu-open-animation;
 }
 
 // Entre tablette et petit bureau, le bouton est trop près du bord gauche pour une fenêtre de
@@ -256,19 +258,6 @@ watch(
     position: fixed;
     top: calc(var(--header-height) + 8px);
     right: var(--space-4);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .explore-menu__panel {
-    animation: explore-menu-in 0.12s ease-out;
-  }
-
-  @keyframes explore-menu-in {
-    from {
-      opacity: 0;
-      transform: translateY(-4px);
-    }
   }
 }
 

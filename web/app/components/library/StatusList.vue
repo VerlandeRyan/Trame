@@ -115,6 +115,8 @@ function choose(status: LibraryStatus) {
   box-shadow: var(--shadow);
   background: var(--color-surface);
 
+  @include menu-open-animation;
+
   .status-list--block > & {
     right: 0;
   }
@@ -123,6 +125,8 @@ function choose(status: LibraryStatus) {
 .status-list__panel--above {
   top: auto;
   bottom: calc(100% + var(--space-1));
+
+  @include menu-open-animation($above: true);
 }
 
 // Style unique des menus de choix : lignes pleine largeur séparées d'un pointillé, choix courant

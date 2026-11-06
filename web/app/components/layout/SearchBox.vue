@@ -236,6 +236,8 @@ watch(
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .search-box {
   position: relative;
   min-width: 0;
@@ -316,6 +318,8 @@ watch(
   border-top: 0;
   border-radius: 0 0 var(--radius) var(--radius);
   background: var(--color-surface);
+
+  @include menu-open-animation;
 }
 
 .search-box__option {

@@ -118,6 +118,8 @@ onBeforeUnmount(() => clearTimeout(timer))
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .picker {
   position: relative;
   display: grid;
@@ -185,10 +187,14 @@ onBeforeUnmount(() => clearTimeout(timer))
   border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
+
+  @include menu-open-animation;
 }
 
 .picker__results--above {
   inset: auto 0 calc(100% + var(--space-1));
+
+  @include menu-open-animation($above: true);
 }
 
 .picker__option {

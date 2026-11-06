@@ -12,7 +12,8 @@ Comportement côté front (Nuxt) des écrans `/`, `/search` et de la page d'erre
 - `search/Filters` (état ouvert/fermé par groupe, lien « Tout replier / Tout déplier ») + `search/FilterGroup` (bouton à chevron à gauche, pastille du nombre de choix, groupe masqué s'il n'a aucune valeur ; Type, Format, Genre dépliés).
 - Feuille basse `UiModal placement="bottom"` au mobile (maquette 04 : pied « Réinitialiser » + « Voir N résultats », `Filters sheet`).
 - `ui/Pagination` par liens, `search/ResultItem`.
-- Tri par `ui/Select` (menu stylé, texte « Trier par Pertinence ▾ » ; `relevance`, `title`, `recent`) : `sort` dans l'URL seulement s'il diffère de la pertinence, envoyé à la liste mais jamais aux compteurs ; le menu de suggestions se rouvre au clic ou au focus du champ.
+- Au mobile, « Filtres (n) » est à gauche et le tri à droite, sur une ligne, comme au catalogue admin ; les pastilles des filtres actifs sont au-dessus. Au bureau, le tri seul est à droite.
+- Tri par `ui/Select` (menu stylé, texte « Trier par Pertinence ▾ » au bureau, « Trier par ▾ » au mobile ; `relevance`, `title`, `recent`) : `sort` dans l'URL seulement s'il diffère de la pertinence, envoyé à la liste mais jamais aux compteurs ; le menu de suggestions se rouvre au clic ou au focus du champ.
 - Page en `noindex`.
 - Le bouton « Ajouter » des résultats et « Proposer cette œuvre » (US-09) sont visibles mais inactifs : l'ajout depuis la recherche reste à faire (#190 ; la fiche œuvre porte déjà `library/EntryCard`).
 - Logique pure dans `utils/search.ts`.

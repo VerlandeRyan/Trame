@@ -271,32 +271,8 @@ const sentinel = useLoadMoreOnScroll(list)
   min-width: 0;
 }
 
-// Au mobile le tri se réduit à « Trier par ▾ » dans un cadre.
 .member-list__sort {
   flex: none;
-
-  @media (max-width: 767px) {
-    min-height: var(--touch);
-    padding: 0 var(--space-2);
-    border: var(--border);
-    border-radius: var(--radius);
-    background: var(--color-surface);
-
-    :deep(.select__trigger)::before {
-      position: absolute;
-      inset: 0;
-      content: '';
-    }
-
-    :deep(.select__value) {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
-  }
 }
 
 .member-list__grid-bar {

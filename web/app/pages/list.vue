@@ -311,33 +311,8 @@ const sentinel = useLoadMoreOnScroll(list)
   }
 }
 
-// Au mobile le tri se réduit à « Trier par ▾ » dans un cadre : la valeur reste lue, pas affichée.
 .list__sort {
   flex: none;
-
-  @media (max-width: 767px) {
-    min-height: var(--touch);
-    padding: 0 var(--space-2);
-    border: var(--border);
-    border-radius: var(--radius);
-    background: var(--color-surface);
-
-    // Tout le cadre ouvre le menu, pas seulement la flèche.
-    :deep(.select__trigger)::before {
-      position: absolute;
-      inset: 0;
-      content: '';
-    }
-
-    :deep(.select__value) {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
-      clip-path: inset(50%);
-      white-space: nowrap;
-    }
-  }
 }
 
 // Champ de 16 px au minimum : Safari iOS ne zoome pas.

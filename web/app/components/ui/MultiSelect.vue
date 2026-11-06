@@ -170,10 +170,14 @@ const clear = () => {
   border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
+
+  @include menu-open-animation;
 }
 
 .multi-select__panel--above {
   inset: auto auto calc(100% + var(--space-1)) 0;
+
+  @include menu-open-animation($above: true);
 }
 
 .multi-select__option {
