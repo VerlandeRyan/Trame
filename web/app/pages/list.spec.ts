@@ -321,7 +321,7 @@ describe('page Ma liste de lecture', () => {
   it('fait −1 / +1 sur les tomes quand la grille compte les tomes', async () => {
     const wrapper = await mountList('/list?view=grid')
 
-    await wrapper.get('[data-testid="list-unit-volumes"]').trigger('click')
+    await wrapper.get('[data-testid="list-unit-volumes"]').setValue(true)
     expect(wrapper.text()).toContain('Glisser à gauche : +1 tome')
     await wrapper.findAll('[data-testid="list-grid-plus"]')[0]!.trigger('click')
 

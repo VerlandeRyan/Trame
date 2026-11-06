@@ -18,16 +18,16 @@ const model = defineModel<string[]>({ required: true })
 const uid = useId()
 const text = ref('')
 const root = ref<HTMLElement | null>(null)
-const input = ref<HTMLInputElement | null>(null)
-const { isOpen, close } = useDismissableMenu(root, () => input.value?.focus())
+const field = ref<{ focus: () => void; getBoundingClientRect: () => DOMRect } | null>(null)
+const { isOpen, close } = useDismissableMenu(root, () => field.value?.focus())
 
 // La liste défile dans la place restante, sous le champ ou au-dessus s'il y en a plus : elle ne
 // rallonge jamais la page.
 const proposalsHeight = ref(MENU_PREFERRED_HEIGHT_PX)
 const isAbove = ref(false)
 function openProposals() {
-  if (input.value) {
-    const rect = input.value.getBoundingClientRect()
+  if (field.value) {
+    const rect = field.value.getBoundingClientRect()
     isAbove.value = shouldOpenAbove(rect, window.innerHeight, MENU_PREFERRED_HEIGHT_PX)
     proposalsHeight.value = isAbove.value
       ? menuMaxHeight(window.innerHeight - rect.top, window.innerHeight)
@@ -70,12 +70,10 @@ const remove = (value: string) => (model.value = model.value.filter((code) => co
   <div ref="root" class="tags">
     <label :for="`${uid}-input`" class="tags__name">{{ label }}</label>
     <div class="tags__search">
-      <input
+      <UiSearchField
         :id="`${uid}-input`"
-        ref="input"
+        ref="field"
         v-model="text"
-        type="search"
-        class="tags__input"
         autocomplete="off"
         :placeholder="placeholder"
         data-testid="tag-input"
@@ -137,18 +135,6 @@ const remove = (value: string) => (model.value = model.value.filter((code) => co
 
 .tags__search {
   position: relative;
-}
-
-.tags__input {
-  width: 100%;
-  min-height: var(--touch);
-  padding: 0 var(--space-3);
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: inherit;
-  // 16 px minimum : évite le zoom automatique de Safari iOS à la prise de focus.
-  font-size: 1rem;
 }
 
 // Superposée aux champs du dessous : la carte ne change pas de hauteur pendant la recherche.

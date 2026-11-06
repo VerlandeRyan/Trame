@@ -17,9 +17,9 @@ const text = ref('')
 const results = ref<RecordRef[]>([])
 let timer: ReturnType<typeof setTimeout> | undefined
 const root = ref<HTMLElement | null>(null)
-const input = ref<HTMLInputElement | null>(null)
+const field = ref<{ focus: () => void; getBoundingClientRect: () => DOMRect } | null>(null)
 // Les propositions se referment au clic à l'extérieur et reviennent quand on reprend la recherche.
-const { isOpen, close } = useDismissableMenu(root, () => input.value?.focus())
+const { isOpen, close } = useDismissableMenu(root, () => field.value?.focus())
 
 // Seule la dernière recherche compte : une réponse plus lente qu'une frappe suivante est écartée.
 let latestSearch = 0
@@ -39,9 +39,9 @@ async function runSearch(value: string) {
 // La liste défile dans la place restante sous le champ, sans rallonger la page.
 const resultsHeight = ref(MENU_PREFERRED_HEIGHT_PX)
 function showResults() {
-  if (input.value) {
+  if (field.value) {
     resultsHeight.value = menuMaxHeight(
-      input.value.getBoundingClientRect().bottom,
+      field.value.getBoundingClientRect().bottom,
       window.innerHeight,
     )
   }
@@ -85,12 +85,10 @@ onBeforeUnmount(() => clearTimeout(timer))
     </div>
     <template v-else>
       <label :for="`${uid}-input`" class="picker__name">{{ label }}</label>
-      <input
+      <UiSearchField
         :id="`${uid}-input`"
-        ref="input"
+        ref="field"
         v-model="text"
-        class="picker__input"
-        type="search"
         autocomplete="off"
         :placeholder="placeholder"
         data-testid="picker-input"
@@ -123,16 +121,6 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 .picker__name {
   font-weight: 700;
-}
-
-.picker__input {
-  min-height: var(--touch);
-  padding: 0 var(--space-3);
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: inherit;
-  font-size: 1rem;
 }
 
 .picker__chosen {

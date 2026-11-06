@@ -38,11 +38,8 @@ failIfMemberUnknown()
 
 useSeoMeta({ title: () => t('profile.list.title', { handle }), robots: 'noindex, nofollow' })
 
-const { tabs, tab, sortOptions, sort, changeView, searchText, onSearchInput } = useListControls(
-  state,
-  list.statusCounts,
-  `/u/${handle}/list`,
-)
+const { tabs, tab, sortOptions, sort, view, viewOptions, unitOptions, searchText, onSearchInput } =
+  useListControls(state, list.statusCounts, `/u/${handle}/list`)
 const isNarrow = useNarrowScreen()
 const searchPlaceholder = computed(() =>
   t(isNarrow.value ? 'list.searchPlaceholderShort' : 'profile.list.searchPlaceholder'),
@@ -73,7 +70,12 @@ const sentinel = useLoadMoreOnScroll(list)
         </NuxtLink>
         <h1 class="member-list__title">{{ t('profile.list.title', { handle }) }}</h1>
       </div>
-      <ListViewToggle v-if="!isPrivate && !isEmpty" :view="state.view" @change="changeView" />
+      <UiSegmented
+        v-if="!isPrivate && !isEmpty"
+        v-model="view"
+        :options="viewOptions"
+        :label="t('list.viewLabel')"
+      />
     </header>
 
     <UiStatePanel
@@ -104,11 +106,10 @@ const sentinel = useLoadMoreOnScroll(list)
       <UiTabs v-model="tab" :tabs="tabs" :label="t('list.tabsLabel')" class="member-list__tabs" />
 
       <div class="member-list__tools">
-        <input
+        <UiSearchField
           v-model="searchText"
-          type="search"
           class="member-list__search"
-          :aria-label="t('profile.list.searchLabel')"
+          :label="t('profile.list.searchLabel')"
           :placeholder="searchPlaceholder"
           data-testid="member-list-search"
           @input="onSearchInput"
@@ -127,7 +128,12 @@ const sentinel = useLoadMoreOnScroll(list)
         <p class="member-list__count" data-testid="member-list-count">
           {{ t('list.workCount', { count: list.total.value }, list.total.value) }}
         </p>
-        <ListUnitToggle v-model="unit" />
+        <UiSegmented
+          v-model="unit"
+          :options="unitOptions"
+          :label="t('list.unitLabel')"
+          :prefix="t('list.unitPrefix')"
+        />
       </div>
 
       <UiStatePanel
@@ -250,10 +256,11 @@ const sentinel = useLoadMoreOnScroll(list)
 // Recherche et tri sur une rangée, comme « Ma liste ».
 .member-list__tools {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: var(--space-2);
 
   @media (min-width: 768px) {
+    align-items: center;
     gap: var(--space-3);
   }
 }
@@ -262,13 +269,6 @@ const sentinel = useLoadMoreOnScroll(list)
 .member-list__search {
   flex: 1 1 0;
   min-width: 0;
-  min-height: var(--touch);
-  padding: 0 var(--space-3);
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font-size: 1rem;
 }
 
 // Au mobile le tri se réduit à « Trier par ▾ » dans un cadre.

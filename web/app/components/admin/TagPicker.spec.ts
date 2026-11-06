@@ -90,11 +90,11 @@ describe('AdminTagPicker', () => {
 
   it('ouvre la liste au-dessus du champ quand le bas de la fenêtre manque de place', async () => {
     const wrapper = await mountPicker()
-    const input = wrapper.get('[data-testid="tag-input"]')
-    input.element.getBoundingClientRect = () =>
+    // La place se mesure sur le cadre du champ, pas sur le champ lui-même.
+    wrapper.get('.search').element.getBoundingClientRect = () =>
       ({ top: window.innerHeight - 100, bottom: window.innerHeight - 60 }) as DOMRect
 
-    await input.trigger('focus')
+    await wrapper.get('[data-testid="tag-input"]').trigger('focus')
 
     expect(wrapper.get('[data-testid="tag-proposals"]').classes()).toContain(
       'tags__proposals--above',

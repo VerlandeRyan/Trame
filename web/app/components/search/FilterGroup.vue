@@ -76,19 +76,14 @@ const selectedCount = computed(() => props.selected.length)
     </h3>
 
     <div v-show="open" :id="panelId" class="filter-group__panel">
-      <div v-if="searchable" class="filter-group__search">
-        <label :for="`${uid}-search`" class="filter-group__sr">{{
-          t('search.filterGenres')
-        }}</label>
-        <Icon name="tabler:search" size="11" aria-hidden="true" class="filter-group__search-icon" />
-        <input
-          :id="`${uid}-search`"
-          v-model="needle"
-          type="search"
-          class="filter-group__input"
-          :placeholder="t('search.filterGenres')"
-        />
-      </div>
+      <UiSearchField
+        v-if="searchable"
+        v-model="needle"
+        small
+        class="filter-group__search"
+        :label="t('search.filterGenres')"
+        :placeholder="t('search.filterGenres')"
+      />
 
       <ul class="filter-group__list">
         <li v-for="option in visible" :key="option.code">
@@ -232,43 +227,7 @@ const selectedCount = computed(() => props.selected.length)
 }
 
 .filter-group__search {
-  position: relative;
   margin: 2px 0 6px;
-}
-
-.filter-group__search-icon {
-  position: absolute;
-  top: 50%;
-  left: 8px;
-  color: var(--color-ink-soft);
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.filter-group__sr {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.filter-group__input {
-  width: 100%;
-  min-height: var(--touch);
-  padding: 0 8px 0 24px;
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-surface);
-  // 16 px : en dessous, Safari iOS zoome au focus.
-  font-size: 1rem;
-
-  @media (min-width: 768px) {
-    min-height: 0;
-    padding: 4px 7px 4px 24px;
-    font-size: 0.8125rem;
-  }
 }
 
 .filter-group__more {

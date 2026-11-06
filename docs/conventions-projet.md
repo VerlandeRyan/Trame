@@ -43,7 +43,7 @@ En cas d'erreur : **révoquer/changer le secret immédiatement** ; réécrire l'
 - **commit-msg** : `commitlint` (format ci-dessus) et contrôle du préfixe de branche (`scripts/check-branch.sh`).
 
 ## 5. Tickets
-GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`, `refactor`, `debt`) et `area:*` (`api`, `web`, `db`, `infra`, `ci`, `docs`, `e2e`, `design`, `mobile`). `type:debt` marque un raccourci assumé : le ticket est ouvert dans la PR qui le laisse. Le backlog vit dans GitHub Issues.
+GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`, `refactor`, `debt`) et `area:*` (`api`, `web`, `db`, `infra`, `ci`, `docs`, `e2e`, `design`, `mobile`). `type:debt` marque un raccourci assumé : le ticket est ouvert dans la PR qui le laisse. Le backlog vit dans GitHub Issues. **Ordre entre tickets** : une dépendance (« à faire avant / après #n ») s'écrit dans une section « Coordination » des **deux** tickets, jamais d'un seul côté ; un ticket fermé n'impose plus d'ordre et sa mention est retirée ou corrigée.
 
 ## 6. Qualité et tests
 - Lint : ESLint + `eslint-plugin-vue` + Prettier ; types : `vue-tsc`, TypeScript strict (6, partout).
