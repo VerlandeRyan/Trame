@@ -37,7 +37,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   <article class="row" data-testid="list-row">
     <div class="row__work">
       <NuxtLink :to="path" class="row__cover" tabindex="-1" aria-hidden="true">
-        <WorkCover :url="coverUrl(work.coverPath)" size="small" />
+        <WorkCover :url="coverUrl(work.coverPath)" size="sm" />
       </NuxtLink>
       <div class="row__title-block">
         <h3 class="row__title">
@@ -70,14 +70,15 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
 
     <div class="row__counter" data-testid="list-chapters">
       <p v-if="isReadOnly" class="row__read-value">
-        <span class="row__read-label">{{ t('list.chapters') }}</span> {{ item.entry.chaptersRead }}
+        <span class="row__read-label">{{ t('counter.chapters.unit') }}</span>
+        {{ item.entry.chaptersRead }}
       </p>
       <UiCounter
         v-else
         :key="`chapters-${counterKey}`"
         compact
         :model-value="item.entry.chaptersRead"
-        :label="t('list.chapters')"
+        :label="t('counter.chapters.unit')"
         @update:model-value="emit('change', { chaptersRead: $event })"
       />
       <small class="row__total">{{ totalLabel(work.chapters) }}</small>
@@ -85,14 +86,15 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
 
     <div class="row__counter" data-testid="list-volumes">
       <p v-if="isReadOnly" class="row__read-value">
-        <span class="row__read-label">{{ t('list.volumes') }}</span> {{ item.entry.volumesRead }}
+        <span class="row__read-label">{{ t('counter.volumes.unit') }}</span>
+        {{ item.entry.volumesRead }}
       </p>
       <UiCounter
         v-else
         :key="`volumes-${counterKey}`"
         compact
         :model-value="item.entry.volumesRead"
-        :label="t('list.volumes')"
+        :label="t('counter.volumes.unit')"
         @update:model-value="emit('change', { volumesRead: $event })"
       />
       <small class="row__total">{{ totalLabel(work.volumes) }}</small>
@@ -110,7 +112,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
       @click="emit('edit')"
     >
       <Icon name="tabler:pencil" size="14" aria-hidden="true" />
-      <span class="row__edit-label">{{ t('list.edit') }}</span>
+      <span class="row__edit-label">{{ t('action.edit') }}</span>
     </UiButton>
   </article>
 </template>
@@ -161,14 +163,6 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   @media (min-width: 768px) {
     flex: none;
     grid-row: auto;
-  }
-}
-
-.row__cover :deep(.cover) {
-  width: 56px;
-
-  @media (min-width: 768px) {
-    width: 44px;
   }
 }
 

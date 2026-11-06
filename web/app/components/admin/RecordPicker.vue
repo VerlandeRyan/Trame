@@ -80,7 +80,7 @@ onBeforeUnmount(() => clearTimeout(timer))
         data-testid="picker-clear"
         @click="model = null"
       >
-        <Icon name="tabler:pencil" size="16" aria-hidden="true" />
+        <Icon name="tabler:x" size="16" aria-hidden="true" />
       </button>
     </div>
     <template v-else>

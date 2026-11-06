@@ -251,7 +251,6 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
 
           <UiStatePanel
             v-if="total === 0"
-            compact
             :title="
               chips.length > 0 && query === ''
                 ? t('search.noResultFilters')

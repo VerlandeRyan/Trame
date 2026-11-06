@@ -9,6 +9,7 @@ import {
   type ListedEntry,
   type ListUnit,
 } from '~/utils/reading-list'
+import { counterKey } from '~/utils/units'
 import { coverUrl, workSlug } from '~/utils/work'
 
 // Couverture à ombre de statut, pastille « Ch. 12 » et boutons −1 / +1. Au doigt, la couverture suit
@@ -29,11 +30,9 @@ const path = computed(() =>
 )
 const progress = computed(() => unitProgress(props.item, props.unit))
 const badge = computed(() =>
-  t(props.unit === 'chapters' ? 'list.badgeChapters' : 'list.badgeVolumes', {
-    value: formatProgress(progress.value),
-  }),
+  t(counterKey(props.unit, 'compact'), { value: formatProgress(progress.value) }),
 )
-const unitLabel = computed(() => t(props.unit === 'chapters' ? 'list.chapters' : 'list.volumes'))
+const unitLabel = computed(() => t(counterKey(props.unit, 'unit')))
 
 // Change à chaque −1 / +1 : la pastille est recréée et rejoue son petit rebond.
 const bumpKey = ref(0)

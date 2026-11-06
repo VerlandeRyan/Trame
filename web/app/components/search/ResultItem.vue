@@ -24,7 +24,7 @@ const authorLine = computed(() =>
 <template>
   <article class="result" data-testid="search-result">
     <NuxtLink :to="path" class="result__cover" tabindex="-1" aria-hidden="true">
-      <WorkCover :url="coverUrl(work.coverPath)" size="small" />
+      <WorkCover :url="coverUrl(work.coverPath)" size="sm" />
     </NuxtLink>
     <div class="result__body">
       <h3 class="result__title">
@@ -69,14 +69,6 @@ const authorLine = computed(() =>
 .result__cover {
   display: block;
   flex: none;
-}
-
-.result__cover :deep(.cover) {
-  width: 40px;
-
-  @media (min-width: 768px) {
-    width: 56px;
-  }
 }
 
 .result__body {

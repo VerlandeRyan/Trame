@@ -119,7 +119,7 @@ function removeFromListAndClose() {
   >
     <div v-if="item" class="edit" data-testid="list-edit-modal">
       <div class="edit__work">
-        <WorkCover :url="coverUrl(item.work.coverPath)" size="small" />
+        <WorkCover :url="coverUrl(item.work.coverPath)" size="sm" />
         <div>
           <p class="edit__title">{{ item.work.title }}</p>
           <p class="edit__kind">{{ kindLine }}</p>
@@ -137,18 +137,18 @@ function removeFromListAndClose() {
 
       <div class="edit__field">
         <span class="edit__label">
-          {{ t('library.chaptersRead') }}
+          {{ t('counter.chapters.label') }}
           <small>{{ publishedTotalLabel(item.work.chapters) }}</small>
         </span>
-        <UiCounter v-model="draft.chaptersRead" compact :label="t('library.chaptersRead')" />
+        <UiCounter v-model="draft.chaptersRead" compact :label="t('counter.chapters.label')" />
       </div>
 
       <div class="edit__field">
         <span class="edit__label">
-          {{ t('library.volumesRead') }}
+          {{ t('counter.volumes.label') }}
           <small>{{ publishedTotalLabel(item.work.volumes) }}</small>
         </span>
-        <UiCounter v-model="draft.volumesRead" compact :label="t('library.volumesRead')" />
+        <UiCounter v-model="draft.volumesRead" compact :label="t('counter.volumes.label')" />
       </div>
 
       <div class="edit__field">
@@ -219,10 +219,6 @@ function removeFromListAndClose() {
   align-items: center;
   gap: var(--space-3);
   padding-bottom: var(--space-2);
-}
-
-.edit__work :deep(.cover) {
-  width: 44px;
 }
 
 .edit__title {

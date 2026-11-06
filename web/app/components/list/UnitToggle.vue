@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ListUnit } from '~/utils/reading-list'
+import { counterKey } from '~/utils/units'
 
 // Ce que la grille compte sur les couvertures : « Compter [Chapitres | Tomes] ». Au mobile le libellé
 // et les icônes s'effacent (« Ch. | Tomes » suffit) mais restent lus par les lecteurs d'écran.
@@ -10,10 +11,15 @@ const choices: { unit: ListUnit; icon: string; label: string; shortLabel: string
   {
     unit: 'chapters',
     icon: 'tabler:bookmark',
-    label: 'list.chapters',
+    label: counterKey('chapters', 'unit'),
     shortLabel: 'list.chaptersShort',
   },
-  { unit: 'volumes', icon: 'tabler:books', label: 'list.volumes', shortLabel: 'list.volumesShort' },
+  {
+    unit: 'volumes',
+    icon: 'tabler:books',
+    label: counterKey('volumes', 'unit'),
+    shortLabel: 'list.volumesShort',
+  },
 ]
 </script>
 

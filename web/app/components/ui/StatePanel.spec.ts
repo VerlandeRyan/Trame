@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import { Icon } from '#components'
@@ -49,14 +51,10 @@ describe('UiStatePanel', () => {
     expect(iconName(wrapper)).toBe('tabler:lock')
   })
 
-  it('garde la pastille et le titre en version compacte', async () => {
-    const wrapper = await mountSuspended(UiStatePanel, {
-      props: { title: 'Ta liste est vide', compact: true },
-    })
+  it('garde une seule taille de panneau : aucune variante compacte', () => {
+    const source = readFileSync(resolve(process.cwd(), 'app/components/ui/StatePanel.vue'), 'utf8')
 
-    expect(wrapper.classes()).toContain('state-panel--compact')
-    expect(iconName(wrapper)).toBe('tabler:book-off')
-    expect(wrapper.get('h2').text()).toBe('Ta liste est vide')
+    expect(source).not.toMatch(/compact/)
   })
 
   it("garde les attributs de test de l'appelant", async () => {

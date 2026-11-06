@@ -164,11 +164,11 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
         <h2 class="profile__label">{{ t('profile.stats') }}</h2>
         <dl class="profile__totals">
           <div class="profile__total" data-testid="profile-chapters">
-            <dt>{{ t('profile.chaptersRead') }}</dt>
+            <dt>{{ t('counter.chapters.label') }}</dt>
             <dd>{{ n(details.stats.chaptersRead) }}</dd>
           </div>
           <div class="profile__total" data-testid="profile-volumes">
-            <dt>{{ t('profile.volumesRead') }}</dt>
+            <dt>{{ t('counter.volumes.label') }}</dt>
             <dd>{{ n(details.stats.volumesRead) }}</dd>
           </div>
         </dl>
@@ -247,7 +247,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
               tabindex="-1"
               aria-hidden="true"
             >
-              <WorkCover :url="coverUrl(update.work.coverPath)" size="small" />
+              <WorkCover :url="coverUrl(update.work.coverPath)" size="sm" />
             </NuxtLink>
             <div class="profile__update-text">
               <NuxtLink :to="workPath(update.work)" class="profile__work">
@@ -648,11 +648,6 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
 .profile__update-cover {
   display: block;
   flex: none;
-  width: 3.25rem;
-
-  :deep(.cover--small) {
-    width: 100%;
-  }
 }
 
 .profile__update-text {

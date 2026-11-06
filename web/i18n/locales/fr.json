@@ -166,8 +166,6 @@
     "relatedWorks": "Œuvres liées",
     "home": "Accueil",
     "tabAll": "Toutes",
-    "chaptersRead": "Chapitres lus",
-    "volumesRead": "Tomes lus",
     "emptyTitle": "Rien à afficher pour l'instant",
     "emptyText": "Le catalogue apparaîtra ici.",
     "modalText": "Contenu de la fenêtre.",
@@ -179,11 +177,25 @@
   "action": {
     "addToList": "Ajouter à ma liste",
     "add": "Ajouter",
-    "close": "Fermer"
+    "close": "Fermer",
+    "edit": "Modifier",
+    "clearChoice": "Effacer le choix"
   },
   "counter": {
     "decrease": "Diminuer : {label}",
-    "increase": "Augmenter : {label}"
+    "increase": "Augmenter : {label}",
+    "chapters": {
+      "label": "Chapitres lus",
+      "unit": "Chapitres",
+      "compact": "Ch. {value}",
+      "position": "Chapitre {value}"
+    },
+    "volumes": {
+      "label": "Tomes lus",
+      "unit": "Tomes",
+      "compact": "T. {value}",
+      "position": "Tome {value}"
+    }
   },
   "workType": {
     "series": "Série",
@@ -338,8 +350,6 @@
     "seoDescription": "Le profil de lecture de {'@'}{handle} sur Trame : statistiques, dernières mises à jour et œuvres les mieux notées.",
     "memberSince": "Membre depuis {date}",
     "stats": "Statistiques",
-    "chaptersRead": "Chapitres lus",
-    "volumesRead": "Tomes lus",
     "worksFollowed": "Œuvres suivies",
     "ratingAverage": "Note moyenne donnée",
     "ratingAverageValue": "{value} / 10",
@@ -393,8 +403,6 @@
   },
   "list": {
     "title": "Ma liste de lecture",
-    "totalChapters": "Chapitres lus",
-    "totalVolumes": "Tomes lus",
     "neverAdded": "Les chapitres et les tomes sont comptés séparément : ils ne s'additionnent jamais.",
     "tabsLabel": "Statut de lecture",
     "tabAll": "Tous",
@@ -414,10 +422,6 @@
     "headerWork": "Œuvre",
     "headerStatus": "Statut",
     "headerRating": "Note",
-    "chapters": "Chapitres",
-    "volumes": "Tomes",
-    "badgeChapters": "Ch. {value}",
-    "badgeVolumes": "T. {value}",
     "gridHint": "Glisser à gauche : +1 {unit} · à droite : −1 · toucher : ouvre la fiche",
     "gridHintMouse": "−1 / +1 : un {unit} de moins ou de plus · cliquer une couverture : ouvre la fiche",
     "unitPrefix": "Compter",
@@ -426,11 +430,10 @@
     "chaptersShort": "Ch.",
     "volumesShort": "Tomes",
     "workCount": "{count} œuvre | {count} œuvres",
-    "chaptersCount": "{count} chapitre | {count} chapitres",
-    "volumesCount": "{count} tome | {count} tomes",
-    "totalsLine": "{chapters} · {volumes} lus",
+    "chaptersCount": "{count} chapitre lu | {count} chapitres lus",
+    "volumesCount": "{count} tome lu | {count} tomes lus",
+    "totalsLine": "{chapters} · {volumes}",
     "changeStatus": "Changer le statut de « {title} »",
-    "edit": "Modifier",
     "editTitle": "Modifier ma lecture de « {title} »",
     "modalTitle": "Modifier ma lecture",
     "status": "Statut",
@@ -466,8 +469,6 @@
   },
   "library": {
     "progress": "Ma progression",
-    "chaptersRead": "Chapitres lus",
-    "volumesRead": "Tomes lus",
     "of": "sur {total}",
     "ofUnknown": "sur ?",
     "ofTen": "sur 10",
@@ -555,7 +556,6 @@
     "archived": "Archivée",
     "published": "Publiée",
     "cancel": "Annuler",
-    "edit": "Modifier",
     "archivesNote": "Les fiches archivées disparaissent des listes et de la recherche publique. Elles restent restaurables.",
     "col": {
       "work": "Œuvre",
@@ -663,7 +663,6 @@
       "removeCredit": "Retirer cet auteur",
       "person": "Personne",
       "searchPerson": "Rechercher une personne…",
-      "clearChoice": "Changer de choix",
       "role": "Rôle",
       "publishers": "Éditeurs et plateformes",
       "addPublisher": "Ajouter un éditeur",

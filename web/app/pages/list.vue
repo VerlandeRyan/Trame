@@ -103,7 +103,6 @@ const sentinel = useLoadMoreOnScroll(list)
     <UiStatePanel
       v-if="list.error.value && !list.items.value.length"
       tone="error"
-      compact
       :title="t('errorPage.title')"
       :text="t('list.loadError')"
     >
@@ -112,7 +111,6 @@ const sentinel = useLoadMoreOnScroll(list)
 
     <UiStatePanel
       v-else-if="isEmptyList"
-      compact
       :title="t('list.emptyTitle')"
       :text="t('list.emptyText')"
       data-testid="list-empty"
@@ -167,7 +165,6 @@ const sentinel = useLoadMoreOnScroll(list)
       <div class="list__results" :class="{ 'list__results--loading': isLoading }">
         <UiStatePanel
           v-if="!list.items.value.length"
-          compact
           :title="t('list.noMatch')"
           :text="t('list.noMatchText')"
           data-testid="list-no-match"
@@ -187,8 +184,8 @@ const sentinel = useLoadMoreOnScroll(list)
           <div class="list__columns" aria-hidden="true">
             <span>{{ t('list.headerWork') }}</span>
             <span>{{ t('list.headerStatus') }}</span>
-            <span class="list__column--center">{{ t('library.chaptersRead') }}</span>
-            <span class="list__column--center">{{ t('library.volumesRead') }}</span>
+            <span class="list__column--center">{{ t('counter.chapters.label') }}</span>
+            <span class="list__column--center">{{ t('counter.volumes.label') }}</span>
             <span>{{ t('list.headerRating') }}</span>
             <span />
           </div>

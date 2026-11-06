@@ -1,9 +1,13 @@
 <script setup lang="ts">
 // Galerie des composants de base, avec des données fictives (aucune donnée réelle du catalogue).
+import { COVER_SIZES, type CoverSize } from '~/utils/cover'
+
 definePageMeta({ middleware: 'component-gallery' })
 
 const { t } = useI18n()
 useHead({ title: t('gallery.title') })
+
+const coverSizes = Object.keys(COVER_SIZES) as CoverSize[]
 
 const readingStatuses = ['reading', 'completed', 'plan_to_read', 'on_hold', 'dropped'] as const
 
@@ -85,9 +89,9 @@ const tabs = computed(() => [
       <h2>{{ t('gallery.tabsAndCounters') }}</h2>
       <UiTabs v-model="activeTab" :tabs="tabs" :label="t('gallery.tabAll')" />
       <UiPanel class="gallery__progress">
-        <UiCounter v-model="chaptersRead" :label="t('gallery.chaptersRead')" />
-        <UiCounter v-model="volumesRead" :label="t('gallery.volumesRead')" :max="99" />
-        <WorkCover size="small" />
+        <UiCounter v-model="chaptersRead" :label="t('counter.chapters.label')" />
+        <UiCounter v-model="volumesRead" :label="t('counter.volumes.label')" :max="99" />
+        <WorkCover v-for="size in coverSizes" :key="size" :size="size" />
       </UiPanel>
       <UiField id="gallery-search" v-model="searchText" :label="t('nav.search')" />
     </section>
@@ -137,7 +141,7 @@ const tabs = computed(() => [
     </section>
 
     <UiStatePanel :title="t('gallery.emptyTitle')" :text="t('gallery.emptyText')" />
-    <UiStatePanel tone="error" compact :title="t('errorPage.title')" :text="t('errorPage.text')" />
+    <UiStatePanel tone="error" :title="t('errorPage.title')" :text="t('errorPage.text')" />
     <UiFormError>{{ t('error.HANDLE_TAKEN') }}</UiFormError>
 
     <UiModal v-model="isModalOpen" :title="t('action.add')" :close-label="t('action.close')">

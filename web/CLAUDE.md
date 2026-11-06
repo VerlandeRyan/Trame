@@ -18,6 +18,7 @@ Ce fichier ne garde que les **règles et les pièges** (≤ 10 Ko, `docs/convent
 ## Règles
 - **Jetons d'abord** : jamais de couleur, d'ombre ni d'épaisseur de contour en dur (`--border`) ; tout vient de `app/assets/styles/_tokens.scss` (détail : conventions §12).
 - **Textes en clés** : aucun texte en dur dans les templates ; `t('section.clé')`. Le français est la référence (`fr.json`) ; les autres langues retombent dessus.
+- **Couvertures** : `<WorkCover size="sm|md|lg|xl|hero">` (64 · 72 · 96 · 112 · 210 px, `wide-size` dès 768 px), jamais de `:deep(.cover)` pour la largeur. **Compteurs** : quatre formes (`label` « Chapitres lus », `unit` « Chapitres », `compact` « Ch. 3 », `position` « Chapitre 3 »), clés `counter.<unité>.<forme>` via `counterKey` (`utils/units.ts`). **« Modifier »** : `action.edit`.
 - **Erreurs d'API** : le front lit `code` et affiche `t('error.<CODE>')`, jamais `message`.
 - **Énumérations** : codes anglais de l'API (`reading`, `plan_to_read`, `series`…), libellés dans les fichiers de langue.
 - **Composants** : un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `<UiButton>`). Réutiliser avant d'en créer ; la page `/components` les présente et `docs/web/composants.md` les liste. Fichiers, routes et dossiers en anglais, textes affichés en clés i18n.

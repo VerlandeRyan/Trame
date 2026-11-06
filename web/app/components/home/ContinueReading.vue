@@ -70,7 +70,7 @@ const addOneLabel = (item: ListedEntry) =>
           tabindex="-1"
           aria-hidden="true"
         >
-          <WorkCover :url="coverUrl(item.work.coverPath)" size="small" />
+          <WorkCover :url="coverUrl(item.work.coverPath)" size="sm" />
         </NuxtLink>
         <div class="continue-reading__text">
           <h3 class="continue-reading__work-title">
@@ -172,14 +172,8 @@ const addOneLabel = (item: ListedEntry) =>
   background: var(--color-surface);
 }
 
-// Vignette plus étroite que `WorkCover small` (72 px) : la carte garde de la place pour le titre.
 .continue-reading__cover {
   flex: none;
-  width: 52px;
-
-  :deep(.cover) {
-    width: 100%;
-  }
 }
 
 .continue-reading__text {
@@ -209,6 +203,12 @@ const addOneLabel = (item: ListedEntry) =>
   margin: 4px 0 0;
   color: var(--color-ink-soft);
   font-size: 0.8125rem;
+
+  // Mobile : titre, puis format · chapitre, puis le statut sur sa propre ligne.
+  @media (max-width: 767px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .continue-reading__status {

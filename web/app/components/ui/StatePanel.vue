@@ -1,13 +1,12 @@
 <script setup lang="ts">
 // Panneau d'état : liste vide, aucun résultat, erreur de chargement, profil privé.
-// `tone="error"` annonce le panneau comme une alerte ; `compact` resserre les marges (listes).
+// `tone="error"` annonce le panneau comme une alerte. Une seule taille, pour tous les écrans.
 const props = withDefaults(
   defineProps<{
     title: string
     text?: string
     tone?: 'empty' | 'error'
     icon?: string
-    compact?: boolean
   }>(),
   { tone: 'empty', text: undefined, icon: undefined },
 )
@@ -21,7 +20,7 @@ const iconName = computed(
 <template>
   <UiPanel
     class="state-panel"
-    :class="{ 'state-panel--error': isError, 'state-panel--compact': compact }"
+    :class="{ 'state-panel--error': isError }"
     :role="isError ? 'alert' : undefined"
   >
     <div class="state-panel__body">
@@ -50,10 +49,6 @@ const iconName = computed(
   text-align: center;
 }
 
-.state-panel--compact .state-panel__body {
-  padding: var(--space-3) var(--space-2);
-}
-
 .state-panel__badge {
   display: grid;
   place-items: center;
@@ -62,11 +57,6 @@ const iconName = computed(
   border-radius: 50%;
   background: var(--color-cover-empty);
   color: var(--color-ink);
-}
-
-.state-panel--compact .state-panel__badge {
-  width: 3rem;
-  height: 3rem;
 }
 
 .state-panel--error .state-panel__badge {

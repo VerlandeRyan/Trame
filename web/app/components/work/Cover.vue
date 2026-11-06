@@ -1,13 +1,32 @@
 <script setup lang="ts">
 // Avec image : liseré blanc et filet d'encre. Sans image : trame rose sur bleu pâle, jamais sur une image.
-withDefaults(defineProps<{ url?: string; size?: 'normal' | 'small' }>(), {
-  url: undefined,
-  size: 'normal',
-})
+// Largeurs normalisées (voir COVER_SIZES) ; sans `size`, la couverture remplit son parent.
+// `wideSize` remplace `size` à partir de 768 px.
+import type { CoverSize } from '~/utils/cover'
+
+const props = withDefaults(
+  defineProps<{ url?: string; size?: CoverSize; wideSize?: CoverSize }>(),
+  {
+    url: undefined,
+    size: undefined,
+    wideSize: undefined,
+  },
+)
+
+// Les petites couvertures ont un liseré et une trame plus fins.
+const isCompact = computed(() => props.size === 'sm' || props.size === 'md')
 </script>
 
 <template>
-  <div class="cover" :class="[`cover--${size}`, url ? 'cover--image' : 'cover--empty']">
+  <div
+    class="cover"
+    :class="[
+      size && `cover--${size}`,
+      wideSize && `cover--wide-${wideSize}`,
+      isCompact && 'cover--compact',
+      url ? 'cover--image' : 'cover--empty',
+    ]"
+  >
     <img v-if="url" :src="url" alt="" loading="lazy" />
     <span v-else class="cover__pad"><Icon name="tabler:photo" aria-hidden="true" /></span>
   </div>
@@ -16,10 +35,20 @@ withDefaults(defineProps<{ url?: string; size?: 'normal' | 'small' }>(), {
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
+// Garder ces largeurs identiques à COVER_SIZES (utils/cover.ts) : un test les compare.
+$sizes: (
+  'sm': 64px,
+  'md': 72px,
+  'lg': 96px,
+  'xl': 112px,
+  'hero': 210px,
+);
+
 .cover {
   position: relative;
   display: grid;
   place-items: center;
+  width: var(--cover-width, auto);
   aspect-ratio: 2 / 3;
   overflow: hidden;
   border: var(--border);
@@ -28,9 +57,18 @@ withDefaults(defineProps<{ url?: string; size?: 'normal' | 'small' }>(), {
   background: var(--color-surface);
 }
 
-.cover--small {
-  width: 72px;
-  flex: none;
+@each $name, $width in $sizes {
+  .cover--#{$name} {
+    --cover-width: #{$width};
+    flex: none;
+  }
+
+  .cover--wide-#{$name} {
+    @media (min-width: 768px) {
+      --cover-width: #{$width};
+      flex: none;
+    }
+  }
 }
 
 .cover--image {
@@ -44,7 +82,7 @@ withDefaults(defineProps<{ url?: string; size?: 'normal' | 'small' }>(), {
     object-position: top center;
   }
 
-  &.cover--small {
+  &.cover--compact {
     padding: 2px;
   }
 }
@@ -56,7 +94,7 @@ withDefaults(defineProps<{ url?: string; size?: 'normal' | 'small' }>(), {
     @include screentone(var(--color-rose-vivid), 9px, 150deg);
   }
 
-  &.cover--small::before {
+  &.cover--compact::before {
     background-size: 7px 7px;
   }
 }
@@ -73,7 +111,7 @@ withDefaults(defineProps<{ url?: string; size?: 'normal' | 'small' }>(), {
   font-size: 22px;
 }
 
-.cover--small .cover__pad {
+.cover--compact .cover__pad {
   width: 26px;
   height: 26px;
   border-radius: var(--radius);
