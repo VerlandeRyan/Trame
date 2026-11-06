@@ -56,7 +56,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
       >
         {{ t(`readingStatus.${item.entry.status}`) }}
       </span>
-      <ListStatusPicker
+      <ListStatusButton
         v-else
         :status="item.entry.status"
         :title="work.title"

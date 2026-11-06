@@ -1,6 +1,7 @@
 <script setup lang="ts">
 // Galerie des composants de base, avec des données fictives (aucune donnée réelle du catalogue).
 import { COVER_SIZES, type CoverSize } from '~/utils/cover'
+import type { LibraryStatus } from '~/utils/library'
 import type { ListUnit, ListView } from '~/utils/reading-list'
 
 definePageMeta({ middleware: 'component-gallery' })
@@ -78,6 +79,7 @@ const unitOptions = computed(() => [
     shortLabel: t('list.volumesShort'),
   },
 ])
+const sampleStatus = ref<LibraryStatus>('reading')
 const activeTab = ref('all')
 const tabs = computed(() => [
   { id: 'all', label: t('gallery.tabAll'), count: 53 },
@@ -130,6 +132,27 @@ const tabs = computed(() => [
           :label="t('list.unitLabel')"
           :prefix="t('list.unitPrefix')"
         />
+      </div>
+      <div class="gallery__menu">
+        <LibraryStatusList
+          :status="sampleStatus"
+          testid-prefix="gallery-status"
+          @change="sampleStatus = $event"
+        >
+          <template #trigger="{ isOpen, menuId, toggle }">
+            <UiButton
+              size="small"
+              :status="sampleStatus"
+              aria-haspopup="menu"
+              :aria-expanded="isOpen"
+              :aria-controls="menuId"
+              @click="toggle"
+            >
+              {{ t(`readingStatus.${sampleStatus}`) }}
+              <Icon name="tabler:chevron-down" size="14" aria-hidden="true" />
+            </UiButton>
+          </template>
+        </LibraryStatusList>
       </div>
     </section>
 
@@ -213,6 +236,11 @@ const tabs = computed(() => [
 .gallery__progress {
   align-items: flex-end;
   gap: var(--space-6);
+}
+
+// Réserve la place du menu de statut ouvert, pour qu'il ne recouvre pas la suite.
+.gallery__menu {
+  min-height: 15rem;
 }
 
 .gallery__grid {

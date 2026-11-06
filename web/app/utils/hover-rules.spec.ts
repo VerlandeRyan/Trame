@@ -86,8 +86,7 @@ describe('liens soulignés au repos', () => {
 // de pastilles (règle « Sélectionné » des conventions).
 describe('survol du choix courant', () => {
   const guards: [string, string][] = [
-    ['components/library/StatusMenu.vue', "&:not([aria-checked='true']"],
-    ['components/list/StatusPicker.vue', "&:not([aria-checked='true']"],
+    ['components/library/StatusList.vue', "&:not([aria-checked='true']"],
     ['components/admin/PillGroup.vue', '&:not(:has(input:checked))'],
   ]
 

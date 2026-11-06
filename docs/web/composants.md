@@ -27,8 +27,8 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 - `ExploreMenu`, `SearchBox` : voir [accueil-recherche.md](accueil-recherche.md). `AccountMenu` : voir [connexion-compte.md](connexion-compte.md).
 
 ## Autres dossiers
-- `library/` (`StatusMenu`, `Progress`, `RemoveConfirm` : confirmation rouge du retrait, partagée par la fiche et « Modifier ma lecture ») : [fiche-oeuvre.md](fiche-oeuvre.md).
-- `list/` (`Summary`, `StatusPicker`, `Row`, `GridItem`, `EditModal`) : [liste-et-profil.md](liste-et-profil.md).
+- `library/` (`StatusMenu`, `StatusList` : menu des cinq statuts partagé par la fiche et `list/StatusButton`, déclencheur en slot `trigger`, action de pied en slot `footer`, `Progress`, `RemoveConfirm` : confirmation rouge du retrait, partagée par la fiche et « Modifier ma lecture ») : [fiche-oeuvre.md](fiche-oeuvre.md).
+- `list/` (`Summary`, `StatusButton`, `Row`, `GridItem`, `EditModal`) : [liste-et-profil.md](liste-et-profil.md).
 - `admin/` (`WorkForm`, `PersonForm`, `PublisherForm`, `RowList`, `RecordPicker`, `LinksFields`, `PillGroup`, `TagPicker`, `Nav`, `Filters`, `FilterGroup`, `ResourceRows`, `RowMenu`, `ArchiveConfirm`) : [administration.md](administration.md).
 - `home/` (`Pitch`, `ContinueReading`, `Featured`, `Shelf`, `Explore`) et `search/` (`Filters`, `FilterGroup`, `ResultItem`) : [accueil-recherche.md](accueil-recherche.md).
 - `auth/` (`SignInModal`, `Notice`) : [connexion-compte.md](connexion-compte.md).

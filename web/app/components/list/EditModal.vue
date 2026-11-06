@@ -128,7 +128,7 @@ function removeFromListAndClose() {
 
       <div class="edit__field">
         <span class="edit__label">{{ t('list.status') }}</span>
-        <ListStatusPicker
+        <ListStatusButton
           :status="draft.status"
           :title="item.work.title"
           @change="draft.status = $event"
