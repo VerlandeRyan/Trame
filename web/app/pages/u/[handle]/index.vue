@@ -157,9 +157,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
         >
           {{ t(isLinkCopied ? 'profile.linkCopied' : 'profile.copyLink') }}
         </button>
-        <p v-if="visibilityErrorKey" class="profile__error" role="alert">
-          {{ t(visibilityErrorKey) }}
-        </p>
+        <UiFormError v-if="visibilityErrorKey">{{ t(visibilityErrorKey) }}</UiFormError>
       </div>
 
       <section v-if="details" class="profile__stats" :aria-label="t('profile.stats')">
@@ -221,11 +219,14 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
       </section>
     </aside>
 
-    <UiPanel v-if="!details" class="profile__private" data-testid="profile-private">
-      <span class="profile__lock"><Icon name="tabler:lock" size="28" aria-hidden="true" /></span>
-      <h2 class="profile__private-title">{{ t('profile.private.title') }}</h2>
-      <p class="profile__private-text">{{ t('profile.private.text') }}</p>
-    </UiPanel>
+    <UiStatePanel
+      v-if="!details"
+      icon="tabler:lock"
+      :title="t('profile.private.title')"
+      :text="t('profile.private.text')"
+      class="profile__private"
+      data-testid="profile-private"
+    />
 
     <div v-else class="profile__main">
       <section class="profile__section" data-testid="profile-recent">
@@ -442,12 +443,6 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   @media (min-width: 768px) {
     flex: 0 0 100%;
   }
-}
-
-.profile__error {
-  margin: 0;
-  color: var(--color-crimson);
-  font-weight: 700;
 }
 
 .profile__stats {
@@ -752,43 +747,12 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   font-weight: 800;
 }
 
-// Profil privé (maquette 13) : panneau haut, cadenas dans un rond.
+// Profil privé (maquette 13) : panneau haut.
 .profile__private {
-  display: grid;
-  justify-items: center;
-  align-content: center;
-  gap: var(--space-2);
   min-height: 16rem;
-  padding: var(--space-6) var(--space-4);
-  text-align: center;
 
   @media (min-width: 768px) {
     min-height: 24rem;
   }
-}
-
-.profile__lock {
-  display: grid;
-  place-items: center;
-  width: 4rem;
-  height: 4rem;
-  border: var(--border);
-  border-radius: 50%;
-  background: var(--color-field-soft);
-  color: var(--color-ink);
-}
-
-.profile__private-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 1.25rem;
-  font-weight: 800;
-}
-
-.profile__private-text {
-  max-width: 24rem;
-  margin: 0;
-  color: var(--color-ink-soft);
-  font-size: 0.875rem;
 }
 </style>

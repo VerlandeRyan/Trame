@@ -10,25 +10,27 @@ useHead({
   title: t(props.error.status === 404 ? 'errorPage.notFoundTitle' : 'errorPage.title'),
 })
 
-function goHome() {
-  clearError({ redirect: localePath('/') })
+async function goHome() {
+  await clearError({ redirect: localePath('/') })
 }
 </script>
 
 <template>
   <NuxtLayout>
     <!-- 404 : maquettes 24 (bureau) et 25 (mobile), avec la vraie recherche (#21). -->
-    <section v-if="notFound" class="not-found" data-testid="not-found">
-      <p class="not-found__code" aria-hidden="true">404</p>
-      <h2 class="not-found__title">{{ t('errorPage.notFoundTitle') }}</h2>
-      <p class="not-found__text">{{ t('errorPage.notFoundText') }}</p>
-      <LayoutSearchBox class="not-found__search" />
-      <UiButton variant="primary" @click="goHome">{{ t('errorPage.backHome') }}</UiButton>
-    </section>
+    <UiPanel v-if="notFound">
+      <section class="not-found" data-testid="not-found">
+        <p class="not-found__code" aria-hidden="true">404</p>
+        <h2 class="not-found__title">{{ t('errorPage.notFoundTitle') }}</h2>
+        <p class="not-found__text">{{ t('errorPage.notFoundText') }}</p>
+        <LayoutSearchBox class="not-found__search" />
+        <UiButton variant="primary" @click="goHome">{{ t('errorPage.backHome') }}</UiButton>
+      </section>
+    </UiPanel>
 
-    <UiEmptyState v-else :title="t('errorPage.title')" :text="t('errorPage.text')">
+    <UiStatePanel v-else tone="error" :title="t('errorPage.title')" :text="t('errorPage.text')">
       <UiButton variant="primary" @click="goHome">{{ t('errorPage.backHome') }}</UiButton>
-    </UiEmptyState>
+    </UiStatePanel>
   </NuxtLayout>
 </template>
 
@@ -58,7 +60,7 @@ function goHome() {
 
 .not-found__title {
   margin-top: var(--space-2);
-  color: var(--color-ink);
+  color: var(--color-blue);
   font-size: 1.25rem;
 
   @media (min-width: 768px) {

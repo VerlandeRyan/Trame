@@ -547,6 +547,7 @@
       "completeness_desc": "Most complete first"
     },
     "empty": "No records",
+    "emptyHint": "Add a record with the “{action}” button at the top of the page.",
     "archived": "Archived",
     "published": "Published",
     "cancel": "Cancel",

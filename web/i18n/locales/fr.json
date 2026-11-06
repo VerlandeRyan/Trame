@@ -551,6 +551,7 @@
       "completeness_desc": "Plus complètes d'abord"
     },
     "empty": "Aucune fiche",
+    "emptyHint": "Ajoute une fiche avec le bouton « {action} » en haut de la page.",
     "archived": "Archivée",
     "published": "Publiée",
     "cancel": "Annuler",

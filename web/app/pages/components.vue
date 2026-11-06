@@ -136,7 +136,9 @@ const tabs = computed(() => [
       <AuthNotice />
     </section>
 
-    <UiEmptyState :title="t('gallery.emptyTitle')" :text="t('gallery.emptyText')" />
+    <UiStatePanel :title="t('gallery.emptyTitle')" :text="t('gallery.emptyText')" />
+    <UiStatePanel tone="error" compact :title="t('errorPage.title')" :text="t('errorPage.text')" />
+    <UiFormError>{{ t('error.HANDLE_TAKEN') }}</UiFormError>
 
     <UiModal v-model="isModalOpen" :title="t('action.add')" :close-label="t('action.close')">
       <p>{{ t('gallery.modalText') }}</p>

@@ -82,7 +82,7 @@ function search(immediately = false) {
   clearTimeout(searchTimer)
   const run = () => {
     const text = searchText.value.trim()
-    if (text !== query.value.q) go({ ...query.value, q: text, page: 1 })
+    if (text !== query.value.q) void go({ ...query.value, q: text, page: 1 })
   }
   if (immediately) run()
   else searchTimer = setTimeout(run, SEARCH_DELAY_MS)
@@ -163,7 +163,7 @@ const archive = (item: AdminListItem) => setArchived(item, true)
         @sort="changeSort"
       />
     </div>
-    <p v-if="errorKey" class="catalogue__error" role="alert">{{ t(errorKey) }}</p>
+    <UiFormError v-if="errorKey">{{ t(errorKey) }}</UiFormError>
     <AdminResourceRows
       v-if="page && page.items.length > 0"
       :kind="query.kind"
@@ -172,7 +172,13 @@ const archive = (item: AdminListItem) => setArchived(item, true)
       @restore="restore"
       @archive="archive"
     />
-    <UiEmptyState v-else :title="t('admin.empty')" />
+    <UiStatePanel
+      v-else
+      :title="t('admin.empty')"
+      :text="
+        isArchives ? undefined : t('admin.emptyHint', { action: t(`admin.newKind.${query.kind}`) })
+      "
+    />
     <p v-if="isArchives" class="catalogue__note">{{ t('admin.archivesNote') }}</p>
     <UiPagination v-if="page" :page="page.page" :pages="pageCount(page)" :link-for="linkFor" />
   </div>
@@ -251,11 +257,5 @@ const archive = (item: AdminListItem) => setArchived(item, true)
   margin: 0;
   color: var(--color-ink-soft);
   font-size: 0.875rem;
-}
-
-.catalogue__error {
-  margin: 0;
-  color: var(--color-crimson);
-  font-weight: 700;
 }
 </style>
