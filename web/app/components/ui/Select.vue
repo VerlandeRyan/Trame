@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { menuMaxHeight, MENU_PREFERRED_HEIGHT_PX } from '~/utils/menu'
+import { MENU_PREFERRED_HEIGHT_PX, MENU_ROW_HEIGHT_PX } from '~/utils/menu'
 
 // Remplace `<select>` (menu non stylable) : le focus reste sur le bouton, l'option active est annoncée.
 const props = defineProps<{
@@ -17,9 +17,11 @@ const model = defineModel<string>({ required: true })
 const uid = useId()
 const listboxId = `${uid}-listbox`
 const open = ref(false)
-// Le menu s'ouvre toujours vers le bas ; sa hauteur est limitée à la place restante dans la
-// fenêtre (il défile), pour ne jamais rallonger la page.
+// Le menu s'ouvre sous le bouton (il défile si la place manque), et au-dessus seulement quand le
+// dessous est trop court ; il ne rallonge jamais la page.
 const menuHeight = ref(MENU_PREFERRED_HEIGHT_PX)
+const isAbove = ref(false)
+const placeMenu = useMenuPlacement()
 const activeIndex = ref(-1)
 const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
@@ -37,7 +39,12 @@ const activeId = computed(() =>
 function openMenu() {
   activeIndex.value = Math.max(currentIndex.value, 0)
   if (root.value) {
-    menuHeight.value = menuMaxHeight(root.value.getBoundingClientRect().bottom, window.innerHeight)
+    const placement = placeMenu(
+      root.value.getBoundingClientRect(),
+      props.options.length * MENU_ROW_HEIGHT_PX,
+    )
+    isAbove.value = placement.isAbove
+    menuHeight.value = placement.maxHeight
   }
   open.value = true
 }
@@ -143,6 +150,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
       v-show="open"
       :id="listboxId"
       class="select__menu"
+      :class="{ 'select__menu--above': isAbove }"
       :style="{ maxHeight: `${menuHeight}px` }"
       role="listbox"
       tabindex="-1"
@@ -204,6 +212,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
     width: max-content;
     min-width: 100%;
     overflow-x: hidden;
+  }
+
+  .select__menu--above {
+    inset: auto 0 calc(100% + var(--space-1)) auto;
   }
 
   &:has(.select__trigger[aria-expanded='true']) {
@@ -276,6 +288,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
   border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
+}
+
+.select__menu--above {
+  inset: auto 0 calc(100% - 4px) auto;
 }
 
 .select__option {

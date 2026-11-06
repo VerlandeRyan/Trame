@@ -66,6 +66,8 @@ test('un administrateur crée une personne, un éditeur et une œuvre qui les ci
   await page.goto('/admin/catalogue/works/new')
   await page.waitForLoadState('networkidle')
   await page.locator('#work-title').fill(WORK)
+  await page.getByRole('combobox', { name: /^Langue originale/ }).click()
+  await page.getByRole('option', { name: 'allemand (de)' }).click()
   await page.getByRole('tab', { name: 'Auteurs et éditeurs' }).click()
   const panel = page.locator('[role="tabpanel"]:visible')
   await panel.getByRole('button', { name: 'Ajouter un auteur' }).click()
@@ -78,8 +80,13 @@ test('un administrateur crée une personne, un éditeur et une œuvre qui les ci
   await expect(page.getByTestId('admin-row').filter({ hasText: WORK })).toBeVisible()
 
   const found = await context.request.get(`/api/v1/works?q=${encodeURIComponent(WORK)}`)
-  const [work] = (await found.json()).items as { id: number; mainAuthor: string | null }[]
+  const [work] = (await found.json()).items as {
+    id: number
+    mainAuthor: string | null
+    originalLanguage: string
+  }[]
   expect(work?.mainAuthor).toBe(PERSON)
+  expect(work?.originalLanguage).toBe('de')
 })
 
 test('les filtres et le tri de la liste des œuvres se combinent', async ({ page }) => {

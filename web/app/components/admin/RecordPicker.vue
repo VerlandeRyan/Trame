@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RecordRef } from '~/utils/admin'
-import { menuMaxHeight, MENU_PREFERRED_HEIGHT_PX } from '~/utils/menu'
+import { MENU_PREFERRED_HEIGHT_PX } from '~/utils/menu'
 
 // Choisit un enregistrement du catalogue par recherche ; `search` est fourni par la page.
 const props = defineProps<{
@@ -36,14 +36,16 @@ async function runSearch(value: string) {
   showResults()
 }
 
-// La liste défile dans la place restante sous le champ, sans rallonger la page.
+// La liste s'ouvre sous le champ (elle défile si la place manque), et au-dessus seulement quand le
+// dessous est trop court.
 const resultsHeight = ref(MENU_PREFERRED_HEIGHT_PX)
+const isAbove = ref(false)
+const placeMenu = useMenuPlacement()
 function showResults() {
   if (field.value) {
-    resultsHeight.value = menuMaxHeight(
-      field.value.getBoundingClientRect().bottom,
-      window.innerHeight,
-    )
+    const placement = placeMenu(field.value.getBoundingClientRect())
+    isAbove.value = placement.isAbove
+    resultsHeight.value = placement.maxHeight
   }
   isOpen.value = results.value.length > 0
 }
@@ -85,29 +87,32 @@ onBeforeUnmount(() => clearTimeout(timer))
     </div>
     <template v-else>
       <label :for="`${uid}-input`" class="picker__name">{{ label }}</label>
-      <UiSearchField
-        :id="`${uid}-input`"
-        ref="field"
-        v-model="text"
-        autocomplete="off"
-        :placeholder="placeholder"
-        data-testid="picker-input"
-        @input="onInput"
-        @focus="showResults"
-        @click="showResults"
-      />
-      <ul
-        v-if="isOpen && results.length > 0"
-        class="picker__results"
-        :style="{ maxHeight: `${resultsHeight}px` }"
-        data-testid="picker-results"
-      >
-        <li v-for="record in results" :key="record.id">
-          <button type="button" class="picker__option" @click="choose(record)">
-            {{ record.label }}
-          </button>
-        </li>
-      </ul>
+      <div class="picker__search">
+        <UiSearchField
+          :id="`${uid}-input`"
+          ref="field"
+          v-model="text"
+          autocomplete="off"
+          :placeholder="placeholder"
+          data-testid="picker-input"
+          @input="onInput"
+          @focus="showResults"
+          @click="showResults"
+        />
+        <ul
+          v-if="isOpen && results.length > 0"
+          class="picker__results"
+          :class="{ 'picker__results--above': isAbove }"
+          :style="{ maxHeight: `${resultsHeight}px` }"
+          data-testid="picker-results"
+        >
+          <li v-for="record in results" :key="record.id">
+            <button type="button" class="picker__option" @click="choose(record)">
+              {{ record.label }}
+            </button>
+          </li>
+        </ul>
+      </div>
     </template>
   </div>
 </template>
@@ -121,6 +126,11 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 .picker__name {
   font-weight: 700;
+}
+
+// Ancre de la liste : collée au champ, jamais au nom du champ qui le précède.
+.picker__search {
+  position: relative;
 }
 
 .picker__chosen {
@@ -175,6 +185,10 @@ onBeforeUnmount(() => clearTimeout(timer))
   border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
+}
+
+.picker__results--above {
+  inset: auto 0 calc(100% + var(--space-1));
 }
 
 .picker__option {

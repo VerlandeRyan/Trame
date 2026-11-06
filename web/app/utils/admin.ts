@@ -144,12 +144,41 @@ export interface RecordRef {
 /** Chiffres seulement, `max` au plus (un total de chapitres ou de tomes tient en 5 chiffres). */
 export const digitsOnly = (value: string, max = 5) => value.replaceAll(/\D/g, '').slice(0, max)
 
-/** Code de langue ISO 639 : 2 ou 3 lettres minuscules. */
-export const languageCode = (value: string) =>
-  value
-    .toLowerCase()
-    .replaceAll(/[^a-z]/g, '')
-    .slice(0, 3)
+/** Langues proposées d'emblée (codes ISO 639) : d'abord européennes, puis asiatiques, dans l'ordre du menu. */
+export const ADMIN_LANGUAGES = [
+  'fr',
+  'en',
+  'de',
+  'es',
+  'it',
+  'pt',
+  'nl',
+  'ca',
+  'pl',
+  'ru',
+  'uk',
+  'sv',
+  'da',
+  'no',
+  'fi',
+  'cs',
+  'hu',
+  'ro',
+  'el',
+  'ja',
+  'ko',
+  'zh',
+] as const
+
+/**
+ * Options d'un menu de langues, libellé « Français (fr) ». Une langue déjà enregistrée mais absente
+ * de la liste (`current`) est ajoutée en tête pour ne pas être perdue.
+ */
+export function languageOptions(nameOf: (code: string) => string, current = '') {
+  const codes: string[] = [...ADMIN_LANGUAGES]
+  if (current && !codes.includes(current)) codes.unshift(current)
+  return optionsOf(codes, (code) => `${nameOf(code)} (${code})`)
+}
 
 /** Options d'un `UiSelect` à partir de codes d'énumération et d'une fonction de libellé. */
 export const optionsOf = (codes: readonly string[], label: (code: string) => string) =>

@@ -23,8 +23,6 @@ const model = defineModel<string>({ required: true })
 }
 
 .select-field__label {
-  color: var(--color-ink-soft);
-  font-size: 0.875rem;
   font-weight: 700;
 }
 </style>

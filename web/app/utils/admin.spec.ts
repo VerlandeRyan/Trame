@@ -13,7 +13,8 @@ import {
   hasIncompleteRows,
   invalidFields,
   itemLabel,
-  languageCode,
+  ADMIN_LANGUAGES,
+  languageOptions,
   optionsOf,
   pageCount,
   parseAdminEditRoute,
@@ -347,11 +348,28 @@ describe('saisie', () => {
     expect(digitsOnly('abc')).toBe('')
     expect(digitsOnly('123', 2)).toBe('12')
   })
+})
 
-  it('ne garde que 3 lettres minuscules pour une langue', () => {
-    expect(languageCode('FR')).toBe('fr')
-    expect(languageCode('j-a1p')).toBe('jap')
-    expect(languageCode('fran')).toBe('fra')
+describe('languageOptions', () => {
+  const nameOf = (code: string) => code.toUpperCase()
+
+  it('propose les langues européennes avec leur code ISO', () => {
+    const options = languageOptions(nameOf)
+
+    expect(options.map((option) => option.value)).toEqual([...ADMIN_LANGUAGES])
+    expect(options[0]).toEqual({ value: 'fr', label: 'FR (fr)' })
+  })
+
+  it('garde une langue déjà enregistrée même hors de la liste', () => {
+    const options = languageOptions(nameOf, 'sw')
+
+    expect(options[0]).toEqual({ value: 'sw', label: 'SW (sw)' })
+    expect(options).toHaveLength(ADMIN_LANGUAGES.length + 1)
+  })
+
+  it('n’ajoute rien pour une langue de la liste ou une valeur vide', () => {
+    expect(languageOptions(nameOf, 'de')).toHaveLength(ADMIN_LANGUAGES.length)
+    expect(languageOptions(nameOf, '')).toHaveLength(ADMIN_LANGUAGES.length)
   })
 })
 
