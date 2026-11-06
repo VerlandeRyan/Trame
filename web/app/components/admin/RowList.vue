@@ -103,7 +103,7 @@ const emit = defineEmits<{ add: []; remove: [index: number] }>()
   padding: var(--space-3);
   border: 2px dashed var(--color-ink-soft);
   border-radius: var(--radius);
-  background: var(--color-field-soft);
+  background: var(--color-row-card);
 
   .row-list__fields {
     grid-column: 1 / -1;

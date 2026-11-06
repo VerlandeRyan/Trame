@@ -24,6 +24,21 @@ describe('LayoutLanguageSwitcher', () => {
     expect(links[1]?.attributes('hreflang')).toBe('en-GB')
   })
 
+  it('marque la langue courante comme le menu de tri : coche à gauche, ligne sélectionnée', async () => {
+    const wrapper = await mountSuspended(LayoutLanguageSwitcher)
+    const [current, other] = wrapper.findAll('a')
+
+    expect(current?.classes()).toContain('language-switcher__item--current')
+    expect(other?.classes()).not.toContain('language-switcher__item--current')
+    for (const link of [current, other]) {
+      expect(link?.element.firstElementChild?.classList.contains('language-switcher__check')).toBe(
+        true,
+      )
+    }
+    expect(current?.element.firstElementChild?.getAttribute('aria-hidden')).toBe('true')
+    expect(current?.element.lastElementChild?.textContent).toBe('FR')
+  })
+
   it('ouvre le menu au clic puis le referme à un second clic', async () => {
     const wrapper = await mountSuspended(LayoutLanguageSwitcher)
     const trigger = wrapper.get('button')

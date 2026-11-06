@@ -204,24 +204,6 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
     width: max-content;
     min-width: 100%;
     overflow-x: hidden;
-    border-color: var(--color-blue);
-  }
-
-  .select__option--selected {
-    background: var(--color-blue);
-    color: var(--color-surface);
-  }
-
-  .select__option--selected .select__check {
-    color: var(--color-surface);
-  }
-
-  .select__option--active:not(.select__option--selected) {
-    background: var(--color-cover-empty);
-  }
-
-  .select__option--active {
-    outline: none;
   }
 
   &:has(.select__trigger[aria-expanded='true']) {
@@ -291,6 +273,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
   padding: 0;
   overflow-y: auto;
   border: var(--border);
+  border-color: var(--color-blue);
   border-radius: var(--radius);
   background: var(--color-surface);
 }
@@ -310,14 +293,20 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
   border-top: 1px dashed var(--color-rule);
 }
 
+// Style unique des menus de choix : le choix courant en bleu plein, la ligne visée au clavier ou
+// à la souris en fond de survol.
 .select__option--selected {
-  background: var(--color-field-soft);
+  background: var(--color-blue);
+  color: var(--color-surface);
   font-weight: 800;
 }
 
-.select__option--active {
-  outline: 2px solid var(--color-blue);
-  outline-offset: -2px;
+.select__option--active:not(.select__option--selected) {
+  background: var(--color-cover-empty);
+}
+
+.select__option--selected .select__check {
+  color: var(--color-surface);
 }
 
 .select__check {

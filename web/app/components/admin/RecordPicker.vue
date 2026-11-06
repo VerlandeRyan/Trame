@@ -202,7 +202,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 
   &:hover,
   &:focus-visible {
-    background: var(--color-field-soft);
+    background: var(--color-cover-empty);
   }
 }
 </style>

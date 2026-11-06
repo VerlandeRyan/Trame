@@ -81,3 +81,17 @@ describe('liens soulignés au repos', () => {
     expect(offenders).toEqual([])
   })
 })
+
+// Garde-fou de #165 : le survol et l'appui ne changent pas le choix courant d'un menu ou d'un groupe
+// de pastilles (règle « Sélectionné » des conventions).
+describe('survol du choix courant', () => {
+  const guards: [string, string][] = [
+    ['components/library/StatusMenu.vue', "&:not([aria-checked='true']"],
+    ['components/list/StatusPicker.vue', "&:not([aria-checked='true']"],
+    ['components/admin/PillGroup.vue', '&:not(:has(input:checked))'],
+  ]
+
+  it.each(guards)('%s exclut le choix courant du survol (`%s`)', (file, guard) => {
+    expect(readFileSync(join(appDirectory, file), 'utf8')).toContain(guard)
+  })
+})

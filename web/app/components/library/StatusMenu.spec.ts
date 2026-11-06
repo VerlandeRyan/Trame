@@ -90,6 +90,30 @@ describe('LibraryStatusMenu', () => {
     expect(wrapper.emitted('remove')).toHaveLength(1)
   })
 
+  it('demande la confirmation du retrait en rouge, comme Ma liste', async () => {
+    const wrapper = await mountMenu()
+
+    await wrapper.get('[data-testid="library-status"]').trigger('click')
+    await wrapper.get('[data-testid="library-remove"]').trigger('click')
+
+    expect(wrapper.get('[data-testid="confirm-accept"]').classes()).toContain('btn--danger-solid')
+  })
+
+  it('marque le statut courant (coche à gauche) et place l’icône du retrait dans la même colonne', async () => {
+    const wrapper = await mountMenu()
+    await wrapper.get('[data-testid="library-status"]').trigger('click')
+
+    const current = wrapper.get('[data-testid="library-status-reading"]')
+    expect(current.attributes('aria-checked')).toBe('true')
+    expect(current.element.firstElementChild?.classList.contains('status-menu__check')).toBe(true)
+    expect(
+      wrapper.get('[data-testid="library-remove"]').element.firstElementChild?.classList,
+    ).toContain('status-menu__check')
+    expect(wrapper.get('[data-testid="library-status-completed"]').attributes('aria-checked')).toBe(
+      'false',
+    )
+  })
+
   it('referme le menu avec Échap', async () => {
     const wrapper = await mountMenu()
     await wrapper.get('[data-testid="library-status"]').trigger('click')

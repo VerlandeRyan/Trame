@@ -235,6 +235,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
 
           <div v-if="total > 0" class="search-page__toolbar">
             <UiSelect
+              boxed
               :model-value="state.sort"
               :options="sortOptions"
               :label="t('search.sortLabel')"
