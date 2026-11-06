@@ -144,6 +144,8 @@ watch(
 }
 
 .layout-header__logo {
+  @include touch-target;
+
   color: var(--color-ink);
   font-size: 1.375rem;
   font-weight: var(--weight-title);

@@ -55,6 +55,8 @@ const authorLine = computed(() =>
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .result {
   display: flex;
   align-items: center;
@@ -83,6 +85,8 @@ const authorLine = computed(() =>
 }
 
 .result__link {
+  @include touch-target;
+
   color: var(--color-blue);
   text-decoration: none;
 
@@ -127,6 +131,10 @@ const authorLine = computed(() =>
   min-height: 36px;
   padding: 0 10px;
   font-size: 0.875rem;
+
+  @media (pointer: coarse) {
+    min-height: var(--touch);
+  }
 
   @media (min-width: 768px) {
     padding: 0 10px;

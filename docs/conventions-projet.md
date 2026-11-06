@@ -141,6 +141,7 @@ Système unique (#164). **Souris seulement**, via les mixins de `_mixins.scss` :
 ### Zones de clic
 - Une zone tactile invisible de 44 px (`::after`, ou un bouton de 32 × 44 px pour les pastilles du carrousel) **ne doit jamais en recouvrir une autre** : la dernière dans le DOM capte le clic de sa voisine. Écarts qui en découlent : 14 px entre les flèches, boutons de pastilles côte à côte, 16 px entre les pastilles d'Explorer.
 - **La zone dépend de l'appareil** : à la souris (`pointer: fine`) elle épouse l'élément (pastille de carrousel : 32 × 28 px, flèche : ses 30 px, pastille d'Explorer : son cadre) pour que le curseur n'active pas un bouton situé à côté ; au doigt (`pointer: coarse`) elle monte à 44 px. Le test E2E `elementFromPoint` de l'accueil le contrôle à 1280 et 390 px.
+- **Petits liens** (`.link-underlined`, logo, titres de résultats) : mixin `touch-target` (`_mixins.scss`), un `::after` invisible qui porte la zone à 44 px de haut **au doigt seulement** (`pointer: coarse`, pas selon la largeur d'écran) ; `utils/touch-target-rules.spec.ts` et `e2e/tests/touch-targets.spec.ts` le contrôlent. Les boutons (« Filtres », « + ») passent à `min-height: var(--touch)`.
 - Boutons inactifs (`UiButton disabled`) : opacité 0,5, ombre conservée, curseur d'interdiction.
 ### Animations
 Toute transition ou animation se déclare dans `@media (prefers-reduced-motion: no-preference)`, jamais de `!important` ni de règle globale « reduce » (Sonar le signale).

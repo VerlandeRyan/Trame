@@ -58,6 +58,8 @@ a {
 // bleu, seul signal possible puisqu'il n'y a plus de soulignement à faire apparaître.
 // `--link-hover-color` : un lien d'une autre couleur (rouge d'une action destructrice) la garde.
 .link-underlined {
+  @include touch-target;
+
   text-decoration: underline;
 
   @include on-hover {
