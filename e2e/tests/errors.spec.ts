@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 
 test.describe('galerie de composants désactivée (production)', () => {
   test.use({ baseURL: 'http://127.0.0.1:3201' })
@@ -15,7 +16,7 @@ test("page introuvable : statut 404 et retour à l'accueil", async ({ page }) =>
   await expect(page.getByRole('heading', { name: "Cette page n'existe pas" })).toBeVisible()
   await expect(page.getByTestId('not-found')).toContainText('404')
   // Le bouton est rendu côté serveur : on attend l'hydratation avant de cliquer.
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByRole('button', { name: "Retour à l'accueil" }).click()
   await expect(page).toHaveURL('/')

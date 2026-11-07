@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 
 // Données de démo (db/demo-data.sql) : À la une = Hollow Tide, Crépuscule, Aube ; mieux notées = 3 œuvres.
 test("accueil en français, sans préfixe d'URL", async ({ page }) => {
@@ -22,7 +23,7 @@ test('accueil en anglais sous /en', async ({ page }) => {
 test('le sélecteur de langue bascule vers /en', async ({ page }) => {
   await page.goto('/')
   // Attendre l'hydratation : sinon le clic peut précéder les écouteurs.
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('button', { name: "Langue de l'interface" }).click()
   await page.getByRole('link', { name: /English/ }).click()
   await expect(page).toHaveURL(/\/en\/?$/)
@@ -101,7 +102,7 @@ test('le titre est en Poppins auto-hébergée, sans appel à un CDN', async ({ p
     if (protocol.startsWith('http') && host !== ownHost) outside.push(request.url())
   })
   await page.reload()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await expect(page.getByTestId('home-title')).toHaveCSS('font-family', /Poppins/)
   const loaded = await page.evaluate(() => document.fonts.check("800 1em 'Poppins'"))
@@ -173,7 +174,7 @@ test('« À la une » : les œuvres populaires de la semaine, avec précédent e
   page,
 }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const title = page.getByTestId('featured-title')
 
   await expect(title).toHaveText('Marée creuse')
@@ -190,7 +191,7 @@ test('« À la une » : le changement d’œuvre est animé, sans mouvement si l
   page,
 }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const next = page.getByTestId('featured-next')
   const title = page.getByTestId('featured-title')
 
@@ -209,7 +210,7 @@ test('« À la une » : chaque pastille mène à son œuvre, y compris celle du 
   page,
 }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const title = page.getByTestId('featured-title')
   const dots = page.getByTestId('featured-dot')
 
@@ -227,7 +228,7 @@ test('les commandes de « À la une » reçoivent leurs propres clics', async ({
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
 
     const stolen = await page.evaluate(() => {
       const selector =
@@ -253,7 +254,7 @@ test('« À la une » se fait glisser au doigt : à gauche la suite, à droite l
   page,
 }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const title = page.getByTestId('featured-title')
   const swipe = (from: number, to: number) =>
     page.getByTestId('featured-stage').evaluate(
@@ -306,7 +307,7 @@ test('survol à la souris : rose pour les formats, rose soutenu pour les genres,
   await page.setViewportSize({ width: 1280, height: 900 })
   // Le bloc Explorer n'est plus sur l'accueil (il rejoint l'en-tête, #97) : la galerie le montre.
   await page.goto('/components')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByTestId('explore-format-manga').hover()
   await expect(page.getByTestId('explore-format-manga')).toHaveCSS(
@@ -331,7 +332,7 @@ test('survol à la souris : la pastille sélectionnée du carrousel reste bleue'
 }) => {
   test.skip(hasTouch, 'Pas de survol sur écran tactile')
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const dots = page.getByTestId('featured-dot')
   const circle = (index: number) =>
     dots.nth(index).evaluate((dot) => getComputedStyle(dot, '::before').backgroundColor)
@@ -348,7 +349,7 @@ test('survol à la souris : « Tout voir » épaissit son trait, « Voir tout le
 }) => {
   test.skip(hasTouch, 'Pas de survol sur écran tactile')
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const seeAll = page.locator('.shelf__all').first()
   await expect(seeAll).toHaveCSS('text-decoration-thickness', 'auto')
@@ -375,7 +376,7 @@ test('survol à la souris : « Tout voir » épaissit son trait, « Voir tout le
 
 test('écran tactile : aucun état de survol ne reste collé après un toucher', async ({ page }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const hoverNone = await page.evaluate(() => matchMedia('(hover: none)').matches)
   test.skip(!hoverNone, 'Appareil à souris')
 
@@ -420,7 +421,7 @@ test('« Récemment ajoutées » mène à la recherche triée, Explorer à la re
 }) => {
   // Explorer : bloc de la galerie `/components` (voir plus haut).
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page
     .getByTestId('home-recent')
@@ -429,7 +430,7 @@ test('« Récemment ajoutées » mène à la recherche triée, Explorer à la re
   await expect(page).toHaveURL(/\/search\?sort=recent$/)
 
   await page.goto('/components')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByTestId('explore-format-manga').click()
   await expect(page).toHaveURL(/\/search\?format=manga$/)
   await expect(page.getByTestId('filter-format-manga').first()).toBeChecked()
@@ -438,7 +439,7 @@ test('« Récemment ajoutées » mène à la recherche triée, Explorer à la re
 test('la recherche de l’accueil mène aux résultats', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByTestId('search-input').fill('basalte')
   await page.getByTestId('home-search-submit').click()

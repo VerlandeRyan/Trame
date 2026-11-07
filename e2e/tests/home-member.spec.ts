@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 import { signUp } from '../support/session.js'
 
 // Accueil d'un membre connecté (US-15, #96) : l'API, la base, la session et le relais Nuxt sont
@@ -16,7 +17,7 @@ test.afterEach(async ({ context }) => {
 async function openHome(page: Page): Promise<void> {
   await page.goto('/')
   // Le +1 et les liens ne répondent qu'une fois la page hydratée.
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 }
 
 async function expectNoAccessibilityViolation(page: Page): Promise<void> {
@@ -75,7 +76,7 @@ test('un membre avec une lecture en cours la reprend d’un +1, sans panneau vis
   await saved
   await expect(continued.getByTestId('continue-reading-progress')).toHaveText('Manga · Chapitre 6')
   await page.reload()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('continue-reading-progress')).toHaveText('Manga · Chapitre 6')
 
   await page.getByTestId('home-continue-reading-list-link').click()

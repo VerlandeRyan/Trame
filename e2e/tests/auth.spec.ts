@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 
 // Connexion : l'API, la base, les sessions, le cookie et le relais Nuxt sont réels ; seul Google est
 // remplacé (`api/src/e2e/fake-google.ts`). Le contrôle avec un vrai Google reste manuel.
@@ -23,7 +24,7 @@ async function signInWithGoogleAs(context: BrowserContext, sub: string): Promise
 
 async function openSignIn(page: Page): Promise<void> {
   // Le bouton est rendu côté serveur : on attend l'hydratation avant de cliquer.
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByTestId('sign-in').click()
   await expect(page.getByRole('dialog')).toBeVisible()
 }
@@ -52,7 +53,7 @@ test('la fenêtre de connexion s’ouvre, garde la page d’origine et se ferme 
 
 test('« Créer ma liste de lecture » ouvre la fenêtre de connexion', async ({ page }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByTestId('home-create-list').click()
 
@@ -68,7 +69,7 @@ test('première connexion : pseudo refusé puis accepté, retour sur la fiche, d
 
   await expect(page).toHaveURL(/\/signup\/handle/)
   await expect(page.getByRole('heading', { name: 'Choisis ton pseudo' })).toBeVisible()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('handle-submit')).toBeDisabled()
 
   await chooseHandle(page, 'admin')
@@ -80,7 +81,7 @@ test('première connexion : pseudo refusé puis accepté, retour sur la fiche, d
   await page.getByTestId('handle-submit').click()
 
   await expect(page).toHaveURL(WORK_PATH)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const account = page.getByTestId('account-menu')
   await expect(account).toHaveText(`@${handle}`)
 
@@ -101,14 +102,14 @@ test('première connexion : pseudo refusé puis accepté, retour sur la fiche, d
 test('le parcours reste en anglais depuis une page anglaise', async ({ page }) => {
   const workPath = '/en/work/1-the-fog-lanterns'
   await page.goto(workPath)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Sign in to Trame' })).toBeVisible()
   await page.getByRole('link', { name: 'Continue with Google' }).click()
 
   await expect(page).toHaveURL(/\/en\/signup\/handle/)
   await expect(page.getByRole('heading', { name: 'Choose your username' })).toBeVisible()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByLabel('Username').fill(uniqueHandle('Reader'))
   await page.getByTestId('handle-submit').click()
 
@@ -120,7 +121,7 @@ test('un retour de Google annulé depuis une page anglaise affiche l’avis en a
   page,
 }) => {
   await page.goto('/en/work/1-the-fog-lanterns')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('button', { name: 'Sign in', exact: true }).click()
   const href = await page.getByTestId('sign-in-google').getAttribute('href')
   const start = await page.request.get(href as string, { maxRedirects: 0 })
@@ -141,7 +142,7 @@ test.describe('boutons', () => {
 
   test('« Se connecter » s’enfonce au clic, sans rester incliné', async ({ page }) => {
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await page.getByTestId('sign-in').hover()
     await page.mouse.down()
 
@@ -156,7 +157,7 @@ test.describe('boutons', () => {
   }) => {
     test.skip(isMobile, 'Le survol n’existe pas au doigt.')
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     // Mesure l'inclinaison une fois la transition (avec rebond) terminée, pas en cours de route.
     const settledTilt = (testId: string) =>
       page.getByTestId(testId).evaluate(async (el) => {
@@ -186,7 +187,7 @@ test('un pseudo déjà pris est refusé, quelle que soit la casse', async ({ bro
   const page = await context.newPage()
   await signInWithGoogleAs(context, `second-${handle}`)
   await page.goto('/signup/handle')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await chooseHandle(page, handle.toLowerCase())
 
   await expect(page.getByRole('alert')).toHaveText('Ce pseudo est déjà pris. Essaie un autre.')
@@ -217,7 +218,7 @@ test('abandonner l’inscription ne crée aucun compte', async ({ page }) => {
   await openSignIn(page)
   await page.getByTestId('sign-in-google').click()
   await expect(page).toHaveURL(/\/signup\/handle/)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByTestId('handle-cancel').click()
   await expect(page.getByRole('dialog')).toBeVisible()
@@ -246,7 +247,7 @@ test('un retour de Google annulé affiche un avis, qu’on peut fermer', async (
 
   const notice = page.getByTestId('auth-notice')
   await expect(notice).toContainText('Connexion annulée')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await notice.getByRole('button', { name: 'Fermer' }).click()
 
   await expect(notice).toBeHidden()
@@ -271,7 +272,7 @@ test.describe('accessibilité', () => {
   test('page du choix du pseudo, avec une erreur', async ({ page, context }) => {
     await signInWithGoogleAs(context, `a11y-${uniqueHandle()}`)
     await page.goto('/signup/handle')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await chooseHandle(page, 'admin')
     await expect(page.getByRole('alert')).toBeVisible()
 

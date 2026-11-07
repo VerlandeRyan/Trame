@@ -12,5 +12,23 @@ export default defineConfig(
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
+    // Tests stables : on attend un état observable, jamais le réseau ni une durée (ils échouent
+    // sur une machine chargée).
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "CallExpression[callee.property.name='waitForLoadState'][arguments.0.value='networkidle']",
+          message:
+            "`networkidle` n'attend que le réseau : utiliser `waitForHydration(page)` (support/hydration.ts).",
+        },
+        {
+          selector: "CallExpression[callee.property.name='waitForTimeout']",
+          message:
+            'Pas de pause fixe : attendre une assertion ou une réponse (`expect`, `waitForResponse`).',
+        },
+      ],
+    },
   },
 )

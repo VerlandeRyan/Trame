@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 
 // La trame de points du bord droit est un décor : présente sur toutes les pages, collée au bord
 // droit, sans jamais capter un clic.
@@ -36,7 +37,7 @@ test('accueil : la trame du bord droit s’arrête au filet du hero', async ({ p
 test('la trame ne capte aucun clic : le contenu au-dessus reçoit les siens', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const stolen = await page.evaluate(() => {
     const target = document.querySelector('[data-testid="home-propose"]')!

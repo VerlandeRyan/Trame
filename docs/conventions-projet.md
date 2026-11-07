@@ -55,6 +55,7 @@ GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`
   - pas de code commenté, CSS compris ; une exception de règle porte toujours sa raison en commentaire.
 - Tests : Vitest (unitaires), tests d'API, Playwright (E2E, desktop + WebKit iPhone) avec axe-core sur chaque page.
 - **Logique et API : test rouge d'abord, puis code. Interface visuelle : mockup validé, implémentation, puis capture dans un vrai navigateur** (un test jsdom ne voit pas une mise en page).
+- **Tests E2E stables** : jamais d'attente sur le réseau ni sur une durée (`networkidle`, `waitForTimeout` : refusés par ESLint dans `e2e/`). Après un `goto` ou un `reload`, `waitForHydration(page)` (`e2e/support/hydration.ts`) avant tout clic ; après une écriture qui s'affiche avant la réponse, attendre `waitForResponse` avant de recharger la page.
 - **Tout changement de comportement ⇒ test E2E** ; toute évolution de schéma ⇒ migration + mise à jour du [modèle de données](modele-de-donnees.md).
 - Localement : n'exécuter que les tests **nouveaux ou modifiés** ; la CI exécute la suite complète.
 - Sécurité : gitleaks, Semgrep CE, CodeQL et SonarQube Cloud en CI, Renovate pour les dépendances. Pas encore en place : OSV-Scanner, Lighthouse CI, SQLFluff.

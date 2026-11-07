@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type BrowserContext, type Page } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 import { signUp } from '../support/session.js'
 
 // Ma liste de lecture (US-07) : l'API, la base, la session et le relais Nuxt sont réels ; seul
@@ -47,7 +48,7 @@ async function signUpWithList(context: BrowserContext): Promise<void> {
 async function openList(page: Page, path = '/list'): Promise<void> {
   await page.goto(path)
   // Les compteurs et le défilement continu ne répondent qu'une fois la page hydratée.
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 }
 
 const rows = (page: Page) => page.getByTestId('list-row')
@@ -113,14 +114,20 @@ test('un chapitre de plus est enregistré aussitôt, puis retrouvé au rechargem
   await signUpWithList(context)
   await openList(page)
 
+  // L'affichage change aussitôt ; on attend l'enregistrement, sans quoi le rechargement le perdrait.
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes('/entry') && response.request().method() === 'PUT' && response.ok(),
+  )
   await rowOf(page, 'Chroniques de Basalte')
     .getByRole('button', { name: 'Augmenter : Chapitres' })
     .click()
 
   await expect(page.getByTestId('list-total-chapters')).toContainText('16')
   await expect(page.getByTestId('list-total-volumes')).toContainText('4')
+  await saved
   await page.reload()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(page.getByTestId('list-total-chapters')).toContainText('16')
   await expect(
     rowOf(page, 'Chroniques de Basalte').getByRole('textbox', {
@@ -181,11 +188,16 @@ test('« Modifier ma lecture » enregistre note et dates, puis retire l’œuvre
   await modal.getByTestId('list-edit-rating').click()
   await modal.getByRole('option', { name: /^9 · Excellent/ }).click()
   await modal.locator('input[type="date"]').last().fill('2026-03-04')
+  const saved = page.waitForResponse(
+    (response) =>
+      response.url().includes('/entry') && response.request().method() === 'PUT' && response.ok(),
+  )
   await page.getByTestId('list-edit-save').click()
   await expect(row.getByTestId('list-rating')).toHaveText('9 / 10')
+  await saved
 
   await page.reload()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await rowOf(page, 'Chroniques de Basalte').getByTestId('list-edit').click()
   await expect(
     page.getByTestId('list-edit-modal').locator('input[type="date"]').last(),
@@ -260,16 +272,20 @@ test('à 768 px la liste reste en cartes lisibles, le tableau commence à 1024 p
   context,
 }) => {
   await signUpWithList(context)
-  const title = () => rows(page).first().locator('.row__title')
+  // Titre lisible : une ou deux lignes. Écrit lettre par lettre il en prenait une dizaine (la
+  // hauteur ne dépend pas de la police de la machine, contrairement à la largeur).
+  const MAX_TITLE_HEIGHT_PX = 70
+  const titleHeight = async () =>
+    (await rows(page).first().locator('.row__title').boundingBox())!.height
   const header = page.locator('.list__columns')
 
   await page.setViewportSize({ width: 768, height: 1024 })
   await openList(page)
   await expect(header).toBeHidden()
-  expect((await title().boundingBox())!.width).toBeGreaterThan(150)
+  await expect.poll(titleHeight).toBeLessThan(MAX_TITLE_HEIGHT_PX)
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(768)
 
   await page.setViewportSize({ width: 1024, height: 768 })
   await expect(header).toBeVisible()
-  expect((await title().boundingBox())!.width).toBeGreaterThan(150)
+  await expect.poll(titleHeight).toBeLessThan(MAX_TITLE_HEIGHT_PX)
 })
