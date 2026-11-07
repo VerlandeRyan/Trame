@@ -135,7 +135,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   }
 
   // Bureau : les colonnes de l'en-tête de `pages/list.vue` (`--list-columns`).
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     grid-template-columns: var(--list-columns);
     align-items: center;
     gap: var(--space-3);
@@ -147,7 +147,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
 .row__work {
   display: contents;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     display: flex;
     align-items: center;
     gap: var(--space-3);
@@ -160,7 +160,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   grid-row: 1 / span 3;
   align-self: start;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     flex: none;
     grid-row: auto;
   }
@@ -174,7 +174,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   min-width: 0;
   padding-right: var(--touch);
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     grid-row: auto;
     grid-column: auto;
     padding-right: 0;
@@ -210,7 +210,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   align-items: center;
   gap: var(--space-3);
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     grid-row: auto;
     grid-column: auto;
   }
@@ -220,7 +220,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   font-size: 0.8125rem;
   font-weight: 800;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     display: none;
   }
 }
@@ -231,7 +231,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   justify-items: start;
   gap: 2px;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     grid-row: auto;
     justify-items: center;
 
@@ -250,7 +250,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   :deep(.counter) {
     justify-items: start;
 
-    @media (min-width: 768px) {
+    @media (min-width: 1024px) {
       justify-items: center;
     }
   }
@@ -267,7 +267,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   font-size: 0.75rem;
   font-weight: 400;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     position: absolute;
     width: 1px;
     height: 1px;
@@ -292,7 +292,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   color: var(--color-ink-soft);
   font-size: 0.6875rem;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     display: block;
   }
 }
@@ -303,7 +303,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   font-size: 0.9375rem;
   font-weight: 800;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     display: block;
   }
 }
@@ -318,7 +318,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   padding: 0;
   min-width: var(--touch);
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     grid-row: auto;
     grid-column: auto;
     align-self: center;
@@ -328,7 +328,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
 }
 
 .row__edit-label {
-  @media (max-width: 767px) {
+  @media (max-width: 1023px) {
     position: absolute;
     width: 1px;
     height: 1px;

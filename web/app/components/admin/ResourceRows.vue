@@ -323,7 +323,7 @@ function archiveMenuItem() {
 }
 
 // Mobile (maquette 6) : titre, une ligne d'information et la complétude ; « ⋮ » ouvre les actions.
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .rows__head,
   .rows__action,
   .rows__cell:not(.rows__meter-cell),

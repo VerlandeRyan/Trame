@@ -320,6 +320,13 @@ watch(
   background: var(--color-surface);
 
   @include menu-open-animation;
+
+  // Champ étroit : la liste déborde à droite pour que les titres respirent ; champ large : elle
+  // garde sa largeur.
+  @media (min-width: 768px) {
+    right: auto;
+    width: max(100%, 22rem);
+  }
 }
 
 .search-box__option {

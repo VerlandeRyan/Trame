@@ -10,6 +10,7 @@
     "exploreIntro": "Find your next read by format or genre.",
     "worksCount": "{count} work | {count} works",
     "searchPlaceholder": "Search for a work or an author…",
+    "searchPlaceholderShort": "Search…",
     "languageLabel": "Interface language",
     "skipToContent": "Skip to content",
     "signIn": "Sign in",

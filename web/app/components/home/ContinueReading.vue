@@ -7,6 +7,8 @@ import { coverUrl, workSlug } from '~/utils/work'
 // Bande « Reprendre la lecture » du hero connecté : les œuvres en cours, avec un +1 qui compte un
 // chapitre (ou un tome pour une œuvre suivie par tomes) ; finir l'œuvre demande confirmation.
 const props = defineProps<{ entries: ListedEntry[] }>()
+// Cartes côte à côte entre 768 et 1023 px (voir le style).
+const TABLET_COLUMNS = 2
 const { t, te } = useI18n()
 const localePath = useLocalePath()
 const headingId = `${useId()}-heading`
@@ -40,7 +42,10 @@ const addOneLabel = (item: ListedEntry) =>
   <section
     v-show="items.length"
     class="continue-reading"
-    :style="{ '--continue-reading-count': Math.min(items.length, CONTINUE_READING_SIZE) }"
+    :style="{
+      '--continue-reading-count': Math.min(items.length, CONTINUE_READING_SIZE),
+      '--continue-reading-count-tablet': Math.min(items.length, TABLET_COLUMNS),
+    }"
     :aria-labelledby="headingId"
     data-testid="home-continue-reading"
   >
@@ -119,15 +124,27 @@ const addOneLabel = (item: ListedEntry) =>
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Au bureau la bande ne dépasse pas la largeur de ses cartes (trois colonnes de 12 px d'écart) :
-// avec une ou deux œuvres, « Voir ma liste » reste collé à la dernière carte.
+// Tablette : deux cartes côte à côte ; dès 1024 px, trois. `shown` : les cartes de la première ligne.
+.continue-reading {
+  --continue-reading-columns: 2;
+  --continue-reading-shown: var(--continue-reading-count-tablet);
+
+  @media (min-width: 1024px) {
+    --continue-reading-columns: 3;
+    --continue-reading-shown: var(--continue-reading-count);
+  }
+}
+
+// Dès 768 px la bande ne dépasse pas la largeur de ses cartes (colonnes de 12 px d'écart) : avec
+// moins de cartes que de colonnes, « Voir ma liste » reste collé à la dernière carte.
 .continue-reading__header,
 .continue-reading__list,
 .continue-reading__error {
   @media (min-width: 768px) {
     max-width: calc(
-      (100% - 2 * var(--space-3)) / 3 * var(--continue-reading-count) +
-        (var(--continue-reading-count) - 1) * var(--space-3)
+      (100% - (var(--continue-reading-columns) - 1) * var(--space-3)) /
+        var(--continue-reading-columns) * var(--continue-reading-shown) +
+        (var(--continue-reading-shown) - 1) * var(--space-3)
     );
   }
 }
@@ -157,7 +174,7 @@ const addOneLabel = (item: ListedEntry) =>
   gap: var(--space-3);
 
   @media (min-width: 768px) {
-    grid-template-columns: repeat(var(--continue-reading-count), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--continue-reading-shown), minmax(0, 1fr));
   }
 }
 

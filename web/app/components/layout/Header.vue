@@ -18,6 +18,9 @@ const onSearchPage = computed(() => isCurrentPage('/search'))
 // L'accueil porte son propre champ de recherche : pas de champ dans l'en-tête.
 const onHomePage = computed(() => isCurrentPage('/'))
 
+// Sous 1024 px le champ de l'en-tête est trop étroit pour l'aide complète.
+const isCompact = useNarrowScreen(1023)
+
 const searching = ref(false)
 const searchBox = ref<{ focus: () => void } | null>(null)
 const searchLink = ref<HTMLButtonElement | null>(null)
@@ -63,7 +66,12 @@ watch(
     <span v-if="isAdmin" class="layout-header__badge" data-testid="admin-badge">
       {{ t('nav.admin.badge') }}
     </span>
-    <LayoutSearchBox v-if="!onHomePage" ref="searchBox" class="layout-header__search" />
+    <LayoutSearchBox
+      v-if="!onHomePage"
+      ref="searchBox"
+      class="layout-header__search"
+      :placeholder="isCompact ? t('nav.searchPlaceholderShort') : undefined"
+    />
     <button
       v-if="!onSearchPage && !onHomePage"
       ref="searchLink"

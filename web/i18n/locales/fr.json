@@ -10,6 +10,7 @@
     "exploreIntro": "Trouve ta prochaine lecture par format ou par genre.",
     "worksCount": "{count} œuvre | {count} œuvres",
     "searchPlaceholder": "Rechercher une œuvre, un auteur…",
+    "searchPlaceholderShort": "Rechercher…",
     "languageLabel": "Langue de l'interface",
     "skipToContent": "Aller au contenu",
     "signIn": "Se connecter",

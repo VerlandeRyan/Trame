@@ -149,5 +149,5 @@ Toute transition ou animation se déclare dans `@media (prefers-reduced-motion: 
 
 ### Accessibilité et appareils
 - **Contraste AA** (mesuré le 2026-10-14) : encre `#1b2a5c` sur les cinq couleurs de statut ≥ 4,59:1, sur le rose 5,20:1 ; blanc sur bleu 8,41:1. Ne jamais mettre de texte blanc sur une couleur de statut (1,45 à 2,98:1).
-- **Appareils** : zones tactiles ≥ 44 px (`--touch`), champs à 16 px minimum (Safari iOS), pas de défilement horizontal, `100dvh` plutôt que `100vh` seul. Points de rupture : 768 et 1024 px.
+- **Appareils** : zones tactiles ≥ 44 px (`--touch`), champs à 16 px minimum (Safari iOS), pas de défilement horizontal, `100dvh` plutôt que `100vh` seul. Points de rupture : 768 et 1024 px. **Tablette (768 à 1023 px)** : un tableau ou une rangée de colonnes qui n'y tient pas garde la mise en page du téléphone jusqu'à 1023 px (« Ma liste », catalogue d'administration) ; au plus deux cartes côte à côte (« Reprendre la lecture ») ; l'aide du champ de recherche de l'en-tête est raccourcie (`useNarrowScreen(1023)`). `utils/tablet-layout-rules.spec.ts` le contrôle.
 - Pas de `v-html` sur du contenu utilisateur ; données de démo fictives uniquement.

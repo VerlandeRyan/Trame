@@ -252,3 +252,24 @@ test('aucune violation d’accessibilité : liste, grille et fenêtre de modific
   await openList(page, '/list?view=grid')
   await expectNoViolation()
 })
+
+// #206 : à 768 px (iPad mini) le tableau était trop serré, les titres s'écrivaient lettre par lettre.
+// Jusqu'à 1023 px une ligne reste une carte ; le tableau et son en-tête commencent à 1024 px.
+test('à 768 px la liste reste en cartes lisibles, le tableau commence à 1024 px', async ({
+  page,
+  context,
+}) => {
+  await signUpWithList(context)
+  const title = () => rows(page).first().locator('.row__title')
+  const header = page.locator('.list__columns')
+
+  await page.setViewportSize({ width: 768, height: 1024 })
+  await openList(page)
+  await expect(header).toBeHidden()
+  expect((await title().boundingBox())!.width).toBeGreaterThan(150)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(768)
+
+  await page.setViewportSize({ width: 1024, height: 768 })
+  await expect(header).toBeVisible()
+  expect((await title().boundingBox())!.width).toBeGreaterThan(150)
+})

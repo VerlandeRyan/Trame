@@ -17,6 +17,29 @@ describe('LayoutHeader', () => {
     expect(wrapper.findAll('button').at(-1)?.text()).toBe('Se connecter')
   })
 
+  it('raccourcit l’aide de la recherche sous 1024 px, où le champ est trop étroit', async () => {
+    const original = window.matchMedia
+    const queries: string[] = []
+    window.matchMedia = ((query: string) => {
+      queries.push(query)
+      return {
+        media: query,
+        matches: query === '(max-width: 1023px)',
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      }
+    }) as unknown as typeof window.matchMedia
+    try {
+      const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
+      await vi.waitFor(() =>
+        expect(wrapper.get('[role="combobox"]').attributes('placeholder')).toBe('Rechercher…'),
+      )
+      expect(queries).toContain('(max-width: 1023px)')
+    } finally {
+      window.matchMedia = original
+    }
+  })
+
   it('propose au mobile une icône qui déploie le champ, sans quitter la page', async () => {
     const wrapper = await mountSuspended(LayoutHeader, { route: WORK_ROUTE })
     const open = wrapper.get('[data-testid="search-open"]')
