@@ -35,6 +35,10 @@ Pas de filtre « À compléter » (le tri par complétude le remplace) ni de cou
 `useAdminEditor` suit si la saisie a changé (`isDirty`, instantané pris au chargement et à l'enregistrement). La page pose un garde du routeur (`router.beforeEach`, retiré avec la page, pas `onBeforeRouteLeave` que les tests ne voient pas) qui ouvre `UiConfirm danger` « Quitter sans enregistrer ? » (`data-testid="leave-confirm"`), plus un `beforeunload` ; changer de section (`?section=`) ne la déclenche pas.
 
 ## Confirmation d'archivage unique
+**Retrait d'une ligne** (titre, synopsis, auteur, éditeur, œuvre liée, lien) : la croix de `RowList` retire tout de suite une ligne vide ; si la ligne est saisie (prop `isFilled`, prédicats `is…RowFilled` de `utils/admin.ts`), `admin/RowRemoveConfirm` (`UiConfirm danger`) demande d'abord.
+
+**Ligne sans fiche choisie** (auteur, éditeur, œuvre liée) : un texte tapé dans `RecordPicker` sans choisir de proposition refuse l'enregistrement (`hasIncompleteRows`). Après ce refus, le champ fautif prend un cadre rouge et un message (`invalid`), et l'onglet qui le contient un point rouge (`UiTab.alert`, `incompleteSections`) ; le message général reste au-dessus d'« Enregistrer ». Les liens sans adresse ne marquent que l'onglet.
+
 `admin/ArchiveConfirm` (`UiConfirm danger` + récapitulatif « Suivie par » / « Relations » d'une œuvre) sert la fiche et la feuille « ⋮ » de la liste. `ResourceRows` reçoit `loadImpact` (la page lit `GET /admin/works/{id}` à l'ouverture, `archiveImpact`) et reste utilisable si la lecture échoue. `GET /admin/works/{id}` renvoie aussi `labels`.
 
 ## Tests

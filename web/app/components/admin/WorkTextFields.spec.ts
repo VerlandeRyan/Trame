@@ -45,13 +45,25 @@ describe('AdminWorkTextFields', () => {
     expect(draft.titles[0]!.language).toBe('es')
   })
 
-  it('retire une ligne', async () => {
+  it('retire sans question une ligne vide', async () => {
+    const { wrapper, draft } = await mountFields()
+    draft.titles.push({ language: 'en', kind: 'short', title: '' })
+    await wrapper.vm.$nextTick()
+
+    await wrapper.get('[data-testid="row-list-remove"]').trigger('click')
+
+    expect(draft.titles).toEqual([])
+  })
+
+  it('ne retire une ligne saisie qu’après confirmation', async () => {
     const { wrapper, draft } = await mountFields()
     draft.titles.push({ language: 'en', kind: 'short', title: 'A' })
     await wrapper.vm.$nextTick()
 
     await wrapper.get('[data-testid="row-list-remove"]').trigger('click')
+    expect(draft.titles).toHaveLength(1)
 
+    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
     expect(draft.titles).toEqual([])
   })
 })

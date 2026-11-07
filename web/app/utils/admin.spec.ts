@@ -11,6 +11,13 @@ import {
   emptyPublisherDraft,
   emptyWorkDraft,
   hasIncompleteRows,
+  incompleteSections,
+  isCreditRowFilled,
+  isLinkRowFilled,
+  isPublisherRowFilled,
+  isRelationRowFilled,
+  isSynopsisRowFilled,
+  isTitleRowFilled,
   invalidFields,
   itemLabel,
   ADMIN_LANGUAGES,
@@ -288,6 +295,23 @@ describe('lignes incomplètes', () => {
     expect(hasIncompleteRows({ ...complete, ...overrides })).toBe(true)
   })
 
+  it.each([
+    ['un auteur sans personne', { credits: [{ person: null, role: 'art' }] }, ['people']],
+    ['un éditeur sans choix', { publishers: [{ publisher: null }] }, ['people']],
+    [
+      'une œuvre liée sans choix',
+      { relations: [{ work: null, relation: 'other' }] },
+      ['relations'],
+    ],
+    ['un lien sans adresse', { links: [{ kind: 'read', url: '', label: 'Lire' }] }, ['links']],
+  ])('place %s dans sa section', (_label, overrides, sections) => {
+    expect(incompleteSections({ ...complete, ...overrides })).toEqual(sections)
+  })
+
+  it('ne signale aucune section pour une fiche complète', () => {
+    expect(incompleteSections(complete)).toEqual([])
+  })
+
   it('laisse passer un lien entièrement vide', () => {
     const links = [{ kind: 'read', url: '', label: '' }]
     expect(hasIncompleteRows({ ...complete, links })).toBe(false)
@@ -396,5 +420,33 @@ describe('divers', () => {
     expect(adminErrorKey({ status: 409, code: 'PERSON_HAS_WORKS' }, messageKeyFor)).toBe(
       'error.PERSON_HAS_WORKS',
     )
+  })
+})
+
+describe('lignes saisies (confirmation avant retrait)', () => {
+  const ref = { id: 1, label: 'Quelqu’un' }
+
+  it('un titre ou un synopsis n’est saisi que s’il a du texte', () => {
+    expect(isTitleRowFilled({ language: 'en', kind: 'international', title: ' ' })).toBe(false)
+    expect(isTitleRowFilled({ language: 'en', kind: 'international', title: 'Mist' })).toBe(true)
+    expect(isSynopsisRowFilled({ language: 'fr', source: 'official', text: '' })).toBe(false)
+    expect(isSynopsisRowFilled({ language: 'fr', source: 'official', text: 'Un résumé' })).toBe(
+      true,
+    )
+  })
+
+  it('un auteur, un éditeur ou une œuvre liée est saisi dès qu’une fiche est choisie', () => {
+    expect(isCreditRowFilled({ person: null, role: 'story' })).toBe(false)
+    expect(isCreditRowFilled({ person: ref, role: 'story' })).toBe(true)
+    expect(isPublisherRowFilled({ publisher: null })).toBe(false)
+    expect(isPublisherRowFilled({ publisher: ref })).toBe(true)
+    expect(isRelationRowFilled({ work: null, relation: 'sequel' })).toBe(false)
+    expect(isRelationRowFilled({ work: ref, relation: 'sequel' })).toBe(true)
+  })
+
+  it('un lien est saisi dès qu’il a une adresse ou un libellé', () => {
+    expect(isLinkRowFilled({ kind: 'read', url: ' ', label: '' })).toBe(false)
+    expect(isLinkRowFilled({ kind: 'read', url: 'https://a.test', label: '' })).toBe(true)
+    expect(isLinkRowFilled({ kind: 'read', url: '', label: 'Lire' })).toBe(true)
   })
 })

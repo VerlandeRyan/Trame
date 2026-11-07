@@ -158,6 +158,59 @@ test('quitter une fiche modifiée demande confirmation, et une fiche neuve repar
   await expect(page.locator('#work-title')).toHaveValue('')
 })
 
+test('retirer une ligne saisie demande confirmation, une ligne vide part tout de suite', async ({
+  page,
+}) => {
+  await page.goto('/admin/catalogue/works/new')
+  await page.waitForLoadState('networkidle')
+  await page.getByRole('tab', { name: 'Auteurs et éditeurs' }).click()
+  const panel = page.locator('[role="tabpanel"]:visible')
+  const rows = panel.getByTestId('row-list-row')
+  // Chaque liste porte sa modale (fermée) : seule celle d'une ligne en cours de retrait est ouverte.
+  const confirmation = page.locator('dialog[open]')
+
+  await panel.getByRole('button', { name: 'Ajouter un auteur' }).click()
+  await panel.getByRole('button', { name: 'Retirer cet auteur' }).click()
+  await expect(rows).toHaveCount(0)
+  await expect(confirmation).toBeHidden()
+
+  await panel.getByRole('button', { name: 'Ajouter un auteur' }).click()
+  await pickFirst(page, 'Mélodie Vasseur')
+  await panel.getByRole('button', { name: 'Retirer cet auteur' }).click()
+  await expect(confirmation).toBeVisible()
+
+  await confirmation.getByTestId('confirm-cancel').click()
+  await expect(rows).toHaveCount(1)
+
+  await panel.getByRole('button', { name: 'Retirer cet auteur' }).click()
+  await confirmation.getByTestId('confirm-accept').click()
+  await expect(rows).toHaveCount(0)
+})
+
+test('un texte tapé sans choisir de proposition est refusé et la ligne est marquée', async ({
+  page,
+}) => {
+  await page.goto('/admin/catalogue/works/new')
+  await page.waitForLoadState('networkidle')
+  await page.locator('#work-title').fill(`${WORK} sans éditeur choisi`)
+  await page.getByRole('tab', { name: 'Auteurs et éditeurs' }).click()
+  const panel = page.locator('[role="tabpanel"]:visible')
+  await panel.getByRole('button', { name: 'Ajouter un éditeur' }).click()
+  await panel.getByTestId('picker-input').fill('dd')
+  await expect(panel.getByTestId('picker-error')).toHaveCount(0)
+
+  await page.getByTestId('admin-save').click()
+
+  await expect(page.getByRole('alert')).toContainText('lignes sont incomplètes')
+  await expect(panel.getByTestId('picker-error')).toHaveText(
+    'Choisis une proposition dans la liste.',
+  )
+  await expect(
+    page.getByRole('tab', { name: 'Auteurs et éditeurs' }).getByRole('img'),
+  ).toHaveAccessibleName('Contient une ligne incomplète')
+  await expect(page).toHaveURL(/works\/new/)
+})
+
 test('enregistrer une fiche modifiée entre-temps est refusé', async ({ page, context }) => {
   const found = await context.request.get(`/api/v1/admin/works?q=${encodeURIComponent(WORK)}`)
   const [work] = (await found.json()).items as { id: number }[]

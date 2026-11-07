@@ -371,14 +371,37 @@ export function workToDraft(work: AdminWork): WorkDraft {
  * Une ligne d'auteur, d'éditeur ou d'œuvre liée sans fiche choisie, ou un lien avec libellé mais
  * sans adresse : `draftToWorkBody` les ignorerait, la saisie serait perdue sans un mot.
  */
+/** Erreur affichée quand l'enregistrement est refusé à cause de `hasIncompleteRows`. */
+export const INCOMPLETE_ROWS_ERROR_KEY = 'admin.error.incompleteRows'
+
 export function hasIncompleteRows(draft: WorkDraft): boolean {
-  return (
-    draft.credits.some((row) => row.person === null) ||
-    draft.publishers.some((row) => row.publisher === null) ||
-    draft.relations.some((row) => row.work === null) ||
-    draft.links.some((row) => row.url.trim() === '' && row.label.trim() !== '')
-  )
+  return incompleteSections(draft).length > 0
 }
+
+/** Les sections de la fiche qui contiennent une ligne incomplète (règle de `hasIncompleteRows`). */
+export function incompleteSections(draft: WorkDraft): WorkSection[] {
+  const isIncomplete: Record<WorkSection, boolean> = {
+    info: false,
+    texts: false,
+    relations: draft.relations.some((row) => row.work === null),
+    links: draft.links.some((row) => row.url.trim() === '' && row.label.trim() !== ''),
+    people:
+      draft.credits.some((row) => row.person === null) ||
+      draft.publishers.some((row) => row.publisher === null),
+  }
+  return WORK_SECTIONS.filter((section) => isIncomplete[section])
+}
+
+// Une ligne est « saisie » quand la retirer ferait perdre quelque chose : elle demande alors confirmation.
+const hasText = (value: string) => value.trim() !== ''
+
+export const isTitleRowFilled = (row: WorkDraft['titles'][number]) => hasText(row.title)
+export const isSynopsisRowFilled = (row: WorkDraft['synopses'][number]) => hasText(row.text)
+export const isCreditRowFilled = (row: WorkDraft['credits'][number]) => row.person !== null
+export const isPublisherRowFilled = (row: WorkDraft['publishers'][number]) => row.publisher !== null
+export const isRelationRowFilled = (row: WorkDraft['relations'][number]) => row.work !== null
+export const isLinkRowFilled = (row: WorkDraft['links'][number]) =>
+  hasText(row.url) || hasText(row.label)
 
 /** Corps de `PUT/POST /admin/works` ; les lignes laissées vides sont ignorées. */
 export function draftToWorkBody(draft: WorkDraft) {

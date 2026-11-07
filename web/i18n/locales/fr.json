@@ -593,6 +593,14 @@
     },
     "back": "Catalogue",
     "save": "Enregistrer",
+    "pickerRequired": "Choisis une proposition dans la liste.",
+    "sectionIncomplete": "Contient une ligne incomplète",
+    "rowRemove": {
+      "title": "Retirer cette ligne ?",
+      "text": "Ce que tu as saisi dans cette ligne sera perdu.",
+      "confirm": "Retirer",
+      "cancel": "Garder"
+    },
     "leave": {
       "title": "Quitter sans enregistrer ?",
       "text": "Les modifications de cette fiche seront perdues.",

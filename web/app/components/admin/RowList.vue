@@ -4,14 +4,29 @@
 // `columns` : colonnes (CSS) des champs d'une ligne dès la tablette ; une colonne en dessous.
 // `rowLabel` : chaque ligne devient une carte à en-tête (« Titre 1 » et le bouton de retrait) ; sans
 // elle, le bouton de retrait est à droite des champs.
-defineProps<{
+// `isFilled` : une ligne qui répond « vrai » demande confirmation avant d'être retirée ; sans lui (ou
+// pour une ligne vide) le retrait est immédiat.
+const props = defineProps<{
   items: T[]
   addLabel: string
   removeLabel: string
   columns?: string
   rowLabel?: string
+  isFilled?: (item: T) => boolean
 }>()
 const emit = defineEmits<{ add: []; remove: [index: number] }>()
+const isConfirming = ref(false)
+// Gardé après la fermeture de la modale : elle se ferme avant d'émettre « confirm ».
+const pendingIndex = ref(0)
+
+function requestRemove(index: number) {
+  if (props.isFilled?.(props.items[index] as T)) {
+    pendingIndex.value = index
+    isConfirming.value = true
+  } else {
+    emit('remove', index)
+  }
+}
 </script>
 
 <template>
@@ -36,7 +51,7 @@ const emit = defineEmits<{ add: []; remove: [index: number] }>()
           class="row-list__remove"
           :aria-label="removeLabel"
           data-testid="row-list-remove"
-          @click="emit('remove', index)"
+          @click="requestRemove(index)"
         >
           <Icon name="tabler:x" size="16" aria-hidden="true" />
         </UiButton>
@@ -51,6 +66,11 @@ const emit = defineEmits<{ add: []; remove: [index: number] }>()
     >
       <Icon name="tabler:plus" size="16" aria-hidden="true" />{{ addLabel }}
     </UiButton>
+    <AdminRowRemoveConfirm
+      v-if="isFilled"
+      v-model="isConfirming"
+      @confirm="emit('remove', pendingIndex)"
+    />
   </div>
 </template>
 

@@ -48,4 +48,51 @@ describe('AdminRowList', () => {
     expect(wrapper.emitted('add')).toHaveLength(1)
     expect(wrapper.emitted('remove')?.[0]).toEqual([1])
   })
+
+  describe('avec `isFilled`', () => {
+    const mountFilledList = () =>
+      mountSuspended(AdminRowList, {
+        props: {
+          items: ['', 'texte'],
+          addLabel: 'Ajouter',
+          removeLabel: 'Retirer',
+          isFilled: (item: unknown) => item !== '',
+        },
+        attachTo: document.body,
+      })
+    const removeButtons = (wrapper: Awaited<ReturnType<typeof mountFilledList>>) =>
+      wrapper.findAll('[data-testid="row-list-remove"]')
+
+    it('retire tout de suite une ligne vide, sans confirmation', async () => {
+      const wrapper = await mountFilledList()
+
+      await removeButtons(wrapper)[0]!.trigger('click')
+
+      expect(wrapper.emitted('remove')?.[0]).toEqual([0])
+      expect(wrapper.get('dialog').element.open).toBe(false)
+      wrapper.unmount()
+    })
+
+    it('demande confirmation pour une ligne saisie et ne retire qu’après accord', async () => {
+      const wrapper = await mountFilledList()
+
+      await removeButtons(wrapper)[1]!.trigger('click')
+      expect(wrapper.emitted('remove')).toBeUndefined()
+      expect(wrapper.get('dialog').element.open).toBe(true)
+
+      await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+      expect(wrapper.emitted('remove')?.[0]).toEqual([1])
+      wrapper.unmount()
+    })
+
+    it('garde la ligne quand on annule', async () => {
+      const wrapper = await mountFilledList()
+
+      await removeButtons(wrapper)[1]!.trigger('click')
+      await wrapper.get('[data-testid="confirm-cancel"]').trigger('click')
+
+      expect(wrapper.emitted('remove')).toBeUndefined()
+      wrapper.unmount()
+    })
+  })
 })

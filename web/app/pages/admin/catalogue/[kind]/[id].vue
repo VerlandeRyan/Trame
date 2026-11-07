@@ -143,6 +143,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
     />
     <AdminArchiveConfirm
       v-model="confirmingArchive"
+      data-testid="archive-confirm"
       :kind="kind"
       :impact="record?.impact"
       @confirm="archive"

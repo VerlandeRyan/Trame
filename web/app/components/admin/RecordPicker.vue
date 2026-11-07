@@ -3,13 +3,16 @@ import type { RecordRef } from '~/utils/admin'
 import { MENU_PREFERRED_HEIGHT_PX } from '~/utils/menu'
 
 // Choisit un enregistrement du catalogue par recherche ; `search` est fourni par la page.
+// `invalid` : aucune fiche n'est choisie alors qu'il en faut une (cadre rouge et message).
 const props = defineProps<{
   label: string
   placeholder: string
   clearLabel: string
   search: (text: string) => Promise<RecordRef[]>
+  invalid?: boolean
 }>()
 const model = defineModel<RecordRef | null>({ default: null })
+const { t } = useI18n()
 
 const SEARCH_DELAY_MS = 200
 const uid = useId()
@@ -72,19 +75,22 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 <template>
   <div ref="root" class="picker">
-    <div v-if="model" class="picker__chosen" data-testid="picker-chosen">
-      <span class="picker__label">{{ model.label }}</span>
-      <button
-        type="button"
-        class="picker__clear"
-        :title="clearLabel"
-        :aria-label="clearLabel"
-        data-testid="picker-clear"
-        @click="model = null"
-      >
-        <Icon name="tabler:x" size="16" aria-hidden="true" />
-      </button>
-    </div>
+    <template v-if="model">
+      <span class="picker__name">{{ label }}</span>
+      <div class="picker__chosen" data-testid="picker-chosen">
+        <span class="picker__label">{{ model.label }}</span>
+        <button
+          type="button"
+          class="picker__clear"
+          :title="clearLabel"
+          :aria-label="clearLabel"
+          data-testid="picker-clear"
+          @click="model = null"
+        >
+          <Icon name="tabler:x" size="16" aria-hidden="true" />
+        </button>
+      </div>
+    </template>
     <template v-else>
       <label :for="`${uid}-input`" class="picker__name">{{ label }}</label>
       <div class="picker__search">
@@ -94,6 +100,10 @@ onBeforeUnmount(() => clearTimeout(timer))
           v-model="text"
           autocomplete="off"
           :placeholder="placeholder"
+          class="picker__field"
+          :class="{ 'picker__field--invalid': invalid }"
+          :aria-invalid="invalid ? 'true' : undefined"
+          :aria-describedby="invalid ? `${uid}-error` : undefined"
           data-testid="picker-input"
           @input="onInput"
           @focus="showResults"
@@ -113,6 +123,10 @@ onBeforeUnmount(() => clearTimeout(timer))
           </li>
         </ul>
       </div>
+      <p v-if="invalid" :id="`${uid}-error`" class="picker__error" data-testid="picker-error">
+        <Icon name="tabler:alert-circle" size="16" aria-hidden="true" />
+        {{ t('admin.pickerRequired') }}
+      </p>
     </template>
   </div>
 </template>
@@ -133,6 +147,20 @@ onBeforeUnmount(() => clearTimeout(timer))
 // Ancre de la liste : collée au champ, jamais au nom du champ qui le précède.
 .picker__search {
   position: relative;
+}
+
+.picker__field--invalid {
+  border-color: var(--color-danger);
+}
+
+.picker__error {
+  display: flex;
+  gap: var(--space-1);
+  align-items: center;
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 0.8125rem;
+  font-weight: 700;
 }
 
 .picker__chosen {
@@ -160,7 +188,8 @@ onBeforeUnmount(() => clearTimeout(timer))
   flex: none;
   place-items: center;
   width: var(--touch);
-  height: var(--touch);
+  // Dans le cadre : la case garde la hauteur du champ de recherche (comme `UiField`).
+  height: calc(var(--touch) - 6px);
   margin-right: calc(var(--space-3) * -1);
   border: 0;
   background: transparent;

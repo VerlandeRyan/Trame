@@ -158,13 +158,19 @@ $tilt-tiers: (
 // Ouverture d'un menu déroulant : fondu et glissement de 4 px depuis le côté du bouton
 // (`$above` : le menu s'ouvre au-dessus, il vient donc du bas).
 @mixin menu-open-animation($above: false) {
-  $offset: if($above, 4px, -4px);
+  $side: 'below';
+  $offset: -4px;
+
+  @if $above {
+    $side: 'above';
+    $offset: 4px;
+  }
 
   @media (prefers-reduced-motion: no-preference) {
-    animation: 0.12s ease-out menu-open-#{if($above, 'above', 'below')};
+    animation: 0.12s ease-out menu-open-#{$side};
 
     @at-root {
-      @keyframes menu-open-#{if($above, 'above', 'below')} {
+      @keyframes menu-open-#{$side} {
         from {
           opacity: 0;
           transform: translateY($offset);
