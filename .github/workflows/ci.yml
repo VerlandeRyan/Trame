@@ -254,3 +254,28 @@ jobs:
           projectBaseDir: api
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # Ce que les tests hors Docker ne voient pas : un COPY oublié (#104), un fichier de test
+  # embarqué, des migrations absentes de l'image.
+  images:
+    name: Images Docker (build et démarrage)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Relire les scripts shell (shellcheck, présent sur le runner)
+        run: shellcheck scripts/*.sh
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version-file: .nvmrc
+          # `.nvmrc` dit « 24 » : sans cela, un Node 24.x plus ancien déjà sur le runner serait pris.
+          check-latest: true
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      # Sert uniquement à appliquer les migrations : l'image api n'embarque pas node-pg-migrate.
+      - run: npm ci --ignore-scripts
+        working-directory: api
+      - run: docker build --tag trame-api:smoke api
+      - run: docker build --tag trame-web:smoke web
+      - name: Démarrer les images et interroger l'API et le web
+        run: bash scripts/smoke-test-images.sh

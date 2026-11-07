@@ -18,6 +18,9 @@ RUN apk upgrade --no-cache \
 COPY --from=build /app/package.json ./
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+# Nécessaires au déploiement : schéma de la base et promotion du premier administrateur.
+COPY migrations ./migrations
+COPY scripts/promote-admin.mjs ./scripts/promote-admin.mjs
 USER node
 EXPOSE 3000
 CMD ["node", "dist/server.js"]
