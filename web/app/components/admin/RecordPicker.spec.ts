@@ -24,6 +24,18 @@ function mountPicker(modelValue: RecordRef | null = null, search = vi.fn(async (
   }
 }
 
+const mountInvalidPicker = (modelValue: RecordRef | null) =>
+  mountSuspended(AdminRecordPicker, {
+    props: {
+      modelValue,
+      label: 'Personne',
+      placeholder: 'Rechercher…',
+      clearLabel: 'Effacer le choix',
+      search: vi.fn(async () => RESULTS),
+      invalid: true,
+    },
+  }).then((wrapper) => ({ wrapper }))
+
 describe('AdminRecordPicker', () => {
   beforeEach(() => vi.useFakeTimers())
   afterEach(() => vi.useRealTimers())
@@ -88,6 +100,32 @@ describe('AdminRecordPicker', () => {
     await wrapper.get('[data-testid="picker-clear"]').trigger('click')
 
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([null])
+  })
+
+  it('marque le champ non choisi quand il est invalide, et le relie à son message', async () => {
+    const { wrapper } = await mountInvalidPicker(null)
+
+    const message = wrapper.get('[data-testid="picker-error"]')
+    expect(message.text()).toBe('Choisis une proposition dans la liste.')
+    const input = wrapper.get('[data-testid="picker-input"]')
+    expect(input.attributes('aria-invalid')).toBe('true')
+    expect(input.attributes('aria-describedby')).toBe(message.attributes('id'))
+    expect(wrapper.get('.picker__field').classes()).toContain('picker__field--invalid')
+  })
+
+  it('n’affiche aucune erreur quand une fiche est choisie ou quand le champ est valide', async () => {
+    expect(
+      (await mountInvalidPicker(RESULTS[0]!)).wrapper.find('[data-testid="picker-error"]').exists(),
+    ).toBe(false)
+    const valid = await mountPicker(null).wrapper
+    expect(valid.find('[data-testid="picker-error"]').exists()).toBe(false)
+    expect(valid.get('[data-testid="picker-input"]').attributes('aria-invalid')).toBeUndefined()
+  })
+
+  it('garde le nom du champ au-dessus du choix fait', async () => {
+    const wrapper = await mountPicker(RESULTS[0]!).wrapper
+
+    expect(wrapper.get('.picker__name').text()).toBe('Personne')
   })
 
   it('écarte la réponse d’une recherche plus lente que la suivante', async () => {

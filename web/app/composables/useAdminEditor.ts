@@ -72,7 +72,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   async function save(): Promise<boolean> {
     errorKey.value = undefined
     if (kind === 'works' && hasIncompleteRows(work.value)) {
-      errorKey.value = 'admin.error.incompleteRows'
+      errorKey.value = INCOMPLETE_ROWS_ERROR_KEY
       return false
     }
     saving.value = true

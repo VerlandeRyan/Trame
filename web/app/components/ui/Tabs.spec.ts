@@ -107,4 +107,20 @@ describe('UiTabs', () => {
       ['dropped'],
     ])
   })
+
+  it('signale par un point rouge, avec son texte, un onglet qui a une alerte', async () => {
+    const wrapper = await mountSuspended(UiTabs, {
+      props: {
+        tabs: [...tabs.slice(0, 2), { id: 'bad', label: 'Liens', alert: 'Ligne incomplète' }],
+        label: 'Statuts',
+        modelValue: 'all',
+      },
+    })
+
+    const alerts = wrapper.findAll('.tabs__alert')
+    expect(alerts).toHaveLength(1)
+    expect(alerts[0]!.attributes('role')).toBe('img')
+    expect(alerts[0]!.attributes('aria-label')).toBe('Ligne incomplète')
+    expect(wrapper.findAll('[role="tab"]')[2]!.find('.tabs__alert').exists()).toBe(true)
+  })
 })

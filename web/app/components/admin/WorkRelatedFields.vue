@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import {
   CREDIT_ROLES,
+  isCreditRowFilled,
+  isPublisherRowFilled,
+  isRelationRowFilled,
   optionsOf,
   RELATION_KINDS,
   type AdminKind,
@@ -11,9 +14,11 @@ import {
 // Ce qui relie l'œuvre au reste du catalogue : auteurs, éditeurs, œuvres liées (RG-17 : une seule
 // relation par œuvre liée).
 // `part` : « people » (auteurs et éditeurs) ou « relations » (œuvres liées), un onglet chacun.
+// `showErrors` : après un enregistrement refusé, les lignes sans fiche choisie sont marquées.
 const props = defineProps<{
   part: 'people' | 'relations'
   search: (kind: AdminKind, text: string) => Promise<RecordRef[]>
+  showErrors?: boolean
 }>()
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
@@ -30,6 +35,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
         :add-label="t('admin.work.addCredit')"
         :remove-label="t('admin.work.removeCredit')"
         :row-label="t('admin.work.creditRow')"
+        :is-filled="isCreditRowFilled"
         columns="minmax(0, 1fr) 16rem"
         @add="draft.credits.push({ person: null, role: 'story' })"
         @remove="draft.credits.splice($event, 1)"
@@ -41,6 +47,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             :placeholder="t('admin.work.searchPerson')"
             :clear-label="t('action.clearChoice')"
             :search="searchIn('people')"
+            :invalid="showErrors && item.person === null"
           />
           <AdminSelectField
             v-model="item.role"
@@ -56,6 +63,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
         :add-label="t('admin.work.addPublisher')"
         :remove-label="t('admin.work.removePublisher')"
         :row-label="t('admin.work.publisherRow')"
+        :is-filled="isPublisherRowFilled"
         @add="draft.publishers.push({ publisher: null })"
         @remove="draft.publishers.splice($event, 1)"
       >
@@ -66,6 +74,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             :placeholder="t('admin.work.searchPublisher')"
             :clear-label="t('action.clearChoice')"
             :search="searchIn('publishers')"
+            :invalid="showErrors && item.publisher === null"
           />
         </template>
       </AdminRowList>
@@ -76,6 +85,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
         :add-label="t('admin.work.addRelation')"
         :remove-label="t('admin.work.removeRelation')"
         :row-label="t('admin.work.relationRow')"
+        :is-filled="isRelationRowFilled"
         columns="minmax(0, 1fr) 16rem"
         @add="draft.relations.push({ work: null, relation: 'sequel' })"
         @remove="draft.relations.splice($event, 1)"
@@ -87,6 +97,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             :placeholder="t('admin.work.searchWork')"
             :clear-label="t('action.clearChoice')"
             :search="searchIn('works')"
+            :invalid="showErrors && item.work === null"
           />
           <AdminSelectField
             v-model="item.relation"

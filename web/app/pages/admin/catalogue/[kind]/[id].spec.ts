@@ -186,7 +186,9 @@ describe('page d’édition du catalogue', () => {
     const wrapper = await mountEdit('/admin/catalogue/people/7')
 
     await wrapper.get('[data-testid="admin-archive"]').trigger('click')
-    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+    await wrapper
+      .get('[data-testid="archive-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
     await flushPromises()
 
     expect(sent[0]).toMatchObject({ method: 'POST', path: 'people/7/archive' })
@@ -281,7 +283,9 @@ describe('page d’édition du catalogue', () => {
     const wrapper = await mountEdit('/admin/catalogue/people/7')
 
     await wrapper.get('[data-testid="admin-archive"]').trigger('click')
-    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+    await wrapper
+      .get('[data-testid="archive-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
     await flushPromises()
 
     expect(wrapper.get('[role="alert"]').text()).toContain('encore créditée')

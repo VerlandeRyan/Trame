@@ -589,6 +589,14 @@
     },
     "back": "Catalogue",
     "save": "Save",
+    "pickerRequired": "Choose a suggestion from the list.",
+    "sectionIncomplete": "Contains an incomplete row",
+    "rowRemove": {
+      "title": "Remove this row?",
+      "text": "What you entered in this row will be lost.",
+      "confirm": "Remove",
+      "cancel": "Keep"
+    },
     "leave": {
       "title": "Leave without saving?",
       "text": "The changes made to this record will be lost.",

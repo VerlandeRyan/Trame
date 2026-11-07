@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { optionsOf, type AdminLink } from '~/utils/admin'
+import { isLinkRowFilled, optionsOf, type AdminLink } from '~/utils/admin'
 
 // Liens externes (https) d'une œuvre ou d'une personne, chacun dans une carte ; `kinds` limite les
 // types proposés (le premier est celui d'un nouveau lien).
@@ -16,6 +16,7 @@ const kindOptions = optionsOf(props.kinds, (code) => t(`admin.option.link.${code
     :add-label="t('admin.links.add')"
     :remove-label="t('admin.links.remove')"
     :row-label="t('admin.links.row')"
+    :is-filled="isLinkRowFilled"
     columns="14rem minmax(0, 1fr) minmax(0, 14rem)"
     @add="links.push({ kind: kinds[0] ?? 'read', url: '', label: '' })"
     @remove="links.splice($event, 1)"

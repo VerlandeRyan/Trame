@@ -94,4 +94,30 @@ describe('AdminWorkForm', () => {
     expect(wrapper.get('[role="alert"]').text()).toContain('ne sont pas valides')
     expect(wrapper.get('[data-testid="admin-save"]').attributes('disabled')).toBeDefined()
   })
+
+  describe('lignes incomplètes refusées à l’enregistrement', () => {
+    const alertedTabs = (wrapper: Awaited<ReturnType<typeof mountForm>>['wrapper']) =>
+      wrapper
+        .findAll('[role="tab"]')
+        .filter((tab) => tab.find('.tabs__alert').exists())
+        .map((tab) => tab.text())
+
+    it('marque l’onglet et le champ de la ligne dont la fiche n’est pas choisie', async () => {
+      const { wrapper, draft } = await mountForm({ errorKey: 'admin.error.incompleteRows' })
+      draft.publishers.push({ publisher: null })
+      await wrapper.vm.$nextTick()
+
+      expect(alertedTabs(wrapper)).toEqual(['Auteurs et éditeurs'])
+      expect(wrapper.findAll('[data-testid="picker-error"]')).toHaveLength(1)
+    })
+
+    it('ne marque rien tant que l’enregistrement n’a pas été refusé', async () => {
+      const { wrapper, draft } = await mountForm()
+      draft.publishers.push({ publisher: null })
+      await wrapper.vm.$nextTick()
+
+      expect(alertedTabs(wrapper)).toEqual([])
+      expect(wrapper.find('[data-testid="picker-error"]').exists()).toBe(false)
+    })
+  })
 })

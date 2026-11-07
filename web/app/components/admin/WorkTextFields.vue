@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { optionsOf, SYNOPSIS_SOURCES, TITLE_KINDS, type WorkDraft } from '~/utils/admin'
+import {
+  isSynopsisRowFilled,
+  isTitleRowFilled,
+  optionsOf,
+  SYNOPSIS_SOURCES,
+  TITLE_KINDS,
+  type WorkDraft,
+} from '~/utils/admin'
 
 // Titres alternatifs (par langue) et synopsis (un par langue, avec sa source), chacun dans son panneau.
 const draft = defineModel<WorkDraft>({ required: true })
@@ -18,6 +25,7 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
         :add-label="t('admin.work.addTitle')"
         :remove-label="t('admin.work.removeTitle')"
         :row-label="t('admin.work.titleRow')"
+        :is-filled="isTitleRowFilled"
         columns="9rem 16rem minmax(0, 1fr)"
         @add="draft.titles.push({ language: 'en', kind: 'international', title: '' })"
         @remove="draft.titles.splice($event, 1)"
@@ -49,6 +57,7 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
         :add-label="t('admin.work.addSynopsis')"
         :remove-label="t('admin.work.removeSynopsis')"
         :row-label="t('admin.work.synopsisRow')"
+        :is-filled="isSynopsisRowFilled"
         columns="9rem 16rem minmax(0, 1fr)"
         @add="draft.synopses.push({ language: 'fr', source: 'official', text: '' })"
         @remove="draft.synopses.splice($event, 1)"

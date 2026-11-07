@@ -5,6 +5,8 @@ export interface UiTab {
   count?: number
   // Couleur de statut de lecture (code de library_entry.status).
   status?: 'reading' | 'completed' | 'plan_to_read' | 'on_hold' | 'dropped'
+  // Texte d'alerte : l'onglet porte un point rouge (erreur à corriger dans ce panneau).
+  alert?: string
 }
 
 // `underline` : onglets de l'administration, texte souligné au lieu de pastilles.
@@ -122,6 +124,15 @@ function registerButton(element: unknown, index: number) {
       />
       {{ tab.label }}
       <span v-if="tab.count !== undefined" class="tabs__count">{{ tab.count }}</span>
+      <svg
+        v-if="tab.alert"
+        class="tabs__alert"
+        viewBox="0 0 10 10"
+        role="img"
+        :aria-label="tab.alert"
+      >
+        <circle cx="5" cy="5" r="5" />
+      </svg>
     </button>
     <span v-if="hasHiddenAfter" class="tabs__edge tabs__edge--end">
       <button
@@ -273,6 +284,13 @@ function registerButton(element: unknown, index: number) {
   height: 10px;
   border: 1px solid var(--color-ink);
   border-radius: 50%;
+}
+
+.tabs__alert {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  fill: var(--color-danger);
 }
 
 .tabs__count {
