@@ -39,7 +39,7 @@ En cas d'erreur : **révoquer/changer le secret immédiatement** ; réécrire l'
 - `main` est toujours déployable.
 
 ## 4. Hooks locaux (`lefthook`, fonctionnent sans GitHub)
-- **pre-commit** : `gitleaks` (secrets) et ESLint sur les fichiers modifiés de `web/`, `api/` et `e2e/`. Prettier n'y est pas : lancer `format:check` avant de proposer un commit.
+- **pre-commit** : `gitleaks` (secrets) et ESLint sur les fichiers modifiés de `web/`, `api/` et `e2e/`, et `shellcheck` sur les `scripts/*.sh` modifiés (même contrôle en CI). Prettier n'y est pas : lancer `format:check` avant de proposer un commit.
 - **commit-msg** : `commitlint` (format ci-dessus) et contrôle du préfixe de branche (`scripts/check-branch.sh`).
 
 ## 5. Tickets
@@ -74,7 +74,7 @@ La documentation doit rester petite pour rester juste et peu coûteuse à lire.
 - Passation de session (`private/etat-courant.md`) mise à jour en fin de session seulement.
 
 ## 8. CI (GitHub Actions)
-`ci.yml` : secrets (gitleaks), workflows (actionlint), Semgrep, commitlint, web (types, lint, tests, build, Sonar), API (migrations, tests, Sonar), E2E Playwright (Chromium bureau et WebKit iPhone) ; `codeql.yml` : CodeQL ; `pr-lien-ticket.yml` : lien PR ↔ ticket. Déploiement à définir avec l'hébergement.
+`ci.yml` : secrets (gitleaks), workflows (actionlint), Semgrep, commitlint, web (types, lint, tests, build, Sonar), API (migrations, tests, Sonar), E2E Playwright (Chromium bureau et WebKit iPhone), images Docker (build, puis `scripts/smoke-test-images.sh` : `/health` de l'API et `/api/v1/works/facets` via le web) ; `codeql.yml` : CodeQL ; `pr-lien-ticket.yml` : lien PR ↔ ticket. Déploiement à définir avec l'hébergement.
 
 ## 9. Technologies
 Node LTS, TypeScript stable, aucune version préliminaire, versions épinglées, mises à jour par Renovate, une montée de version majeure à la fois.
