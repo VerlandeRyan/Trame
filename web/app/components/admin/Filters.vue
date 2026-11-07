@@ -228,7 +228,7 @@ const sheetGroups = computed(
   flex: 2;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .filters__inline {
     display: none;
   }

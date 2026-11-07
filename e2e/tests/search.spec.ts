@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 
 // Bureau par défaut, y compris dans le projet iPhone ; les tests mobiles fixent leur largeur.
 test.use({ viewport: { width: 1280, height: 800 } })
@@ -7,7 +8,7 @@ test.use({ viewport: { width: 1280, height: 800 } })
 test.describe('suggestions', () => {
   test('apparaissent dès 2 caractères et mènent à la fiche', async ({ page }) => {
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     const input = page.getByTestId('search-input').first()
 
     await input.fill('l')
@@ -27,7 +28,7 @@ test.describe('suggestions', () => {
 
   test('se rouvrent au clic dans le champ', async ({ page }) => {
     await page.goto('/search?q=basalte')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     const input = page.getByTestId('search-input').first()
     const menu = page.getByTestId('search-suggestions').first()
     await expect(menu).toBeHidden()
@@ -42,7 +43,7 @@ test.describe('suggestions', () => {
 
   test('se ferment avec Échap et Entrée ouvre la page de résultats', async ({ page }) => {
     await page.goto('/')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     const input = page.getByTestId('search-input').first()
 
     await input.fill('basalte')
@@ -60,7 +61,7 @@ test.describe('page de résultats', () => {
   test('liste les résultats, filtre par type et retire le filtre', async ({ page }) => {
     await page.goto('/search?q=basalte')
     // Hydratation terminée : sinon la case cochée trop tôt n'est pas prise en compte.
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await expect(page.getByTestId('search-result')).toHaveCount(3)
 
     await page.getByTestId('filter-type-oneshot').first().check()
@@ -79,7 +80,7 @@ test.describe('page de résultats', () => {
   }) => {
     await page.goto('/')
     await page.goto('/search?q=basalte')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
 
     await page.getByTestId('filter-type-series').first().check()
     await expect(page).toHaveURL(/type=series/)
@@ -93,7 +94,7 @@ test.describe('page de résultats', () => {
 
   test('trie par titre ou par date d’ajout et garde le choix dans l’adresse', async ({ page }) => {
     await page.goto('/search?q=basalte')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     const titles = page.getByTestId('search-result').locator('h3')
     await expect(titles).toHaveCount(3)
 
@@ -119,7 +120,7 @@ test.describe('page de résultats', () => {
 
   test('« Tout replier » masque les valeurs, la pastille compte le choix', async ({ page }) => {
     await page.goto('/search?q=basalte&type=series')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     const aside = page.locator('aside')
 
     await expect(aside.getByTestId('filter-badge')).toHaveText('1')
@@ -133,7 +134,7 @@ test.describe('page de résultats', () => {
 
   test('plusieurs valeurs par catégorie : elles s’additionnent', async ({ page }) => {
     await page.goto('/search?q=basalte&type=series')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await expect(page.getByTestId('search-result')).toHaveCount(1)
 
     await page.getByTestId('filter-type-oneshot').first().check()
@@ -147,7 +148,7 @@ test.describe('page de résultats', () => {
 
   test('changer de langue garde la recherche et les filtres dans l’adresse', async ({ page }) => {
     await page.goto('/search?q=basalte&type=series,oneshot&sort=title')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
 
     await page.getByRole('button', { name: "Langue de l'interface" }).click()
     await page.getByRole('link', { name: /English/ }).click()
@@ -162,7 +163,7 @@ test.describe('page de résultats', () => {
 
   test('sans texte de recherche : le catalogue, du plus récemment ajouté', async ({ page }) => {
     await page.goto('/search')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
 
     // Les 11 œuvres de démo, plus celles que les autres parcours (administration) créent en parallèle.
     const count = page.getByTestId('search-count')
@@ -178,7 +179,7 @@ test.describe('page de résultats', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 360 })
     await page.goto('/search')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
 
@@ -196,7 +197,7 @@ test.describe('page de résultats', () => {
   }) => {
     await page.setViewportSize({ width: 1280, height: 400 })
     await page.goto('/search?q=basalte')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await page.evaluate(() => {
       const spacer = document.createElement('div')
       spacer.style.height = '1500px'
@@ -218,11 +219,11 @@ test.describe('page de résultats', () => {
     page,
   }) => {
     await page.goto('/search')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await page.getByRole('button', { name: "Langue de l'interface" }).click()
     await page.getByRole('link', { name: /English/ }).click()
     await expect(page).toHaveURL(/\/en\/search/)
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
 
     // Sous charge, la page anglaise peut ne pas être hydratée : on recommence la saisie jusqu'à
     // ce que le champ réagisse.
@@ -239,7 +240,7 @@ test.describe('page de résultats', () => {
   test('aucun résultat : carte centrée, sans colonne de filtres', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 })
     await page.goto('/search?q=xyzqw')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
 
     const card = await page.getByTestId('search-empty').boundingBox()
     expect(card).toBeTruthy()
@@ -262,11 +263,11 @@ test.describe('page de résultats', () => {
   test('mobile : le champ est dans la page et les filtres dans une fenêtre', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/search?q=xyzqw')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await expect(page.getByRole('button', { name: /^Filtres/ })).toHaveCount(0)
 
     await page.goto('/search?q=basalte')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
 
     await expect(page.getByTestId('search-open')).toHaveCount(0)
     await page.getByRole('button', { name: /^Filtres/ }).click()
@@ -299,7 +300,7 @@ test.describe('page de résultats', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/search?q=basalte&type=series')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await page.getByRole('button', { name: /^Filtres/ }).click()
     await expect(page.getByRole('dialog')).toBeVisible()
 
@@ -314,7 +315,7 @@ test.describe('page de résultats', () => {
   }) => {
     await page.setViewportSize({ width: 390, height: 844 })
     await page.goto('/work/1-les-lanternes-de-brume')
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     const title = page.getByTestId('work-title')
 
     await page.getByTestId('search-open').click()
@@ -360,7 +361,7 @@ test('pagination : les pages montent d’1 px au survol, la page courante ne cha
     },
   )
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const input = page.getByTestId('search-input').first()
   await input.fill('œuvre')
   await input.press('Enter')

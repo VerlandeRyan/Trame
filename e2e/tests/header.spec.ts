@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 import { signUp, uniqueHandle } from '../support/session.js'
 
 // L'accueil porte son propre champ de recherche : ces contrôles de l'en-tête se font sur une fiche.
@@ -25,6 +26,7 @@ test("« Se connecter » est le bouton bleu de l'en-tête", async ({ page }) => 
 
 test("le lien d'évitement mène au contenu", async ({ page }) => {
   await page.goto('/')
+  await waitForHydration(page)
   const skipLink = page.getByRole('link', { name: 'Aller au contenu' })
   await skipLink.focus()
   await expect(skipLink).toBeVisible()
@@ -44,7 +46,7 @@ for (const width of [320, 390]) {
 
     for (const path of [WORK_PATH, '/']) {
       await page.goto(path)
-      await page.waitForLoadState('networkidle')
+      await waitForHydration(page)
       await expect(page.getByTestId('account-menu')).toContainText(`@${handle.slice(0, 3)}`)
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -61,7 +63,7 @@ test('le menu du compte liste les entrées, sans Administration pour un membre',
   await page.setViewportSize({ width: 390, height: 600 })
   await signUp(context)
   await page.goto(WORK_PATH)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByTestId('account-menu').click()
 
@@ -108,7 +110,7 @@ test('le menu des langues est intégré, calé sur le bouton, et se ferme avec �
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const trigger = page.getByRole('button', { name: "Langue de l'interface" })
   // Toute la carte répond : un clic sur la marge gauche, à côté du globe, ouvre aussi le menu.
@@ -149,7 +151,7 @@ test("petit mobile (320 px) : l'en-tête tient sur une ligne, menu des langues o
 }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('button', { name: "Langue de l'interface" }).click()
 
   const overflow = await page.evaluate(
@@ -165,7 +167,7 @@ test('bureau : Explorer ouvre formats et genres avec compteurs, Échap rend le f
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto(WORK_PATH)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const trigger = page.getByTestId('explore-open')
   const panel = page.getByTestId('explore-panel')
@@ -187,7 +189,7 @@ test("bureau : un clic à l'extérieur ferme Explorer, un format mène à la rec
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto(WORK_PATH)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const trigger = page.getByTestId('explore-open')
   const panel = page.getByTestId('explore-panel')
@@ -206,7 +208,7 @@ test("bureau : un clic à l'extérieur ferme Explorer, un format mène à la rec
 test('bureau : « Voir tout le catalogue » mène à la recherche', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByTestId('explore-open').click()
   await page.getByTestId('explore-all-catalog').click()
@@ -234,7 +236,7 @@ test("bureau : le bouton reste blanc ouvert, la fenêtre reste dans l'écran à 
   for (const width of [800, 1280]) {
     await page.setViewportSize({ width, height: 800 })
     await page.goto(WORK_PATH)
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await page.getByTestId('explore-open').click()
     const panel = page.getByTestId('explore-panel')
     await expect(panel.locator('[data-testid^="explore-format-"]').first()).toBeVisible()
@@ -253,7 +255,7 @@ test("mobile : ☰ ouvre Explorer, recherche et menu s'excluent, zones de clic �
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto(WORK_PATH)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const trigger = page.getByTestId('explore-open')
   const box = await trigger.boundingBox()
@@ -279,7 +281,7 @@ test("mobile : ☰ ouvre Explorer, recherche et menu s'excluent, zones de clic �
 test('petit mobile (320 px) : ☰ et volet ouvert sans défilement horizontal', async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 640 })
   await page.goto(WORK_PATH)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByTestId('explore-open').click()
   await expect(page.getByTestId('explore-panel')).toBeVisible()
 
@@ -296,7 +298,7 @@ test('bureau : après un lien du menu puis le retour, Explorer se rouvre avec se
 }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const trigger = page.getByTestId('explore-open')
   const panel = page.getByTestId('explore-panel')
@@ -319,7 +321,7 @@ test('mobile : le titre « Explorer » replie et déplie le volet, le ☰ passe 
 }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const trigger = page.getByTestId('explore-open')
   // Le centre du bouton appartient au bouton, pas à la trame de l'en-tête.
@@ -348,7 +350,7 @@ test('mobile : le titre « Explorer » replie et déplie le volet, le ☰ passe 
 test('en anglais : le contenu du menu Explorer est traduit', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/en')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByTestId('explore-open').click()
   const panel = page.getByTestId('explore-panel')

@@ -379,7 +379,7 @@ const sentinel = useLoadMoreOnScroll(list)
 .list__columns {
   display: none;
 
-  @media (min-width: 768px) {
+  @media (min-width: 1024px) {
     display: grid;
     grid-template-columns: var(--list-columns);
     gap: var(--space-3);

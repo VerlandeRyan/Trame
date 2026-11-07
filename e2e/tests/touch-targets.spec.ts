@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { signInAsAdmin } from '../support/admin.js'
+import { waitForHydration } from '../support/hydration.js'
 import { signUp } from '../support/session.js'
 
 // #156 : au doigt (`pointer: coarse`), chaque petit lien ou bouton répond sur 44 px de haut sans
@@ -37,14 +38,14 @@ async function heightOf(page: Page, selector: string): Promise<number> {
 
 test('accueil : logo et « Tout voir » ont une zone de 44 px', async ({ page }) => {
   await page.goto('/')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   expect(await stolenZones(page, '.layout-header__logo')).toEqual([])
   expect(await stolenZones(page, '.shelf__all')).toEqual([])
 })
 
 test('recherche : titres, « Filtres » et « + » ont une zone de 44 px', async ({ page }) => {
   await page.goto('/search?q=basalte')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   expect(await stolenZones(page, '.result__link')).toEqual([])
   expect(await heightOf(page, '.search-page__filters-button')).toBeGreaterThanOrEqual(TOUCH)
   expect(await heightOf(page, '.result__add')).toBeGreaterThanOrEqual(TOUCH)
@@ -53,13 +54,13 @@ test('recherche : titres, « Filtres » et « + » ont une zone de 44 px', async
 test('administration : « ‹ Catalogue » a une zone de 44 px', async ({ context, page }) => {
   await signInAsAdmin(context)
   await page.goto('/admin/catalogue/works/new')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   expect(await stolenZones(page, '[data-testid="admin-back"]')).toEqual([])
 })
 
 test('liste d’un membre : « Retour au profil » a une zone de 44 px', async ({ context, page }) => {
   const handle = await signUp(context)
   await page.goto(`/u/${handle}/list`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   expect(await stolenZones(page, '[data-testid="member-list-back"]')).toEqual([])
 })

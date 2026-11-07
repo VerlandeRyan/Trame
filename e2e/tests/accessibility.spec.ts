@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 
 // Contrôle automatique d'accessibilité (WCAG 2 A et AA) sur chaque page existante.
 const pages = [
@@ -26,7 +27,7 @@ test("aucune violation d'accessibilité : suggestions ouvertes", async ({ page }
   // Le champ de l'en-tête n'existe qu'au bureau (le mobile le déploie depuis une icône).
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/search?q=basalte')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByTestId('search-input').first().fill('lanternes')
   await expect(page.getByTestId('search-suggestions').first()).toBeVisible()
 
@@ -35,7 +36,7 @@ test("aucune violation d'accessibilité : suggestions ouvertes", async ({ page }
 
 test("aucune violation d'accessibilité : menu de tri ouvert", async ({ page }) => {
   await page.goto('/search?q=basalte')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByTestId('search-sort').click()
   await expect(page.getByRole('option', { name: 'Pertinence' })).toBeVisible()
 
@@ -45,7 +46,7 @@ test("aucune violation d'accessibilité : menu de tri ouvert", async ({ page }) 
 test("aucune violation d'accessibilité : feuille de filtres mobile ouverte", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/search?q=basalte&type=series')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('button', { name: /^Filtres/ }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
 
@@ -55,7 +56,7 @@ test("aucune violation d'accessibilité : feuille de filtres mobile ouverte", as
 for (const { name, path } of pages) {
   test(`aucune violation d'accessibilité : ${name}`, async ({ page }) => {
     await page.goto(path)
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
 
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

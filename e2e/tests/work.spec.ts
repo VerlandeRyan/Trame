@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 
 const WORK_PATH = '/work/1-les-lanternes-de-brume'
 
@@ -95,7 +96,7 @@ test('changer de langue sur une fiche recharge la fiche dans la nouvelle langue'
   page,
 }) => {
   await page.goto(WORK_PATH)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByRole('button', { name: "Langue de l'interface" }).click()
   await page.getByRole('link', { name: /English/ }).click()
@@ -106,7 +107,7 @@ test('changer de langue sur une fiche recharge la fiche dans la nouvelle langue'
 
 test("cliquer sur une œuvre liée ouvre sa fiche sans redirection d'erreur", async ({ page }) => {
   await page.goto('/work/2-chroniques-de-basalte')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByRole('link', { name: /Histoires de Cendre/ }).click()
 
@@ -119,7 +120,7 @@ test('beaucoup d’auteurs : trois visibles, « + N autres auteurs » et « Voir
 }) => {
   // L'anthologie du jeu de démo crédite cinq personnes.
   await page.goto('/work/7-basalte-le-recueil-des-braises')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   const people = page.locator('.people')
 
   await expect(people.locator('li')).toHaveCount(3)

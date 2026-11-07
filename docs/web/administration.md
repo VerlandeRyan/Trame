@@ -21,7 +21,7 @@ Comportement côté front (Nuxt) de l'administration (#26, US-11, maquette 22). 
 - Chaque onglet a sa recherche (changer d'onglet la vide, `queryForTab`), son placeholder et son bouton de création (« Nouvelle œuvre / personne / éditeur », absent des archives).
 - Les œuvres ont en plus `admin/Filters` : type, format, statut en `UiMultiSelect` (bouton à cadre, cases à cocher, OU dans un filtre, valeurs en liste séparée par des virgules dans l'adresse) ; tri A→Z / complétude en `UiSelect boxed` ; « Réinitialiser » seulement si un filtre est actif. Leur recherche porte aussi sur le nom des auteurs (pas de champ « Auteur »).
 - Barre `admin/Nav`, onglets soulignés (`UiTabs underline` : Œuvres, Personnes, Éditeurs et plateformes, Archives avec leur nombre pour le type en cours).
-- Tableau `admin/ResourceRows` : type · format, auteur, statut, complétude, « Modifier » ou « Restaurer ». Archiver se fait depuis la fiche (bouton `danger`, enregistrer en `success`). La feuille « ⋮ » du mobile est `admin/RowMenu` (`v-model`, émet `restore` et `archive` ; la confirmation reste dans `ResourceRows`).
+- Tableau `admin/ResourceRows` : type · format, auteur, statut, complétude, « Modifier » ou « Restaurer ». Archiver se fait depuis la fiche (bouton `danger`, enregistrer en `success`). Jusqu'à 1023 px (téléphone et tablette) le tableau devient des cartes et les filtres passent dans une feuille. La feuille « ⋮ » est `admin/RowMenu` (`v-model`, émet `restore` et `archive` ; la confirmation reste dans `ResourceRows`).
 - `admin/FilterGroup` (cases sans compteurs, feuille de filtres mobile) reste distinct de `search/FilterGroup` (facettes, compteurs, recherche, « Voir les N autres »).
 - Pastille ADMIN dans l'en-tête.
 

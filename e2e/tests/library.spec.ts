@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 import { signUp, uniqueHandle } from '../support/session.js'
 
 // Fiche de lecture (US-05, US-06) : l'API, la base, la session et le relais Nuxt sont réels ;
@@ -18,7 +19,7 @@ test.afterEach(async ({ context }) => {
 async function openWork(page: Page): Promise<void> {
   await page.goto(WORK_PATH)
   // La fiche de lecture se charge dans le navigateur, une fois la page hydratée.
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 }
 
 const statusButton = (page: Page) => page.getByTestId('library-status')
@@ -89,11 +90,21 @@ test('ajouter une œuvre, la faire avancer, la noter, la dater, puis la retirer'
   await expect(ratingField(page)).toHaveValue('8')
 
   await page.getByTestId('library-dates-toggle').click()
+  // On attend la réponse de l'API pour cette date : recharger avant elle la perdrait, et la réponse
+  // d'un autre enregistrement (la note) ne suffit pas.
+  const dateSaved = page.waitForResponse(
+    (response) =>
+      response.url().includes('/entry') &&
+      response.request().method() === 'PUT' &&
+      (response.request().postData() ?? '').includes('2026-03-04') &&
+      response.ok(),
+  )
   await page.getByTestId('library-finished').fill('2026-03-04')
+  await dateSaved
 
   // Tout est enregistré : rechargée, la fiche retrouve ses valeurs.
   await page.reload()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await expect(statusButton(page)).toContainText('En cours')
   await expect(chaptersField(page)).toHaveValue('1')
   await expect(volumesField(page)).toHaveValue('2')
@@ -150,7 +161,7 @@ for (const [label, dismiss] of [
     await expect(statusButton(page)).toContainText('À lire')
     await expect(chaptersField(page)).toHaveValue('0')
     await page.reload()
-    await page.waitForLoadState('networkidle')
+    await waitForHydration(page)
     await expect(statusButton(page)).toContainText('À lire')
     await expect(chaptersField(page)).toHaveValue('0')
   })

@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { signInAsAdmin } from '../support/admin.js'
+import { waitForHydration } from '../support/hydration.js'
 import { signUp } from '../support/session.js'
 
 // Administration du catalogue (US-11) : l'API, la base, la session et le relais Nuxt sont réels ;
@@ -50,21 +51,21 @@ test('un administrateur crée une personne, un éditeur et une œuvre qui les ci
 }) => {
   // Sans attendre l'hydratation, un clic ou un enregistrement partirait en navigation ou en envoi natif.
   await page.goto('/admin/catalogue?kind=people')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByTestId('admin-new').click()
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.locator('#person-name').fill(PERSON)
   await saveAndWaitForList(page)
   await expect(page.getByTestId('admin-row').filter({ hasText: PERSON })).toBeVisible()
 
   await page.goto('/admin/catalogue/publishers/new')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.locator('#publisher-name').fill(PUBLISHER)
   await saveAndWaitForList(page)
   await expect(page).toHaveURL(/kind=publishers/)
 
   await page.goto('/admin/catalogue/works/new')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.locator('#work-title').fill(WORK)
   await page.getByRole('combobox', { name: /^Langue originale/ }).click()
   await page.getByRole('option', { name: 'allemand (de)' }).click()
@@ -127,8 +128,10 @@ test('les filtres et le tri de la liste des œuvres se combinent', async ({ page
 
 test('revenir d’une fiche garde l’onglet et la recherche de la liste', async ({ page }) => {
   await page.goto(`/admin/catalogue?kind=people&q=${encodeURIComponent(PERSON)}`)
+  await waitForHydration(page)
   await clickRowAction(page, 'edit')
   await expect(page).toHaveURL(/\/admin\/catalogue\/people\/\d+/)
+  await waitForHydration(page)
   await page.getByTestId('admin-back').click()
 
   await expect(page).toHaveURL(/kind=people/)
@@ -140,7 +143,7 @@ test('quitter une fiche modifiée demande confirmation, et une fiche neuve repar
   page,
 }) => {
   await page.goto('/admin/catalogue/works/new')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.locator('#work-title').fill(`${WORK} abandonnée`)
   await page.getByTestId('admin-cancel').click()
   const leave = page.getByTestId('leave-confirm')
@@ -162,7 +165,7 @@ test('retirer une ligne saisie demande confirmation, une ligne vide part tout de
   page,
 }) => {
   await page.goto('/admin/catalogue/works/new')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.getByRole('tab', { name: 'Auteurs et éditeurs' }).click()
   const panel = page.locator('[role="tabpanel"]:visible')
   const rows = panel.getByTestId('row-list-row')
@@ -191,7 +194,7 @@ test('un texte tapé sans choisir de proposition est refusé et la ligne est mar
   page,
 }) => {
   await page.goto('/admin/catalogue/works/new')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
   await page.locator('#work-title').fill(`${WORK} sans éditeur choisi`)
   await page.getByRole('tab', { name: 'Auteurs et éditeurs' }).click()
   const panel = page.locator('[role="tabpanel"]:visible')
@@ -216,7 +219,7 @@ test('enregistrer une fiche modifiée entre-temps est refusé', async ({ page, c
   const [work] = (await found.json()).items as { id: number }[]
   const url = `/api/v1/admin/works/${work!.id}`
   await page.goto(`/admin/catalogue/works/${work!.id}`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   // Une autre session enregistre la fiche pendant qu'elle est ouverte ici.
   const body = await (await context.request.get(url)).json()
@@ -236,6 +239,7 @@ test('archiver masque l’œuvre au public, restaurer la rend', async ({ page, c
   expect(await publicStatus()).toBe(200)
 
   await page.goto(`/admin/catalogue/works/${work!.id}`)
+  await waitForHydration(page)
   await expect(page.getByTestId('admin-state')).toHaveText('Publiée')
   await page.getByTestId('admin-archive').click()
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
@@ -245,6 +249,7 @@ test('archiver masque l’œuvre au public, restaurer la rend', async ({ page, c
   await page.goto(`/admin/catalogue?q=${encodeURIComponent(WORK)}`)
   await expect(page.getByTestId('admin-row')).toHaveCount(0)
   await page.goto(`/admin/catalogue?q=${encodeURIComponent(WORK)}&scope=archived`)
+  await waitForHydration(page)
   await expect(page.getByTestId('admin-row')).toContainText('par @')
   await clickRowAction(page, 'restore')
   await expect(page.getByTestId('admin-row')).toHaveCount(0)
@@ -256,6 +261,7 @@ test('une personne créditée sur une œuvre publiée ne s’archive pas', async
   const [person] = (await found.json()).items as { id: number }[]
 
   await page.goto(`/admin/catalogue/people/${person!.id}`)
+  await waitForHydration(page)
   await page.getByTestId('admin-archive').click()
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
 
@@ -265,7 +271,7 @@ test('une personne créditée sur une œuvre publiée ne s’archive pas', async
 
 test('se déconnecter depuis une page d’administration ramène à l’accueil', async ({ page }) => {
   await page.goto('/admin/catalogue/works/new')
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await page.getByTestId('account-menu').click()
   await page.getByTestId('sign-out').click()

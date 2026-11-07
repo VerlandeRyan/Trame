@@ -221,8 +221,9 @@ const archive = (item: AdminListItem) => setArchived(item, true)
   min-width: 14rem;
   max-width: 28rem;
 
-  // Au mobile la recherche prend toute la ligne, les filtres passent dessous.
-  @media (max-width: 767px) {
+  // Jusqu'à 1279 px la recherche prend toute la ligne, les filtres passent dessous : côte à côte,
+  // le tri retombait seul sur une troisième ligne.
+  @media (max-width: 1279px) {
     flex-basis: 100%;
     max-width: none;
   }

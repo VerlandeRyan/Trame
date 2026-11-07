@@ -55,6 +55,7 @@ GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`
   - pas de code commenté, CSS compris ; une exception de règle porte toujours sa raison en commentaire.
 - Tests : Vitest (unitaires), tests d'API, Playwright (E2E, desktop + WebKit iPhone) avec axe-core sur chaque page.
 - **Logique et API : test rouge d'abord, puis code. Interface visuelle : mockup validé, implémentation, puis capture dans un vrai navigateur** (un test jsdom ne voit pas une mise en page).
+- **Tests E2E stables** : jamais d'attente sur le réseau ni sur une durée (`networkidle`, `waitForTimeout` : refusés par ESLint dans `e2e/`). Après un `goto` ou un `reload`, `waitForHydration(page)` (`e2e/support/hydration.ts`) avant tout clic ; après une écriture qui s'affiche avant la réponse, attendre `waitForResponse` avant de recharger la page.
 - **Tout changement de comportement ⇒ test E2E** ; toute évolution de schéma ⇒ migration + mise à jour du [modèle de données](modele-de-donnees.md).
 - Localement : n'exécuter que les tests **nouveaux ou modifiés** ; la CI exécute la suite complète.
 - Sécurité : gitleaks, Semgrep CE, CodeQL et SonarQube Cloud en CI, Renovate pour les dépendances. Pas encore en place : OSV-Scanner, Lighthouse CI, SQLFluff.
@@ -149,5 +150,5 @@ Toute transition ou animation se déclare dans `@media (prefers-reduced-motion: 
 
 ### Accessibilité et appareils
 - **Contraste AA** (mesuré le 2026-10-14) : encre `#1b2a5c` sur les cinq couleurs de statut ≥ 4,59:1, sur le rose 5,20:1 ; blanc sur bleu 8,41:1. Ne jamais mettre de texte blanc sur une couleur de statut (1,45 à 2,98:1).
-- **Appareils** : zones tactiles ≥ 44 px (`--touch`), champs à 16 px minimum (Safari iOS), pas de défilement horizontal, `100dvh` plutôt que `100vh` seul. Points de rupture : 768 et 1024 px.
+- **Appareils** : zones tactiles ≥ 44 px (`--touch`), champs à 16 px minimum (Safari iOS), pas de défilement horizontal, `100dvh` plutôt que `100vh` seul. Points de rupture : 768 et 1024 px. **Tablette (768 à 1023 px)** : un tableau ou une rangée de colonnes qui n'y tient pas garde la mise en page du téléphone jusqu'à 1023 px (« Ma liste », catalogue d'administration) ; au plus deux cartes côte à côte (« Reprendre la lecture ») ; l'aide du champ de recherche de l'en-tête est raccourcie (`useNarrowScreen(1023)`). `utils/tablet-layout-rules.spec.ts` le contrôle.
 - Pas de `v-html` sur du contenu utilisateur ; données de démo fictives uniquement.

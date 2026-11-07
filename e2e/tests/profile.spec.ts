@@ -1,5 +1,6 @@
 import { AxeBuilder } from '@axe-core/playwright'
 import { expect, test, type BrowserContext } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 import { signUp } from '../support/session.js'
 
 // Profil public (US-08) : l'API, la base, la session et le relais Nuxt sont réels ; seul Google est
@@ -83,10 +84,11 @@ test('son propriétaire retrouve son profil par le menu et le passe en privé', 
 }) => {
   const handle = await signUpWithList(context)
   await page.goto('/')
+  await waitForHydration(page)
   await page.getByTestId('account-menu').click()
   await page.getByTestId('profile-link').click()
   await page.waitForURL(`**/u/${handle}`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   await expect(page.getByTestId('profile-visibility')).toContainText('Profil public')
   await page.getByTestId('profile-visibility-toggle').click()
@@ -124,7 +126,7 @@ test('le profil n’a aucun défaut d’accessibilité détectable', async ({ co
   const handle = await signUpWithList(context)
   await context.clearCookies()
   await page.goto(`/u/${handle}`)
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 
   const results = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])

@@ -1,9 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { waitForHydration } from '../support/hydration.js'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/components')
   // Attendre l'hydratation : sinon un clic peut précéder les écouteurs d'événements.
-  await page.waitForLoadState('networkidle')
+  await waitForHydration(page)
 })
 
 test('le compteur est borné et saisissable', async ({ page }) => {
