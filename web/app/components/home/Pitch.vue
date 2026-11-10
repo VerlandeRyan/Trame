@@ -1,8 +1,9 @@
 <script setup lang="ts">
+/** Home pitch panel shown to visitors: the three promises and a sign-in call to action. */
 const { t } = useI18n()
 const signInOpen = useSignInModal()
 
-// Les trois engagements du panneau ; les textes sont dans `home.pitch.*`.
+// The three promises of the panel; their texts are under `home.pitch.*`.
 const pillars = [
   { key: 'tracking', icon: 'tabler:bookmark', color: 'reading' },
   { key: 'everything', icon: 'tabler:books', color: 'plan' },
@@ -45,7 +46,7 @@ const pillars = [
   padding-top: var(--space-4);
 }
 
-// Autocollant incliné posé sur le bord haut de la carte.
+// Tilted sticker placed on the card's top edge.
 .pitch__sticker {
   position: absolute;
   top: 0;
@@ -138,7 +139,7 @@ const pillars = [
   }
 }
 
-// Filet d'encre plein au-dessus du bouton, qui occupe toute la largeur de la carte.
+// Solid ink rule above the button, which takes the card's full width.
 .pitch__cta {
   margin-top: 6px;
   padding-top: 14px;

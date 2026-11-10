@@ -1,21 +1,24 @@
+/** Request validation middleware built on Zod schemas. */
 import type { RequestHandler } from 'express';
 import type { z, ZodType } from 'zod';
 import { AppError } from '../errors.js';
 
+/** Part of the request that gets validated. */
 type Source = 'body' | 'query' | 'params';
 
-/** Paramètres d'une issue Zod utiles au front pour son propre message ; jamais la valeur saisie. */
+/** Parameters of a Zod issue the front end needs for its own message; never the typed value. */
 const ISSUE_PARAMS = ['expected', 'origin', 'minimum', 'maximum', 'format', 'values'] as const;
 
 type ParamValue = string | number | boolean | (string | number)[];
 
+/** Whether a Zod issue parameter is safe to expose. */
 function isParamValue(value: unknown): value is ParamValue {
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')
     return true;
   return Array.isArray(value) && value.every((v) => typeof v === 'string' || typeof v === 'number');
 }
 
-/** Une erreur de champ : `path` + `code` Zod + paramètres, sans message (le front traduit). */
+/** One field error: `path` + Zod `code` + parameters, with no message (the front end translates). */
 function toDetail(issue: { path: PropertyKey[]; code: string }) {
   const params: Record<string, ParamValue> = {};
   for (const key of ISSUE_PARAMS) {
@@ -26,14 +29,14 @@ function toDetail(issue: { path: PropertyKey[]; code: string }) {
 }
 
 /**
- * Valeur déjà analysée par `validate(source, schema)` : le schéma ne sert ici qu'à la typer,
- * ce qui évite un cast dans chaque contrôleur.
+ * Types a value already parsed by `validate(source, schema)`: the schema only provides the type here,
+ * which avoids a cast in every controller.
  */
 export function validated<S extends ZodType>(_schema: S, value: unknown): z.output<S> {
   return value as z.output<S>;
 }
 
-/** Valide `req.body`, `req.query` ou `req.params` avec un schéma Zod ; remplace la valeur par la version analysée. */
+/** Validates `req.body`, `req.query` or `req.params` with a Zod schema and replaces it with the parsed value. */
 export function validate(source: Source, schema: ZodType): RequestHandler {
   return (req, _res, next) => {
     const result = schema.safeParse(req[source]);
@@ -42,7 +45,7 @@ export function validate(source: Source, schema: ZodType): RequestHandler {
       next(new AppError('VALIDATION_ERROR', details));
       return;
     }
-    // `req.query` est en lecture seule sous Express 5 : on le redéfinit explicitement.
+    // `req.query` is read-only in Express 5: redefine it explicitly.
     Object.defineProperty(req, source, { value: result.data, writable: true, configurable: true });
     next();
   };

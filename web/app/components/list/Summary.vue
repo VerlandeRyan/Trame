@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { ReadingTotals } from '~/utils/reading-list'
 
-// Les deux totaux sont séparés : jamais additionnés (RG-02). Deux cartes au bureau, une ligne
-// discrète au mobile (les cartes restent dans la page, masquées, pour les lecteurs d'écran).
+/**
+ * Reading totals of the list. The two totals stay separate, never added together. Two cards on
+ * desktop, a discreet line on mobile (the cards stay in the page, hidden, for screen readers).
+ */
 defineProps<{ totals: ReadingTotals }>()
 const { t, n } = useI18n()
 </script>
@@ -39,7 +41,7 @@ const { t, n } = useI18n()
   gap: var(--space-3) var(--space-4);
 }
 
-// Mobile : seule la ligne se voit ; les cartes (et la phrase d'explication) restent lues.
+// Mobile: only the line is visible; the cards (and the explanatory sentence) stay readable by screen readers.
 .summary__totals {
   display: grid;
   flex: 1 1 18rem;

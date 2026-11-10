@@ -1,5 +1,5 @@
-// happy-dom n'implémente pas toujours <dialog>.showModal() / close() : doublures minimales
-// (l'ouverture et la fermeture se vérifient par l'attribut `open`).
+// happy-dom does not always implement <dialog>.showModal() / close(): minimal stand-ins
+// (opening and closing are checked through the `open` attribute).
 if (typeof HTMLDialogElement !== 'undefined') {
   const dialogPrototype = HTMLDialogElement.prototype
 

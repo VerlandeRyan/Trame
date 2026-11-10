@@ -1,15 +1,18 @@
+/** Storage of the external links of a work or a person. */
 import type { Transaction } from 'kysely';
 import type { Database, ExternalLinkKind } from '../db/database.js';
 
+/** An external link as stored. */
 export interface ExternalLinkRecord {
   kind: ExternalLinkKind;
   url: string;
   label: string | null;
 }
 
+/** What the links belong to: a work or a person. */
 type Owner = { workId: number } | { personId: number };
 
-/** Remplace tous les liens d'une œuvre ou d'une personne, dans la transaction en cours. */
+/** Replaces all the links of a work or a person, inside the current transaction. */
 export async function replaceLinks(
   trx: Transaction<Database>,
   owner: Owner,

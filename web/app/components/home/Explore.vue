@@ -2,12 +2,14 @@
 import { pickExploreCodes, type GenreItem } from '~/utils/home'
 import { translatedCode } from '~/utils/search'
 
+/** Home "Explore" block: shortcuts to the main formats and genres. */
 const props = defineProps<{ genres: GenreItem[] }>()
 const { t, te } = useI18n()
 const localePath = useLocalePath()
 
 const exploreCodes = computed(() => pickExploreCodes(props.genres))
 
+/** Translated label of a format or genre code. */
 function genreLabel(code: string) {
   return translatedCode(t, te, 'genre', code)
 }
@@ -74,8 +76,8 @@ function genreLabel(code: string) {
   font-size: 1.0625rem;
 }
 
-// Chaque rangée occupe toute la largeur. 16 px d'écart : l'inclinaison au survol déborde un peu, et
-// les zones de clic au doigt ne se recouvrent pas.
+// Each row takes the full width. 16 px gap: the hover tilt overflows a little, and
+// touch click areas must not overlap.
 .explore__list {
   display: flex;
   flex-wrap: wrap;
@@ -94,7 +96,7 @@ function genreLabel(code: string) {
   }
 }
 
-// Genres par défaut ; formats et « Tous les… » surchargent plus bas.
+// Default for genres; formats and "All the…" override it below.
 .explore__link {
   position: relative;
   display: block;
@@ -108,7 +110,7 @@ function genreLabel(code: string) {
   font-weight: 700;
   text-decoration: none;
 
-  // Zone de clic : la pastille à la souris, 8 px autour au doigt.
+  // Click area: the pill itself with a mouse, 8 px around it with a finger.
   &::after {
     position: absolute;
     inset: 0;
@@ -119,10 +121,10 @@ function genreLabel(code: string) {
     }
   }
 
-  // 1,2° et non 2,5° : une pastille large dévie plus qu'un bouton pour le même angle.
+  // 1.2° rather than 2.5°: a wide pill moves more than a button for the same angle.
   @include tilt-on-hover(var(--color-rose-soft), wide);
 
-  // Au doigt, l'appui remplace le survol.
+  // With a finger, the pressed state replaces hover.
   &:active:not(:disabled) {
     background: var(--color-rose-soft);
     transform: scale(0.96);

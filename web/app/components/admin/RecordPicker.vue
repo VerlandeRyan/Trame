@@ -2,8 +2,10 @@
 import type { RecordRef } from '~/utils/admin'
 import { MENU_PREFERRED_HEIGHT_PX } from '~/utils/menu'
 
-// Choisit un enregistrement du catalogue par recherche ; `search` est fourni par la page.
-// `invalid` : aucune fiche n'est choisie alors qu'il en faut une (cadre rouge et message).
+/**
+ * Picks a catalogue record by searching; `search` is provided by the page. `invalid`: no record
+ * is chosen although one is required (red frame and message).
+ */
 const props = defineProps<{
   label: string
   placeholder: string
@@ -21,11 +23,12 @@ const results = ref<RecordRef[]>([])
 let timer: ReturnType<typeof setTimeout> | undefined
 const root = ref<HTMLElement | null>(null)
 const field = ref<{ focus: () => void; getBoundingClientRect: () => DOMRect } | null>(null)
-// Les propositions se referment au clic à l'extérieur et reviennent quand on reprend la recherche.
+// The suggestions close on a click outside and come back when the search resumes.
 const { isOpen, close } = useDismissableMenu(root, () => field.value?.focus())
 
-// Seule la dernière recherche compte : une réponse plus lente qu'une frappe suivante est écartée.
+// Only the latest search counts: a response slower than a following keystroke is discarded.
 let latestSearch = 0
+/** Runs the search and shows its results unless a newer search has started. */
 async function runSearch(value: string) {
   const current = ++latestSearch
   let found: RecordRef[] = []
@@ -39,11 +42,12 @@ async function runSearch(value: string) {
   showResults()
 }
 
-// La liste s'ouvre sous le champ (elle défile si la place manque), et au-dessus seulement quand le
-// dessous est trop court.
+// The list opens under the field (it scrolls if room is short), and above only when the space
+// below is too short.
 const resultsHeight = ref(MENU_PREFERRED_HEIGHT_PX)
 const isAbove = ref(false)
 const placeMenu = useMenuPlacement()
+/** Places and opens the results list, if there are results. */
 function showResults() {
   if (field.value) {
     const placement = placeMenu(field.value.getBoundingClientRect())
@@ -53,6 +57,7 @@ function showResults() {
   isOpen.value = results.value.length > 0
 }
 
+/** Starts a search after a pause in typing; an empty text clears the results. */
 function onInput() {
   clearTimeout(timer)
   const value = text.value.trim()
@@ -63,6 +68,7 @@ function onInput() {
   timer = setTimeout(() => runSearch(value), SEARCH_DELAY_MS)
 }
 
+/** Chooses a record and closes the list. */
 function choose(record: RecordRef) {
   model.value = record
   text.value = ''
@@ -144,7 +150,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   font-weight: 700;
 }
 
-// Ancre de la liste : collée au champ, jamais au nom du champ qui le précède.
+// Anchor of the list: attached to the field, never to the field name above it.
 .picker__search {
   position: relative;
 }
@@ -182,13 +188,13 @@ onBeforeUnmount(() => clearTimeout(timer))
   font-weight: 700;
 }
 
-// Changer de choix : simple icône dans le cadre, pour ne pas la confondre avec le retrait de la ligne.
+// Change the choice: a plain icon inside the frame, so it is not mistaken for removing the row.
 .picker__clear {
   display: grid;
   flex: none;
   place-items: center;
   width: var(--touch);
-  // Dans le cadre : la case garde la hauteur du champ de recherche (comme `UiField`).
+  // Inside the frame: the box keeps the height of the search field (like `UiField`).
   height: calc(var(--touch) - 6px);
   margin-right: calc(var(--space-3) * -1);
   border: 0;
@@ -202,7 +208,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   }
 }
 
-// Superposée aux champs du dessous : la carte ne change pas de hauteur pendant la recherche.
+// Overlaid on the fields below: the card keeps its height while searching.
 .picker__results {
   position: absolute;
   inset: calc(100% + var(--space-1)) 0 auto;

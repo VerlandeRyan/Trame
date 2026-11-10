@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Work card: cover, title and type. */
 defineProps<{
   title: string
   type: 'series' | 'oneshot' | 'anthology'

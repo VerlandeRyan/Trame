@@ -1,17 +1,20 @@
-/** Menu fermé par un clic à l'extérieur de `root` ou par Échap (le focus revient alors au bouton). */
+/** Menu closed by a click outside `root` or by Escape (focus then returns to the button). */
 export function useDismissableMenu(root: Ref<HTMLElement | null>, focusTrigger: () => void) {
   const isOpen = ref(false)
 
+  /** Closes the menu, optionally giving focus back to its button. */
   function close({ restoreFocus = false } = {}) {
     isOpen.value = false
     if (restoreFocus) focusTrigger()
   }
 
+  /** Closes the menu when the click lands outside it. */
   function closeOnOutsideClick(event: MouseEvent) {
     if (isOpen.value && !root.value?.contains(event.target as Node)) close()
   }
 
-  // Sur le document : Safari ne donne pas le focus à un bouton cliqué.
+  // Listens on the document: Safari does not focus a clicked button.
+  /** Closes the menu on Escape, giving focus back to the trigger. */
   function closeOnEscape(event: KeyboardEvent) {
     if (isOpen.value && event.key === 'Escape') close({ restoreFocus: true })
   }

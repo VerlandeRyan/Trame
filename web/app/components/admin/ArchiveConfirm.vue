@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { AdminKind, ArchiveImpact } from '~/utils/admin'
 
-// Confirmation d'archivage, la même depuis la fiche et depuis la liste. `impact` (œuvres seulement)
-// rappelle ce qui reste en place : membres qui suivent l'œuvre et œuvres liées.
+/**
+ * Archive confirmation, the same from the record and from the list. `impact` (works only) recalls
+ * what stays in place: members who follow the work and related works.
+ */
 defineProps<{ kind: AdminKind; impact?: ArchiveImpact | null }>()
 const open = defineModel<boolean>({ default: false })
 const emit = defineEmits<{ confirm: [] }>()
@@ -34,7 +36,7 @@ const { t } = useI18n()
 </template>
 
 <style scoped lang="scss">
-// Libellé à gauche, valeur à droite, filets légers.
+// Label on the left, value on the right, light rules.
 .impact {
   margin: var(--space-3) 0 0;
   font-size: 0.875rem;

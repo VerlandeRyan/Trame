@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Default layout: header, page content and the screentone column on the right edge. */
 const { t } = useI18n()
 const route = useRoute()
 
@@ -11,7 +12,7 @@ useHtmlLanguage()
     <LayoutHeader />
     <AuthNotice />
     <AuthSignInModal />
-    <!-- Décor : trame de points roses au bord droit, sous l'en-tête, derrière le contenu. -->
+    <!-- Decoration: pink dot screentone on the right edge, under the header, behind the content. -->
     <div v-if="route.meta.trame !== 'hero'" class="layout__trame" aria-hidden="true" />
     <main id="contenu" class="layout__main" tabindex="-1">
       <slot />
@@ -20,7 +21,7 @@ useHtmlLanguage()
 </template>
 
 <style scoped lang="scss">
-// Le contenu s'étire : le contour de focus de `<main>` entoure toute la page.
+// The content stretches: `<main>`'s focus outline surrounds the whole page.
 .layout {
   display: flex;
   flex-direction: column;
@@ -28,13 +29,13 @@ useHtmlLanguage()
   min-height: 100dvh;
 }
 
-// Mêmes marges latérales que l'en-tête. Ce sont des variables : l'accueil les annule pour ses bandes.
+// Same side margins as the header. They are variables: the home page cancels them for its bands.
 .layout__main {
   --main-pad-top: var(--space-4);
   --main-pad-x: var(--space-3);
   --main-pad-bottom: var(--space-6);
 
-  // Au-dessus de la trame décorative (`z-index` 0).
+  // Above the decorative screentone (`z-index` 0).
   position: relative;
   z-index: 1;
   flex: 1;
@@ -46,15 +47,15 @@ useHtmlLanguage()
     --main-pad-bottom: 30px;
   }
 
-  // `<main>` n'est pas un contrôle : un clic à vide ou le lien d'évitement le focalisent, mais son
-  // contour (un trait sur le bord de la page) n'apporte rien.
+  // `<main>` is not a control: an empty click or the skip link focuses it, but its
+  // outline (a line on the page edge) adds nothing.
   &:focus-visible {
     outline: none;
   }
 }
 
-// Trame rose du bord droit, fixe pendant le défilement, qui s'estompe vers la gauche et le bas.
-// Décor : ni clic ni lecteur d'écran.
+// Pink screentone on the right edge, fixed while scrolling, fading to the left and bottom.
+// Decoration: no clicks, hidden from screen readers.
 .layout__trame {
   position: fixed;
   top: 0;
@@ -78,7 +79,7 @@ useHtmlLanguage()
   }
 }
 
-// Lien d'évitement : visible seulement au focus clavier.
+// Skip link: visible only on keyboard focus.
 .layout__skip-link {
   position: absolute;
   top: -100px;

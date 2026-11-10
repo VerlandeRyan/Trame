@@ -1,17 +1,19 @@
+/** Session store persisting sessions in the database. */
 import session, { type SessionData } from 'express-session';
 import type { SessionRepository } from '../repositories/session.repository.js';
 
-/** Durée de vie d'une session si le cookie n'en précise pas (ne devrait pas arriver). */
+/** Lifetime of a session when the cookie gives none (should not happen). */
 const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000;
 
 type Callback<T = void> = (err?: unknown, result?: T) => void;
 
+/** Expiry date of a session. */
 function expiryOf(data: SessionData): Date {
   const expires = data.cookie.expires;
   return expires ? new Date(expires) : new Date(Date.now() + DEFAULT_TTL_MS);
 }
 
-/** Store `express-session` adossé à la table `session` (SQL dans le dépôt, pas ici). */
+/** `express-session` store backed by the session table (the SQL lives in the repository, not here). */
 export class SessionStore extends session.Store {
   constructor(private readonly sessions: SessionRepository) {
     super();

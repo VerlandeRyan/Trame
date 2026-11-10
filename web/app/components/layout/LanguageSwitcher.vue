@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Sélecteur de la langue d'interface : un bouton (toute la carte est cliquable) qui ouvre un menu
-// de liens vers la même page dans chaque langue.
+/** Interface language switcher: a button (the whole card is clickable) that opens a menu of links to the same page in each language. */
 const { t, locale, locales } = useI18n()
 const switchLocalePath = useSwitchLocalePath()
 const route = useRoute()
@@ -10,6 +9,7 @@ const trigger = ref<HTMLButtonElement | null>(null)
 const { isOpen, close } = useDismissableMenu(root, () => trigger.value?.focus())
 const menuId = useId()
 
+/** One menu entry per language, linking to the current page in that language. */
 const items = computed(() =>
   locales.value.map((entry) => ({
     code: entry.code,
@@ -20,7 +20,6 @@ const items = computed(() =>
   })),
 )
 
-// Après le choix d'une langue, la route change : le menu se referme.
 watch(
   () => route.fullPath,
   () => close(),
@@ -83,7 +82,7 @@ watch(
   position: relative;
 }
 
-// Toute la carte est le bouton : icône, code et chevron réagissent au clic.
+// The whole card is the button: icon, code and chevron all react to the click.
 .language-switcher__trigger {
   display: flex;
   align-items: center;
@@ -125,7 +124,6 @@ watch(
   @include menu-open-animation;
 }
 
-// Chaque ligne est un lien sur toute la largeur du menu.
 .language-switcher__item {
   display: flex;
   align-items: center;
@@ -137,12 +135,12 @@ watch(
   font-weight: 700;
   text-decoration: none;
 
-  // Même signal de sélection que le menu de tri (`ui/Select.vue`) : fond bleu plein, coche à gauche.
+  // Same selection signal as the sort menu (`ui/Select.vue`): solid blue background, tick on the left.
   &:focus-visible:not(.language-switcher__item--current) {
     background: var(--color-cover-empty);
   }
 
-  // Le survol n'existe qu'à la souris : sur écran tactile il resterait collé après un toucher.
+  // Hover only exists with a mouse: on a touch screen it would stay stuck after a tap.
   @media (hover: hover) and (pointer: fine) {
     &:hover:not(.language-switcher__item--current) {
       background: var(--color-cover-empty);

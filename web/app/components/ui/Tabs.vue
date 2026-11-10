@@ -1,15 +1,16 @@
 <script setup lang="ts">
+/** One tab of the control. */
 export interface UiTab {
   id: string
   label: string
   count?: number
-  // Couleur de statut de lecture (code de library_entry.status).
+  /** Reading status colour. */
   status?: 'reading' | 'completed' | 'plan_to_read' | 'on_hold' | 'dropped'
-  // Texte d'alerte : l'onglet porte un point rouge (erreur à corriger dans ce panneau).
+  /** Alert text: the tab carries a red dot (an error to fix in this panel). */
   alert?: string
 }
 
-// `underline` : onglets de l'administration, texte souligné au lieu de pastilles.
+/** Tabs with keyboard navigation. `underline`: administration tabs, underlined text instead of pills. */
 const props = withDefaults(defineProps<{ tabs: UiTab[]; label: string; underline?: boolean }>(), {
   underline: false,
 })
@@ -17,12 +18,13 @@ const activeTabId = defineModel<string>({ required: true })
 const tabButtons = ref<HTMLButtonElement[]>([])
 const tablist = ref<HTMLElement | null>(null)
 
-// Chevrons des onglets soulignés : ils signalent les onglets cachés de part et d'autre.
+// Chevrons of underlined tabs: they signal tabs hidden on either side.
 const hasHiddenBefore = ref(false)
 const hasHiddenAfter = ref(false)
-// Part de la largeur visible parcourue par un clic sur un chevron.
+// Share of the visible width covered by a click on a chevron.
 const SCROLL_STEP_RATIO = 0.6
 
+/** Updates which sides have hidden tabs. */
 function updateHiddenTabs() {
   const element = tablist.value
   if (!element) return
@@ -30,11 +32,13 @@ function updateHiddenTabs() {
   hasHiddenAfter.value = element.scrollLeft + element.clientWidth < element.scrollWidth - 1
 }
 
+/** Scrolls the tab list by a share of its visible width. */
 function scrollTabs(direction: -1 | 1) {
   const element = tablist.value
   element?.scrollBy({ left: direction * element.clientWidth * SCROLL_STEP_RATIO })
 }
 
+/** Scrolls the active tab into view. */
 function revealActiveTab() {
   const index = props.tabs.findIndex((tab) => tab.id === activeTabId.value)
   tabButtons.value[index]?.scrollIntoView?.({ inline: 'nearest', block: 'nearest' })
@@ -52,7 +56,7 @@ onMounted(() => {
 onBeforeUnmount(() => resizeObserver?.disconnect())
 watch(activeTabId, () => props.underline && nextTick(revealActiveTab))
 
-// Index de l'onglet visé par une touche de navigation ; undefined si la touche n'en est pas une.
+/** Index of the tab targeted by a navigation key; undefined if the key is not one. */
 function targetIndexFor(key: string, currentIndex: number): number | undefined {
   const lastIndex = props.tabs.length - 1
   switch (key) {
@@ -69,6 +73,7 @@ function targetIndexFor(key: string, currentIndex: number): number | undefined {
   }
 }
 
+/** Arrow, Home and End keys move the selection and the focus. */
 function onKeydown(event: KeyboardEvent, currentIndex: number) {
   const targetIndex = targetIndexFor(event.key, currentIndex)
   const targetTab = targetIndex === undefined ? undefined : props.tabs[targetIndex]
@@ -79,6 +84,7 @@ function onKeydown(event: KeyboardEvent, currentIndex: number) {
   tabButtons.value[targetIndex]?.focus()
 }
 
+/** Keeps a reference to each tab button, by index. */
 function registerButton(element: unknown, index: number) {
   if (element) tabButtons.value[index] = element as HTMLButtonElement
 }
@@ -172,12 +178,12 @@ function registerButton(element: unknown, index: number) {
   white-space: nowrap;
   cursor: pointer;
 
-  // Jamais sur l'onglet courant : un survol ne doit pas ressembler à une sélection.
+  // Never on the current tab: a hover must not look like a selection.
   &:not(.tabs__tab--active) {
     @include on-hover {
       background: var(--color-cover-empty);
 
-      // La pastille de nombre, de la même teinte que ce fond, passe en blanc pour rester visible.
+      // The count pill, of the same tint as this background, turns white to stay visible.
       .tabs__count {
         background: var(--color-surface);
       }
@@ -196,7 +202,7 @@ function registerButton(element: unknown, index: number) {
   color: var(--color-surface);
 }
 
-// Deux lignes superposées, comme la maquette : filet d'encre de la barre, trait bleu de l'onglet.
+// Two stacked lines: the bar's ink rule and the tab's blue line.
 .tabs--underline {
   @include underline-tab-bar;
 
@@ -208,7 +214,7 @@ function registerButton(element: unknown, index: number) {
 
     @include underline-tab('tabs__tab--active');
 
-    // Le fond reste celui du papier : la pastille garde sa teinte de repos.
+    // The background stays the paper's: the pill keeps its resting tint.
     &:not(.tabs__tab--active) {
       @include on-hover {
         .tabs__count {
@@ -222,7 +228,7 @@ function registerButton(element: unknown, index: number) {
     }
   }
 
-  // Les chevrons remplacent la barre de défilement.
+  // Chevrons replace the scrollbar.
   scrollbar-width: none;
 
   &::-webkit-scrollbar {
@@ -236,8 +242,8 @@ function registerButton(element: unknown, index: number) {
   }
 }
 
-// Emplacement de largeur nulle collé au bord du défilement : le chevron reste visible tout en
-// laissant les onglets défiler dessous.
+// Zero-width slot attached to the scroll edge: the chevron stays visible while
+// letting the tabs scroll underneath.
 .tabs__edge {
   position: sticky;
   z-index: 1;
@@ -253,7 +259,6 @@ function registerButton(element: unknown, index: number) {
   }
 }
 
-// Chevron dans un cadre rond à contour rose, au-dessus du filet des onglets.
 .tabs__arrow {
   position: absolute;
   top: calc(50% - 1.5px);

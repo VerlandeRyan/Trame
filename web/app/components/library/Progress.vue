@@ -6,12 +6,14 @@ import {
   type LibraryEntryChanges,
 } from '~/utils/library'
 
-// « Ma progression » (US-06) : chapitres lus, tomes lus et note, puis les dates de lecture
-// (repliées : la maquette de la fiche n'en a pas, elles ne doivent pas pousser le synopsis).
-// Les deux compteurs sont indépendants (RG-02) ; la note vaut 0 tant qu'on n'a pas noté (« — »).
+/**
+ * "My progress": chapters read, volumes read and rating, then the reading dates (collapsed so
+ * they do not push the synopsis down). The two counters are independent; the rating is 0 until
+ * rated (shown as a dash).
+ */
 const props = defineProps<{
   entry: LibraryEntry
-  /** Chapitres / tomes parus connus (`null` : inconnu, affiché « ? »). */
+  /** Known published chapters / volumes (`null`: unknown, shown as "?"). */
   totalChapters: number | null
   totalVolumes: number | null
 }>()
@@ -21,18 +23,21 @@ const { t } = useI18n()
 const titleId = useId()
 const NO_RATING = 0
 
+/** "of 12", or "of ?" when the total is unknown. */
 const totalLabel = (total: number | null) =>
   total === null ? t('library.ofUnknown') : t('library.of', { total })
 
+/** Whether more chapters are marked read than the catalogue knows. */
 const chaptersExceedTotal = computed(() =>
   exceedsKnownTotal(props.entry.chaptersRead, props.totalChapters),
 )
+/** Whether more volumes are marked read than the catalogue knows. */
 const volumesExceedTotal = computed(() =>
   exceedsKnownTotal(props.entry.volumesRead, props.totalVolumes),
 )
 
-// Une progression peut demander de changer le statut (`useReadingPrompt`) ; si rien n'est
-// enregistré, le compteur a pu afficher la valeur saisie : on le recrée pour qu'il relise la vraie.
+// A progress change may ask to change the status (`useReadingPrompt`); if nothing is saved, the
+// counter may have displayed the typed value: recreate it so it reads the real one again.
 const counterKey = ref(0)
 const {
   isOpen: isAskingToRead,
@@ -45,6 +50,7 @@ const {
   decline: declinePrompt,
 } = useReadingPrompt()
 
+/** Reports a counter change, after the confirmation if one is needed. */
 function changeProgress(changes: LibraryEntryChanges) {
   const isAsking = requestPrompt(
     props.entry,
@@ -55,9 +61,11 @@ function changeProgress(changes: LibraryEntryChanges) {
   if (!isAsking) emit('change', changes)
 }
 
+/** Reports a rating change; 0 removes the rating. */
 const changeRating = (rating: number) =>
   emit('change', { rating: rating === NO_RATING ? null : rating })
 
+/** Reports a start or end date change; an empty value clears it. */
 function changeDate(field: 'startedOn' | 'finishedOn', event: Event) {
   const date = (event.target as HTMLInputElement).value
   emit('change', { [field]: date === '' ? null : date })
@@ -65,7 +73,7 @@ function changeDate(field: 'startedOn' | 'finishedOn', event: Event) {
 </script>
 
 <template>
-  <!-- La fenêtre de confirmation reste hors du panneau : `container-type` en ferait son repère. -->
+  <!-- The confirmation window stays outside the panel: `container-type` would make it its reference. -->
   <div>
     <section class="progress" :aria-labelledby="titleId" data-testid="library-progress">
       <h2 :id="titleId" class="progress__title">{{ t('library.progress') }}</h2>
@@ -156,8 +164,8 @@ function changeDate(field: 'startedOn' | 'finishedOn', event: Event) {
 </template>
 
 <style scoped lang="scss">
-// Cotes de la maquette : panneau blanc à ombre, titre de 13 px, trois colonnes séparées par un
-// filet, toujours côte à côte. Étroit, les compteurs se resserrent (le panneau décide, pas l'écran).
+// White panel with a shadow, 13 px title, three columns separated by a
+// rule, always side by side. When narrow, the counters tighten (the panel decides, not the screen).
 .progress {
   container-type: inline-size;
   border: var(--border);
@@ -230,7 +238,7 @@ function changeDate(field: 'startedOn' | 'finishedOn', event: Event) {
   cursor: pointer;
 }
 
-// Les deux dates côte à côte, même à 320 px : une seule rangée au lieu de deux.
+// The two dates side by side, even at 320 px: one row instead of two.
 .progress__dates-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -246,8 +254,8 @@ function changeDate(field: 'startedOn' | 'finishedOn', event: Event) {
   font-weight: 700;
 }
 
-// Champs discrets : 32 px de haut, texte de 13 px (un `<input type="date">` ouvre un sélecteur
-// natif, il ne déclenche pas le zoom de Safari iOS comme un champ de texte).
+// Discreet fields: 32 px tall, 13 px text (an `<input type="date">` opens a native picker,
+// it does not trigger Safari iOS's zoom like a text field).
 .progress__date-input {
   min-width: 0;
   min-height: 32px;

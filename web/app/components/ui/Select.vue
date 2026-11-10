@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { MENU_PREFERRED_HEIGHT_PX, MENU_ROW_HEIGHT_PX } from '~/utils/menu'
 
-// Remplace `<select>` (menu non stylable) : le focus reste sur le bouton, l'option active est annoncée.
+/** Replaces the native select (unstylable menu): focus stays on the button, the active option is announced. */
 const props = defineProps<{
   options: { value: string; label: string }[]
-  /** Nom accessible (« Trier par »). */
+  /** Accessible name ("Sort by"). */
   label: string
-  /** Libellé visible devant la valeur (défaut : `label`). */
+  /** Visible label before the value (default: `label`). */
   prefix?: string
   triggerTestId?: string
-  /** Cadre blanc, comme `UiMultiSelect` (par défaut : texte plat). */
+  /** White frame, like `UiMultiSelect` (default: flat text). */
   boxed?: boolean
 }>()
 const model = defineModel<string>({ required: true })
@@ -17,8 +17,8 @@ const model = defineModel<string>({ required: true })
 const uid = useId()
 const listboxId = `${uid}-listbox`
 const open = ref(false)
-// Le menu s'ouvre sous le bouton (il défile si la place manque), et au-dessus seulement quand le
-// dessous est trop court ; il ne rallonge jamais la page.
+// The menu opens under the button (it scrolls if room is short), and above only when the space
+// below is too short; it never makes the page longer.
 const menuHeight = ref(MENU_PREFERRED_HEIGHT_PX)
 const isAbove = ref(false)
 const placeMenu = useMenuPlacement()
@@ -29,13 +29,14 @@ const trigger = ref<HTMLButtonElement | null>(null)
 const currentIndex = computed(() =>
   props.options.findIndex((option) => option.value === model.value),
 )
-// Un préfixe vide (`prefix=""`) le masque : le libellé est alors affiché par le parent.
+// An empty prefix hides it: the parent then displays the label itself.
 const prefixText = computed(() => props.prefix ?? props.label)
 const currentLabel = computed(() => props.options[currentIndex.value]?.label ?? '')
 const activeId = computed(() =>
   open.value && activeIndex.value >= 0 ? `${uid}-option-${activeIndex.value}` : undefined,
 )
 
+/** Opens the menu on the current option, placed under or above the button. */
 function openMenu() {
   activeIndex.value = Math.max(currentIndex.value, 0)
   if (root.value) {
@@ -49,23 +50,27 @@ function openMenu() {
   open.value = true
 }
 
+/** Closes the menu, optionally giving focus back to the button. */
 function closeMenu(restoreFocus = false) {
   open.value = false
   activeIndex.value = -1
   if (restoreFocus) trigger.value?.focus()
 }
 
+/** Opens the menu, or closes it if open. */
 function toggle() {
   if (open.value) closeMenu()
   else openMenu()
 }
 
+/** Selects the option at the index and closes the menu. */
 function choose(index: number) {
   const option = props.options[index]
   if (option) model.value = option.value
   closeMenu(true)
 }
 
+/** Moves the active option up or down, wrapping around; opens the menu if closed. */
 function move(step: 1 | -1) {
   if (!open.value) {
     openMenu()
@@ -75,7 +80,7 @@ function move(step: 1 | -1) {
   activeIndex.value = (activeIndex.value + step + count) % count
 }
 
-/** Première option après l'option active dont le libellé commence par `letter` (circulaire). */
+/** Jumps to the first option after the active one whose label starts with `letter` (wrapping). */
 function jumpToLetter(letter: string) {
   const wanted = letter.toLocaleLowerCase()
   const count = props.options.length
@@ -89,6 +94,7 @@ function jumpToLetter(letter: string) {
   }
 }
 
+/** Keyboard support: arrows, Home/End, letters, Enter/Space, Escape and Tab. */
 function onKeydown(event: KeyboardEvent) {
   const isLetter = event.key.length === 1 && event.key !== ' ' && !event.ctrlKey && !event.metaKey
   if (event.key === 'ArrowDown') {
@@ -107,7 +113,7 @@ function onKeydown(event: KeyboardEvent) {
     event.preventDefault()
     closeMenu(true)
   } else if ((event.key === 'Enter' || event.key === ' ') && open.value) {
-    // Valide l'option active ; sinon le clic natif du bouton ouvre le menu.
+    // Confirms the active option; otherwise the button's native click opens the menu.
     event.preventDefault()
     choose(activeIndex.value)
   } else if (event.key === 'Tab') {
@@ -115,6 +121,7 @@ function onKeydown(event: KeyboardEvent) {
   }
 }
 
+/** Closes the menu on a press outside it. */
 function onPointerDown(event: PointerEvent) {
   if (root.value && !root.value.contains(event.target as Node)) closeMenu()
 }
@@ -198,7 +205,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
   font-size: 0.875rem;
 }
 
-// Tout le cadre ouvre le menu : le bouton le remplit, le préfixe est cliquable.
+// The whole frame opens the menu: the button fills it, the prefix is clickable.
 .select--boxed {
   min-height: var(--touch);
   padding-left: var(--space-3);
@@ -206,9 +213,9 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
   border-radius: var(--radius);
   background: var(--color-surface);
 
-  // Menu de la largeur du cadre, en bleu pour ne pas se confondre avec les champs qu'il recouvre.
-  // Au moins la largeur du cadre, ancré à son bord droit : un libellé long élargit le menu
-  // vers la gauche au lieu de le faire défiler horizontalement.
+  // Menu as wide as the frame, in blue so it is not confused with the fields it covers.
+  // At least the frame's width, anchored to its right edge: a long label widens the menu
+  // to the left instead of scrolling horizontally.
   .select__menu {
     inset: calc(100% + var(--space-1)) 0 auto auto;
     width: max-content;
@@ -239,8 +246,8 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
     justify-content: space-between;
     padding: 0 var(--space-3) 0 0;
 
-    // Toute la surface du cadre (marges et préfixe compris) ouvre le menu ; le menu, posé après
-    // dans le DOM, reste au-dessus.
+    // The whole frame surface (margins and prefix included) opens the menu; the menu, placed after
+    // in the DOM, stays on top.
     &::before {
       content: '';
       position: absolute;
@@ -248,7 +255,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
     }
   }
 
-  // Au mobile, un tri encadré se réduit à « Trier par ▾ » : la valeur reste lue, pas affichée.
+  // On mobile, a framed sort shrinks to 'Sort by ▾': the value is still read, not displayed.
   @media (max-width: 767px) {
     &.select--labelled .select__value {
       position: absolute;
@@ -331,8 +338,8 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
   border-top: 1px dashed var(--color-rule);
 }
 
-// Style unique des menus de choix : le choix courant en bleu plein, la ligne visée au clavier ou
-// à la souris en fond de survol.
+// Single style of choice menus: the current choice in solid blue, the row targeted by keyboard or
+// mouse with the hover background.
 .select__option--selected {
   background: var(--color-blue);
   color: var(--color-surface);

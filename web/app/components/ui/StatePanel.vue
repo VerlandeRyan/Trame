@@ -1,6 +1,8 @@
 <script setup lang="ts">
-// Panneau d'état : liste vide, aucun résultat, erreur de chargement, profil privé.
-// `tone="error"` annonce le panneau comme une alerte. Une seule taille, pour tous les écrans.
+/**
+ * State panel: empty list, no result, loading error, private profile. `tone="error"` announces
+ * the panel as an alert. A single size, for every screen.
+ */
 const props = withDefaults(
   defineProps<{
     title: string
@@ -12,6 +14,7 @@ const props = withDefaults(
 )
 
 const isError = computed(() => props.tone === 'error')
+/** The given icon, or the default one for the tone. */
 const iconName = computed(
   () => props.icon ?? (isError.value ? 'tabler:alert-triangle' : 'tabler:book-off'),
 )
@@ -35,7 +38,7 @@ const iconName = computed(
 </template>
 
 <style scoped lang="scss">
-// Centré dans la hauteur que l'appelant lui donne (profil privé).
+// Centred within the height the caller gives it (private profile).
 .state-panel {
   display: grid;
   align-content: center;

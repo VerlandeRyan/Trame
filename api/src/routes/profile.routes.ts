@@ -1,3 +1,4 @@
+/** Routes of public member profiles and of the signed-in user's profile setting. */
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { createProfileController } from '../controllers/profile.controller.js';
@@ -8,7 +9,7 @@ import { listEntriesQuery } from '../schemas/library.js';
 import { profileParams, profileQuery, visibilityBody } from '../schemas/profile.js';
 import type { ProfileService } from '../services/profile.service.js';
 
-/** Monté sous `/users` : profil public d'un membre et sa liste de lecture. */
+/** Mounted under the users prefix: a member's public profile and reading list. */
 export function createProfileRouter(service: ProfileService): Router {
   const controller = createProfileController(service);
   const router = Router();
@@ -27,7 +28,7 @@ export function createProfileRouter(service: ProfileService): Router {
   return router;
 }
 
-/** Monté sous `/me` : réglage du profil de l'utilisateur connecté. */
+/** Mounted under the current-user prefix: the signed-in user's profile setting. */
 export function createMyProfileRouter(
   service: ProfileService,
   options: { rateLimit: RateLimitSettings },

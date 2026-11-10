@@ -1,3 +1,4 @@
+/** HTTP controller of public member profiles and the profile visibility setting. */
 import type { RequestHandler } from 'express';
 import { currentUser } from '../middleware/auth.js';
 import { validated } from '../middleware/validate.js';
@@ -5,6 +6,7 @@ import { listEntriesQuery } from '../schemas/library.js';
 import { profileParams, profileQuery, visibilityBody } from '../schemas/profile.js';
 import type { ProfileService } from '../services/profile.service.js';
 
+/** Builds the profile request handlers. */
 export function createProfileController(service: ProfileService): {
   get: RequestHandler;
   listEntries: RequestHandler;

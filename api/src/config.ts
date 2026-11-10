@@ -1,36 +1,41 @@
+/** Reads and validates the environment variables into a typed configuration. */
 import { randomBytes } from 'node:crypto';
 import { z } from 'zod';
 
 /**
- * Langues acceptées par le paramètre `lang` (ADR 0007). Liste de configuration, pas de la base :
- * en ajouter une est un changement de code sans migration.
+ * Languages accepted by the `lang` parameter. A configuration list, not a database one: adding
+ * a language is a code change without a migration.
  */
 export const SUPPORTED_LANGUAGES = ['fr', 'en'] as const;
+/** One of the supported interface languages. */
 export type Language = (typeof SUPPORTED_LANGUAGES)[number];
 
+/** Text variable where an empty string counts as unset. */
 const optionalText = z
   .string()
   .optional()
   .transform((value) => (value === '' ? undefined : value));
 
+/** Upper bound of the trusted proxy hops setting. */
 const MAX_PROXY_HOPS = 10;
 
+/** Shape of the raw environment variables. */
 const envSchema = z
   .object({
     DATABASE_URL: z.string().min(1, 'DATABASE_URL manquante (voir .env.example)'),
     PORT: z.coerce.number().int().min(1).max(65535).default(3000),
     NODE_ENV: optionalText,
-    /** Origine du front : redirections après connexion et contrôle de l'en-tête `Origin`. */
+    /** Front-end origin: redirects after sign-in and the allowed request origin. */
     WEB_ORIGIN: z.url().default('http://localhost:3001'),
-    /** Secret de signature du cookie de session ; obligatoire en production. */
+    /** Signing secret of the session cookie; required in production. */
     SESSION_SECRET: optionalText.pipe(z.string().min(32).optional()),
-    /** Cookie `Secure` ; par défaut actif en production seulement. */
+    /** Secure cookie flag; enabled by default in production only. */
     SECURE_COOKIES: optionalText.pipe(z.enum(['true', 'false']).optional()),
-    /** Pour que le cookie `Secure` soit posé. */
+    /** Number of reverse proxies to trust, so that the secure cookie can be set. */
     TRUST_PROXY: optionalText
       .transform((value) => (value === undefined ? 0 : Number(value)))
       .pipe(z.number().int().min(0).max(MAX_PROXY_HOPS)),
-    /** Client OAuth Google ; sans eux, la connexion répond `AUTH_UNAVAILABLE`. */
+    /** Google OAuth client; without it, sign-in answers `AUTH_UNAVAILABLE`. */
     GOOGLE_CLIENT_ID: optionalText,
     GOOGLE_CLIENT_SECRET: optionalText,
     GOOGLE_REDIRECT_URI: optionalText.pipe(z.url().optional()),
@@ -45,6 +50,7 @@ const envSchema = z
     }
   });
 
+/** Validated configuration used by the server. */
 export interface Config {
   DATABASE_URL: string;
   PORT: number;
@@ -56,6 +62,7 @@ export interface Config {
   GOOGLE?: { clientId: string; clientSecret: string; redirectUri: string };
 }
 
+/** Parses the environment into a `Config`; throws an error listing every invalid variable. */
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = envSchema.safeParse(env);
   if (!parsed.success) {
@@ -70,7 +77,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     PORT: data.PORT,
     NODE_ENV: data.NODE_ENV,
     WEB_ORIGIN: new URL(data.WEB_ORIGIN).origin,
-    // Hors production, un secret aléatoire suffit : les sessions ne survivent pas au redémarrage.
+    // Outside production a random secret is enough: sessions do not survive a restart.
     SESSION_SECRET: data.SESSION_SECRET ?? randomBytes(32).toString('hex'),
     SECURE_COOKIES: data.SECURE_COOKIES
       ? data.SECURE_COOKIES === 'true'

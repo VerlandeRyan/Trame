@@ -8,7 +8,7 @@ import {
   safeReturnTo,
 } from '~/utils/auth'
 
-// Choix du pseudo à la première connexion : le compte n'existe qu'ensuite.
+/** Handle choice at first sign-in: the account only exists afterwards. */
 definePageMeta({ layout: 'signup' })
 
 const { t } = useI18n()
@@ -32,6 +32,7 @@ watch(handle, () => {
   errorMessage.value = ''
 })
 
+/** Creates the account; an expired sign-up sends the visitor home with a notice. */
 async function submitHandle() {
   if (!canSubmit.value) return
   submitting.value = true
@@ -51,6 +52,7 @@ async function submitHandle() {
   }
 }
 
+/** Abandons the pending sign-up and goes home with a notice. */
 async function abandonSignup() {
   try {
     await cancelSignup()

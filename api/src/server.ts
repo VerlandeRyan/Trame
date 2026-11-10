@@ -1,3 +1,4 @@
+/** Production entry point: loads the configuration and starts the server with the real Google client. */
 import { startServer } from './bootstrap.js';
 import { loadConfig } from './config.js';
 import { createGoogleClient } from './services/google-identity.js';

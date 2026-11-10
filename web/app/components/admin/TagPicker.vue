@@ -2,14 +2,16 @@
 import { MENU_PREFERRED_HEIGHT_PX } from '~/utils/menu'
 import { foldAccents } from '~/utils/work'
 
-// Choisit plusieurs valeurs dans une longue liste : un champ de recherche propose celles qui restent,
-// les valeurs choisies s'affichent en pastilles retirables dessous.
+/**
+ * Picks several values from a long list: a search field proposes those that remain, and the
+ * chosen values appear below as removable pills.
+ */
 const props = defineProps<{
   label: string
   placeholder: string
-  /** Texte quand aucune valeur ne correspond à la recherche. */
+  /** Text when no value matches the search. */
   emptyLabel: string
-  /** Nom accessible de la croix d'une pastille. */
+  /** Accessible name of a pill's cross. */
   removeLabel: (name: string) => string
   options: { value: string; label: string }[]
 }>()
@@ -21,11 +23,12 @@ const root = ref<HTMLElement | null>(null)
 const field = ref<{ focus: () => void; getBoundingClientRect: () => DOMRect } | null>(null)
 const { isOpen, close } = useDismissableMenu(root, () => field.value?.focus())
 
-// La liste s'ouvre sous le champ (elle défile si la place manque), et au-dessus seulement quand le
-// dessous est trop court : elle ne rallonge jamais la page.
+// The list opens under the field (it scrolls if room is short), and above only when the space
+// below is too short: it never makes the page longer.
 const proposalsHeight = ref(MENU_PREFERRED_HEIGHT_PX)
 const isAbove = ref(false)
 const placeMenu = useMenuPlacement()
+/** Places and opens the list of proposals. */
 function openProposals() {
   if (field.value) {
     const placement = placeMenu(field.value.getBoundingClientRect())
@@ -35,6 +38,7 @@ function openProposals() {
   isOpen.value = true
 }
 
+/** The chosen values with their labels (the code itself when unknown). */
 const chosen = computed(() =>
   model.value.map(
     (value) =>
@@ -44,6 +48,7 @@ const chosen = computed(() =>
       },
   ),
 )
+/** Options not yet chosen that match the typed text, ignoring accents. */
 const proposals = computed(() => {
   const needle = foldAccents(text.value.trim())
   return props.options.filter(
@@ -51,17 +56,20 @@ const proposals = computed(() => {
   )
 })
 
+/** Adds a value and closes the list. */
 function add(value: string) {
   model.value = [...model.value, value]
   text.value = ''
   close()
 }
 
+/** Adds the first proposal, if any. */
 function addFirstProposal() {
   const [first] = proposals.value
   if (first) add(first.value)
 }
 
+/** Removes a chosen value. */
 const remove = (value: string) => (model.value = model.value.filter((code) => code !== value))
 </script>
 
@@ -135,7 +143,7 @@ const remove = (value: string) => (model.value = model.value.filter((code) => co
   position: relative;
 }
 
-// Superposée aux champs du dessous : la carte ne change pas de hauteur pendant la recherche.
+// Overlaid on the fields below: the card keeps its height while searching.
 .tags__proposals {
   position: absolute;
   inset: calc(100% + var(--space-1)) 0 auto;

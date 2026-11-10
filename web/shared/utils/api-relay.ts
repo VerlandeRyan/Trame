@@ -1,12 +1,14 @@
-// Règles du relais `/api/v1/…` (`server/api/v1/[...path].ts`), dans `shared/` pour que le serveur
-// les utilise sans import et que les tests les atteignent.
+/**
+ * Rules of the API relay: kept in `shared/` so the server uses them without an import and the
+ * tests can reach them.
+ */
 const READ_METHODS = new Set(['GET', 'HEAD'])
-// Une route d'écriture s'ajoute ici avec son ticket.
+// A write route is added here together with the feature that needs it.
 const WRITABLE_ROUTES = [
   { methods: new Set(['POST']), path: /^auth\// },
   { methods: new Set(['PUT', 'DELETE']), path: /^works\/\d+\/entry$/ },
   { methods: new Set(['PATCH']), path: /^me\/profile$/ },
-  // Administration du catalogue : création, remplacement, archivage et restauration.
+  // Catalogue administration: create, replace, archive and restore.
   { methods: new Set(['POST']), path: /^admin\/(people|publishers|works)$/ },
   { methods: new Set(['PUT']), path: /^admin\/(people|publishers|works)\/\d+$/ },
   {
@@ -15,9 +17,10 @@ const WRITABLE_ROUTES = [
   },
 ]
 
+/** Decision on a relayed request. */
 export type RelayVerdict = 'allowed' | 'bad-request' | 'method-not-allowed'
 
-/** Chemin décodé : `%2e%2e` et `%2f` doivent être vus comme `..` et `/` avant le contrôle. */
+/** Decoded path: `%2e%2e` and `%2f` must be seen as `..` and `/` before the check. */
 function decodePath(path: string): string | undefined {
   try {
     return decodeURIComponent(path)
@@ -26,6 +29,7 @@ function decodePath(path: string): string | undefined {
   }
 }
 
+/** Decides whether a request may be relayed: reads anywhere, writes only on listed routes. */
 export function judgeRelayRequest(method: string, path: string): RelayVerdict {
   const decoded = decodePath(path)
   if (decoded === undefined || decoded.split('/').includes('..')) return 'bad-request'
@@ -37,9 +41,12 @@ export function judgeRelayRequest(method: string, path: string): RelayVerdict {
 }
 
 /**
- * Valeur de `X-Forwarded-For` pour l'API : la chaîne reçue, puis l'adresse qui vient de se
- * connecter. Sans elle, les limites de débit par adresse seraient partagées par tous les visiteurs.
+ * `X-Forwarded-For` value for the API: the received chain, then the address that just connected.
+ * Without it, per-address rate limits would be shared by all visitors.
  */
-export function forwardedFor(incoming: string | undefined, peer: string | undefined): string | undefined {
+export function forwardedFor(
+  incoming: string | undefined,
+  peer: string | undefined,
+): string | undefined {
   return [incoming, peer].filter(Boolean).join(', ') || undefined
 }

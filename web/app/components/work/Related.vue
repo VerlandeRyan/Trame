@@ -2,8 +2,10 @@
 import type { RelationGroup } from '~/utils/work'
 import { workSlug } from '~/utils/work'
 
-// Œuvres liées regroupées par type de relation (inverse déduit dans `groupRelations`).
-// Comme dans les maquettes : couvertures seules ; le titre reste dans le nom accessible du lien.
+/**
+ * Related works grouped by kind of relation (the inverse is derived in `groupRelations`).
+ * Covers only; the title stays in the link's accessible name.
+ */
 defineProps<{ groups: RelationGroup[] }>()
 const { t } = useI18n()
 const localePath = useLocalePath()
@@ -45,8 +47,8 @@ const localePath = useLocalePath()
   row-gap: var(--space-4);
 }
 
-// Groupes côte à côte, séparés par un filet à droite de chacun (maquettes) : à la ligne, un groupe
-// reste collé au bord gauche et son filet reste de son côté droit.
+// Groups side by side, each followed by a rule on its right: when wrapping, a group
+// stays at the left edge and its rule stays on its right side.
 .related__group {
   display: grid;
   align-content: start;

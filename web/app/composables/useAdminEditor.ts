@@ -1,19 +1,21 @@
+/** Editing state of a catalogue record (work, person or publisher), new or existing. */
 import type { ArchiveImpact } from '~/utils/admin'
 
-/** Ce qui s'affiche en tête de la fiche en cours d'édition. */
+/** What is shown at the top of the record being edited. */
 export interface EditedRecord {
   archived: boolean
   heading: string
-  /** Œuvre seulement : ce que l'archivage laisse en place, rappelé dans la confirmation. */
+  /** Works only: what archiving leaves in place, recalled in the confirmation. */
   impact?: ArchiveImpact
 }
 
-// État d'édition d'une fiche du catalogue (œuvre, personne ou éditeur), nouvelle ou existante.
+/** Loads, edits, saves and archives one record; the draft lives in shared state. */
 export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   const client = useAdminClient()
   const api = useApi()
 
-  // `useState` : le brouillon chargé au rendu serveur est repris tel quel par le navigateur.
+  // `useState`: the draft loaded during server rendering is picked up as is by the browser.
+  /** Key of one piece of the editor state, unique per record. */
   const stateKey = (name: string) => `admin-${name}-${kind}-${id}`
   const work = useState<WorkDraft>(stateKey('work'), emptyWorkDraft)
   const person = useState<PersonDraft>(stateKey('person'), emptyPersonDraft)
@@ -22,23 +24,25 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   const errorKey = ref<string>()
   const saving = ref(false)
 
-  // Une fiche neuve repart toujours à vide : l'état survit à la navigation dans le site.
+  // A new record always starts empty: the state survives navigation within the site.
   if (id === 'new') {
     work.value = emptyWorkDraft()
     person.value = emptyPersonDraft()
     publisher.value = emptyPublisherDraft()
   }
 
+  /** The draft of the kind being edited. */
   const currentDraft = () => {
     if (kind === 'works') return work.value
     return kind === 'people' ? person.value : publisher.value
   }
 
-  // Dernier état enregistré (ou chargé), pour savoir si la saisie a changé.
   const savedSnapshot = ref(JSON.stringify(currentDraft()))
   const isDirty = computed(() => JSON.stringify(currentDraft()) !== savedSnapshot.value)
+  /** Remembers the current draft as the saved state. */
   const markSaved = () => (savedSnapshot.value = JSON.stringify(currentDraft()))
 
+  /** Reads the existing record into its draft; does nothing for a new one. */
   async function load() {
     if (id === 'new') return
     if (kind === 'works') {
@@ -61,6 +65,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     markSaved()
   }
 
+  /** API body built from the current draft. */
   const body = () => {
     if (kind === 'works') return draftToWorkBody(work.value)
     return kind === 'people'
@@ -68,7 +73,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
       : draftToPublisherBody(publisher.value)
   }
 
-  /** Enregistre ; vrai si l'API a accepté, sinon `errorKey` dit pourquoi. */
+  /** Saves; true if the API accepted, otherwise `errorKey` says why. */
   async function save(): Promise<boolean> {
     errorKey.value = undefined
     if (kind === 'works' && hasIncompleteRows(work.value)) {
@@ -89,7 +94,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     }
   }
 
-  /** Archive ou restaure la fiche ; vrai si l'API a accepté. */
+  /** Archives or restores the record; true if the API accepted. */
   async function setArchived(archived: boolean): Promise<boolean> {
     if (id === 'new') return false
     errorKey.value = undefined

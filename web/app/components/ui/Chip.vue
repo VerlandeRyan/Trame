@@ -1,3 +1,4 @@
+<!-- Small pill that labels a short piece of text. -->
 <template>
   <span class="chip"><slot /></span>
 </template>

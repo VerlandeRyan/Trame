@@ -8,15 +8,17 @@ import {
   type AdminWorkSort,
 } from '~/utils/admin'
 
-// Filtres et tri de la liste des œuvres (maquette 22) : type, format, statut, à choix multiples ;
-// une liste vide veut dire « tous ». Les changements sont émis tout de suite. Au mobile, les trois
-// filtres tiennent dans une feuille ouverte par « Filtres », comme la page de recherche.
+/**
+ * Filters and sort of the work list: type, format and status, multiple choice; an empty list
+ * means "all". Changes are emitted at once. On mobile, the three filters fit in a sheet opened
+ * by "Filters", like the search page.
+ */
 const props = defineProps<{
   filters: AdminWorkFilters
   sort: AdminWorkSort
-  /** Codes des formats connus (manga, webtoon…). */
+  /** Known format codes (manga, webtoon…). */
   formats: string[]
-  /** Nombre de fiches trouvées, repris par le bouton de la feuille. */
+  /** Number of records found, shown by the sheet button. */
   total: number
 }>()
 const emit = defineEmits<{ change: [filters: AdminWorkFilters]; sort: [sort: AdminWorkSort] }>()
@@ -32,14 +34,18 @@ const statusOptions = computed(() =>
 const formatOptions = computed(() => optionsOf(props.formats, genreLabel))
 const sortOptions = computed(() => optionsOf(ADMIN_WORK_SORTS, (code) => t(`admin.sort.${code}`)))
 
+/** Replaces the values of one filter. */
 const setFilter = (name: keyof AdminWorkFilters, values: string[]) =>
   emit('change', { ...props.filters, [name]: values })
 
+/** Total number of selected filter values. */
 const activeCount = computed(() =>
   Object.values(props.filters).reduce((total, values) => total + values.length, 0),
 )
+/** Clears every filter. */
 const reset = () => emit('change', { type: [], status: [], format: [] })
 
+/** Adds the value to a filter, or removes it if already selected. */
 function toggleFilter(name: keyof AdminWorkFilters, value: string) {
   const chosen = props.filters[name]
   setFilter(
@@ -51,6 +57,7 @@ function toggleFilter(name: keyof AdminWorkFilters, value: string) {
 const isSheetOpen = ref(false)
 const openGroups = reactive({ type: true, format: true, status: true })
 const areAllGroupsOpen = computed(() => Object.values(openGroups).every(Boolean))
+/** Opens or collapses every group of the sheet. */
 function setAllGroups(isOpen: boolean) {
   openGroups.type = openGroups.format = openGroups.status = isOpen
 }
@@ -185,8 +192,8 @@ const sheetGroups = computed(
   align-items: center;
 }
 
-// Bureau d'abord : la version mobile ne doit jamais apparaître, même avant que tous les styles soient
-// chargés. `.filters` en plus pour l'emporter sur le `display` de `UiButton`, quel que soit l'ordre.
+// Desktop first: the mobile version must never show, even before all styles are loaded.
+// `.filters` is added to win over `UiButton`'s `display`, whatever the order.
 .filters .filters__open {
   display: none;
 }
@@ -219,7 +226,7 @@ const sheetGroups = computed(
   cursor: pointer;
 }
 
-// Pied de la feuille : « Réinitialiser » 1/3, « Voir N résultats » 2/3, sur toute la largeur.
+// Sheet footer: "Reset" takes 1/3, "See N results" 2/3, over the full width.
 .filters__sheet-reset {
   flex: 1;
 }

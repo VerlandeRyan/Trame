@@ -1,3 +1,7 @@
+/**
+ * Response schemas of the public API. `satisfies` ties each schema to the service type, and
+ * `strictObject` makes the contract test fail if a response gains an undocumented field.
+ */
 import { z } from 'zod';
 import {
   CREDIT_ROLES,
@@ -22,9 +26,6 @@ import type { LibraryPage } from '../services/library.service.js';
 import type { Profile } from '../services/profile.service.js';
 import type { FeaturedItem, TopRatedWork, WorkDetail, WorkPage } from '../services/work.service.js';
 
-// `satisfies` lie chaque schéma au type du service ; `strictObject` fait échouer le test de contrat
-// si une réponse gagne un champ non décrit.
-
 const workType = z.enum(WORK_TYPES);
 const workStatus = z.enum(WORK_STATUSES);
 const externalLinkKind = z.enum(EXTERNAL_LINK_KINDS);
@@ -34,6 +35,7 @@ const creditRole = z.enum(CREDIT_ROLES);
 const titleKind = z.enum(TITLE_KINDS);
 const relationKind = z.enum(RELATION_KINDS);
 
+/** A work as shown on a list card. */
 const workSummary = z.strictObject({
   id: z.number().int(),
   title: z.string().describe('Titre dans la langue demandée, sinon titre original.'),
@@ -46,6 +48,7 @@ const workSummary = z.strictObject({
   mainAuthor: z.string().nullable(),
 }) satisfies z.ZodType<WorkSummary>;
 
+/** A page of the catalogue list. */
 export const workPageSchema = z.strictObject({
   items: z.array(workSummary),
   page: z.number().int(),
@@ -56,8 +59,10 @@ export const workPageSchema = z.strictObject({
     .describe('Aucune œuvre ne contient tous les mots : la liste donne celles qui en ont un.'),
 }) satisfies z.ZodType<WorkPage>;
 
+/** Number of works per value of one filter. */
 const facetCounts = z.array(z.strictObject({ code: z.string(), count: z.number().int() }));
 
+/** Facet counts of every filter group. */
 export const workFacetsSchema = z
   .strictObject({
     type: facetCounts,
@@ -70,6 +75,7 @@ export const workFacetsSchema = z
     'Œuvres par valeur de filtre ; chaque groupe ignore son propre filtre (sauf `genre`, en ET).',
   ) satisfies z.ZodType<WorkFacets>;
 
+/** The home "featured" works. */
 export const featuredListSchema = z
   .strictObject({
     items: z.array(
@@ -92,6 +98,7 @@ export const featuredListSchema = z
   })
   .describe('Jusqu’à 3 œuvres, la plus ajoutée à une liste récemment d’abord ; vide si aucune.');
 
+/** The home "top rated" works. */
 export const topRatedListSchema = z
   .strictObject({
     items: z.array(
@@ -105,12 +112,14 @@ export const topRatedListSchema = z
     'Jusqu’à 12 œuvres ayant au moins 10 notes, les mieux notées d’abord ; vide si aucune.',
   );
 
+/** An external link. */
 const link = z.strictObject({
   kind: externalLinkKind,
   url: z.string(),
   label: z.string().nullable(),
 });
 
+/** Full detail of one work. */
 export const workDetailSchema = z.strictObject({
   id: z.number().int(),
   title: z.string(),
@@ -168,6 +177,7 @@ export const workDetailSchema = z.strictObject({
     .describe('Moyenne sur une décimale ; `null` sous 10 notes (RG-04).'),
 }) satisfies z.ZodType<WorkDetail>;
 
+/** The genre and format list. */
 export const genreListSchema = z.strictObject({
   items: z.array(
     z.strictObject({
@@ -177,11 +187,13 @@ export const genreListSchema = z.strictObject({
   ),
 });
 
+/** The health probe answer. */
 export const healthSchema = z.strictObject({
   status: z.enum(['ok', 'degraded']),
   database: z.enum(['up', 'down']),
 }) satisfies z.ZodType<HealthStatus>;
 
+/** Who is behind the request. */
 export const authStatusSchema = z
   .discriminatedUnion('status', [
     z.strictObject({ status: z.literal('anonymous') }),
@@ -203,6 +215,7 @@ export const authStatusSchema = z
     'Qui est derrière la requête. Jamais l’e-mail ni l’identifiant Google.',
   ) satisfies z.ZodType<AuthStatus>;
 
+/** A reading-list entry. */
 const libraryEntry = z.strictObject({
   status: z.enum(LIBRARY_STATUSES),
   chaptersRead: z.number().int().describe('Chapitres lus, indépendants des tomes.'),
@@ -212,6 +225,7 @@ const libraryEntry = z.strictObject({
   finishedOn: z.string().nullable().describe('Date `YYYY-MM-DD`.'),
 }) satisfies z.ZodType<LibraryEntry>;
 
+/** The signed-in user's entry for one work. */
 export const libraryEntryResponseSchema = z
   .strictObject({
     entry: libraryEntry
@@ -222,6 +236,7 @@ export const libraryEntryResponseSchema = z
   entry: LibraryEntry | null;
 }>;
 
+/** A page of the reading list with its counts. */
 export const libraryPageSchema = z
   .strictObject({
     items: z.array(
@@ -250,8 +265,10 @@ export const libraryPageSchema = z
     'Une page de la liste de lecture de l’utilisateur connecté.',
   ) satisfies z.ZodType<LibraryPage>;
 
+/** Number of works per reading status. */
 const statusCounts = z.record(z.enum(LIBRARY_STATUSES), z.number().int());
 
+/** A member's public profile. */
 export const profileSchema = z
   .strictObject({
     handle: z.string().describe('Pseudo public, avec la casse choisie.'),
@@ -288,15 +305,18 @@ export const profileSchema = z
   })
   .describe('Profil public d’un membre. Jamais l’e-mail.') satisfies z.ZodType<Profile>;
 
+/** The stored profile visibility. */
 export const profileVisibilitySchema = z
   .strictObject({ visibility: z.enum(PROFILE_VISIBILITIES) })
   .describe('Visibilité enregistrée.');
 
+/** Every stable error code, as a non-empty tuple for `z.enum`. */
 const errorCodes = Object.keys(ERROR_CODES) as [
   keyof typeof ERROR_CODES,
   ...(keyof typeof ERROR_CODES)[],
 ];
 
+/** The uniform error response. */
 export const errorSchema = z
   .strictObject({
     code: z.enum(errorCodes).describe('Code stable : le front traduit à partir de lui.'),

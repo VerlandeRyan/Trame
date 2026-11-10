@@ -1,10 +1,11 @@
 import js from '@eslint/js';
+import jsdoc from 'eslint-plugin-jsdoc';
 import { defineConfig } from 'eslint/config';
 import sonarjs from 'eslint-plugin-sonarjs';
 import tseslint from 'typescript-eslint';
 
-// Règles de SonarCloud (eslint-plugin-sonarjs) vérifiées avant le push ; lint typé pour que les
-// règles qui lisent les types (promesses, `void`…) répondent comme dans l'analyse Sonar.
+// SonarCloud rules (eslint-plugin-sonarjs) checked before pushing; typed lint so the
+// rules that read types (promises, `void`…) answer as in the Sonar analysis.
 export default defineConfig(
   { ignores: ['dist/**', 'dist-e2e/**', 'coverage/**', 'migrations/**', 'scripts/**', 'src/db/generated.ts'] },
   {
@@ -13,17 +14,29 @@ export default defineConfig(
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
+    plugins: { jsdoc },
     rules: {
-      // Une propriété écartée par `...rest` n'est pas une variable oubliée.
+      // A property dropped by `...rest` is not a forgotten variable.
       '@typescript-eslint/no-unused-vars': ['error', { ignoreRestSiblings: true }],
       'sonarjs/no-unused-vars': 'off',
+      // Documentation convention: every function, interface and class has a one-line description.
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          require: { FunctionDeclaration: true, ClassDeclaration: true },
+          contexts: ['TSInterfaceDeclaration', 'VariableDeclarator > ArrowFunctionExpression'],
+        },
+      ],
+      'jsdoc/require-description': ['error', { contexts: ['any'] }],
     },
   },
   {
-    // Tests : `.sort()` compare des ensembles sans ordre, une moyenne arrondie s'attend exacte et
-    // le SQL d'insertion se construit en ligne.
+    // Tests: `.sort()` compares sets without order, a rounded average is expected exact and
+    // the insertion SQL is built inline. Documentation is not required there.
     files: ['**/*.test.ts'],
     rules: {
+      'jsdoc/require-jsdoc': 'off',
+      'jsdoc/require-description': 'off',
       'sonarjs/no-alphabetical-sort': 'off',
       'sonarjs/no-misleading-array-reverse': 'off',
       'sonarjs/no-floating-point-equality': 'off',

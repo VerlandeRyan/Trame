@@ -1,4 +1,5 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import WorkPage from './[slug].vue'
 
@@ -31,7 +32,16 @@ const work = {
   ratingAverage: null,
 }
 
+let entryReads = 0
+
 beforeEach(() => {
+  clearNuxtState()
+  useState('auth').value = { status: 'anonymous' }
+  entryReads = 0
+  registerEndpoint('/api/v1/works/42/entry', () => {
+    entryReads += 1
+    return { entry: null }
+  })
   // Adresse relative : `registerEndpoint` intercepte les appels internes de l'environnement de test.
   useRuntimeConfig().apiBase = ''
   registerEndpoint('/api/v1/works/42', () => work)
@@ -72,4 +82,21 @@ describe('page de fiche', () => {
       clearError()
     },
   )
+
+  it('ne lit pas la liste de lecture pour un visiteur', async () => {
+    await mountSuspended(WorkPage, { route: '/work/42-aube-fictive' })
+    await flushPromises()
+
+    expect(entryReads).toBe(0)
+  })
+
+  it('lit la liste de lecture d’un membre connecté', async () => {
+    useState('auth').value = {
+      status: 'authenticated',
+      user: { id: 1, handle: 'lecteur', role: 'user' },
+    }
+    await mountSuspended(WorkPage, { route: '/work/42-aube-fictive' })
+
+    await vi.waitFor(() => expect(entryReads).toBeGreaterThan(0))
+  })
 })

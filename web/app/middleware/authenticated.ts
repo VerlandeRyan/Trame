@@ -1,4 +1,4 @@
-// Pages réservées aux membres : un visiteur revient à l'accueil, où la fenêtre de connexion s'ouvre.
+/** Member-only pages: a visitor goes back home, where the sign-in window opens. */
 export default defineNuxtRouteMiddleware(() => {
   if (useAuth().state.value.status === 'authenticated') return
 

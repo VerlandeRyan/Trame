@@ -2,7 +2,7 @@
 import type { RouteLocationNormalized } from 'vue-router'
 import type { RecordRef } from '~/utils/admin'
 
-// Fiche du catalogue en création (`/new`) ou en modification (US-11, maquette 22).
+/** Catalogue record being created (`/new`) or edited. */
 definePageMeta({
   middleware: 'admin',
   validate: (route) => parseAdminEditRoute(route.params) !== null,
@@ -14,7 +14,7 @@ const target = parseAdminEditRoute(route.params) ?? { kind: 'works' as const, id
 const { kind, id } = target
 const editor = useAdminEditor(kind, id)
 const { record, errorKey, saving } = editor
-// Arrivé sans passer par la liste (adresse directe), « Retour » mène à l'onglet de cette fiche.
+// Arrived without going through the list (direct address): "Back" leads to this record's tab.
 const { last: lastList, location: listLocation } = useAdminListLocation()
 lastList.value ??= parseAdminListQuery({ kind })
 
@@ -27,7 +27,7 @@ await useAsyncData(`admin-edit-${kind}-${id}`, async () => {
   await editor.load()
   return true
 })
-// Les genres ne changent pas pendant l'édition : une seule lecture, côté serveur comme navigateur.
+// Genres do not change during editing: a single read, on the server as in the browser.
 const api = useApi()
 const { data: genres } = await useAsyncData('admin-genres', async () =>
   kind === 'works'
@@ -35,32 +35,37 @@ const { data: genres } = await useAsyncData('admin-genres', async () =>
     : { items: [] as { code: string; category: string }[] },
 )
 
+/** Searches records of a kind, for the pickers. */
 const search = (searchKind: AdminKind, text: string): Promise<RecordRef[]> =>
   editor.client.search(searchKind, text)
+/** Goes back to the list the user came from. */
 const backToList = () => navigateTo(listLocation.value)
 
+/** Saves, then goes back to the list if the API accepted. */
 async function submit() {
   if (await editor.save()) await backToList()
 }
 
 const confirmingArchive = ref(false)
+/** Archives the record, then goes back to the list. */
 async function archive() {
   if (await editor.setArchived(true)) {
     isLeaving = true
     await backToList()
   }
 }
+/** Restores the record. */
 const restore = () => editor.setArchived(false)
 
-// Quitter la fiche avec une saisie non enregistrée demande confirmation.
+// Leaving the record with unsaved input asks for confirmation.
 const confirmingLeave = ref(false)
 let pendingDestination: RouteLocationNormalized | null = null
 let isLeaving = false
-// Un garde du routeur (retiré avec la page) plutôt que `onBeforeRouteLeave`, qui ne voit pas la
-// page quand elle est montée seule dans les tests.
+// A router guard (removed with the page) rather than `onBeforeRouteLeave`, which cannot see the
+// page when it is mounted alone in tests.
 if (import.meta.client) {
   const removeLeaveGuard = useRouter().beforeEach((to, from) => {
-    // Changer de section (`?section=`) reste sur la même fiche.
+    // Changing section (`?section=`) stays on the same record.
     if (to.path === from.path || isLeaving || !editor.isDirty.value) return true
     pendingDestination = to
     confirmingLeave.value = true
@@ -68,10 +73,12 @@ if (import.meta.client) {
   })
   onBeforeUnmount(removeLeaveGuard)
 }
-function leave() {
+/** Leaves for the destination that was held back by the guard. */
+async function leave() {
   isLeaving = true
-  if (pendingDestination) navigateTo(pendingDestination)
+  if (pendingDestination) await navigateTo(pendingDestination)
 }
+/** Asks the browser to confirm closing the tab while input is unsaved. */
 function warnBeforeUnload(event: BeforeUnloadEvent) {
   if (editor.isDirty.value) event.preventDefault()
 }
@@ -184,7 +191,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
   justify-content: space-between;
 }
 
-// Le titre et sa pastille d'état restent ensemble ; l'action d'archivage va à l'autre bout.
+// The title and its status pill stay together; the archive action goes to the other end.
 .edit__heading {
   display: flex;
   flex-wrap: wrap;

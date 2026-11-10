@@ -3,20 +3,22 @@ import { CONTINUE_READING_SIZE, SHELF_SIZE, type FeaturedWork, type RatedWork } 
 import { countEntriesOfAllStatuses, type ListedEntry, type ListPage } from '~/utils/reading-list'
 import type { WorkPage } from '~/utils/search'
 
-// `path: '/'` fait de ce fichier la racine. `trame: 'hero'` : la trame du bord droit reste dans la
-// bande du hero, le layout n'affiche pas sa colonne fixe.
+/** Home page: hero with search, featured works, recent works, top rated and the member's reading in progress. */
+// `path: '/'` makes this file the root. `trame: 'hero'`: the right-edge screentone stays within
+// the hero band, the layout does not show its fixed column.
 definePageMeta({ path: '/', trame: 'hero' })
 
 const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const api = useApi()
 
-/** Œuvres en cours d'un membre ; `isReadingListEmpty` : aucune œuvre, tous statuts confondus. */
+/** A member's works in progress; `isReadingListEmpty`: no work at all, every status together. */
 interface ContinueReadingData {
   items: ListedEntry[]
   isReadingListEmpty: boolean
 }
 
+/** Everything the home page loads. */
 interface HomeData {
   featured: FeaturedWork[]
   recent: WorkPage['items']
@@ -24,17 +26,17 @@ interface HomeData {
   continueReading: ContinueReadingData | null
 }
 
-// Tampons du hero, dans l'ordre de la maquette ; libellés dans `genre.*`.
+// Stamps of the hero, in display order; labels are under `genre.*`.
 const STAMP_FORMATS = ['manga', 'bd', 'webtoon', 'webcomic', 'comics']
 
-// Seul un membre connecté a un accueil personnalisé (`pending` : pseudo pas encore choisi).
+// Only a signed-in member gets a personalised home (`pending`: handle not chosen yet).
 const auth = useAuth()
 const member = computed(() =>
   auth.state.value.status === 'authenticated' ? auth.state.value.user : null,
 )
 const memberHandle = computed(() => (member.value ? `@${member.value.handle}` : ''))
 
-// Un bloc dont l'appel échoue est masqué : une panne ne casse pas l'accueil.
+/** A block whose call fails is hidden: an outage does not break the home page. */
 async function loadOrFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
   try {
     return await request
@@ -43,7 +45,7 @@ async function loadOrFallback<T>(request: Promise<T>, fallback: T): Promise<T> {
   }
 }
 
-// Une panne laisse la bande absente (`null`) : on ne la prend pas pour une liste vide.
+/** Loads the member's works in progress; an outage leaves the strip absent (`null`), not mistaken for an empty list. */
 async function loadContinueReading(lang: string): Promise<ContinueReadingData | null> {
   if (!member.value) return null
   return loadOrFallback<ContinueReadingData | null>(
@@ -59,6 +61,7 @@ async function loadContinueReading(lang: string): Promise<ContinueReadingData | 
   )
 }
 
+/** Loads every home block in parallel. */
 async function loadHomeBlocks(): Promise<HomeData> {
   const lang = locale.value
   const [featured, recent, topRated, continueReading] = await Promise.all([
@@ -92,7 +95,6 @@ const isReadingListEmpty = computed(() => data.value?.continueReading?.isReading
 
 const searchBox = ref<{ submit: () => void } | null>(null)
 
-// Au mobile, le champ n'a que « Rechercher… ».
 const narrow = useNarrowScreen()
 const placeholder = computed(() =>
   narrow.value ? t('home.searchPlaceholderShort') : t('home.searchPlaceholder'),
@@ -126,7 +128,7 @@ useHead({ title: () => t('app.name') })
             {{ t('home.title') }}
             <span class="home__highlight">{{ t('home.titleHighlight') }}</span>
           </h1>
-          <!-- Décor : les formats sont déjà dans le texte et dans la recherche. -->
+          <!-- Decoration: the formats are already in the text and in the search. -->
           <ul class="home__stamps" aria-hidden="true" data-testid="home-stamps">
             <li v-for="format in STAMP_FORMATS" :key="format" class="home__stamp">
               {{ t(`genre.${format}`) }}
@@ -202,7 +204,7 @@ useHead({ title: () => t('app.name') })
         :works="data.topRated"
       />
 
-      <!-- Inactif jusqu'à US-09 (proposition d'une œuvre, connexion requise). -->
+      <!-- Inactive until proposing a work exists (sign-in required). -->
       <UiPanel class="home__missing" data-testid="home-missing">
         <div>
           <h2 class="home__missing-title">{{ t('home.missing.title') }}</h2>
@@ -219,14 +221,14 @@ useHead({ title: () => t('app.name') })
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Bandes pleine largeur : on annule les marges de `<main>`, la page pose les siennes.
+// Full-width bands: cancel `<main>`'s margins, the page sets its own.
 .home {
   margin: calc(-1 * var(--main-pad-top)) calc(-1 * var(--main-pad-x))
     calc(-1 * var(--main-pad-bottom));
   --rule-gap: 14px;
 }
 
-// La trame du bord droit (décor, sans clic) s'arrête au filet de la bande.
+// The right-edge screentone (decoration, no clicks) stops at the band's rule.
 .home__hero {
   position: relative;
   display: flex;
@@ -266,7 +268,7 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-// Colonne de gauche : au mobile l'ordre visuel est titre, sous-titre, tampons, recherche.
+// Left column: on mobile the visual order is title, subtitle, stamps, search.
 .home__lead {
   display: flex;
   flex: 1 1 100%;
@@ -291,19 +293,18 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-// Membre : pas de tampons ni de sous-titre inversé, l'ordre du DOM suffit.
+// Member: no stamps or reversed subtitle, the DOM order is enough.
 .home__lead.home__lead--member > * {
   order: 0;
 }
 
-// La bande occupe toute la largeur du hero, sous la recherche.
 .home__continue-reading {
   flex: 1 1 100%;
   min-width: 0;
   margin-top: var(--space-2);
 }
 
-// Liste vide : au bureau, titre, recherche et formats sont centrés.
+// Empty list: on desktop, title, search and formats are centred.
 .home__hero--empty {
   @media (min-width: 768px) {
     justify-content: center;
@@ -313,7 +314,7 @@ useHead({ title: () => t('app.name') })
       align-items: center;
     }
 
-    // Le centrage ne doit pas gagner le menu de suggestions.
+    // Centring must not reach the suggestions menu.
     .home__search {
       width: 100%;
       margin-inline: auto;
@@ -339,7 +340,7 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-// Formats cliquables : mêmes pastilles blanches que les tampons, mais droites et de 44 px.
+// Clickable formats: same white pills as the stamps, but straight and 44 px tall.
 .home__format {
   display: inline-flex;
   align-items: center;
@@ -362,7 +363,7 @@ useHead({ title: () => t('app.name') })
   font-size: 1.85rem;
   line-height: 1.1;
   text-wrap: balance;
-  // Un pseudo de 30 caractères n'a aucun point de coupure : sans cela il déborde de l'écran.
+  // A 30-character handle has no break point: without this it overflows the screen.
   overflow-wrap: anywhere;
 
   @media (min-width: 768px) {
@@ -370,18 +371,18 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-// Soulignement au feutre rose (bleu sur rose : 3,2:1, suffisant pour de gros caractères).
+// Pink marker underline (blue on pink: 3.2:1, enough for large characters).
 .home__highlight {
   background: linear-gradient(transparent 62%, var(--color-rose) 62%);
 }
 
-// Tampons blancs inclinés, non cliquables, sur une seule ligne (au mobile comme au bureau).
+// Tilted white stamps, not clickable, on a single line (mobile and desktop).
 .home__stamps {
   display: flex;
   gap: 6px;
   order: 2;
   margin: 0 0 var(--space-3);
-  // Une ligne jusqu'à 320 px : le corps suit la largeur (décor, masqué aux lecteurs d'écran).
+  // One line down to 320 px: the body follows the width (decoration, hidden from screen readers).
   font-size: min(0.78rem, 2.9vw);
 
   @media (min-width: 768px) {
@@ -426,7 +427,6 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-// Une ligne au bureau (la colonne est assez large), deux lignes au mobile.
 .home__intro {
   order: 1;
   margin: var(--space-2) 0 var(--space-3);
@@ -472,7 +472,7 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-// Au mobile, Entrée suffit : le bouton n'existe qu'à partir de la tablette.
+// On mobile, Enter is enough: the button only exists from tablet width.
 .home__submit {
   @media (max-width: 767px) {
     display: none;
@@ -483,7 +483,7 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-// Blocs séparés de 26 px, y compris entre le hero et le premier.
+// Blocks 26 px apart, including between the hero and the first one.
 .home__body {
   display: grid;
   gap: 26px;
@@ -507,7 +507,6 @@ useHead({ title: () => t('app.name') })
   }
 }
 
-// Garde sa largeur au mobile.
 .home__propose {
   justify-self: start;
 }

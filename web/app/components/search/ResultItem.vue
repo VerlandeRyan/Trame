@@ -2,20 +2,24 @@
 import { originalLine, translatedCode, type WorkSummary } from '~/utils/search'
 import { coverUrl, workSlug } from '~/utils/work'
 
+/** One result of the search page: cover, title, tags and author line. */
 const props = defineProps<{ work: WorkSummary }>()
 const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
 
+/** Localised address of the work page. */
 const path = computed(() => localePath(`/work/${workSlug(props.work.id, props.work.title)}`))
-// « EN : Titre original » quand la langue de l'interface n'est pas celle de l'œuvre.
+// "EN : Original title" when the interface language is not the work's.
 const original = computed(() => {
   const line = originalLine(props.work, locale.value)
   return line === null ? null : `${line.language.toUpperCase()} : ${line.title}`
 })
+/** Type and format labels. */
 const tags = computed(() => [
   t(`workType.${props.work.type}`),
   ...props.work.formats.map((code) => translatedCode(t, te, 'genre', code)),
 ])
+/** "Author · Status" line. */
 const authorLine = computed(() =>
   [props.work.mainAuthor, t(`workStatus.${props.work.status}`)].filter(Boolean).join(' · '),
 )
@@ -38,7 +42,7 @@ const authorLine = computed(() =>
       </ul>
       <p class="result__meta">{{ authorLine }}</p>
     </div>
-    <!-- Inactif jusqu'à « Ajouter à ma liste » (#23). -->
+    <!-- Inactive until 'Add to my list' exists. -->
     <div class="result__action">
       <UiButton
         variant="primary"
@@ -90,7 +94,7 @@ const authorLine = computed(() =>
   color: var(--color-blue);
   text-decoration: none;
 
-  // À la souris seulement : sur écran tactile le survol resterait collé après un toucher.
+  // Mouse only: on a touch screen, hover would stay stuck after a tap.
   @media (hover: hover) and (pointer: fine) {
     &:hover {
       text-decoration: underline;
@@ -141,7 +145,7 @@ const authorLine = computed(() =>
   }
 }
 
-// Mobile : « + » seul, le libellé reste dans `aria-label`.
+// Mobile: '+' alone, the label stays in `aria-label`.
 .result__add-label {
   display: none;
 

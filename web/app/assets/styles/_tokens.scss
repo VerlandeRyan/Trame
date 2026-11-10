@@ -7,51 +7,51 @@
   --color-ink-soft: #4d5a8a;
   --color-blue: #2340b8;
   --color-rose: #f07a9c;
-  // Survols : le rose et le bleu se renforcent. `rose-strong` est le rose le plus foncé qui garde
-  // le texte d'encre au seuil AA (4,55:1) ; `contrast.spec.ts` le vérifie.
+  // Hover: pink and blue get stronger. `rose-strong` is the darkest pink that keeps
+  // ink text at the AA threshold (4.55:1); `contrast.spec.ts` checks it.
   --color-rose-strong: #ea6a91;
   --color-rose-soft: #f4a0b9;
   --color-blue-strong: #16297d;
-  // Bleu des liens au survol, plus clair que le bleu du site (texte courant : 5,4:1 sur le papier).
+  // Link blue on hover, lighter than the site blue (body text: 5.4:1 on paper).
   --color-blue-light: #3558d9;
   --color-chip: #fde3ea;
   --color-cover-empty: #cfd8ff;
-  // Couverture sans image : fond bleu pâle et trame rose vif (`work/Cover.vue`).
+  // Cover without an image: pale blue background and bright pink screentone.
   --color-cover-blank: #bcc8ff;
   --color-rose-vivid: #ff2f9e;
-  // Carte d'une ligne de formulaire admin : gris froid, pour que le survol `cover-empty` des
-  // boutons et sélecteurs qu'elle contient reste visible.
+  // Card of an admin form row: cool grey, so the `cover-empty` hover of the
+  // buttons and selects it contains stays visible.
   --color-row-card: #e2e2ea;
-  // Trame décorative du bord droit (layouts/default.vue, hero de l'accueil) : même rose vif que la
-  // trame des couvertures sans image.
+  // Decorative right-edge screentone: same bright pink as the
+  // screentone of covers without an image.
   --color-trame-side: var(--color-rose-vivid);
   --color-field-soft: #eef1ff;
-  // Accueil visiteur : badge « À la une » et icône de découverte, surlignage des mots clés,
-  // « N lecteurs ». Texte d'encre sur `yellow` et `cyan`, `crimson` sur fond blanc (`contrast.spec.ts`).
+  // Visitor home: 'Featured' badge and discovery icon, keyword highlight,
+  // 'N readers'. Ink text on `yellow` and `cyan`, `crimson` on white (`contrast.spec.ts`).
   --color-yellow: #ffc933;
   --color-cyan: #8ff3fa;
   --color-crimson: #a3174f;
   --color-danger: #b3263e;
   --color-danger-strong: #8f1e32;
-  // Trait d'un onglet souligné survolé (3:1 sur le papier).
+  // Line of a hovered underlined tab (3:1 on paper).
   --color-blue-line: #6f86e6;
   --color-rule: rgb(27 42 92 / 27%);
 
-  // Cartes de formats du menu « Explorer » (un format inconnu garde --color-field-soft)
+  // Format cards of the Explore menu (an unknown format keeps --color-field-soft)
   --color-format-manga: #ffd3ea;
   --color-format-manhwa: #e5d9fb;
   --color-format-webtoon: #fff3b8;
   --color-format-bd: #dde4ff;
   --color-format-webcomic: #d6f8f4;
 
-  // Statuts de lecture (clés = codes de work_status de library_entry)
+  // Reading statuses (keys are the library entry status codes)
   --status-reading: #4cc38a;
   --status-completed: #7fa0ff;
   --status-plan_to_read: #cfc2f5;
   --status-on_hold: #f6d36b;
   --status-dropped: #e8707c;
-  // Fond d'un bouton de statut au survol et à l'appui : 10 % de noir. « Terminé » et « Abandonné »
-  // passent sous 4,5:1 avec le texte d'encre le temps du survol (exception assumée, `contrast.spec.ts`).
+  // Hover and press background of a status button: 10% black. 'Completed' and 'Dropped'
+  // fall below 4.5:1 with ink text while hovered (accepted exception, `contrast.spec.ts`).
   --status-reading-strong: #44b07c;
   --status-completed-strong: #7290e6;
   --status-plan_to_read-strong: #baafdd;
@@ -65,12 +65,12 @@
   --shadow: 3px 3px 0 var(--color-ink);
   --shadow-small: 2px 2px 0 var(--color-ink);
 
-  // Typographie : pile système, et Poppins 800 (auto-hébergée, `nuxt.config.ts`) pour les titres d'accroche.
+  // Typography: system stack, and Poppins 800 (self-hosted, `nuxt.config.ts`) for headline titles.
   --font-sans: system-ui, -apple-system, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif;
   --font-display: 'Poppins', var(--font-sans);
   --weight-title: 800;
 
-  // Espacement (échelle de 4 px)
+  // Spacing (4 px scale)
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -78,9 +78,9 @@
   --space-6: 24px;
   --space-8: 32px;
 
-  // Zone tactile minimale (WCAG / maquettes)
+  // Minimum touch target size (WCAG)
   --touch: 44px;
 }
 
 // Points de rupture (media queries, valeurs non variabilisables en CSS) :
-// mobile < 768 px (maquettes à 390 px), tablette ≥ 768 px, bureau ≥ 1024 px (maquettes à 1280 px).
+// mobile < 768 px, tablet ≥ 768 px, desktop ≥ 1024 px.

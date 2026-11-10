@@ -1,3 +1,4 @@
+/** HTTP controller of the Google sign-in flow, account creation and sign-out. */
 import type { Request, RequestHandler } from 'express';
 import { SUPPORTED_LANGUAGES } from '../config.js';
 import { AppError } from '../errors.js';
@@ -12,27 +13,28 @@ import type { GoogleIdentity } from '../services/google-identity.js';
 import { SESSION_TTL_MS, cookieOptions, sessionCookieName } from '../session/middleware.js';
 import { destroySession, regenerateSession, saveSession } from '../session/session-actions.js';
 
+/** Front-end page paths the flow redirects to. */
 const HOME_PATH = '/';
 const HANDLE_PATH = '/signup/handle';
 
-// Le français n'a pas de préfixe d'URL, les autres langues en ont un (`/en/…`).
+/** French has no URL prefix; the other languages do (`/en/…`). */
 const DEFAULT_LANGUAGE = 'fr';
 const PREFIXED_LANGUAGES: ReadonlySet<string> = new Set(
   SUPPORTED_LANGUAGES.filter((language) => language !== DEFAULT_LANGUAGE),
 );
 
-/** Préfixe de langue de la page d'origine (`/en`), pour garder le parcours dans cette langue. */
+/** Language prefix of the originating page (`/en`), to keep the journey in that language. */
 function localePrefix(returnTo?: string): string {
   const firstSegment = returnTo?.split(/[/?#]/)[1] ?? '';
   return PREFIXED_LANGUAGES.has(firstSegment) ? `/${firstSegment}` : '';
 }
 
-/** Le front renvoie l'utilisateur vers `returnTo` une fois son handle choisi. */
+/** Appends `returnTo` so the front end can send the user back once the handle is chosen. */
 function withReturnTo(path: string, returnTo?: string): string {
   return returnTo ? `${path}?returnTo=${encodeURIComponent(returnTo)}` : path;
 }
 
-/** Ouvre une session neuve (nouvel identifiant) pour un utilisateur connecté ou en attente de handle. */
+/** Opens a fresh session (new identifier) for a signed-in user or one waiting to choose a handle. */
 async function openSession(
   req: Request,
   content: { userId: number } | { pending: GoogleIdentity },
@@ -44,6 +46,7 @@ async function openSession(
   await saveSession(req);
 }
 
+/** Builds the authentication request handlers. */
 export function createAuthController(
   service: AuthService,
   options: { webOrigin: string; secureCookies: boolean },
@@ -68,7 +71,9 @@ export function createAuthController(
     async finishGoogleLogin(req, res) {
       const { code, state, error } = validated(callbackQuery, req.query);
       const attempt = req.session.oauth;
+      /** Redirects the browser to a page of the front end. */
       const backToFront = (path: string) => res.redirect(`${webOrigin}${path}`);
+      /** Sends the user back to the home page with the reason of the failure. */
       const fail = (reason: string) =>
         backToFront(`${localePrefix(attempt?.returnTo)}${HOME_PATH}?auth_error=${reason}`);
 
@@ -107,7 +112,7 @@ export function createAuthController(
       res.status(201).json({ status: 'authenticated', user });
     },
 
-    /** Déconnexion, ou abandon d'une inscription en attente. */
+    /** Signs out, or abandons a pending sign-up. */
     async signOut(req, res) {
       await destroySession(req);
       res.clearCookie(sessionCookieName(secureCookies), cookieOptions(secureCookies));

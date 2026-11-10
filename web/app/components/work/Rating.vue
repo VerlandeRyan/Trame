@@ -1,7 +1,9 @@
 <script setup lang="ts">
-// Note moyenne et nombre de membres : publics, visibles sans connexion (US-02, RG-04).
-// La moyenne n'est affichée qu'à partir de `minRatings` notes ; en dessous, seul le nombre de notes.
-// Le nombre de membres est toujours affiché, zéro compris.
+/**
+ * Average rating and number of members: public, visible without signing in. The average is only
+ * shown from `minRatings` ratings; below that, only the number of ratings. The number of members
+ * is always shown, zero included.
+ */
 withDefaults(
   defineProps<{
     average: number | null
@@ -13,6 +15,7 @@ withDefaults(
 )
 const { t, locale } = useI18n()
 
+/** Number formatted for the interface language. */
 const formatNumber = (value: number) => new Intl.NumberFormat(locale.value).format(value)
 </script>
 

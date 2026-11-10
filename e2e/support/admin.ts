@@ -1,11 +1,12 @@
+/** Helper that signs the demo administrator into a browser context. */
 import { expect, type BrowserContext } from '@playwright/test'
 
-/** Compte administrateur du jeu de démo (`db/demo-data.sql`), identifié par `sub` et e-mail. */
+/** Fake sign-in code of the demo administrator account (from the demo data set), identified by `sub` and email. */
 const DEMO_ADMIN_CODE = encodeURIComponent('e2e:demo-sub-admin:admin@exemple.test')
 
 /**
- * Ouvre la session du compte administrateur de démo dans ce contexte, par le vrai callback de
- * l'API (seul Google est remplacé, voir `api/src/e2e/fake-google.ts`).
+ * Opens the demo administrator's session in this context through the API's real callback
+ * (only Google is replaced).
  */
 export async function signInAsAdmin(context: BrowserContext): Promise<void> {
   const start = await context.request.get('/api/v1/auth/google?returnTo=%2F', { maxRedirects: 0 })

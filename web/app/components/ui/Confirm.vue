@@ -1,24 +1,28 @@
 <script setup lang="ts">
-// Confirmation d'une action sensible ; `cancelLabel` est l'issue sûre (ne rien changer).
-// `cancel` distingue le bouton de refus de la croix, d'Échap et du clic à côté (qui ne font que fermer).
+/**
+ * Confirmation of a sensitive action; `cancelLabel` is the safe outcome (change nothing).
+ * `cancel` tells the decline button apart from the cross, Escape and a click outside (which only close).
+ */
 defineProps<{
   title: string
   text: string
   confirmLabel: string
   cancelLabel: string
   closeLabel: string
-  // Action destructrice (archivage…) : bouton de confirmation rouge.
+  /** Destructive action (archiving…): red confirm button. */
   danger?: boolean
 }>()
 const emit = defineEmits<{ confirm: []; cancel: [] }>()
 const open = defineModel<boolean>({ default: false })
 const narrow = useNarrowScreen()
 
+/** Closes the dialog and reports the confirmation. */
 function confirm() {
   open.value = false
   emit('confirm')
 }
 
+/** Closes the dialog and reports the explicit refusal. */
 function cancel() {
   open.value = false
   emit('cancel')
@@ -67,8 +71,8 @@ function cancel() {
   line-height: 1.5;
 }
 
-// Les deux boutons restent toujours côte à côte, à largeur égale ; un libellé long passe sur deux
-// lignes dans son bouton plutôt que d'envoyer un bouton sous l'autre.
+// Both buttons always stay side by side, at equal width; a long label wraps onto two
+// lines inside its button rather than sending one button under the other.
 .confirm__actions {
   display: flex;
   gap: var(--space-3);

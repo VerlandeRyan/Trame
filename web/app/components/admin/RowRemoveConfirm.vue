@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Confirmation du retrait d'une ligne déjà saisie d'un formulaire d'administration : textes et rouge
-// portés ici, une seule fois.
+/** Confirmation of removing an already filled row of an administration form: texts and red styling live here, once. */
 const emit = defineEmits<{ confirm: [] }>()
 const open = defineModel<boolean>({ default: false })
 const { t } = useI18n()

@@ -8,9 +8,11 @@ import {
 } from '~/utils/admin'
 import { updateAge } from '~/utils/profile'
 
-// Tableau du catalogue (maquette 22) : une ligne par fiche, « Modifier » ou, pour une archive,
-// « Restaurer ». Archiver se fait depuis la fiche, ou depuis la feuille « ⋮ » (`admin/RowMenu`) au mobile.
-// `loadImpact` (œuvres) lit ce que l'archivage laisse en place, pour la confirmation.
+/**
+ * Catalogue table: one row per record, "Edit" or, for an archive, "Restore". Archiving is done
+ * from the record, or from the "⋮" sheet (`admin/RowMenu`) on mobile. `loadImpact` (works) reads
+ * what archiving leaves in place, for the confirmation.
+ */
 const props = defineProps<{
   kind: AdminKind
   items: AdminListItem[]
@@ -21,6 +23,7 @@ const { t } = useI18n()
 const localePath = useLocalePath()
 
 const isWorks = computed(() => props.kind === 'works')
+/** Column headings of the table for the kind. */
 const columns = computed(() =>
   isWorks.value
     ? ['work', 'typeFormat', 'author', 'status', 'completeness']
@@ -28,12 +31,14 @@ const columns = computed(() =>
 )
 
 const ACTION_COLUMN = '7.5rem'
+/** CSS grid columns of a row. */
 const gridColumns = computed(() =>
   isWorks.value
     ? `minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr) ${ACTION_COLUMN}`
     : `minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) ${ACTION_COLUMN}`,
 )
 
+/** Lowercase relative age of a date ("3 days"), empty without a date. */
 const ageLabel = (iso: string | null | undefined) => {
   if (!iso) return ''
   const age = updateAge(iso)
@@ -44,6 +49,7 @@ const ageLabel = (iso: string | null | undefined) => {
   return label.toLowerCase()
 }
 
+/** Line under the title: last update, or who archived it and when. */
 function subtitle(item: AdminListItem): string {
   if (!item.archived)
     return item.updatedAt ? t('admin.row.updated', { age: ageLabel(item.updatedAt) }) : ''
@@ -54,17 +60,19 @@ function subtitle(item: AdminListItem): string {
 }
 
 const genreLabel = useGenreLabel()
+/** Work type followed by its formats. */
 function typeAndFormat(item: AdminListItem): string {
   const type = item.type ? t(`admin.option.workType.${item.type}`) : ''
   return [type, ...(item.formats ?? []).map(genreLabel)].filter(Boolean).join(' · ')
 }
 
+/** Translated kind of a person or publisher. */
 function kindLabel(item: AdminListItem): string {
   const group = props.kind === 'people' ? 'person' : 'publisher'
   return item.kind ? t(`admin.option.${group}.${item.kind}`) : ''
 }
 
-// Mobile : une seule ligne d'information sous le titre, comme la maquette 6.
+/** Mobile: a single information line under the title. */
 function summary(item: AdminListItem): string {
   const parts = isWorks.value
     ? [typeAndFormat(item), item.status ? t(`admin.option.workStatus.${item.status}`) : '']
@@ -72,18 +80,19 @@ function summary(item: AdminListItem): string {
   return parts.filter(Boolean).join(' · ')
 }
 
-// Mobile : les actions d'une fiche sont dans une feuille ouverte par « ⋮ » (maquette 7).
 const menuItem = ref<AdminListItem | null>(null)
 const isMenuOpen = ref(false)
+/** Opens the action sheet of a row. */
 function openMenu(item: AdminListItem) {
   menuItem.value = item
   isMenuOpen.value = true
 }
 
-// L'archivage demande la même confirmation que depuis la fiche, récapitulatif compris (chargé à
-// l'ouverture ; sans lui, la confirmation reste utilisable).
+// Archiving asks the same confirmation as from the record, summary included (loaded on opening;
+// without it, the confirmation stays usable).
 const isArchiveConfirmOpen = ref(false)
 const impact = ref<ArchiveImpact | null>(null)
+/** Opens the archive confirmation and loads what archiving would leave in place. */
 async function askArchive(item: AdminListItem) {
   isArchiveConfirmOpen.value = true
   impact.value = null
@@ -95,6 +104,7 @@ async function askArchive(item: AdminListItem) {
     impact.value = null
   }
 }
+/** Reports the confirmed archiving of the row whose sheet is open. */
 function archiveMenuItem() {
   if (menuItem.value) emit('archive', menuItem.value)
 }
@@ -216,7 +226,7 @@ function archiveMenuItem() {
   box-shadow: var(--shadow);
 }
 
-// Colonnes (`--rows-columns`, posée par le composant) : fiche large, cellules, puis l'action.
+// Columns (`--rows-columns`, set by the component): wide record cell, cells, then the action.
 .rows__head,
 .rows__row {
   display: grid;
@@ -260,7 +270,7 @@ function archiveMenuItem() {
   font-weight: 800;
   text-decoration: none;
 
-  // Comme le titre d'une ligne de Ma liste.
+  // Same as the title of a My list row.
   @include on-hover {
     text-decoration: underline;
   }
@@ -316,13 +326,13 @@ function archiveMenuItem() {
   justify-self: end;
 }
 
-// Éléments propres au mobile, masqués au bureau.
+// Mobile-only elements, hidden on desktop.
 .rows__summary,
 .rows__more {
   display: none;
 }
 
-// Mobile (maquette 6) : titre, une ligne d'information et la complétude ; « ⋮ » ouvre les actions.
+// Mobile: title, one information line and the completeness; "⋮" opens the actions.
 @media (max-width: 1023px) {
   .rows__head,
   .rows__action,
@@ -337,8 +347,8 @@ function archiveMenuItem() {
     align-items: start;
   }
 
-  // Couverture, titre, information et complétude deviennent les cases d'une même grille : la
-  // couverture s'étend sur les trois lignes de texte (maquette 6).
+  // Cover, title, information and completeness become cells of one grid: the
+  // cover spans the three text lines.
   .rows__main {
     display: contents;
   }

@@ -1,20 +1,31 @@
 import js from '@eslint/js'
+import jsdoc from 'eslint-plugin-jsdoc'
 import { defineConfig } from 'eslint/config'
 import sonarjs from 'eslint-plugin-sonarjs'
 import tseslint from 'typescript-eslint'
 
-// Mêmes règles que l'API et le web : SonarJS (eslint-plugin-sonarjs) en lint typé.
+// Same rules as the API and the web: SonarJS (eslint-plugin-sonarjs) with typed lint.
 export default defineConfig(
   { ignores: ['test-results/**', 'playwright-report/**', 'eslint.config.mjs'] },
   {
     files: ['**/*.ts'],
     extends: [js.configs.recommended, tseslint.configs.recommended, sonarjs.configs.recommended],
+    plugins: { jsdoc },
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },
     },
-    // Tests stables : on attend un état observable, jamais le réseau ni une durée (ils échouent
-    // sur une machine chargée).
+    // Stable tests: wait for an observable state, never the network or a duration (they fail
+    // on a loaded machine).
     rules: {
+      // Documentation convention: every function and interface has a one-line description.
+      'jsdoc/require-jsdoc': [
+        'error',
+        {
+          require: { FunctionDeclaration: true, ClassDeclaration: true },
+          contexts: ['TSInterfaceDeclaration', 'VariableDeclarator > ArrowFunctionExpression'],
+        },
+      ],
+      'jsdoc/require-description': ['error', { contexts: ['any'] }],
       'no-restricted-syntax': [
         'error',
         {
@@ -30,5 +41,10 @@ export default defineConfig(
         },
       ],
     },
+  },
+  {
+    // Documentation is not required in the journeys.
+    files: ['tests/**/*.ts'],
+    rules: { 'jsdoc/require-jsdoc': 'off', 'jsdoc/require-description': 'off' },
   },
 )

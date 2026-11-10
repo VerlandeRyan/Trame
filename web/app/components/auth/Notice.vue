@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { authNoticeFor } from '~/utils/auth'
 
-// Bandeau de connexion, venu de l'adresse (`?auth_error=`) ou posé par le code (`useAuthNotice`) ;
-// ce dernier disparaît à la navigation suivante.
+/**
+ * Sign-in banner, coming from the address (`?auth_error=`) or set by code (`useAuthNotice`);
+ * the latter disappears on the next navigation.
+ */
 const { t, te } = useI18n()
 const route = useRoute()
 const router = useRouter()
@@ -19,6 +21,7 @@ watch(
   },
 )
 
+/** Hides the banner and removes its parameter from the address. */
 async function dismiss() {
   postedNotice.value = null
   queryNotice.value = null
@@ -65,12 +68,12 @@ async function dismiss() {
   background: var(--color-yellow);
 }
 
-// Vert « En cours » des statuts : texte d'encre, contraste AA (voir web/CLAUDE.md).
+// Status "reading" green: ink text, AA contrast.
 .auth-notice--success {
   background: var(--status-reading);
 }
 
-// Blanc sur `crimson` : 4,5:1 au moins (`contrast.spec.ts`).
+// White on `crimson`: at least 4.5:1 (checked by `contrast.spec.ts`).
 .auth-notice--error {
   background: var(--color-crimson);
   color: var(--color-surface);

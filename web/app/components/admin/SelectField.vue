@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Menu déroulant à cadre blanc, avec son nom de champ au-dessus comme `UiField`.
+/** White-framed dropdown with its field name above, like `UiField`. */
 defineProps<{ options: { value: string; label: string }[]; label: string }>()
 const model = defineModel<string>({ required: true })
 </script>

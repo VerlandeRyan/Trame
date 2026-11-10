@@ -1,3 +1,4 @@
+/** Assembles the versioned API router from the per-domain routers. */
 import { Router } from 'express';
 import type { RateLimitSettings } from '../middleware/rate-limit.js';
 import type { AuthService } from '../services/auth.service.js';
@@ -15,6 +16,7 @@ import { createLibraryRouter, createMyLibraryRouter } from './library.routes.js'
 import { createMyProfileRouter, createProfileRouter } from './profile.routes.js';
 import { createWorkRouter } from './work.routes.js';
 
+/** Services and settings the API router depends on. */
 export interface ApiServices {
   adminCatalogue: AdminCatalogueServices;
   authService: AuthService;
@@ -29,7 +31,7 @@ export interface ApiServices {
   adminRateLimit: RateLimitSettings;
 }
 
-/** Routes versionnées, montées sous `/api/v1`. Les routes métier s'ajoutent ici. */
+/** Versioned routes, mounted under the API prefix. New domain routers are added here. */
 export function createApiRouter({
   adminCatalogue,
   authService,

@@ -1,4 +1,4 @@
-// Promeut le premier administrateur : `npm run db:promote-admin -- <handle>`
+// Promotes the first administrator: `npm run db:promote-admin -- <handle>`
 import pg from 'pg';
 
 const handle = process.argv[2];
@@ -15,7 +15,7 @@ if (!connectionString) {
 const client = new pg.Client({ connectionString });
 await client.connect();
 try {
-  // Une seule requête : la promotion et la vérification « aucun admin » ne peuvent pas se croiser.
+  // A single query: the promotion and the 'no admin' check cannot cross.
   const promoted = await client.query(
     `UPDATE app_user SET role = 'admin'
      WHERE handle = $1 AND deleted_at IS NULL

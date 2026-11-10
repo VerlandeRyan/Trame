@@ -1,7 +1,9 @@
 <script setup lang="ts">
-// Avec image : liseré blanc et filet d'encre. Sans image : trame rose sur bleu pâle, jamais sur une image.
-// Largeurs normalisées (voir COVER_SIZES) ; sans `size`, la couverture remplit son parent.
-// `wideSize` remplace `size` à partir de 768 px.
+/**
+ * Work cover. With an image: white edge and ink outline. Without: pink screentone on pale blue,
+ * never over an image. Standard widths (see `COVER_SIZES`); without `size`, the cover fills its
+ * parent. `wideSize` replaces `size` from 768 px.
+ */
 import type { CoverSize } from '~/utils/cover'
 
 const props = withDefaults(
@@ -13,7 +15,6 @@ const props = withDefaults(
   },
 )
 
-// Les petites couvertures ont un liseré et une trame plus fins.
 const isCompact = computed(() => props.size === 'sm' || props.size === 'md')
 </script>
 
@@ -35,7 +36,7 @@ const isCompact = computed(() => props.size === 'sm' || props.size === 'md')
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Garder ces largeurs identiques à COVER_SIZES (utils/cover.ts) : un test les compare.
+// Keep these widths identical to `COVER_SIZES` (utils/cover.ts): a test compares them.
 $sizes: (
   'sm': 64px,
   'md': 72px,

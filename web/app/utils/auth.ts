@@ -1,19 +1,23 @@
+/** Sign-in helpers: handle format, safe return paths, notices and session cookie detection. */
 import type { AuthState } from '../contract/api'
 import { errorMessageKey } from './api-error'
 
-/** `GET /auth/me` ; `pending` : identité Google validée, pseudo à choisir. */
+/** Auth status; `pending`: Google identity verified, handle still to choose. */
 export type { AuthState, AuthUser } from '../contract/api'
 
+/** State of a visitor who is not signed in. */
 export const ANONYMOUS: AuthState = { status: 'anonymous' }
 
-// Même format que l'API ; les mots réservés ne sont connus que d'elle.
+// Same format as the API; reserved words are only known to it.
 export const HANDLE_MIN_LENGTH = 3
 export const HANDLE_MAX_LENGTH = 30
 const HANDLE_PATTERN = /^[A-Za-z0-9_-]+$/
 const HOME_PATH = '/'
+/** A path of this site only: starts with a single slash, printable characters. */
 const RETURN_TO_PATTERN = /^\/(?![/\\])[\x21-\x7e]*$/
 const RETURN_TO_MAX_LENGTH = 300
 
+/** Whether the handle has an allowed length and characters. */
 export function isValidHandle(handle: string): boolean {
   return (
     handle.length >= HANDLE_MIN_LENGTH &&
@@ -22,7 +26,7 @@ export function isValidHandle(handle: string): boolean {
   )
 }
 
-/** Page où revenir après la connexion : un chemin du site seulement, sinon l'accueil. */
+/** Page to return to after sign-in: a path of this site only, otherwise the home page. */
 export function safeReturnTo(raw: unknown): string {
   const path = Array.isArray(raw) ? raw[0] : raw
   const valid =
@@ -30,27 +34,28 @@ export function safeReturnTo(raw: unknown): string {
   return valid ? path : HOME_PATH
 }
 
-/** Adresse qui lance la connexion Google (navigation complète, relayée vers l'API). */
+/** Address that starts the Google sign-in (full navigation, relayed to the API). */
 export function googleLoginUrl(returnTo: string): string {
   return `/api/v1/auth/google?returnTo=${encodeURIComponent(safeReturnTo(returnTo))}`
 }
 
-/** Bandeau : clé de traduction ; jaune pour une information, vert pour une réussite, rouge pour une erreur. */
+/** Banner: translation key and tone (yellow for information, green for success, red for an error). */
 export interface AuthNotice {
   key: string
   tone: 'info' | 'success' | 'error'
-  /** Avis posé juste avant une redirection : il survit à ce changement d'adresse, pas au suivant. */
+  /** Notice set just before a redirect: it survives that address change, not the next one. */
   keepOnce?: boolean
 }
 
+/** Reason recorded when a visitor abandons the sign-up. */
 export const SIGNUP_CANCELLED = 'signup_cancelled'
-// Une `Map` : la valeur vient de l'adresse, `constructor` ou `toString` ne doivent rien trouver.
+// A `Map`: the value comes from the address, so `constructor` or `toString` must find nothing.
 const INFO_NOTICE_KEYS = new Map([
   ['cancelled', 'auth.cancelled'],
   [SIGNUP_CANCELLED, 'auth.signupCancelled'],
 ])
 
-/** Bandeau demandé par `/?auth_error=…` : annulation (info) ou code d'erreur de l'API (erreur). */
+/** Banner requested by the `auth_error` query: a cancellation (info) or an API error code (error). */
 export function authNoticeFor(raw: unknown, hasKey: (key: string) => boolean): AuthNotice | null {
   const reason = Array.isArray(raw) ? raw[0] : raw
   if (typeof reason !== 'string' || reason === '') return null
@@ -60,15 +65,15 @@ export function authNoticeFor(raw: unknown, hasKey: (key: string) => boolean): A
     : { key: errorMessageKey(reason, hasKey), tone: 'error' }
 }
 
-// L'API pose `__Host-trame.sid` en production (cookie Secure) et `trame.sid` en HTTP local.
+// The API sets `__Host-trame.sid` in production (Secure cookie) and `trame.sid` on local HTTP.
 const SESSION_COOKIE_PREFIXES = ['trame.sid=', '__Host-trame.sid=']
 
-/** Sans cookie de session, inutile de demander à l'API qui est connecté. */
+/** Without a session cookie there is no point asking the API who is signed in. */
 export function hasSessionCookie(cookieHeader: string | undefined): boolean {
   return (cookieHeader ?? '')
     .split(';')
     .some((cookie) => SESSION_COOKIE_PREFIXES.some((prefix) => cookie.trim().startsWith(prefix)))
 }
 
-/** Une API lente ne doit pas bloquer le rendu des pages. */
+/** A slow API must not block page rendering. */
 export const AUTH_STATUS_TIMEOUT_MS = 3000

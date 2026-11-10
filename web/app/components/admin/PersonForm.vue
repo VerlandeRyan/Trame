@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { optionsOf, PERSON_KINDS, type PersonDraft } from '~/utils/admin'
 
-// Formulaire d'une personne ou d'un collectif : nom, nature, liens.
+/** Form of a person or a collective: name, kind, links. */
 defineProps<{ errorKey?: string; saving: boolean }>()
 const draft = defineModel<PersonDraft>({ required: true })
 const emit = defineEmits<{ submit: [] }>()

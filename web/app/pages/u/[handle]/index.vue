@@ -12,7 +12,7 @@ import {
 } from '~/utils/profile'
 import { coverUrl, workSlug } from '~/utils/work'
 
-// Profil public d'un membre : `/u/{handle}` (US-08, maquettes 11 à 13).
+/** Public profile of a member: `/u/{handle}`. */
 const route = useRoute()
 const { t, n, locale } = useI18n()
 const localePath = useLocalePath()
@@ -22,6 +22,7 @@ const auth = useAuth()
 const handle = String(route.params.handle ?? '')
 const profileKey = `profile-${handle}-${locale.value}-${auth.state.value.status}`
 
+/** Loads the profile; an unknown or malformed handle gives a 404. */
 async function loadProfile(): Promise<Profile> {
   try {
     return await api.request<Profile>(`/users/${encodeURIComponent(handle)}`, {
@@ -42,12 +43,12 @@ const shownHandle = computed(() => profile.value?.handle ?? handle)
 const details = computed(() => profile.value?.details ?? null)
 const isOwner = computed(() => profile.value?.isOwner === true)
 const shares = computed(() => (details.value ? statusShares(details.value.stats.statusCounts) : []))
-// Son propre profil mène à « Ma liste de lecture » (modifiable), celui d'un autre à sa liste en lecture seule.
+// One's own profile leads to "My reading list" (editable), another member's to their read-only list.
 const listPath = computed(() =>
   localePath(isOwner.value ? '/list' : `/u/${shownHandle.value}/list`),
 )
 
-// Un profil privé ne doit pas être indexé ; un profil public l'est, avec sa description.
+// A private profile must not be indexed; a public one is, with its description.
 const isPublic = computed(() => profile.value?.visibility === 'public')
 useSeoMeta({
   title: () => t('profile.title', { handle: shownHandle.value }),
@@ -57,6 +58,7 @@ useSeoMeta({
 const localeHead = useLocaleHead({ dir: false, seo: true })
 useHead(() => ({ link: localeHead.value.link, meta: localeHead.value.meta }))
 
+/** "Member since" month and year in the interface language. */
 const memberSince = computed(() =>
   details.value
     ? new Intl.DateTimeFormat(locale.value, { year: 'numeric', month: 'long' }).format(
@@ -64,6 +66,7 @@ const memberSince = computed(() =>
       )
     : '',
 )
+/** Average rating text, or the "no rating" text. */
 const ratingAverage = computed(() => {
   const average = details.value?.stats.ratingAverage ?? null
   if (average === null) return t('profile.noRating')
@@ -71,9 +74,11 @@ const ratingAverage = computed(() => {
   return t('profile.ratingAverageValue', { value })
 })
 
+/** Localised address of a work page. */
 const workPath = (work: { id: number; title: string }) =>
   localePath(`/work/${workSlug(work.id, work.title)}`)
 
+/** Progress text of a recent update: completed (with rating), or the volume or chapter reached. */
 function progressLabel(update: ProfileUpdate): string {
   const progress = updateProgress(update.entry)
   if (progress.kind !== 'completed') return t(`profile.${progress.kind}`, { value: progress.value })
@@ -82,6 +87,7 @@ function progressLabel(update: ProfileUpdate): string {
     : t('profile.completedRated', { rating: progress.rating })
 }
 
+/** Relative age text of a recent update. */
 function ageLabel(update: ProfileUpdate): string {
   const age = updateAge(update.updatedAt)
   return 'count' in age
@@ -89,9 +95,10 @@ function ageLabel(update: ProfileUpdate): string {
     : t(`profile.age.${age.unit}`)
 }
 
-// Réglage de la visibilité (propriétaire) : l'affichage suit l'enregistrement.
+// Visibility setting (owner): the display follows the save.
 const visibilityErrorKey = ref<string | null>(null)
 const isSavingVisibility = ref(false)
+/** Saves the new visibility, then reloads the profile. */
 async function changeVisibility(visibility: ProfileVisibility) {
   if (!profile.value || isSavingVisibility.value) return
   isSavingVisibility.value = true
@@ -106,8 +113,9 @@ async function changeVisibility(visibility: ProfileVisibility) {
   }
 }
 
-// Lien de partage de son propre profil ; sans accès au presse-papiers, rien n'est annoncé.
+// Share link of one's own profile; without clipboard access, nothing is announced.
 const isLinkCopied = ref(false)
+/** Copies the profile address to the clipboard. */
 async function copyProfileLink() {
   try {
     await navigator.clipboard.writeText(new URL(route.path, window.location.origin).href)
@@ -116,6 +124,7 @@ async function copyProfileLink() {
     isLinkCopied.value = false
   }
 }
+/** The visibility the toggle would switch to. */
 const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'private' : 'public'))
 </script>
 
@@ -182,7 +191,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
             <dd data-testid="profile-average">{{ ratingAverage }}</dd>
           </div>
         </dl>
-        <!-- Décor : la légende juste dessous donne les mêmes chiffres, lisibles au clavier et au lecteur d'écran. -->
+        <!-- Decoration: the legend just below gives the same figures, readable by keyboard and screen reader. -->
         <div v-if="shares.length" class="profile__bar" aria-hidden="true">
           <span
             v-for="share in shares"
@@ -291,8 +300,8 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Maquettes 11 (bureau) et 12 (mobile) : colonne d'identité à gauche au bureau, tout en une colonne
-// au mobile (monogramme à côté du pseudo, statistiques réduites aux totaux et à la barre).
+// On desktop the identity sits in a left column. On mobile everything is in one column, with
+// the monogram beside the handle and the statistics reduced to the totals and the bar.
 .profile {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -392,7 +401,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   font-size: 0.8125rem;
 }
 
-// Propriétaire : état de visibilité et actions, dans un cadre en tirets (maquette 11, vue 2).
+// Owner: visibility state and actions, in a dashed frame.
 .profile__visibility {
   display: flex;
   flex-wrap: wrap;
@@ -413,7 +422,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   color: var(--color-ink-soft);
 }
 
-// Actions en ligne : 44 px de haut au doigt seulement.
+// Inline actions: 44 px tall with a finger only.
 .profile__link-button {
   min-height: 28px;
   padding: 0;
@@ -435,8 +444,8 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   }
 }
 
-// Colonne étroite du bureau : « Lien copié » reste sur sa propre ligne et ne fait pas remonter
-// le bouton. Au mobile les deux actions partagent la rangée, pour prendre moins de hauteur.
+// Narrow desktop column: 'Link copied' stays on its own line and does not push
+// the button up. On mobile the two actions share the row, to take less height.
 .profile__copy-link {
   text-align: left;
 
@@ -450,7 +459,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   gap: var(--space-3);
 }
 
-// « Statistiques » n'existe qu'au bureau, sous un filet.
+// 'Statistics' only exists on desktop, under a rule.
 .profile__label {
   display: none;
   margin: 0;
@@ -493,7 +502,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   }
 }
 
-// Œuvres suivies et note moyenne : bureau seulement (la maquette mobile n'a que les totaux).
+// Followed works and average rating: desktop only (mobile only has the totals).
 .profile__figures {
   display: none;
   margin: 0;
@@ -536,7 +545,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   }
 }
 
-// Mobile : légende sur une ligne, statuts à zéro masqués. Bureau : une ligne par statut, avec ›.
+// Mobile: one-line legend, zero statuses hidden. Desktop: one row per status, with ›.
 .profile__statuses {
   display: flex;
   flex-wrap: wrap;
@@ -698,7 +707,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   text-align: right;
 }
 
-// Couvertures de 100 px (120 au bureau), alignées à gauche, sans s'étirer sur toute la largeur.
+// 100 px covers (120 on desktop), left-aligned, not stretched over the full width.
 .profile__shelf {
   display: grid;
   grid-template-columns: repeat(auto-fill, 6.25rem);
@@ -725,7 +734,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   width: 100%;
   text-decoration: none;
 
-  // Toute la carte est le lien : le titre se souligne quand on la survole.
+  // The whole card is the link: the title is underlined on hover.
   @include on-hover {
     .profile__work {
       text-decoration: underline;
@@ -742,7 +751,7 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
   font-weight: 800;
 }
 
-// Profil privé (maquette 13) : panneau haut.
+// Private profile: tall panel.
 .profile__private {
   min-height: 16rem;
 

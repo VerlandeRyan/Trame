@@ -7,19 +7,20 @@ import {
   type LinkNetwork,
 } from '~/utils/work'
 
-// « Auteur sur le web » : sites et réseaux des personnes créditées, repliés au-delà de 3 personnes.
+/** "Author on the web": websites and networks of the credited people, folded beyond 3 people. */
 const props = defineProps<{
   people: { personId: number; name: string; links: ExternalLink[] }[]
 }>()
 const { t } = useI18n()
 
 const isExpanded = ref(false)
+/** People shown, all or only the first ones. */
 const visiblePeople = computed(() =>
   isExpanded.value ? props.people : props.people.slice(0, PEOPLE_COLLAPSED_COUNT),
 )
 const hiddenCount = computed(() => props.people.length - PEOPLE_COLLAPSED_COUNT)
 
-// Noms écrits en toutes lettres : l'analyse de @nuxt/icon les embarque aussi côté navigateur.
+// Names written out in full: @nuxt/icon's scan bundles them for the browser too.
 const NETWORK_ICONS: Record<LinkNetwork, string> = {
   x: 'tabler:brand-x',
   instagram: 'tabler:brand-instagram',
@@ -35,8 +36,10 @@ const NETWORK_ICONS: Record<LinkNetwork, string> = {
   website: 'tabler:world',
 }
 
+/** Icon of the network a link points to. */
 const iconFor = (url: string) => NETWORK_ICONS[linkNetwork(url)]
 
+/** Only the https links. */
 const safeLinks = (links: ExternalLink[]) => links.filter((link) => isSafeLink(link.url))
 </script>
 
@@ -86,7 +89,7 @@ const safeLinks = (links: ExternalLink[]) => links.filter((link) => isSafeLink(l
 </template>
 
 <style scoped lang="scss">
-// Même traitement que « Informations » : trame fondue au mobile, filet plein de 2 px au bureau.
+// Same treatment as 'Information': faded screentone on mobile, solid 2 px rule on desktop.
 .people__title {
   color: var(--color-ink);
   font-size: 0.9375rem;
@@ -132,8 +135,8 @@ const safeLinks = (links: ExternalLink[]) => links.filter((link) => isSafeLink(l
   gap: var(--space-1);
 }
 
-// Zone tactile de 44 px sans agrandir la ligne : la marge négative la fait déborder au-dessus
-// et au-dessous de l'icône.
+// 44 px touch area without enlarging the row: the negative margin makes it overflow above
+// and below the icon.
 .people__link {
   display: grid;
   place-items: center;

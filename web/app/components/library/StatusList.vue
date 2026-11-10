@@ -2,13 +2,15 @@
 import { LIBRARY_STATUSES, type LibraryStatus } from '~/utils/library'
 import { shouldOpenAbove } from '~/utils/menu'
 
-// Menu des cinq statuts de lecture, partagé par la fiche œuvre et Ma liste. L'appelant fournit le
-// déclencheur (slot `trigger`) et, au besoin, une action de pied (slot `footer`).
+/**
+ * Menu of the five reading statuses, shared by the work page and My list. The caller provides
+ * the trigger (`trigger` slot) and, if needed, a footer action (`footer` slot).
+ */
 const props = defineProps<{
   status: LibraryStatus
-  /** Préfixe des `data-testid` des lignes : `<préfixe>-<statut>`. */
+  /** Prefix of the rows' test ids: `<prefix>-<status>`. */
   testidPrefix: string
-  /** Le menu prend toute la largeur de l'appelant au lieu de celle de son déclencheur. */
+  /** The menu takes the caller's full width instead of its trigger's. */
   block?: boolean
 }>()
 const emit = defineEmits<{ change: [status: LibraryStatus] }>()
@@ -16,18 +18,19 @@ const slots = useSlots()
 const { t } = useI18n()
 
 const root = ref<HTMLElement | null>(null)
+/** Finds the menu trigger inside the component. */
 const findTrigger = () => root.value?.querySelector<HTMLElement>('[aria-haspopup="menu"]') ?? null
 const { isOpen, close } = useDismissableMenu(root, () => findTrigger()?.focus())
 const menuId = useId()
 
 const ROW_HEIGHT = 44
-// Retrait du cadre autour des lignes.
 const PANEL_PADDING = 16
-// Ligne du pied : une ligne tactile et son trait de séparation.
+// Footer row: one touch row and its separator line.
 const FOOTER_HEIGHT = ROW_HEIGHT + 1
-// Près du bas de l'écran, le menu s'ouvre au-dessus du déclencheur au lieu d'être coupé.
+// Near the bottom of the screen, the menu opens above the trigger instead of being cut off.
 const opensAbove = ref(false)
 
+/** Opens or closes the menu, deciding first whether it opens above. */
 function toggleMenu() {
   const trigger = findTrigger()
   if (!isOpen.value && trigger) {
@@ -42,6 +45,7 @@ function toggleMenu() {
   isOpen.value = !isOpen.value
 }
 
+/** Closes the menu and reports the status if it changed. */
 function choose(status: LibraryStatus) {
   close({ restoreFocus: true })
   if (status !== props.status) emit('change', status)
@@ -129,8 +133,8 @@ function choose(status: LibraryStatus) {
   @include menu-open-animation($above: true);
 }
 
-// Style unique des menus de choix : lignes pleine largeur séparées d'un pointillé, choix courant
-// en bleu plein avec la coche à gauche. Le pied reçoit les mêmes lignes par `:deep`.
+// Single style of choice menus: full-width rows separated by a dotted line, current choice
+// in solid blue with the tick on the left. The footer gets the same rows through `:deep`.
 .status-list__item,
 .status-list__footer :deep(.status-list__item) {
   display: flex;
@@ -148,7 +152,7 @@ function choose(status: LibraryStatus) {
   text-align: left;
   cursor: pointer;
 
-  // Le survol et l'appui ne changent pas le choix courant (bleu plein).
+  // Hover and press do not change the current choice (solid blue).
   &:not([aria-checked='true'], .status-list__item--danger) {
     @include on-hover {
       background: var(--color-cover-empty);
@@ -167,7 +171,7 @@ function choose(status: LibraryStatus) {
   color: var(--color-surface);
 }
 
-// Texte rouge : survol rose pâle, comme « Archiver » (conventions § survol et appui).
+// Red text: pale pink hover, like Archive (see the project hover and press conventions).
 .status-list__footer :deep(.status-list__item--danger) {
   color: var(--color-crimson);
 
@@ -193,7 +197,7 @@ function choose(status: LibraryStatus) {
   width: 16px;
 }
 
-// Trait plein : l'action du pied se détache des statuts.
+// Solid line: the footer action stands apart from the statuses.
 .status-list__footer {
   border-top: var(--border);
   border-top-color: var(--color-blue);

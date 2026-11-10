@@ -1,9 +1,10 @@
+/** Input schemas of the public catalogue routes. */
 import { z } from 'zod';
 import { WORK_STATUSES, WORK_TYPES } from '../domain/catalogue-enums.js';
 import type { ListWorksInput, WorkFilterInput } from '../services/work.service.js';
 import { commaSeparatedList, genreCode, lang, MULTI_VALUE, pageQuery } from './common.js';
 
-/** Recherche et filtres, communs à la liste et aux compteurs. Les `describe` alimentent OpenAPI. */
+/** Search and filters shared by the list and the facet counts. The `describe` texts feed the API documentation. */
 const filtersQuery = z.object({
   q: z
     .string()
@@ -29,6 +30,7 @@ const filtersQuery = z.object({
     .optional(),
 });
 
+/** Query of the catalogue list: search, filters, language, sort and pagination. */
 export const listWorksQuery = filtersQuery.extend({
   lang: lang.optional(),
   sort: z
@@ -38,9 +40,10 @@ export const listWorksQuery = filtersQuery.extend({
   ...pageQuery('Œuvres'),
 }) satisfies z.ZodType<ListWorksInput>;
 
-/** `match=any` : les compteurs suivent une liste passée aux résultats approchants. */
+/** Query of the facet counts; `match=any` makes them follow a list that fell back to approximate results. */
 export const facetsQuery = filtersQuery.extend({
   match: z.enum(['all', 'any']).optional(),
 }) satisfies z.ZodType<WorkFilterInput>;
 
+/** Query of a single work, or of the home lists: only the language. */
 export const workQuery = z.object({ lang: lang.optional() });

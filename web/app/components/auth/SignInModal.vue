@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { googleLoginUrl } from '~/utils/auth'
 
-// Fenêtre de connexion : centrée au bureau, feuille basse au mobile.
+/** Sign-in window: centred on desktop, bottom sheet on mobile. */
 const { t } = useI18n()
 const route = useRoute()
 const isOpen = useSignInModal()
 const narrow = useNarrowScreen()
 
-// Retour sur la page courante, langue comprise.
+// Return to the current page, language included.
 const loginUrl = computed(() => googleLoginUrl(route.fullPath))
 
 const assurances = [
@@ -49,7 +49,7 @@ const assurances = [
 </template>
 
 <style scoped lang="scss">
-// Tailles et intervalles relevés dans la maquette 15 (`.note`, `.gbtn`, `.lst`).
+// Sizes and spacing of the sign-in window design.
 .sign-in__intro {
   margin: 0;
   color: var(--color-ink-soft);

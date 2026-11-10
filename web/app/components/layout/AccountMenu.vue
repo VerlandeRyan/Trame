@@ -1,6 +1,8 @@
 <script setup lang="ts">
-// Compte connecté : le pseudo et son menu. Les entrées sans page (soumissions)
-// sont visibles mais inactives en attendant leur ticket.
+/**
+ * Signed-in account: the handle and its menu. Entries without a page (submissions) are visible
+ * but inactive for now.
+ */
 const props = defineProps<{ handle: string; isAdmin?: boolean }>()
 const PLANNED_ITEMS = [
   { labelKey: 'nav.proposeWork', testId: 'propose-work-link' },
@@ -22,20 +24,24 @@ const { isOpen, close } = useDismissableMenu(root, () => trigger.value?.$el.focu
 const menuId = useId()
 
 const confirmingSignOut = ref(false)
+/** Closes the menu and asks for confirmation before signing out. */
 function askSignOut() {
   close()
   confirmingSignOut.value = true
 }
 
-// Les middlewares ne jouent qu'à la navigation : une page réservée aux membres ou aux
-// administrateurs reste affichée après la déconnexion si on n'en sort pas.
+// Middlewares only run on navigation: a members-only or admin page stays displayed after sign-out
+// unless the user leaves it.
 const MEMBER_PAGE_MIDDLEWARE = new Set(['authenticated', 'admin'])
 const route = useRoute()
+/** Whether the current page is reserved to members or administrators. */
 const isMemberPage = () =>
   [route.meta.middleware].flat().some((name) => MEMBER_PAGE_MIDDLEWARE.has(String(name)))
 
-// Le résultat est annoncé dans le bandeau : vert si déconnecté, rouge si l'échec laisse connecté.
-// Depuis une page réservée on revient à l'accueil : l'avis traverse cette redirection.
+/**
+ * Signs out. The result is announced in the banner: green if signed out, red if the failure keeps
+ * the user signed in. From a reserved page the user goes back home: the notice survives that redirect.
+ */
 async function confirmSignOut() {
   try {
     await signOut()
@@ -141,7 +147,7 @@ async function confirmSignOut() {
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Le compte cède de la place avant que l'en-tête déborde : seul le pseudo se tronque.
+// The account gives up room before the header overflows: only the handle is truncated.
 .account-menu {
   position: relative;
   min-width: 0;
@@ -170,7 +176,7 @@ async function confirmSignOut() {
   z-index: 40;
   width: 280px;
   max-width: calc(100vw - 32px);
-  // Le menu complet dépasse un petit écran en hauteur.
+  // The full menu is taller than a small screen.
   max-height: calc(100dvh - 5rem);
   overflow-y: auto;
   padding: 4px 16px 8px;
@@ -210,7 +216,7 @@ async function confirmSignOut() {
   font-size: 0.9rem;
 }
 
-// Lignes à plat comme la maquette : filet, chevron, aucun cadre de bouton.
+// Flat rows: a rule, a chevron, no button frame.
 .account-menu__row {
   display: flex;
   align-items: center;
@@ -227,7 +233,7 @@ async function confirmSignOut() {
   text-decoration: none;
   cursor: pointer;
 
-  // Le chevron est décoratif : le second `content` (texte alternatif vide) le retire du nom accessible.
+  // The chevron is decorative: the second `content` (empty alternative text) removes it from the accessible name.
   &::after {
     content: '›';
     content: '›' / '';
@@ -238,7 +244,7 @@ async function confirmSignOut() {
     cursor: not-allowed;
   }
 
-  // Même fond que le menu des langues, débordant de 8 px de chaque côté sans toucher aux filets.
+  // Same background as the language menu, overflowing 8 px on each side without touching the rules.
   &:focus-visible {
     background: var(--color-cover-empty);
     box-shadow:
@@ -261,7 +267,7 @@ async function confirmSignOut() {
   }
 }
 
-// Le filet de la dernière ligne ferait double trait avec le titre du groupe.
+// The last row's rule would double up with the group title.
 .account-menu__row:has(+ .account-menu__group) {
   border-bottom: 0;
 }

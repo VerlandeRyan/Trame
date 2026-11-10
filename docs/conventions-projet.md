@@ -1,6 +1,6 @@
 # Conventions de projet
 
-> Dernière mise à jour : 2026-11-05
+> Dernière mise à jour : 2026-11-10
 
 ## 1. Dépôt
 - **Un monorepo** public, sans fichier LICENSE pour l'instant : `api/`, `web/`, `db/`, `e2e/`, `docs/`, `.github/`.
@@ -59,6 +59,17 @@ GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`
 - **Tout changement de comportement ⇒ test E2E** ; toute évolution de schéma ⇒ migration + mise à jour du [modèle de données](modele-de-donnees.md).
 - Localement : n'exécuter que les tests **nouveaux ou modifiés** ; la CI exécute la suite complète.
 - Sécurité : gitleaks, Semgrep CE, CodeQL et SonarQube Cloud en CI, Renovate pour les dépendances. Pas encore en place : OSV-Scanner, Lighthouse CI, SQLFluff.
+
+## 6 ter. Commentaires
+Le code se reprend sans ouvrir d'autres fichiers ; le commentaire est court, utile, en **anglais**.
+- **En-tête de fichier** : une ligne `/** … */` en tête (dans `<script>` pour un `.vue`, commentaire HTML avant `<template>` sinon) qui dit ce que le fichier contient ou fait.
+- **Un élément, une ligne** : chaque fonction (exportée ou non), composable, store, type, énumération et constante exportés, et chaque composant a une ligne `/** … */` qui dit **ce que c'est ou ce que ça renvoie**, pas comment. Pas de `@param` ni `@returns` sauf si le nom et le type ne suffisent pas.
+- **Rien d'évident** : ni le nom, ni le type, ni ce que le code dit déjà.
+- **`//` = un « pourquoi » non intuitif** (piège navigateur, ordre qui compte, contrainte métier, choix qui surprendrait). Un `//` qui décrit simplement un élément devient un `/** */`.
+- **Jamais** de numéro de ticket, de renvoi à une maquette, à une règle de gestion ou à une user story, ni d'historique d'une décision (git le garde).
+- **Hors périmètre** : fichiers générés (`db/generated.ts`, `contract/api-schema.ts`) et tests (`*.test.ts`, `*.spec.ts`), qui ne sont pas commentés élément par élément.
+- **Contrôles** : `eslint-plugin-jsdoc` (`npm run lint`, aussi lancé par le hook après chaque édition) impose la ligne par fonction, interface et classe (les types dérivés d'une constante documentée n'ont pas leur propre ligne) ; un test d'en-têtes (`file-headers.test.ts` côté API, `file-headers.spec.ts` côté web) impose l'en-tête de fichier. Aucun outil ne juge la qualité : voir ci-dessous.
+- **Relecture** : avant de rendre un travail, se demander « un nouveau venu comprendrait-il ce fichier sans ouvrir les autres ? » et relire le diff avec `/simplify` (ou `/code-review` sur une PR) pour retirer ce qui redit le code. L'assistant prend cette habitude à chaque tâche.
 
 ## 6 bis. Budget de documentation
 La documentation doit rester petite pour rester juste et peu coûteuse à lire.

@@ -1,3 +1,4 @@
+/** Builds the Express application: middleware, routes and the services wired to the database. */
 import { randomBytes } from 'node:crypto';
 import express, { type Express, type RequestHandler } from 'express';
 import type { Db } from './db/database.js';
@@ -36,21 +37,21 @@ import { createProfileService } from './services/profile.service.js';
 import { createWorkService } from './services/work.service.js';
 
 /**
- * Réglages d'authentification. Tous facultatifs : sans eux, la connexion Google répond
- * `AUTH_UNAVAILABLE` et le secret de session est aléatoire (propre au processus).
+ * Authentication settings, all optional: without them Google sign-in answers `AUTH_UNAVAILABLE`
+ * and the session secret is random (local to the process).
  */
 export interface AuthOptions {
   google?: GoogleClient;
   sessionSecret?: string;
   webOrigin?: string;
   secureCookies?: boolean;
-  /** Limite de débit des routes de connexion */
+  /** Rate limit of the sign-in routes. */
   rateLimit?: RateLimitSettings;
 }
 
 /**
- * `docs` : interface de lecture de la spécification, montée sur `/docs` ; fournie seulement hors
- * production (voir `server.ts`).
+ * Creates the application. `docs` is the API reference UI, provided outside production only
+ * (see `bootstrap.ts`).
  */
 export function createApp({
   db,
@@ -64,9 +65,9 @@ export function createApp({
   docs?: RequestHandler<never, string>;
   auth?: AuthOptions;
   trustProxy?: number;
-  /** Limite de débit des écritures de la liste de lecture (relevée par les E2E). */
+  /** Rate limit of reading-list writes (raised by the E2E tests). */
   libraryRateLimit?: RateLimitSettings;
-  /** Limite de débit des écritures d'administration du catalogue. */
+  /** Rate limit of catalogue administration writes. */
   adminRateLimit?: RateLimitSettings;
 }): Express {
   const {
@@ -99,7 +100,7 @@ export function createApp({
   });
   if (docs) app.use('/docs', docs);
 
-  // Sonde hors préfixe : non versionnée, utilisée par l'orchestration.
+  // Unversioned health probe, used by the orchestration.
   app.use('/health', createHealthRouter(createHealthService(createHealthRepository(db))));
   app.use(
     '/api/v1',

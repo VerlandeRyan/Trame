@@ -13,7 +13,7 @@ import {
   type WorkDetail,
 } from '~/utils/work'
 
-// Fiche œuvre : `/work/{id}-{slug}` (`/en/work/…` en anglais)
+/** Work page: `/work/{id}-{slug}` (`/en/work/…` in English). */
 const route = useRoute()
 const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
@@ -23,6 +23,7 @@ const api = useApi()
 const workId = parseWorkId(String(route.params.slug ?? ''))
 if (workId === null) throw createError({ statusCode: 404, fatal: true })
 
+/** Loads the work; a missing one gives a 404, any other failure a 500. */
 async function loadWork(): Promise<WorkDetail> {
   try {
     return await api.request<WorkDetail>(`/works/${workId}`, { query: { lang: locale.value } })
@@ -37,8 +38,8 @@ if (error.value || !work.value) {
   throw createError({ statusCode: error.value?.status ?? 404, fatal: true })
 }
 
-// L'URL canonique porte le titre affiché dans la langue de l'interface, comme les liens des œuvres
-// liées (même titre localisé) : un clic depuis une fiche arrive donc directement sur la bonne URL.
+// The canonical URL carries the title displayed in the interface language, like the links of
+// related works (same localised title): a click from a work page lands directly on the right URL.
 const canonicalSlug = workSlug(work.value.id, work.value.title)
 const canonicalPath = localePath(`/work/${canonicalSlug}`)
 if (route.params.slug !== canonicalSlug) {
@@ -83,19 +84,20 @@ useSeoMeta({
   twitterDescription: description,
 })
 
+/** Translated label of a code, or the code itself. */
 const codeLabel = (code: string) => (te(`genre.${code}`) ? t(`genre.${code}`) : code)
 const tags = [...detail.formats, ...detail.genres].map((code) => ({ code, label: codeLabel(code) }))
 const alternativeTitles = formatAlternativeTitles(detail.alternativeTitles)
 const relationGroups = groupRelations(detail.relations)
 
-// Ma liste de lecture : lue dès le rendu serveur (cookie du visiteur), pour que la page arrive
-// dans le bon état. Au navigateur, on relit à l'arrivée par un lien du site, ou si le serveur
-// n'a pas pu lire (la page affichée au chargement a déjà l'état reçu du serveur).
+// My reading list: read during server rendering (visitor's cookie), so the page arrives in the
+// right state. In the browser, it is read again when arriving by a link of the site, or if the
+// server could not read it (the page displayed at load already has the server's state).
 const { state: auth } = useAuth()
 const isSignedIn = computed(() => auth.value.status === 'authenticated')
 const library = useLibraryEntry(workId)
 const { entry, isLoaded, isBusy, errorKey } = library
-// Passer en « Terminé » avec des compteurs sous le total paru propose de les y mettre.
+// Switching to "completed" with counters below the published total offers to set them to it.
 const {
   isOpen: isAskingToRead,
   title: promptTitle,
@@ -106,6 +108,7 @@ const {
   confirm: confirmPrompt,
   decline: declinePrompt,
 } = useReadingPrompt()
+/** Changes the reading status, after the confirmation if one is needed. */
 function changeStatus(status: LibraryStatus) {
   const isAsking =
     entry.value !== null &&
@@ -118,19 +121,20 @@ function changeStatus(status: LibraryStatus) {
   if (!isAsking) void library.save({ status })
 }
 const isClientNavigation = import.meta.client && !useNuxtApp().isHydrating
+/** Reads the reading entry during server rendering, for a signed-in visitor. */
 async function loadEntryOnServer() {
   if (import.meta.server && isSignedIn.value) await library.load()
 }
 await loadEntryOnServer()
 onMounted(() => {
-  if (isSignedIn.value && (isClientNavigation || !isLoaded.value)) library.load()
+  if (isSignedIn.value && (isClientNavigation || !isLoaded.value)) void library.load()
 })
 </script>
 
 <template>
   <article class="work">
-    <!-- Colonne de gauche au bureau ; sur mobile, les wrappers disparaissent (display: contents) et
-         les blocs s'enchaînent dans l'ordre de la maquette grâce à `order`. -->
+    <!-- Left column on desktop; on mobile the wrappers disappear (display: contents) and
+         the blocks follow one another in the intended order thanks to `order`. -->
     <div class="work__side">
       <WorkCover class="work__cover" size="xl" wide-size="hero" :url="cover" />
       <LibraryStatusMenu
@@ -208,7 +212,7 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
-// Mobile (maquette 02) : couverture à gauche du titre, puis les blocs sur toute la largeur.
+// Mobile: cover left of the title, then the blocks over the full width.
 .work {
   display: grid;
   grid-template-columns: 112px minmax(0, 1fr);
@@ -233,7 +237,7 @@ onMounted(() => {
   min-width: 0;
 }
 
-// Mobile (maquette 02) : le bouton de statut, « Lire / Acheter », puis « Ma progression » avant la note.
+// Mobile: the status button, 'Read / Buy', then 'My progress' before the rating.
 .work__status {
   order: 3;
 }
@@ -295,7 +299,7 @@ onMounted(() => {
   gap: var(--space-1);
 }
 
-// Bureau (maquette 01) : colonne de gauche de 210 px, contenu à droite.
+// Desktop: 210 px left column, content on the right.
 @media (min-width: 768px) {
   .work {
     grid-template-columns: 210px minmax(0, 1fr);

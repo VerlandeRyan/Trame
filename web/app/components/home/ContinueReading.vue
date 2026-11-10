@@ -4,10 +4,12 @@ import { formatProgress, unitProgress, type ListedEntry } from '~/utils/reading-
 import { translatedCode } from '~/utils/search'
 import { coverUrl, workSlug } from '~/utils/work'
 
-// Bande « Reprendre la lecture » du hero connecté : les œuvres en cours, avec un +1 qui compte un
-// chapitre (ou un tome pour une œuvre suivie par tomes) ; finir l'œuvre demande confirmation.
+/**
+ * "Continue reading" strip of the signed-in hero: the works in progress, with a +1 that counts a
+ * chapter (or a volume for a work followed by volumes); finishing the work asks for confirmation.
+ */
 const props = defineProps<{ entries: ListedEntry[] }>()
-// Cartes côte à côte entre 768 et 1023 px (voir le style).
+// Cards side by side between 768 and 1023 px (see the style).
 const TABLET_COLUMNS = 2
 const { t, te } = useI18n()
 const localePath = useLocalePath()
@@ -15,9 +17,11 @@ const headingId = `${useId()}-heading`
 
 const { items, errorKey, readingPrompt, addOneToProgress } = useContinueReading(() => props.entries)
 
+/** Localised address of the work page. */
 const workPath = (item: ListedEntry) =>
   localePath(`/work/${workSlug(item.work.id, item.work.title)}`)
 
+/** "Format · Chapter 3/12" line under the title. */
 function progressLine(item: ListedEntry): string {
   const unit = incrementUnit(item.entry)
   const format = translatedCode(t, te, 'genre', item.work.formats[0] ?? '')
@@ -28,6 +32,7 @@ function progressLine(item: ListedEntry): string {
   return item.work.formats.length ? `${format} · ${progress}` : progress
 }
 
+/** Accessible name of the +1 button. */
 const addOneLabel = (item: ListedEntry) =>
   t(
     incrementUnit(item.entry) === 'chapters'
@@ -38,7 +43,7 @@ const addOneLabel = (item: ListedEntry) =>
 </script>
 
 <template>
-  <!-- `v-show` : la bande disparaît quand la dernière œuvre est finie, sans perdre la confirmation. -->
+  <!-- `v-show`: the strip disappears when the last work is finished, without losing the confirmation. -->
   <section
     v-show="items.length"
     class="continue-reading"
@@ -124,7 +129,7 @@ const addOneLabel = (item: ListedEntry) =>
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Tablette : deux cartes côte à côte ; dès 1024 px, trois. `shown` : les cartes de la première ligne.
+// Tablet: two cards side by side; from 1024 px, three. `shown`: the cards of the first row.
 .continue-reading {
   --continue-reading-columns: 2;
   --continue-reading-shown: var(--continue-reading-count-tablet);
@@ -135,8 +140,8 @@ const addOneLabel = (item: ListedEntry) =>
   }
 }
 
-// Dès 768 px la bande ne dépasse pas la largeur de ses cartes (colonnes de 12 px d'écart) : avec
-// moins de cartes que de colonnes, « Voir ma liste » reste collé à la dernière carte.
+// From 768 px the strip never exceeds the width of its cards (12 px column gap): with
+// fewer cards than columns, "See my list" stays attached to the last card.
 .continue-reading__header,
 .continue-reading__list,
 .continue-reading__error {
@@ -168,7 +173,7 @@ const addOneLabel = (item: ListedEntry) =>
   font-weight: 800;
 }
 
-// Mobile : cartes empilées ; bureau : jusqu'à trois côte à côte.
+// Cards are stacked on mobile, and up to three sit side by side on desktop.
 .continue-reading__list {
   display: grid;
   gap: var(--space-3);
@@ -221,7 +226,7 @@ const addOneLabel = (item: ListedEntry) =>
   color: var(--color-ink-soft);
   font-size: 0.8125rem;
 
-  // Mobile : titre, puis format · chapitre, puis le statut sur sa propre ligne.
+  // Mobile: title, then format · chapter, then the status on its own line.
   @media (max-width: 767px) {
     flex-direction: column;
     align-items: flex-start;
@@ -242,8 +247,8 @@ const addOneLabel = (item: ListedEntry) =>
   min-width: var(--touch);
   padding: 0 var(--space-2);
 
-  // Bouton carré de 44 px : palier le plus fort. `.btn` double la spécificité pour l'emporter
-  // sur le palier de `UiButton`, donc aussi sur son enfoncement, à redéclarer ici.
+  // 44 px square button: strongest tilt tier. `.btn` doubles the specificity to win over
+  // `UiButton`'s tier, so its pressed state must be redeclared here too.
   &.btn {
     @include tilt-on-hover(null, small);
     @include press-down;

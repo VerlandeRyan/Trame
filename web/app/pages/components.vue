@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Galerie des composants de base, avec des données fictives (aucune donnée réelle du catalogue).
+/** Gallery of the base components, with fictitious data (no real catalogue data). */
 import { COVER_SIZES, type CoverSize } from '~/utils/cover'
 import type { LibraryStatus } from '~/utils/library'
 import type { ListUnit, ListView } from '~/utils/reading-list'
@@ -19,7 +19,6 @@ const sampleWorks = [
   { id: 3, title: 'Œuvre fictive C', type: 'anthology' as const },
 ]
 
-// Accueil : mêmes données fictives que les autres exemples.
 const sampleSummary = {
   originalLanguage: 'fr',
   status: 'ongoing' as const,
@@ -238,7 +237,7 @@ const tabs = computed(() => [
   gap: var(--space-6);
 }
 
-// Réserve la place du menu de statut ouvert, pour qu'il ne recouvre pas la suite.
+// Reserves room for the open status menu, so it does not cover what follows.
 .gallery__menu {
   min-height: 15rem;
 }

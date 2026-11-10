@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Pied commun des formulaires du catalogue : erreur de l'API, « Enregistrer » (vert) et « Annuler »,
-// qui ramène à la liste où l'on était.
+/** Common footer of the catalogue forms: API error, "Save" (green) and "Cancel", which goes back to the list the user came from. */
 defineProps<{ errorKey?: string; saving: boolean }>()
 const { t } = useI18n()
 const { location } = useAdminListLocation()

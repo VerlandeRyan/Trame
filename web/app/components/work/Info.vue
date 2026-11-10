@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { formatTotal, type WorkStatus, type WorkType } from '~/utils/work'
 
-// Bloc « Informations » : type, format, totaux (« ? » tant que l'œuvre est en cours), statut, éditeurs, langue.
+/** "Information" block: type, format, totals ("?" while the work is ongoing), status, publishers, language. */
 const props = defineProps<{
   type: WorkType
   formats: string[]
-  /** Totaux : `null` tant qu'ils ne sont pas renseignés (affichés « ? »). */
+  /** Totals: `null` while not filled in (shown as "?"). */
   totals: { chapters: number | null; volumes: number | null }
   status: WorkStatus
   publishers: string[]
@@ -13,13 +13,15 @@ const props = defineProps<{
 }>()
 const { t, te, locale } = useI18n()
 
-// Repliable sur mobile uniquement ; ouvert par défaut. Au bureau la liste reste toujours affichée.
+// Collapsible on mobile only; open by default. On desktop the list is always shown.
 const isOpen = ref(true)
 const listId = useId()
 
+/** Translated label of a code, or the code itself without a translation. */
 const codeLabel = (group: 'genre', code: string) =>
   te(`${group}.${code}`) ? t(`${group}.${code}`) : code
 
+/** Name of the original language in the interface language. */
 const languageName = computed(() => {
   try {
     return new Intl.DisplayNames([locale.value], { type: 'language' }).of(props.originalLanguage)
@@ -28,6 +30,7 @@ const languageName = computed(() => {
   }
 })
 
+/** The label / value rows shown, skipping empty ones. */
 const rows = computed(() => {
   const list: { key: string; label: string; value: string }[] = [
     { key: 'type', label: t('work.info.type'), value: t(`workType.${props.type}`) },
@@ -62,7 +65,7 @@ const rows = computed(() => {
 
 <template>
   <section class="info" :class="{ 'info--collapsed': !isOpen }" :aria-label="t('work.info.title')">
-    <!-- Bureau : titre simple (maquette 01). Mobile : le titre est un bouton qui replie la liste. -->
+    <!-- Desktop: plain title. Mobile: the title is a button that collapses the list. -->
     <h2 class="info__title info__title--static">{{ t('work.info.title') }}</h2>
     <h2 class="info__title info__title--toggle">
       <button
@@ -93,8 +96,8 @@ const rows = computed(() => {
 </template>
 
 <style scoped lang="scss">
-// Mobile : titre 15 px sous une trame fondue. Bureau (maquette 01) : titre de 12 px souligné
-// d'un filet plein de 2 px, sans trame.
+// Mobile: 15 px title under a faded screentone. Desktop: 12 px title underlined
+// by a solid 2 px rule, no screentone.
 .info__title {
   color: var(--color-ink);
   font-size: 0.9375rem;
@@ -144,7 +147,7 @@ const rows = computed(() => {
     font-size: 0.75rem;
   }
 
-  // Au bureau la liste est toujours visible, quel que soit l'état mobile.
+  // On desktop the list is always visible, whatever the mobile state.
   .info--collapsed .info__list {
     display: grid;
   }

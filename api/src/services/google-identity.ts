@@ -1,42 +1,46 @@
+/** The only gateway to Google sign-in (OAuth authorisation code with PKCE and nonce). */
 import { CodeChallengeMethod, OAuth2Client } from 'google-auth-library';
 import { AppError } from '../errors.js';
 
-/** Identité vérifiée par Google : seuls ces deux champs sont conservés. */
+/** Identity verified by Google: only these two fields are kept. */
 export interface GoogleIdentity {
   sub: string;
   email: string;
 }
 
-/** Secrets d'une connexion en cours, gardés en session jusqu'au retour de Google. */
+/** Secrets of a sign-in in progress, kept in the session until Google sends the user back. */
 export interface GoogleSecrets {
   codeVerifier: string;
   nonce: string;
 }
 
+/** What starting a sign-in produces: the Google URL to visit and the values to remember. */
 export interface GoogleLogin extends GoogleSecrets {
   url: string;
   state: string;
 }
 
-/** Seule porte vers Google : remplacée par une doublure dans les tests. */
+/** The only gateway to Google: replaced by a stand-in in the tests. */
 export interface GoogleClient {
   start(): Promise<GoogleLogin>;
-  /** Échange le code contre l'identité ; lève `AUTH_STATE_INVALID` si Google la refuse. */
+  /** Exchanges the code for the identity; throws `AUTH_STATE_INVALID` if Google rejects it. */
   verify(code: string, secrets: GoogleSecrets): Promise<GoogleIdentity>;
 }
 
+/** Google OAuth client settings. */
 export interface GoogleSettings {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
 }
 
+/** The part of the Google OAuth client the code relies on. */
 export type GoogleOAuth = Pick<
   OAuth2Client,
   'generateAuthUrl' | 'generateCodeVerifierAsync' | 'getToken' | 'verifyIdToken'
 >;
 
-/** Client OAuth Google (code d'autorisation + PKCE + nonce, périmètre `openid email`). */
+/** Google OAuth client (authorisation code + PKCE + nonce, `openid email` scope). */
 export function createGoogleClient(
   settings: GoogleSettings,
   oauth: GoogleOAuth = new OAuth2Client(
@@ -86,7 +90,7 @@ export function createGoogleClient(
   };
 }
 
-/** Client utilisé quand Google n'est pas configuré : toute tentative répond `AUTH_UNAVAILABLE`. */
+/** Client used when Google is not configured: every attempt answers `AUTH_UNAVAILABLE`. */
 export const unavailableGoogleClient: GoogleClient = {
   start() {
     return Promise.reject(new AppError('AUTH_UNAVAILABLE'));

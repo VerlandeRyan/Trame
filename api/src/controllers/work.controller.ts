@@ -1,9 +1,11 @@
+/** HTTP controller of the public catalogue: search, facets, home lists and work details. */
 import type { RequestHandler } from 'express';
 import { validated } from '../middleware/validate.js';
 import { idParams } from '../schemas/common.js';
 import { facetsQuery, listWorksQuery, workQuery } from '../schemas/work.js';
 import type { WorkService } from '../services/work.service.js';
 
+/** Builds the catalogue request handlers. */
 export function createWorkController(service: WorkService): {
   list: RequestHandler;
   facets: RequestHandler;

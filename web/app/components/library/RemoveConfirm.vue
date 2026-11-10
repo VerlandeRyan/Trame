@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Confirmation du retrait d'une œuvre de la liste (fiche œuvre et « Modifier ma lecture ») : textes
-// et rouge portés ici, une seule fois.
+/** Confirmation of removing a work from the list (work page and reading edit window): texts and red styling live here, once. */
 const emit = defineEmits<{ confirm: [] }>()
 const open = defineModel<boolean>({ default: false })
 const { t } = useI18n()

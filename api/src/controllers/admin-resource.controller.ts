@@ -1,3 +1,4 @@
+/** Generic HTTP controller shared by the catalogue administration resources (works, people, publishers). */
 import type { RequestHandler } from 'express';
 import type { z } from 'zod';
 import { currentUser } from '../middleware/auth.js';
@@ -5,7 +6,7 @@ import { validated } from '../middleware/validate.js';
 import { idParams } from '../schemas/common.js';
 import type { AdminListInput, Page } from '../services/admin-list.js';
 
-/** Ce que le contrôleur attend d'un service du catalogue (œuvres, personnes, éditeurs). */
+/** What the controller expects from a catalogue service. */
 export interface AdminResourceService<Item, Full, Input, ListInput extends AdminListInput> {
   list(input: ListInput): Promise<Page<Item>>;
   get(id: number): Promise<Full>;
@@ -15,6 +16,7 @@ export interface AdminResourceService<Item, Full, Input, ListInput extends Admin
   restore(id: number, adminId: number): Promise<Full>;
 }
 
+/** The request handlers exposed for one administered resource. */
 export interface AdminResourceController {
   list: RequestHandler;
   get: RequestHandler;
@@ -24,7 +26,7 @@ export interface AdminResourceController {
   restore: RequestHandler;
 }
 
-/** Les routes ont déjà validé la requête avec `listQuery`, `idParams` et `body`. */
+/** Builds the controller of a resource; the routes have already validated the request with the given schemas. */
 export function createAdminResourceController<Item, Full, Input, ListInput extends AdminListInput>(
   service: AdminResourceService<Item, Full, Input, ListInput>,
   body: z.ZodType<Input>,

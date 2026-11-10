@@ -1,3 +1,4 @@
+/** Business rules of the reading list: merging edits, proposed dates and the reading journal. */
 import type { LibraryStatus } from '../db/database.js';
 import { AppError } from '../errors.js';
 import type {
@@ -9,7 +10,7 @@ import type {
   NewReadingEvent,
 } from '../repositories/library.repository.js';
 
-/** Champs omis : inchangés sur une entrée existante, valeur par défaut sur une nouvelle. */
+/** Omitted fields: unchanged on an existing entry, default value on a new one. */
 export interface EntryInput {
   status: LibraryStatus;
   chaptersRead?: number;
@@ -19,15 +20,17 @@ export interface EntryInput {
   finishedOn?: string | null;
 }
 
+/** Reading-list operations. */
 export interface LibraryService {
-  /** `null` si l'œuvre n'est pas dans la liste ; `NOT_FOUND` si l'œuvre n'existe pas ou est archivée. */
+  /** `null` if the work is not in the list; `NOT_FOUND` if the work does not exist or is archived. */
   getEntry(userId: number, workId: number): Promise<LibraryEntry | null>;
   saveEntry(userId: number, workId: number, input: EntryInput): Promise<LibraryEntry>;
-  /** Sans effet si l'œuvre n'est pas dans la liste. */
+  /** No effect if the work is not in the list. */
   removeEntry(userId: number, workId: number): Promise<void>;
   listEntries(userId: number, input: ListEntriesInput): Promise<LibraryPage>;
 }
 
+/** Search, filter, sort and page of a reading-list read. */
 export interface ListEntriesInput {
   q?: string;
   status?: LibraryStatus[];
@@ -37,13 +40,15 @@ export interface ListEntriesInput {
   pageSize: number;
 }
 
+/** A page of the list with its counts. */
 export interface LibraryPage extends LibraryList {
   page: number;
   pageSize: number;
-  /** Œuvres correspondant à la recherche et au filtre de statut. */
+  /** Works matching the search and the status filter. */
   total: number;
 }
 
+/** Defaults of a new entry, apart from its status. */
 const NEW_ENTRY: Omit<LibraryEntry, 'status'> = {
   chaptersRead: 0,
   volumesRead: 0,
@@ -52,14 +57,15 @@ const NEW_ENTRY: Omit<LibraryEntry, 'status'> = {
   finishedOn: null,
 };
 
+/** Today's date in UTC as `YYYY-MM-DD`. */
 const todayUtc = (): string => new Date().toISOString().slice(0, 10);
 
-/** Les champs fournis, `null` compris (il efface) ; un champ omis garde sa valeur actuelle. */
+/** The provided fields, `null` included (it clears); an omitted field keeps its current value. */
 function providedFields(input: EntryInput): Partial<EntryInput> {
   return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
 }
 
-/** Au changement de statut, propose la date de début (En cours) ou de fin (Terminé) si elle manque. */
+/** On a status change, proposes the start date (reading) or end date (completed) if missing. */
 function withProposedDates(
   entry: LibraryEntry,
   previousStatus: LibraryStatus | undefined,
@@ -73,13 +79,14 @@ function withProposedDates(
   };
 }
 
+/** The entry that results from applying the input to the current one (or to a new one). */
 function mergeEntry(current: LibraryEntry | null, input: EntryInput, today: string): LibraryEntry {
   const kept = current ?? { ...NEW_ENTRY, status: input.status };
   const merged: LibraryEntry = { ...kept, ...providedFields(input) };
   return withProposedDates(merged, current?.status, today);
 }
 
-/** Journal des progressions : une ligne par chose qui a changé (un retrait de note n'en produit pas). */
+/** Progress journal: one line per thing that changed (removing a rating produces none). */
 function journalEvents(current: LibraryEntry | null, next: LibraryEntry): NewReadingEvent[] {
   const events: NewReadingEvent[] = [];
   if (next.status !== current?.status) events.push({ kind: 'status', status: next.status });
@@ -93,10 +100,12 @@ function journalEvents(current: LibraryEntry | null, next: LibraryEntry): NewRea
   return events;
 }
 
+/** Creates the reading-list service; `today` can be replaced in tests. */
 export function createLibraryService(
   repository: LibraryRepository,
   today: () => string = todayUtc,
 ): LibraryService {
+  /** Throws `NOT_FOUND` unless the work exists and is not archived. */
   async function assertWorkAvailable(workId: number): Promise<void> {
     if (!(await repository.isWorkAvailable(workId))) throw new AppError('NOT_FOUND');
   }

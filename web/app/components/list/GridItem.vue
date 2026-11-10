@@ -12,9 +12,11 @@ import {
 import { counterKey } from '~/utils/units'
 import { coverUrl, workSlug } from '~/utils/work'
 
-// Couverture à ombre de statut, pastille « Ch. 12 » et boutons −1 / +1. Au doigt, la couverture suit
-// le geste et laisse voir « +1 » / « −1 » dessous (comme MALClient) : glisser vers la gauche fait +1
-// (on va vers la suite, comme le carrousel), vers la droite −1 ; un simple toucher ouvre la fiche.
+/**
+ * Cover with a status shadow, a "Ch. 12" badge and −1 / +1 buttons. With a finger, the cover
+ * follows the gesture and reveals "+1" / "−1" underneath: dragging left adds one (moving forward,
+ * like the carousel), dragging right removes one; a plain tap opens the work page.
+ */
 const props = withDefaults(
   defineProps<{ item: ListedEntry; unit: ListUnit; isReadOnly?: boolean }>(),
   { isReadOnly: false },
@@ -25,18 +27,22 @@ const localePath = useLocalePath()
 
 const MAX_COUNT = 99_999
 
+/** Localised address of the work page. */
 const path = computed(() =>
   localePath(`/work/${workSlug(props.item.work.id, props.item.work.title)}`),
 )
+/** Amount read and published total for the shown counter. */
 const progress = computed(() => unitProgress(props.item, props.unit))
+/** Text of the badge on the cover. */
 const badge = computed(() =>
   t(counterKey(props.unit, 'compact'), { value: formatProgress(progress.value) }),
 )
 const unitLabel = computed(() => t(counterKey(props.unit, 'unit')))
 
-// Change à chaque −1 / +1 : la pastille est recréée et rejoue son petit rebond.
+// Changes on every −1 / +1: the badge is recreated and replays its small bounce.
 const bumpKey = ref(0)
 
+/** Reports the counter changed by one step, within bounds. */
 function changeCounterBy(step: 1 | -1) {
   const next = progress.value.read + step
   if (next < 0 || next > MAX_COUNT) return
@@ -46,12 +52,12 @@ function changeCounterBy(step: 1 | -1) {
 
 let swipeStart: { x: number; y: number } | null = null
 let hasSwiped = false
-// Décalage de la couverture pendant le geste (px) ; 0 au repos : elle revient en rebondissant.
+// Offset of the cover during the gesture (px); 0 at rest: it springs back.
 const offset = ref(0)
 
 const isDragging = computed(() => offset.value !== 0)
-// Glissée vers la gauche, la couverture laisse voir « +1 » à droite ; vers la droite, « −1 » à gauche.
 const revealStep = computed(() => (offset.value < 0 ? '+1' : '−1'))
+/** CSS variables that move and tilt the cover with the finger. */
 const coverStyle = computed(() => ({
   '--grid-status': `var(--status-${props.item.entry.status})`,
   '--drag-offset': `${offset.value}px`,
@@ -59,25 +65,28 @@ const coverStyle = computed(() => ({
   '--drag-progress': dragProgress(offset.value),
 }))
 
+/** Starts tracking a touch swipe (not for the mouse, nor on a read-only list). */
 function startSwipe(event: PointerEvent) {
   if (props.isReadOnly || event.pointerType !== 'touch') return
   swipeStart = { x: event.clientX, y: event.clientY }
   hasSwiped = false
 }
 
+/** Moves the cover with the finger. */
 function moveSwipe(event: PointerEvent) {
   if (!swipeStart) return
   offset.value = dragOffset(event.clientX - swipeStart.x, event.clientY - swipeStart.y)
 }
 
+/** Stops tracking and lets the cover spring back. */
 function cancelSwipe() {
   swipeStart = null
   offset.value = 0
 }
 
+/** Commits the swipe as a −1 or +1 if it was long and horizontal enough. */
 function endSwipe(event: PointerEvent) {
   if (!swipeStart) return
-  // 1 vers la gauche (la suite) : +1 ; −1 vers la droite : −1.
   const step = swipeDirection(event.clientX - swipeStart.x, event.clientY - swipeStart.y)
   cancelSwipe()
   if (step === 0) return
@@ -85,7 +94,7 @@ function endSwipe(event: PointerEvent) {
   changeCounterBy(step)
 }
 
-// Un glissement ne doit pas ouvrir la fiche.
+/** A swipe must not open the work page. */
 function preventOpeningAfterSwipe(event: MouseEvent) {
   if (!hasSwiped) return
   hasSwiped = false
@@ -96,7 +105,7 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
 <template>
   <article class="grid-item" data-testid="list-grid-item">
     <div class="grid-item__stage" :style="coverStyle">
-      <!-- Sous la couverture : la couleur du statut et « +1 » / « −1 », de plus en plus visibles. -->
+      <!-- Under the cover: the status colour and +1 / −1, increasingly visible. -->
       <div
         class="grid-item__reveal"
         :class="offset < 0 ? 'grid-item__reveal--end' : 'grid-item__reveal--start'"
@@ -166,7 +175,7 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
 .grid-item {
   display: grid;
   align-content: start;
-  // L'ombre colorée de la couverture déborde de 6 px : le titre doit rester en dessous.
+  // The cover's coloured shadow overflows by 6 px: the title must stay below it.
   gap: var(--space-3);
   min-width: 0;
 }
@@ -175,7 +184,7 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
   position: relative;
 }
 
-// Fond révélé par le glissement : couleur du statut, « +1 » / « −1 » qui apparaît avec le geste.
+// Background revealed by the drag: status colour, with +1 / −1 appearing as the gesture goes.
 .grid-item__reveal {
   position: absolute;
   inset: 0;
@@ -200,8 +209,8 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
   justify-content: flex-start;
 }
 
-// Le statut est la couleur de l'ombre de la couverture (à la place de l'ombre d'encre). Pendant le
-// geste la couverture suit le doigt ; au relâchement elle revient en rebondissant.
+// The status is the colour of the cover shadow (instead of the ink shadow). During the
+// gesture the cover follows the finger; on release it springs back.
 .grid-item__cover {
   position: relative;
   border-radius: var(--radius);
@@ -215,7 +224,7 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
   }
 
   :deep(.cover) {
-    // Un filet d'encre fin autour de la couleur la détache du fond.
+    // A thin ink outline around the colour separates it from the background.
     box-shadow:
       4px 4px 0 var(--grid-status),
       5px 5px 0 1px var(--color-ink);
@@ -269,7 +278,6 @@ function preventOpeningAfterSwipe(event: MouseEvent) {
   pointer-events: none;
 }
 
-// La pastille grossit un instant à chaque −1 / +1, puis revient.
 .grid-item__badge--bump {
   @media (prefers-reduced-motion: no-preference) {
     animation: badge-bump 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);

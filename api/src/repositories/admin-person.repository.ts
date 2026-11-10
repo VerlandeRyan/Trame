@@ -1,3 +1,4 @@
+/** Queries for administering people (creators): list, read, write and archive. */
 import { sql, type Selectable } from 'kysely';
 import type { Db, PersonKind, PersonRow } from '../db/database.js';
 import {
@@ -9,25 +10,29 @@ import {
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
 
+/** Data written when creating or replacing a person. */
 export interface AdminPersonDraft {
   name: string;
   kind: PersonKind;
   links: ExternalLinkRecord[];
 }
 
+/** A person as shown in lists. */
 export interface AdminPersonSummary {
   id: number;
   name: string;
   kind: PersonKind;
   archived: boolean;
-  /** Œuvres non archivées où la personne est créditée. */
+  /** Unarchived works crediting the person. */
   activeWorkCount: number;
 }
 
+/** A person with their links. */
 export interface AdminPersonRecord extends AdminPersonSummary {
   links: ExternalLinkRecord[];
 }
 
+/** Search, scope and page of a people list. */
 export interface AdminPersonListCriteria {
   q?: string;
   scope: ArchiveScope;
@@ -35,20 +40,23 @@ export interface AdminPersonListCriteria {
   offset: number;
 }
 
+/** People administration queries. */
 export interface AdminPersonRepository {
   list(criteria: AdminPersonListCriteria): Promise<{ items: AdminPersonSummary[]; total: number }>;
   find(id: number): Promise<AdminPersonRecord | null>;
   create(draft: AdminPersonDraft): Promise<number>;
-  /** Faux si la personne n'existe pas. */
+  /** False if the person does not exist. */
   update(id: number, draft: AdminPersonDraft): Promise<boolean>;
-  /** Faux si la personne n'existe pas, ou, pour un archivage, si une œuvre non archivée la crédite. */
+  /** False if the person does not exist, or, when archiving, if an unarchived work credits them. */
   setArchived(id: number, archived: boolean): Promise<boolean>;
 }
 
+/** Columns read for a person summary. */
 type SummaryRow = Pick<Selectable<PersonRow>, 'id' | 'name' | 'kind' | 'deleted_at'> & {
   activeWorkCount: number;
 };
 
+/** Converts a database row into a summary. */
 function toSummary(row: SummaryRow): AdminPersonSummary {
   return {
     id: row.id,
@@ -59,18 +67,21 @@ function toSummary(row: SummaryRow): AdminPersonSummary {
   };
 }
 
+/** Number of unarchived works crediting the person. */
 const ACTIVE_WORKS_OF_PERSON = sql<number>`(
   SELECT count(DISTINCT wc.work_id) FROM work_credit wc JOIN work w ON w.id = wc.work_id
   WHERE wc.person_id = person.id AND w.deleted_at IS NULL
 )`;
 
-/** Garde de l'archivage, évaluée dans l'`UPDATE` : une œuvre créditée entre-temps le fait échouer. */
+/** Archive guard, evaluated inside the `UPDATE`: a work crediting the person in the meantime makes it fail. */
 const NO_ACTIVE_WORK_OF_PERSON = sql<boolean>`NOT EXISTS (
   SELECT 1 FROM work_credit wc JOIN work w ON w.id = wc.work_id
   WHERE wc.person_id = person.id AND w.deleted_at IS NULL
 )`;
 
+/** Creates the people administration repository. */
 export function createAdminPersonRepository(db: Db): AdminPersonRepository {
+  /** People matching the search text and archive scope. */
   function filtered({ q, scope }: Pick<AdminPersonListCriteria, 'q' | 'scope'>) {
     let query = db.selectFrom('person');
     const archive = archiveCondition('person.deleted_at', scope);

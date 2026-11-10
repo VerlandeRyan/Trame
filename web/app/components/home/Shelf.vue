@@ -3,12 +3,14 @@ import { formatRatingAverage } from '~/utils/home'
 import type { WorkSummary } from '~/utils/search'
 import { coverUrl, workSlug } from '~/utils/work'
 
+/** A work with its optional rating, as shown on a shelf. */
 type ShelfWork = WorkSummary & { ratingAverage?: number; ratingCount?: number }
 
+/** Home row of work covers with a title and a "See all" link. */
 defineProps<{
   title: string
   works: ShelfWork[]
-  /** Sans lien « Tout voir » quand aucune page ne correspond à la rangée. */
+  /** No "See all" link when no page matches the row. */
   seeAllTo?: string | { path: string; query: Record<string, string> }
   testId: string
 }>()
@@ -17,6 +19,7 @@ const { t, locale } = useI18n()
 const localePath = useLocalePath()
 const headingId = `${useId()}-heading`
 
+/** "9.1 · 12 ratings", or `null` for a work without a rating. */
 function ratingLabel(work: ShelfWork): string | null {
   if (work.ratingAverage === undefined || work.ratingCount === undefined) return null
   const average = formatRatingAverage(work.ratingAverage, locale.value)
@@ -82,8 +85,8 @@ function ratingLabel(work: ShelfWork): string | null {
   font-weight: 700;
 }
 
-// Une seule ligne : autant d'œuvres que la largeur en permet, qui se la partagent. Les suivantes
-// tombent sur des lignes de hauteur nulle, donc masquées, jamais coupées en deux.
+// A single row: as many works as the width allows, sharing it. The following ones wrap onto
+// zero-height rows, so they are hidden, never cut in two.
 .shelf__list {
   --shelf-item: 104px;
 
@@ -92,7 +95,7 @@ function ratingLabel(work: ShelfWork): string | null {
   grid-template-rows: auto;
   grid-auto-rows: 0;
   gap: 0 12px;
-  // Marge compensée : `overflow: hidden` ne rogne ni l'ombre ni le soulèvement des couvertures.
+  // Compensating margin: `overflow: hidden` must not clip the covers' shadow or lift.
   margin: -4px -4px 0 0;
   padding: 4px 4px 0 0;
   overflow: hidden;
@@ -111,7 +114,7 @@ function ratingLabel(work: ShelfWork): string | null {
 .shelf__cover {
   display: block;
 
-  // Soulèvement au survol : souris seulement, et sans animation réduite.
+  // Lift on hover: mouse only, and not with reduced motion.
   @media (prefers-reduced-motion: no-preference) {
     transition: transform 0.15s ease-out;
   }

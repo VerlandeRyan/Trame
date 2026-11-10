@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Menu « Explorer » de l'en-tête : formats en cartes, genres en pastilles,
-// compteurs et lien vers tout le catalogue.
+/** Header "Explore" menu: formats as cards, genres as pills, counts and a link to the whole catalogue. */
 import { pickExploreFacets } from '~/utils/home'
 import { translatedCode, type WorkFacets } from '~/utils/search'
 
@@ -15,10 +14,11 @@ const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
 const panelId = useId()
 
-// Compteurs chargés à la première ouverture ; un échec laisse seulement le lien vers le catalogue.
+// Counts are loaded on first opening; a failure leaves only the link to the catalogue.
 const facets = ref<Pick<WorkFacets, 'format' | 'genre'> | null>(null)
 let requested = false
 
+/** Loads the format and genre counts once. */
 async function loadFacets() {
   if (requested) return
   requested = true
@@ -29,14 +29,17 @@ async function loadFacets() {
   }
 }
 
+/** Formats and themes to show, in editorial order. */
 const explore = computed(() =>
   facets.value ? pickExploreFacets(facets.value) : { formats: [], themes: [] },
 )
 
+/** Translated label of a format or genre code. */
 function label(code: string) {
   return translatedCode(t, te, 'genre', code)
 }
 
+/** Closes the menu, optionally giving focus back to its button. */
 function close({ restoreFocus = false } = {}) {
   open.value = false
   if (restoreFocus) trigger.value?.focus()
@@ -46,27 +49,28 @@ watch(open, (isOpen) => {
   if (isOpen) void loadFacets()
 })
 
+/** Closes the menu on a click outside it. */
 function closeOnOutsideClick(event: MouseEvent) {
   if (open.value && !root.value?.contains(event.target as Node)) close()
 }
 
-// Échap sur le document : Safari ne donne pas le focus à un bouton cliqué.
+// Escape is listened to on the document: Safari does not focus a clicked button.
+/** Closes the menu on Escape, giving focus back to its button. */
 function closeOnEscape(event: KeyboardEvent) {
   if (open.value && event.key === 'Escape') close({ restoreFocus: true })
 }
 
-// Mobile : le titre du volet replie ou déplie son contenu (le bureau n'a pas de repli).
 const mobileQuery = '(max-width: 767px)'
 const isMobile = ref(false)
 const collapsed = ref(false)
 const showContent = computed(() => !(isMobile.value && collapsed.value))
 let mobileMedia: MediaQueryList | undefined
 
+/** Follows the mobile media query. */
 function syncMobile() {
   isMobile.value = mobileMedia?.matches ?? false
 }
 
-// Chaque ouverture repart volet déplié.
 watch(open, (isOpen) => {
   if (isOpen) collapsed.value = false
 })
@@ -77,7 +81,7 @@ onMounted(() => {
   mobileMedia = window.matchMedia?.(mobileQuery)
   mobileMedia?.addEventListener('change', syncMobile)
   syncMobile()
-  // Monté déjà ouvert (retour sur une page où l'état est resté ouvert) : charger les compteurs.
+  // Mounted already open (back on a page where the state stayed open): load the counts.
   if (open.value) void loadFacets()
 })
 onBeforeUnmount(() => {
@@ -86,8 +90,8 @@ onBeforeUnmount(() => {
   document.removeEventListener('keydown', closeOnEscape)
 })
 
-// Un lien choisi referme le menu tout de suite (`@click="close()"`) : sur `/search` le menu est
-// démonté et ne verrait plus la route changer ; ceci couvre les autres navigations.
+// A chosen link closes the menu at once (`@click="close()"`): on the search page the menu is
+// unmounted and would no longer see the route change; this covers the other navigations.
 watch(
   () => route.fullPath,
   () => close(),
@@ -195,7 +199,7 @@ watch(
   position: relative;
 }
 
-// Même bouton blanc que le sélecteur de langue, ouvert ou non : jamais de rose au clic.
+// Same white button as the language switcher, open or not: never pink on click.
 .explore-menu__trigger {
   display: flex;
   align-items: center;
@@ -211,7 +215,7 @@ watch(
   cursor: pointer;
 }
 
-// L'icône ☰ / ✕ est réservée au mobile.
+// The ☰ / ✕ icon is reserved for mobile.
 .explore-menu__icon {
   display: none;
 }
@@ -226,7 +230,7 @@ watch(
   }
 }
 
-// Bureau : fenêtre calée sur le bord droit du bouton.
+// Desktop: window aligned with the button's right edge.
 .explore-menu__panel {
   position: absolute;
   top: calc(100% + 10px);
@@ -251,8 +255,8 @@ watch(
   @include menu-open-animation;
 }
 
-// Entre tablette et petit bureau, le bouton est trop près du bord gauche pour une fenêtre de
-// 640 px calée dessus : elle se cale alors sur le bord droit de la fenêtre du navigateur.
+// Between tablet and small desktop, the button is too close to the left edge for a window of
+// 640 px aligned with it: it then aligns with the browser window's right edge.
 @media (min-width: 768px) and (max-width: 1099px) {
   .explore-menu__panel {
     position: fixed;
@@ -372,7 +376,7 @@ watch(
   font-weight: 700;
   text-decoration: none;
 
-  // Zone de clic de 44 px au doigt, sans recouvrir les voisines (écart de 10 px).
+  // 44 px click area with a finger, without covering its neighbours (10 px gap).
   &::after {
     position: absolute;
     inset: 0;
@@ -419,10 +423,10 @@ watch(
   }
 }
 
-// Mobile : bouton ☰ à droite de l'en-tête (libellé lu par les lecteurs d'écran seulement), volet
-// pleine largeur sous l'en-tête, repère de position (voir `Header.vue`), bouton « Voir tout » en bas.
+// Mobile: ☰ button at the right of the header (label read by screen readers only), full-width
+// panel under the header, position marker (see `Header.vue`), "See all" button at the bottom.
 @media (max-width: 767px) {
-  // Le ☰ est un enfant statique de l'en-tête : il doit passer devant la trame (::before).
+  // The ☰ is a static child of the header: it must sit in front of the screentone (::before).
   .explore-menu__trigger {
     position: relative;
     z-index: 1;
@@ -463,7 +467,7 @@ watch(
     box-shadow: 0 6px 0 rgb(27 42 92 / 25%);
   }
 
-  // « Explorer ▴ » : rangée de titre du volet, comme les maquettes.
+  // "Explore ▴": title row of the panel.
   .explore-menu__title {
     display: flex;
     align-items: center;

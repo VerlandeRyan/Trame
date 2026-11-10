@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LibraryStatus } from '~/utils/library'
 
-// Statut d'une œuvre de la liste : bouton à sa couleur qui ouvre le menu des cinq statuts.
+/** Status of a list work: a button in the status colour that opens the menu of the five statuses. */
 defineProps<{ status: LibraryStatus; title: string }>()
 const emit = defineEmits<{ change: [status: LibraryStatus] }>()
 const { t } = useI18n()

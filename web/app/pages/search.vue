@@ -19,26 +19,28 @@ import {
   type WorkPage,
 } from '~/utils/search'
 
-// Page de résultats : l'URL porte la recherche, les filtres, le tri et la page.
+/** Results page: the address carries the search, the filters, the sort and the page. */
 const route = useRoute()
 const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
 const api = useApi()
 
 const state = computed(() => parseSearchQuery(route.query))
-// Sans texte (ou moins de 2 caractères), la page liste le catalogue.
+// Without text (or under 2 characters), the page lists the catalogue.
 const query = computed(() => activeQuery(state.value))
 
+/** Results and counts of one search. */
 interface SearchData {
   works: WorkPage
   facets: WorkFacets
-  /** Texte de ces résultats (le titre suit la liste affichée). */
+  /** Text of these results (the heading follows the displayed list). */
   query: string
 }
 
-// Adresse + langue : identifie la recherche en cours.
+/** Identifier of the current search: address and language. */
 const searchKey = () => `${locale.value}|${route.fullPath}`
 
+/** Loads the results and the facet counts, starting over if the search changed meanwhile. */
 async function loadSearch(): Promise<SearchData> {
   const requested = searchKey()
   const current = state.value
@@ -50,10 +52,10 @@ async function loadSearch(): Promise<SearchData> {
       query: toApiQuery(current, { lang: locale.value }),
     }),
   ])
-  // Recherche changée pendant l'appel (frappe rapide) : on recommence pour la dernière.
+  // Search changed during the call (fast typing): start over for the latest one.
   if (searchKey() !== requested) return loadSearch()
   if (!works.approximate) return { works, facets, query: activeQuery(current) }
-  // Liste approchante : les compteurs la suivent.
+  // Approximate list: the counts follow it.
   const approximateFacets = await api.request<WorkFacets>('/works/facets', {
     query: { ...toApiQuery(current, { lang: locale.value }), match: 'any' },
   })
@@ -61,22 +63,22 @@ async function loadSearch(): Promise<SearchData> {
   return { works, facets: approximateFacets, query: activeQuery(current) }
 }
 
-// La langue est dans la clé et dans les sources : changer de langue recrée la page, et une clé
-// partagée gardait l'ancien gestionnaire (la liste n'était plus rechargée).
+// The language is in the key and in the sources: changing language recreates the page, whereas
+// a shared key kept the old handler (the list was no longer reloaded).
 const { data, error, status, refresh } = await useAsyncData<SearchData>(
   `search-${locale.value}`,
   loadSearch,
   { watch: [() => route.fullPath, locale] },
 )
 
-// noindex : page de résultats sans contenu propre ; les moteurs indexent les fiches œuvres.
+// noindex: a results page has no content of its own; search engines index the work pages.
 useSeoMeta({
   title: () =>
     query.value === '' ? t('search.title') : t('search.titleWithQuery', { query: query.value }),
   robots: 'noindex, follow',
 })
 
-// Filtre, tri et réinitialisation remplacent l'entrée d'historique : « Retour » quitte la recherche.
+/** Goes to a search state; filter, sort and reset replace the history entry, so "Back" leaves the search. */
 async function navigateToSearch(
   next: SearchState,
   options: { replace?: boolean } = {},
@@ -87,14 +89,15 @@ async function navigateToSearch(
   )
 }
 
-// Pendant le chargement, la liste précédente reste affichée, estompée.
+// While loading, the previous list stays displayed, faded.
 const loading = computed(() => status.value === 'pending')
 
 const filtersOpen = ref(false)
 const sheetFilters = ref<{ allOpen: boolean; setAll: (open: boolean) => void } | null>(null)
 
-// La feuille n'existe qu'au mobile : on la ferme en passant au bureau.
+// The sheet only exists on mobile: it closes when switching to desktop.
 let desktopQuery: MediaQueryList | undefined
+/** Closes the filter sheet when the screen becomes desktop-sized. */
 function closeSheetOnDesktop(event: MediaQueryListEvent) {
   if (event.matches) filtersOpen.value = false
 }
@@ -108,7 +111,7 @@ onBeforeUnmount(() => desktopQuery?.removeEventListener('change', closeSheetOnDe
 const pages = computed(() => totalPages(data.value?.works.total ?? 0, data.value?.works.pageSize))
 const total = computed(() => data.value?.works.total ?? 0)
 
-// Page au-delà de la dernière : on rejoint la dernière.
+// A page beyond the last one: go to the last one.
 watch(
   data,
   (loaded) => {
@@ -122,10 +125,13 @@ watch(
   },
   { immediate: true },
 )
+/** Selected filter values, shown as removable chips. */
 const chips = computed(() => activeFilters(state.value))
 
+/** Translated label of a filter value. */
 const labelOf = (key: FilterKey, code: string) => filterValueLabel(t, te, key, code)
 
+/** Sort choices; relevance only exists with search text. */
 const sortOptions = computed(() =>
   SORTS.filter((sort) => sort !== 'relevance' || hasSearchText(state.value.q)).map((sort) => ({
     value: sort,
@@ -133,15 +139,17 @@ const sortOptions = computed(() =>
   })),
 )
 
+/** Applies a new sort. */
 function onSortChange(value: string) {
   return navigateToSearch(changeSort(state.value, value as SearchSort), { replace: true })
 }
 
+/** Address of a results page. */
 function linkFor(page: number) {
   return { path: localePath('/search'), query: toRouteQuery({ ...state.value, page }) }
 }
 
-// Le titre suit la liste affichée, pas l'adresse (qui change avant l'arrivée des résultats).
+// The heading follows the displayed list, not the address (which changes before results arrive).
 const heading = computed(() => {
   const shown = data.value?.query ?? ''
   if (total.value === 0) {
@@ -189,7 +197,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
           :aria-busy="loading"
         >
           <header class="search-page__head">
-            <!-- Seul le nombre de résultats est annoncé aux lecteurs d'écran. -->
+            <!-- Only the number of results is announced to screen readers. -->
             <h1 class="search-page__count" aria-live="polite" data-testid="search-count">
               {{ heading }}
             </h1>
@@ -219,7 +227,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
             </li>
           </ul>
 
-          <!-- « Filtres (n) » (mobile) et tri, de même taille côte à côte. -->
+          <!-- 'Filters (n)' (mobile) and sort, same size side by side. -->
           <div v-if="hasFilterColumn" class="search-page__toolbar">
             <UiButton
               variant="secondary"
@@ -256,7 +264,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
             class="search-page__empty"
             data-testid="search-empty"
           >
-            <!-- Inactif jusqu'à US-09. -->
+            <!-- Inactive until proposing a work exists. -->
             <UiButton variant="primary" disabled data-testid="search-propose">
               {{ t('search.proposeSignIn') }}
             </UiButton>
@@ -279,7 +287,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
         </section>
       </div>
 
-      <!-- Feuille de filtres du mobile. -->
+      <!-- Mobile filter sheet. -->
       <UiModal
         v-model="filtersOpen"
         placement="bottom"
@@ -334,7 +342,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   gap: var(--space-4);
 }
 
-// Le champ de la page n'existe qu'au mobile (au bureau, celui de l'en-tête suffit).
+// The page's field only exists on mobile (on desktop the header's is enough).
 .search-page__field {
   @media (min-width: 768px) {
     display: none;
@@ -345,7 +353,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   display: grid;
   gap: var(--space-4);
 
-  // Sans colonne de filtres, le contenu prend toute la largeur.
+  // Without a filter column, the content takes the full width.
   @media (min-width: 768px) {
     grid-template-columns: 210px minmax(0, 1fr);
     align-items: start;
@@ -367,7 +375,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   margin-top: 16px;
 }
 
-// Filtres : feuille au mobile, colonne à gauche au bureau (elle défile avec la page).
+// Filters: a sheet on mobile, a left column on desktop (it scrolls with the page).
 .search-page__filters {
   display: none;
 
@@ -405,7 +413,6 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   --rule-gap: 10px;
 }
 
-// Pastilles des filtres actifs.
 .search-page__filterbar {
   display: flex;
   flex-wrap: wrap;
@@ -415,7 +422,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   padding: 0;
 }
 
-// Comme le catalogue admin : « Filtres » à gauche, le tri à droite (mobile) ; le tri seul à droite (bureau).
+// Like the admin catalogue: 'Filters' on the left, sort on the right (mobile); sort alone on the right (desktop).
 .search-page__toolbar {
   display: flex;
   gap: var(--space-3);
@@ -428,8 +435,8 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   }
 }
 
-// Bureau d'abord : le bouton mobile ne doit jamais apparaître, même avant que tous les styles soient
-// chargés. `.search-page__toolbar` en plus pour l'emporter sur le `display` de `UiButton`.
+// Desktop first: the mobile button must never show, even before all styles are loaded.
+// `.search-page__toolbar` is added to win over `UiButton`'s `display`.
 .search-page__toolbar .search-page__filters-button {
   display: none;
 }
@@ -441,7 +448,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   }
 }
 
-// Zone tactile de 44 px via le pseudo-élément.
+// 44 px touch area through the pseudo-element.
 .search-page__chip {
   position: relative;
   display: inline-flex;
@@ -476,14 +483,13 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   }
 }
 
-// Carte « aucun résultat » centrée.
 .search-page__empty {
   width: 100%;
   max-width: 780px;
   margin: var(--space-6) auto 0;
 }
 
-// « Tout replier » dans l'en-tête de la feuille ; zone tactile de 44 px.
+// 'Collapse all' in the sheet header; 44 px touch area.
 .search-page__sheet-collapse {
   min-height: var(--touch);
   padding: 0 var(--space-1);
@@ -496,7 +502,7 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
   cursor: pointer;
 }
 
-// Pied de la feuille : « Réinitialiser » 1/3, « Voir N résultats » 2/3.
+// Sheet footer: 'Reset' 1/3, 'See N results' 2/3.
 .search-page__sheet-reset {
   flex: 1;
 }

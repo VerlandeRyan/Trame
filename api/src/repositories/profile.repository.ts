@@ -1,3 +1,4 @@
+/** Queries behind public member profiles: account, reading figures, top rated and recent updates. */
 import { sql } from 'kysely';
 import type { Db, ProfileVisibility } from '../db/database.js';
 import {
@@ -10,6 +11,7 @@ import {
 import type { WorkSummary } from './work.repository.js';
 import { displayTitle, visibleWork, workSummaryColumns } from './work-sql.js';
 
+/** Account data shown on a profile. */
 export interface ProfileAccount {
   id: number;
   handle: string;
@@ -17,7 +19,7 @@ export interface ProfileAccount {
   memberSince: Date;
 }
 
-/** Sommes brutes : la moyenne des notes est calculée par le service. */
+/** Raw sums: the service computes the average rating. */
 export interface ProfileFigures {
   statusCounts: StatusCounts;
   chaptersRead: number;
@@ -26,29 +28,36 @@ export interface ProfileFigures {
   ratingCount: number;
 }
 
+/** A rated work of a member. */
 export interface ProfileRatedWork {
   work: WorkSummary;
   rating: number;
 }
 
+/** A recently updated reading-list entry. */
 export interface RecentUpdate {
   work: WorkSummary;
   entry: LibraryEntry;
   updatedAt: Date;
 }
 
+/** Profile queries. */
 export interface ProfileRepository {
-  /** Compte actif ; `null` s'il n'existe pas ou a été supprimé. Le handle ignore la casse. */
+  /** Active account; `null` if it does not exist or was deleted. The handle ignores case. */
   findByHandle(handle: string): Promise<ProfileAccount | null>;
+  /** Reading totals of a member (archived works excluded). */
   figures(userId: number): Promise<ProfileFigures>;
-  /** Œuvres notées, meilleure note d'abord (puis la plus récente) ; œuvres archivées exclues. */
+  /** Rated works, best rating first (then most recent); archived works excluded. */
   topRated(userId: number, lang: string | undefined, limit: number): Promise<ProfileRatedWork[]>;
-  /** Entrées de la liste, la plus récemment modifiée d'abord ; œuvres archivées exclues. */
+  /** List entries, most recently modified first; archived works excluded. */
   recentUpdates(userId: number, lang: string | undefined, limit: number): Promise<RecentUpdate[]>;
+  /** Changes who can see the profile. */
   setVisibility(userId: number, visibility: ProfileVisibility): Promise<void>;
 }
 
+/** Creates the profile repository. */
 export function createProfileRepository(db: Db): ProfileRepository {
+  /** Visible works of a member's list, with their summary columns. */
   const listedWorks = (userId: number, lang: string | undefined) =>
     db
       .selectFrom('library_entry')
@@ -117,7 +126,7 @@ export function createProfileRepository(db: Db): ProfileRepository {
         .orderBy('work.id')
         .limit(limit)
         .execute();
-      // `rating IS NOT NULL` ne resserre pas le type : le filtre ci-dessous le fait sans assertion.
+      // `rating IS NOT NULL` does not narrow the type: the filter below does it without an assertion.
       return rows.flatMap(({ rating, ...work }) => (rating === null ? [] : [{ work, rating }]));
     },
 

@@ -1,7 +1,9 @@
 <script setup lang="ts">
-// Choix en pastilles : un seul (radios natifs) ou plusieurs (cases natives). Le contrôle natif reste
-// dans le DOM, au clavier et pour les lecteurs d'écran, mais n'est pas dessiné ; la pastille choisie
-// prend l'encre, le survol (souris seulement) l'éclaircit.
+/**
+ * Choice in pills: one (native radios) or several (native checkboxes). The native control stays
+ * in the DOM, for the keyboard and screen readers, but is not drawn; the chosen pill takes the
+ * ink colour, and hover (mouse only) lightens it.
+ */
 const props = defineProps<{
   label: string
   options: { value: string; label: string }[]
@@ -10,9 +12,11 @@ const props = defineProps<{
 const model = defineModel<string | string[]>({ required: true })
 const uid = useId()
 
+/** Whether the value is currently chosen. */
 const isChosen = (value: string) =>
   Array.isArray(model.value) ? model.value.includes(value) : model.value === value
 
+/** Chooses the value, or toggles it in multiple mode. */
 function choose(value: string) {
   if (!props.multiple || !Array.isArray(model.value)) {
     model.value = value
@@ -79,7 +83,7 @@ function choose(value: string) {
     cursor: pointer;
   }
 
-  // Le survol ne change pas une pastille cochée.
+  // Hover does not change a checked pill.
   &:not(:has(input:checked)) {
     @include on-hover {
       background: var(--color-cover-empty);

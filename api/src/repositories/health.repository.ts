@@ -1,11 +1,14 @@
+/** Database liveness check. */
 import { sql } from 'kysely';
 import type { Db } from '../db/database.js';
 
+/** Health queries. */
 export interface HealthRepository {
-  /** Vrai si la base répond. */
+  /** True when the database answers. */
   ping(): Promise<boolean>;
 }
 
+/** Creates the health repository. */
 export function createHealthRepository(db: Db): HealthRepository {
   return {
     async ping() {

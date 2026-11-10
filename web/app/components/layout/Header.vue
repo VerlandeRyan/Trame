@@ -1,6 +1,8 @@
 <script setup lang="ts">
-// En-tête du site, d'après les maquettes : logo, recherche, langue, connexion.
-// Au mobile, la recherche est une icône qui déploie le champ dans l'en-tête.
+/**
+ * Site header: logo, search, language, sign-in. On mobile, search is an icon that unfolds the
+ * field inside the header.
+ */
 const { t, locales } = useI18n()
 const localePath = useLocalePath()
 const route = useRoute()
@@ -10,23 +12,25 @@ const isAdmin = computed(
   () => auth.value.status === 'authenticated' && auth.value.user.role === 'admin',
 )
 
-// Dans n'importe quelle langue : au changement de langue, `localePath` suit déjà la nouvelle langue
-// alors que `route.path` est encore l'ancien, ce qui ferait clignoter le champ de recherche.
+// In any language: when the language changes, `localePath` already follows the new language
+// while `route.path` is still the old one, which would make the search field flicker.
+/** Whether the current route is the given page, in any language. */
 const isCurrentPage = (path: string) =>
   locales.value.some(({ code }) => route.path === localePath(path, code))
 const onSearchPage = computed(() => isCurrentPage('/search'))
-// L'accueil porte son propre champ de recherche : pas de champ dans l'en-tête.
+// The home page has its own search field: none in the header.
 const onHomePage = computed(() => isCurrentPage('/'))
 
-// Sous 1024 px le champ de l'en-tête est trop étroit pour l'aide complète.
+// Below 1024 px the header field is too narrow for the full help text.
 const isCompact = useNarrowScreen(1023)
 
 const searching = ref(false)
 const searchBox = ref<{ focus: () => void } | null>(null)
 const searchLink = ref<HTMLButtonElement | null>(null)
 
-// Menu Explorer : ouvrir la recherche le referme (jamais deux croix à la fois).
+// Explore menu: opening the search closes it (never two crosses at once).
 const exploring = ref(false)
+/** Opens the search field and focuses it. */
 async function openSearch() {
   exploring.value = false
   searching.value = true
@@ -34,19 +38,20 @@ async function openSearch() {
   searchBox.value?.focus()
 }
 
+/** Closes the search field and gives focus back to the icon. */
 async function closeSearch() {
   searching.value = false
   await nextTick()
   searchLink.value?.focus()
 }
 
-// Échap referme le champ (le menu de suggestions a priorité).
+/** Escape closes the field (the suggestions menu takes priority). */
 function onEscape(event: KeyboardEvent) {
   if (searching.value && !event.defaultPrevented) void closeSearch()
 }
 
-// Une navigation referme le champ et le menu Explorer (le menu est démonté sur `/search` : il ne
-// peut pas se refermer lui-même à temps, l'état doit rester ici).
+// A navigation closes the field and the Explore menu (the menu is unmounted on the search page:
+// it cannot close itself in time, so the state has to stay here).
 watch(
   () => route.fullPath,
   () => {
@@ -141,7 +146,7 @@ watch(
     min-height: var(--header-height);
   }
 
-  // Trame d'encre dense à droite, qui s'estompe vers la gauche.
+  // Dense ink screentone on the right, fading to the left.
   &::before {
     @include screentone(var(--color-ink), 6px, 270deg, 55%);
   }
@@ -160,7 +165,7 @@ watch(
   text-decoration: none;
 }
 
-// Pastille « ADMIN » à côté du logo : on voit d'un coup d'œil que la session est administrateur.
+// "ADMIN" pill next to the logo: shows at a glance that the session is an administrator's.
 .layout-header__badge {
   flex-shrink: 0;
   padding: 2px 8px;
@@ -171,7 +176,7 @@ watch(
   font-weight: 800;
 }
 
-// Sur un petit écran la place revient au compte et au menu.
+// On a small screen the room goes to the account and the menu.
 @media (max-width: 479px) {
   .layout-header__badge {
     display: none;
@@ -186,7 +191,7 @@ watch(
   margin-left: auto;
 }
 
-// Les autres éléments gardent leur largeur : le compte (pseudo tronqué) absorbe le manque de place.
+// The other elements keep their width: the account (truncated handle) absorbs the lack of room.
 .layout-header__logo,
 .layout-header__language {
   flex-shrink: 0;
@@ -202,7 +207,7 @@ watch(
   }
 }
 
-// Ouvrir / fermer la recherche : mobile seulement.
+// Open / close the search: mobile only.
 .layout-header__search-link,
 .layout-header__search-close {
   display: none;
@@ -229,14 +234,14 @@ watch(
   display: none;
 }
 
-// Mobile : en-tête compact (logo, recherche en icône, langue, compte).
+// Mobile: compact header (logo, search as an icon, language, account).
 @media (max-width: 767px) {
   .layout-header {
     gap: var(--space-2);
     padding: var(--space-2) var(--space-3);
   }
 
-  // Le logo garde sa largeur ; recherche (icône), langue et compte forment un groupe collé à droite.
+  // The logo keeps its width; search (icon), language and account form a group pushed to the right.
   .layout-header__search {
     display: none;
   }
@@ -277,7 +282,7 @@ watch(
     }
   }
 
-  // Petits écrans (320–399 px) : tout doit tenir sur une ligne sans défilement horizontal.
+  // Small screens (320–399 px): everything must fit on one line without horizontal scrolling.
   @media (max-width: 399px) {
     .layout-header {
       gap: 6px;
@@ -303,8 +308,8 @@ watch(
     }
   }
 
-  // Très petits écrans (< 360 px) : le compte devient une icône ; le libellé reste lu par les
-  // lecteurs d'écran. Les polices varient selon les systèmes : on garde de la marge.
+  // Very small screens (< 360 px): the account becomes an icon; the label is still read by
+  // screen readers. Fonts vary between systems: keep some margin.
   @media (max-width: 359px) {
     .layout-header__sign-in-icon {
       display: inline-block;

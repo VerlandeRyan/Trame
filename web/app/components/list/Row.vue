@@ -4,8 +4,10 @@ import type { ListedEntry } from '~/utils/reading-list'
 import { translatedCode } from '~/utils/search'
 import { coverUrl, workSlug } from '~/utils/work'
 
-// Une œuvre de la liste : couverture, titre, statut, compteurs de chapitres et de tomes
-// (indépendants), note et accès à la fenêtre « Modifier ma lecture ».
+/**
+ * A work of the list: cover, title, status, chapter and volume counters (independent), rating
+ * and access to the "Edit my reading" window.
+ */
 const props = withDefaults(
   defineProps<{ item: ListedEntry; counterKey?: number; isReadOnly?: boolean }>(),
   { counterKey: 0, isReadOnly: false },
@@ -15,21 +17,26 @@ const { t, te } = useI18n()
 const localePath = useLocalePath()
 
 const work = computed(() => props.item.work)
+/** Localised address of the work page. */
 const path = computed(() => localePath(`/work/${workSlug(work.value.id, work.value.title)}`))
+/** "Type · Formats" line under the title. */
 const kindLine = computed(() =>
   [
     t(`workType.${work.value.type}`),
     ...work.value.formats.map((code) => translatedCode(t, te, 'genre', code)),
   ].join(' · '),
 )
+/** "8/10", or the "no rating" text. */
 const ratingLabel = computed(() =>
   props.item.entry.rating === null
     ? t('library.noRating')
     : t('list.ratingOutOfTen', { value: props.item.entry.rating }),
 )
+/** "of 12", or "of ?" when the published total is unknown. */
 const totalLabel = (total: number | null) =>
   total === null ? t('library.ofUnknown') : t('library.of', { total })
 
+/** Reports a status change. */
 const changeStatus = (status: LibraryStatus) => emit('change', { status })
 </script>
 
@@ -62,7 +69,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
         :title="work.title"
         @change="changeStatus"
       />
-      <!-- Au mobile la note suit le statut ; au bureau elle a sa propre colonne. -->
+      <!-- On mobile the rating follows the status; on desktop it has its own column. -->
       <span v-if="item.entry.rating !== null" class="row__rating-mobile">
         {{ ratingLabel }}
       </span>
@@ -120,8 +127,6 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Mobile (maquette 10) : la couverture à gauche sur toute la hauteur ; titre, statut et note,
-// puis les deux compteurs, alignés sur le titre.
 .row {
   position: relative;
   display: grid;
@@ -134,7 +139,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
     border-bottom: 0;
   }
 
-  // Bureau : les colonnes de l'en-tête de `pages/list.vue` (`--list-columns`).
+  // Desktop: the columns of the `pages/list.vue` header (`--list-columns`).
   @media (min-width: 1024px) {
     grid-template-columns: var(--list-columns);
     align-items: center;
@@ -143,7 +148,6 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   }
 }
 
-// Au mobile la couverture et le titre deviennent des cases de la carte.
 .row__work {
   display: contents;
 
@@ -166,8 +170,8 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   }
 }
 
-// Lignes posées à la main au mobile : le bouton de modification partage la première ligne, et
-// un placement automatique repousserait le titre sous la couverture.
+// Rows placed by hand on mobile: the edit button shares the first row, and
+// automatic placement would push the title under the cover.
 .row__title-block {
   grid-row: 1;
   grid-column: 2 / -1;
@@ -235,7 +239,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
     grid-row: auto;
     justify-items: center;
 
-    // Au bureau l'en-tête de colonne porte le libellé : il reste lu par les lecteurs d'écran.
+    // On desktop the column header carries the label: it is still read by screen readers.
     :deep(.counter__label) {
       position: absolute;
       width: 1px;
@@ -246,7 +250,6 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
     }
   }
 
-  // Au mobile le libellé est au-dessus du compteur, à gauche.
   :deep(.counter) {
     justify-items: start;
 
@@ -256,7 +259,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   }
 }
 
-// Lecture seule : la valeur remplace le compteur, son libellé n'est visible qu'au mobile.
+// Read-only: the value replaces the counter, its label is only visible on mobile.
 .row__read-value {
   margin: 0;
   font-weight: 800;
@@ -308,8 +311,7 @@ const changeStatus = (status: LibraryStatus) => emit('change', { status })
   }
 }
 
-// Mobile, bouton à icône en haut à droite de la carte. Bureau, « Modifier » dans sa colonne.
-// Pas de `position` ici. Le survol d'un bouton passe en `relative` et décalerait un bouton en absolu.
+// No `position` here: a button's hover switches it to `relative` and would shift an absolute one.
 .row__edit {
   grid-row: 1;
   grid-column: 3;

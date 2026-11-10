@@ -2,7 +2,7 @@
 import type { RouteLocationRaw } from 'vue-router'
 import { pageItems } from '~/utils/search'
 
-// Par liens : l'adresse porte la page (partageable, fonctionne sans script).
+/** Pagination bar made of links: the address carries the page (shareable, works without script). */
 const props = defineProps<{
   page: number
   pages: number
@@ -97,7 +97,7 @@ const items = computed(() => pageItems(props.page, props.pages))
     padding: 4px 11px;
   }
 
-  // Petit bouton : même montée d'1 px que −/+ et les flèches (pas la page courante, qui n'est pas un lien).
+  // Small button: same 1 px lift as −/+ and the arrows (not the current page, which is not a link).
   &:not(.pagination__item--current) {
     @include lift-on-hover;
   }
@@ -120,7 +120,7 @@ const items = computed(() => pageItems(props.page, props.pages))
   }
 }
 
-// Mobile : chevrons, le texte reste lu par les lecteurs d'écran.
+// Mobile: chevrons, the text stays read by screen readers.
 .pagination__text {
   display: none;
 }

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/** Error page: a not-found message for 404, a generic one otherwise, with a way back home. */
 import type { NuxtError } from '#app'
 
 const props = defineProps<{ error: NuxtError }>()
@@ -10,6 +11,7 @@ useHead({
   title: t(props.error.status === 404 ? 'errorPage.notFoundTitle' : 'errorPage.title'),
 })
 
+/** Clears the error and goes to the home page. */
 async function goHome() {
   await clearError({ redirect: localePath('/') })
 }
@@ -17,7 +19,7 @@ async function goHome() {
 
 <template>
   <NuxtLayout>
-    <!-- 404 : maquettes 24 (bureau) et 25 (mobile), avec la vraie recherche (#21). -->
+    <!-- 404: with the real search. -->
     <UiPanel v-if="notFound">
       <section class="not-found" data-testid="not-found">
         <p class="not-found__code" aria-hidden="true">404</p>

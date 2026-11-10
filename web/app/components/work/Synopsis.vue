@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { CreditRole } from '~/utils/work'
 
-// Synopsis : langue et source indiquées ; un texte traduit automatiquement est signalé (US-02).
-// Le texte est affiché en texte brut (jamais de HTML).
+/**
+ * Synopsis with its language and source; an automatically translated text is flagged.
+ * The text is displayed as plain text (never HTML).
+ */
 defineProps<{
   text: string | null
   language: string | null
@@ -11,6 +13,7 @@ defineProps<{
 }>()
 const { t, locale } = useI18n()
 
+/** Name of a language in the interface language, or the code itself. */
 function languageLabel(code: string): string {
   try {
     return new Intl.DisplayNames([locale.value], { type: 'language' }).of(code) ?? code
@@ -50,7 +53,7 @@ function languageLabel(code: string): string {
 </template>
 
 <style scoped lang="scss">
-// Contenu empilé depuis le haut (jamais centré ni étiré) ; chip collée au bord haut du cadre.
+// Content stacked from the top (never centred or stretched); chip attached to the frame's top edge.
 .synopsis {
   display: flex;
   flex-direction: column;

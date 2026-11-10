@@ -1,19 +1,21 @@
 <script setup lang="ts">
+/** Button, or a link styled as a button, in several colour variants and two sizes. */
 import type { RouteLocationRaw } from 'vue-router'
 
+/** Hover tilt tier, chosen by button width. */
 type Tilt = 'small' | 'medium' | 'wide'
 
 const props = withDefaults(
   defineProps<{
     variant?: 'primary' | 'secondary' | 'blue' | 'success' | 'danger' | 'danger-solid'
     size?: 'normal' | 'small'
-    // Couleur de statut : œuvre déjà dans la liste (le libellé reste toujours présent).
+    /** Status colour: work already in the list (the label is always present). */
     status?: 'reading' | 'completed' | 'plan_to_read' | 'on_hold' | 'dropped'
-    // Un lien (navigation complète) à l'aspect d'un bouton.
+    /** A link (full navigation) styled as a button. */
     href?: string
-    // Un lien interne du site (navigation sans rechargement) à l'aspect d'un bouton.
+    /** An internal site link (navigation without reload) styled as a button. */
     to?: RouteLocationRaw
-    // Pleine largeur, survol moins incliné.
+    /** Full width, less tilted on hover. */
     block?: boolean
   }>(),
   {
@@ -25,9 +27,8 @@ const props = withDefaults(
     block: false,
   },
 )
-// Palier d'inclinaison au survol (`_mixins.scss`) selon la largeur : `wide` en pleine largeur,
-// `small` pour la petite taille, sinon `medium`. Un bouton très étroit (« +1 ») le surcharge
-// avec `tilt-on-hover` dans le style de son parent.
+// Hover tilt tier by width: `wide` for full width, `small` for the small size, otherwise
+// `medium`. A very narrow button ("+1") overrides it with `tilt-on-hover` in its parent's style.
 const tiltTier = computed<Tilt>(() => {
   if (props.block) return 'wide'
   return props.size === 'small' ? 'small' : 'medium'
@@ -72,18 +73,17 @@ const NuxtLink = resolveComponent('NuxtLink')
   text-decoration: none;
   cursor: pointer;
 
-  // Appui (souris et doigt, même fond que le survol).
   @include press-down;
 
-  // Sans cela un bouton inactif a l'air actif.
+  // Without this, a disabled button looks active.
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
 }
 
-// Survol et appui : inclinaison ; bouton blanc → `--color-cover-empty`, bouton coloré → fond plus
-// foncé, texte intact.
+// Hover and press: tilt; white button → `--color-cover-empty`, coloured button → darker
+// background, text untouched.
 .btn--primary {
   background: var(--color-rose);
 
@@ -103,7 +103,7 @@ const NuxtLink = resolveComponent('NuxtLink')
   @include tilt-on-hover(var(--color-blue-strong));
 }
 
-// Valider (enregistrer) : le vert de « En cours », texte d'encre (contraste AA).
+// Confirm (save): the 'reading' green, ink text (AA contrast).
 .btn--success {
   background: var(--status-reading);
 
@@ -116,11 +116,11 @@ const NuxtLink = resolveComponent('NuxtLink')
   background: var(--color-surface);
   color: var(--color-danger);
 
-  // Le survol reste rouge : fond rose pâle, cadre et texte rouges.
+  // Hover stays red: pale pink background, red frame and text.
   @include tilt-on-hover(var(--color-chip));
 }
 
-// Confirmation d'une action destructrice : fond rouge, texte blanc (6,3:1).
+// Destructive action confirmation: red background, white text (6.3:1).
 .btn--danger-solid {
   background: var(--color-danger);
   color: var(--color-surface);
@@ -135,18 +135,18 @@ const NuxtLink = resolveComponent('NuxtLink')
   font-weight: 800;
 }
 
-// Statuts : leur couleur est une donnée, on l'assombrit.
+// Statuses: their colour is data, so it is darkened.
 @each $status in (reading, completed, plan_to_read, on_hold, dropped) {
   .btn--status-#{$status} {
     background: var(--status-#{$status});
 
-    // Le fond du statut l'emporte sur le survol de la variante.
+    // The status background wins over the variant's hover.
     @include tilt-on-hover(var(--status-#{$status}-strong));
   }
 }
 
-// Palier d'inclinaison selon la largeur (voir `_mixins.scss`). Après les variantes et les statuts,
-// pour l'emporter sur leur palier courant.
+// Tilt tier by width (see `_mixins.scss`). After the variants and statuses,
+// to win over their current tier.
 @each $tier in (small, medium, wide) {
   .btn--tilt-#{$tier} {
     @include tilt-on-hover(null, $tier);

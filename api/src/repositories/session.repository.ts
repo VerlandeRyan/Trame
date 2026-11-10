@@ -1,20 +1,24 @@
+/** Storage of web sessions. */
 import type { Db } from '../db/database.js';
 
-/** Une session n'est prolongée que si l'expiration avance de plus que cela (évite une écriture par requête). */
+/** A session is only extended when the expiry moves forward by more than this (avoids a write per request). */
 const MIN_EXTENSION_MS = 24 * 60 * 60 * 1000;
 
+/** Session queries. */
 export interface SessionRepository {
-  /** Contenu d'une session non expirée, sinon `null`. */
+  /** Content of an unexpired session, otherwise `null`. */
   find(sid: string): Promise<unknown>;
-  /** Crée ou remplace la session. */
+  /** Creates or replaces the session. */
   save(sid: string, content: unknown, expire: Date): Promise<void>;
-  /** Repousse l'expiration d'une session existante, si le gain dépasse un jour. */
+  /** Pushes back the expiry of an existing session, if the gain exceeds one day. */
   touch(sid: string, expire: Date): Promise<void>;
+  /** Deletes a session. */
   remove(sid: string): Promise<void>;
-  /** Supprime les sessions expirées ; renvoie leur nombre. */
+  /** Deletes the expired sessions; returns how many. */
   removeExpired(): Promise<number>;
 }
 
+/** Creates the session repository. */
 export function createSessionRepository(db: Db): SessionRepository {
   return {
     async find(sid) {

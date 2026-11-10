@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { AdminKind, RecordRef, WorkDraft } from '~/utils/admin'
 
-// Fiche œuvre en sections (maquette 22, état 3) : toutes restent dans le formulaire, une seule est
-// visible, pour qu'un enregistrement prenne tout. La section « Couvertures » viendra avec l'envoi
-// d'images.
+/**
+ * Work form in sections: all stay in the form, only one is visible, so that a save takes
+ * everything. A covers section will come with image upload.
+ */
 const props = defineProps<{
   genres: { code: string; category: string }[]
   search: (kind: AdminKind, text: string) => Promise<RecordRef[]>
@@ -14,7 +15,7 @@ const draft = defineModel<WorkDraft>({ required: true })
 const emit = defineEmits<{ submit: [] }>()
 const { t } = useI18n()
 
-// La section visible est dans l'adresse (`?section=links`) : un rechargement la retrouve.
+// The visible section is in the address (`?section=links`): a reload finds it again.
 const route = useRoute()
 const router = useRouter()
 const section = computed({
@@ -24,11 +25,13 @@ const section = computed({
       query: { ...route.query, section: id === WORK_SECTIONS[0] ? undefined : id },
     }),
 })
-// Les lignes incomplètes ne sont signalées qu'après un enregistrement refusé pour cette raison.
+// Incomplete rows are only flagged after a save refused for that reason.
 const isIncompleteRefused = computed(() => props.errorKey === INCOMPLETE_ROWS_ERROR_KEY)
+/** Sections to mark with an alert. */
 const flaggedSections = computed(() =>
   isIncompleteRefused.value ? incompleteSections(draft.value) : [],
 )
+/** One tab per section, with an alert on incomplete ones. */
 const tabs = computed(() =>
   WORK_SECTIONS.map((id) => ({
     id,

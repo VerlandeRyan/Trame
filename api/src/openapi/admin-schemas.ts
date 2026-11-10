@@ -1,3 +1,4 @@
+/** Response schemas of the catalogue administration, tied to the repository types by `satisfies`. */
 import { z } from 'zod';
 import {
   CREDIT_ROLES,
@@ -22,14 +23,14 @@ import type {
 import type { AdminPublisherSummary } from '../repositories/admin-publisher.repository.js';
 import type { Page } from '../services/admin-list.js';
 
-// Réponses de l'administration du catalogue ; `satisfies` les lie aux types des dépôts.
-
+/** An external link. */
 const link = z.strictObject({
   kind: z.enum(EXTERNAL_LINK_KINDS),
   url: z.string(),
   label: z.string().nullable(),
 });
 
+/** A paginated list of the given item schema. */
 function pageOf<T extends z.ZodType>(item: T) {
   return z.strictObject({
     items: z.array(item),
@@ -39,6 +40,7 @@ function pageOf<T extends z.ZodType>(item: T) {
   });
 }
 
+/** A person as listed. */
 const personSummary = z.strictObject({
   id: z.number().int(),
   name: z.string(),
@@ -47,14 +49,17 @@ const personSummary = z.strictObject({
   activeWorkCount: z.number().int().describe('Œuvres non archivées où la personne est créditée.'),
 }) satisfies z.ZodType<AdminPersonSummary>;
 
+/** A person with their links. */
 export const adminPersonSchema = personSummary.extend({
   links: z.array(link),
 }) satisfies z.ZodType<AdminPersonRecord>;
 
+/** A page of people. */
 export const adminPersonPageSchema = pageOf(personSummary) satisfies z.ZodType<
   Page<AdminPersonSummary>
 >;
 
+/** A publisher or platform. */
 export const adminPublisherSchema = z.strictObject({
   id: z.number().int(),
   name: z.string(),
@@ -64,10 +69,12 @@ export const adminPublisherSchema = z.strictObject({
   activeWorkCount: z.number().int().describe('Œuvres non archivées publiées.'),
 }) satisfies z.ZodType<AdminPublisherSummary>;
 
+/** A page of publishers. */
 export const adminPublisherPageSchema = pageOf(adminPublisherSchema) satisfies z.ZodType<
   Page<AdminPublisherSummary>
 >;
 
+/** Identity and status of a work. */
 const workSummary = z.strictObject({
   id: z.number().int(),
   title: z.string(),
@@ -77,8 +84,10 @@ const workSummary = z.strictObject({
   archived: z.boolean(),
 }) satisfies z.ZodType<AdminWorkSummary>;
 
+/** Name of a cited record. */
 const recordLabel = z.strictObject({ id: z.number().int(), label: z.string() });
 
+/** A full work record for editing. */
 export const adminWorkSchema = workSummary.extend({
   chapters: z.number().int().nullable(),
   volumes: z.number().int().nullable(),
@@ -110,6 +119,7 @@ export const adminWorkSchema = workSummary.extend({
     .describe('Version de la fiche, à renvoyer avec le remplacement (`PUT`).'),
 }) satisfies z.ZodType<AdminWorkRecord>;
 
+/** A work as listed. */
 const workListItem = workSummary.extend({
   formats: z.array(z.string()).describe('Codes de format, triés.'),
   mainAuthor: z.string().nullable(),
@@ -122,6 +132,7 @@ const workListItem = workSummary.extend({
     .describe('0 à 100, par quarts : synopsis, éditeur, lien, couverture.'),
 }) satisfies z.ZodType<AdminWorkListItem>;
 
+/** A page of works. */
 export const adminWorkPageSchema = pageOf(workListItem) satisfies z.ZodType<
   Page<AdminWorkListItem>
 >;

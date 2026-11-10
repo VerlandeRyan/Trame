@@ -1,12 +1,16 @@
 <script setup lang="ts">
-// Champ de recherche à loupe. `class` et `style` vont au cadre (l'appelant le place) ; les autres
-// attributs natifs (`placeholder`, `maxlength`, `data-testid`, écouteurs…) vont au champ. `label` est le nom accessible, masqué ; sans lui, l'appelant relie son
-// propre libellé visible par `id`. `small` : champ bas au bureau (filtres de la page Recherche).
+/**
+ * Search field with a magnifier. `class` and `style` go to the frame (the caller places it); the
+ * other native attributes (placeholder, maxlength, test id, listeners…) go to the input. `label`
+ * is the hidden accessible name; without it, the caller links its own visible label by `id`.
+ * `small`: low field on desktop (filters of the search page).
+ */
 import type { StyleValue } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 defineProps<{ label?: string; small?: boolean }>()
 const attrs = useAttrs()
+/** Native attributes for the input (everything but class and style). */
 const inputAttributes = computed(() => {
   const native = { ...attrs }
   delete native.class
@@ -14,12 +18,13 @@ const inputAttributes = computed(() => {
   return native
 })
 const model = defineModel<string>({ default: '' })
-// Émis après la mise à jour du modèle : le parent y lit déjà la valeur à jour.
+// Emitted after the model update: the parent already reads the up-to-date value.
 const emit = defineEmits<{ input: [event: Event] }>()
 
 const box = ref<HTMLElement | null>(null)
 const input = ref<HTMLInputElement | null>(null)
 
+/** Updates the model, then reports the input event. */
 function onInput(event: Event) {
   model.value = (event.target as HTMLInputElement).value
   emit('input', event)
@@ -27,7 +32,7 @@ function onInput(event: Event) {
 
 defineExpose({
   focus: () => input.value?.focus(),
-  // Le cadre, pas le champ : une liste de propositions se place sous le contour.
+  // The frame, not the input: a suggestion list is placed under the outline.
   getBoundingClientRect: () => box.value!.getBoundingClientRect(),
 })
 </script>
@@ -68,7 +73,7 @@ defineExpose({
     outline-offset: 2px;
   }
 
-  // Champ bas au bureau ; au doigt il garde la zone tactile entière.
+  // Low field on desktop; with a finger it keeps the full touch area.
   &--small {
     @media (min-width: 768px) {
       min-height: 0;
@@ -97,7 +102,7 @@ defineExpose({
   border: 0;
   background: transparent;
   color: inherit;
-  // 16 px minimum : évite le zoom automatique de Safari iOS à la prise de focus.
+  // 16 px minimum: avoids Safari iOS's automatic zoom on focus.
   font-size: 1rem;
 
   &:focus {
