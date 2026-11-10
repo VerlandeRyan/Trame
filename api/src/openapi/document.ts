@@ -1,4 +1,19 @@
 import { z } from 'zod';
+import {
+  CREDIT_ROLES,
+  EXTERNAL_LINK_KINDS,
+  GENRE_CATEGORIES,
+  PERSON_KINDS,
+  PERSON_LINK_KINDS,
+  PUBLISHER_KINDS,
+  RELATION_KINDS,
+  SYNOPSIS_SOURCES,
+  TITLE_KINDS,
+  WORK_LINK_KINDS,
+  WORK_STATUSES,
+  WORK_TYPES,
+} from '../domain/catalogue-enums.js';
+import { LIBRARY_STATUSES, PROFILE_VISIBILITIES, USER_ROLES } from '../domain/user-enums.js';
 import type { ErrorCode } from '../errors.js';
 import {
   adminListQuery,
@@ -42,9 +57,52 @@ export const API_PREFIX = '/api/v1';
 
 type JsonSchema = Record<string, unknown>;
 
+/** Énumérations publiées comme composants nommés : le web en génère ses valeurs d'exécution. */
+const NAMED_ENUMS: Record<string, readonly string[]> = {
+  WorkType: WORK_TYPES,
+  WorkStatus: WORK_STATUSES,
+  CreditRole: CREDIT_ROLES,
+  RelationKind: RELATION_KINDS,
+  PublisherKind: PUBLISHER_KINDS,
+  PersonKind: PERSON_KINDS,
+  ExternalLinkKind: EXTERNAL_LINK_KINDS,
+  WorkLinkKind: WORK_LINK_KINDS,
+  PersonLinkKind: PERSON_LINK_KINDS,
+  TitleKind: TITLE_KINDS,
+  SynopsisSource: SYNOPSIS_SOURCES,
+  GenreCategory: GENRE_CATEGORIES,
+  LibraryStatus: LIBRARY_STATUSES,
+  UserRole: USER_ROLES,
+  // `ProfileVisibility` désigne déjà la réponse de `PATCH /me/profile`.
+  Visibility: PROFILE_VISIBILITIES,
+};
+
+const enumNameByValues = new Map(
+  Object.entries(NAMED_ENUMS).map(([name, values]) => [values.join('|'), name]),
+);
+
+const enumComponents = Object.fromEntries(
+  Object.entries(NAMED_ENUMS).map(([name, values]) => [
+    name,
+    { type: 'string', enum: [...values] },
+  ]),
+);
+
+/** Remplace toute énumération inline qui reprend les valeurs d'un composant nommé par un `$ref`. */
+function referenceNamedEnums(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(referenceNamedEnums);
+  if (node === null || typeof node !== 'object') return node;
+  const { type: _type, enum: values, ...rest } = node as JsonSchema;
+  const name = Array.isArray(values) ? enumNameByValues.get(values.join('|')) : undefined;
+  if (name !== undefined) return { $ref: `#/components/schemas/${name}`, ...rest };
+  return Object.fromEntries(
+    Object.entries(node).map(([key, value]) => [key, referenceNamedEnums(value)]),
+  );
+}
+
 function toJsonSchema(schema: z.ZodType, io: 'input' | 'output'): JsonSchema {
   const { $schema: _ignored, ...rest } = z.toJSONSchema(schema, { io }) as JsonSchema;
-  return rest;
+  return referenceNamedEnums(rest) as JsonSchema;
 }
 
 /** Une entrée de paramètre OpenAPI par propriété du schéma. */
@@ -602,6 +660,7 @@ export function buildOpenApiDocument() {
         },
       },
       schemas: {
+        ...enumComponents,
         Error: toJsonSchema(errorSchema, 'output'),
         AdminPerson: toJsonSchema(adminPersonSchema, 'output'),
         AdminPersonPage: toJsonSchema(adminPersonPageSchema, 'output'),

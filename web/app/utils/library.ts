@@ -4,17 +4,8 @@ import type { LibraryEntry, LibraryStatus } from '../contract/api'
 
 export type { LibraryEntry, LibraryStatus } from '../contract/api'
 
-/**
- * Valeurs d'exécution du statut (menus, onglets). `satisfies` refuse un statut que l'API ne connaît
- * plus ; un statut ajouté par l'API est détecté par le test de type de `library.spec.ts`.
- */
-export const LIBRARY_STATUSES = [
-  'reading',
-  'completed',
-  'plan_to_read',
-  'on_hold',
-  'dropped',
-] as const satisfies readonly LibraryStatus[]
+/** Valeurs d'exécution du statut (menus, onglets), générées avec le contrat. */
+export { LIBRARY_STATUSES } from '../contract/api'
 
 /** Statut d'une œuvre qu'on vient d'ajouter à sa liste. */
 export const DEFAULT_LIBRARY_STATUS: LibraryStatus = 'plan_to_read'

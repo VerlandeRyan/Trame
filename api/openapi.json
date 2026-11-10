@@ -997,11 +997,7 @@
                 "type": "object",
                 "properties": {
                   "visibility": {
-                    "type": "string",
-                    "enum": [
-                      "public",
-                      "private"
-                    ],
+                    "$ref": "#/components/schemas/Visibility",
                     "description": "`public` par défaut ; `private` masque tout sauf le pseudo."
                   }
                 },
@@ -1414,14 +1410,7 @@
                 "type": "object",
                 "properties": {
                   "status": {
-                    "type": "string",
-                    "enum": [
-                      "reading",
-                      "completed",
-                      "plan_to_read",
-                      "on_hold",
-                      "dropped"
-                    ],
+                    "$ref": "#/components/schemas/LibraryStatus",
                     "description": "Statut de lecture."
                   },
                   "chaptersRead": {
@@ -1818,11 +1807,7 @@
                     "maxLength": 200
                   },
                   "kind": {
-                    "type": "string",
-                    "enum": [
-                      "person",
-                      "collective"
-                    ]
+                    "$ref": "#/components/schemas/PersonKind"
                   },
                   "links": {
                     "default": [],
@@ -1832,11 +1817,7 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": "string",
-                          "enum": [
-                            "website",
-                            "social"
-                          ]
+                          "$ref": "#/components/schemas/PersonLinkKind"
                         },
                         "url": {
                           "type": "string",
@@ -2060,11 +2041,7 @@
                     "maxLength": 200
                   },
                   "kind": {
-                    "type": "string",
-                    "enum": [
-                      "person",
-                      "collective"
-                    ]
+                    "$ref": "#/components/schemas/PersonKind"
                   },
                   "links": {
                     "default": [],
@@ -2074,11 +2051,7 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": "string",
-                          "enum": [
-                            "website",
-                            "social"
-                          ]
+                          "$ref": "#/components/schemas/PersonLinkKind"
                         },
                         "url": {
                           "type": "string",
@@ -2536,12 +2509,7 @@
                     "maxLength": 200
                   },
                   "kind": {
-                    "type": "string",
-                    "enum": [
-                      "publisher",
-                      "platform",
-                      "self_published"
-                    ]
+                    "$ref": "#/components/schemas/PublisherKind"
                   },
                   "url": {
                     "default": null,
@@ -2751,12 +2719,7 @@
                     "maxLength": 200
                   },
                   "kind": {
-                    "type": "string",
-                    "enum": [
-                      "publisher",
-                      "platform",
-                      "self_published"
-                    ]
+                    "$ref": "#/components/schemas/PublisherKind"
                   },
                   "url": {
                     "default": null,
@@ -3249,22 +3212,10 @@
                     "description": "Code ISO 639, en minuscules."
                   },
                   "type": {
-                    "type": "string",
-                    "enum": [
-                      "series",
-                      "oneshot",
-                      "anthology"
-                    ]
+                    "$ref": "#/components/schemas/WorkType"
                   },
                   "status": {
-                    "type": "string",
-                    "enum": [
-                      "upcoming",
-                      "ongoing",
-                      "completed",
-                      "hiatus",
-                      "abandoned"
-                    ]
+                    "$ref": "#/components/schemas/WorkStatus"
                   },
                   "chapters": {
                     "anyOf": [
@@ -3329,13 +3280,7 @@
                           "description": "Code ISO 639, en minuscules."
                         },
                         "kind": {
-                          "type": "string",
-                          "enum": [
-                            "translated",
-                            "international",
-                            "former",
-                            "short"
-                          ]
+                          "$ref": "#/components/schemas/TitleKind"
                         },
                         "title": {
                           "type": "string",
@@ -3369,12 +3314,7 @@
                           "maxLength": 5000
                         },
                         "source": {
-                          "type": "string",
-                          "enum": [
-                            "official",
-                            "human",
-                            "machine"
-                          ]
+                          "$ref": "#/components/schemas/SynopsisSource"
                         }
                       },
                       "required": [
@@ -3398,13 +3338,7 @@
                           "maximum": 9007199254740991
                         },
                         "role": {
-                          "type": "string",
-                          "enum": [
-                            "story",
-                            "art",
-                            "colors",
-                            "other"
-                          ]
+                          "$ref": "#/components/schemas/CreditRole"
                         }
                       },
                       "required": [
@@ -3448,18 +3382,7 @@
                           "maximum": 9007199254740991
                         },
                         "relation": {
-                          "type": "string",
-                          "enum": [
-                            "sequel",
-                            "prequel",
-                            "spin_off",
-                            "side_story",
-                            "adaptation",
-                            "alternate_version",
-                            "shared_universe",
-                            "contains",
-                            "other"
-                          ]
+                          "$ref": "#/components/schemas/RelationKind"
                         }
                       },
                       "required": [
@@ -3477,11 +3400,7 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": "string",
-                          "enum": [
-                            "read",
-                            "buy"
-                          ]
+                          "$ref": "#/components/schemas/WorkLinkKind"
                         },
                         "url": {
                           "type": "string",
@@ -3723,22 +3642,10 @@
                     "description": "Code ISO 639, en minuscules."
                   },
                   "type": {
-                    "type": "string",
-                    "enum": [
-                      "series",
-                      "oneshot",
-                      "anthology"
-                    ]
+                    "$ref": "#/components/schemas/WorkType"
                   },
                   "status": {
-                    "type": "string",
-                    "enum": [
-                      "upcoming",
-                      "ongoing",
-                      "completed",
-                      "hiatus",
-                      "abandoned"
-                    ]
+                    "$ref": "#/components/schemas/WorkStatus"
                   },
                   "chapters": {
                     "anyOf": [
@@ -3803,13 +3710,7 @@
                           "description": "Code ISO 639, en minuscules."
                         },
                         "kind": {
-                          "type": "string",
-                          "enum": [
-                            "translated",
-                            "international",
-                            "former",
-                            "short"
-                          ]
+                          "$ref": "#/components/schemas/TitleKind"
                         },
                         "title": {
                           "type": "string",
@@ -3843,12 +3744,7 @@
                           "maxLength": 5000
                         },
                         "source": {
-                          "type": "string",
-                          "enum": [
-                            "official",
-                            "human",
-                            "machine"
-                          ]
+                          "$ref": "#/components/schemas/SynopsisSource"
                         }
                       },
                       "required": [
@@ -3872,13 +3768,7 @@
                           "maximum": 9007199254740991
                         },
                         "role": {
-                          "type": "string",
-                          "enum": [
-                            "story",
-                            "art",
-                            "colors",
-                            "other"
-                          ]
+                          "$ref": "#/components/schemas/CreditRole"
                         }
                       },
                       "required": [
@@ -3922,18 +3812,7 @@
                           "maximum": 9007199254740991
                         },
                         "relation": {
-                          "type": "string",
-                          "enum": [
-                            "sequel",
-                            "prequel",
-                            "spin_off",
-                            "side_story",
-                            "adaptation",
-                            "alternate_version",
-                            "shared_universe",
-                            "contains",
-                            "other"
-                          ]
+                          "$ref": "#/components/schemas/RelationKind"
                         }
                       },
                       "required": [
@@ -3951,11 +3830,7 @@
                       "type": "object",
                       "properties": {
                         "kind": {
-                          "type": "string",
-                          "enum": [
-                            "read",
-                            "buy"
-                          ]
+                          "$ref": "#/components/schemas/WorkLinkKind"
                         },
                         "url": {
                           "type": "string",
@@ -4295,6 +4170,133 @@
       }
     },
     "schemas": {
+      "WorkType": {
+        "type": "string",
+        "enum": [
+          "series",
+          "oneshot",
+          "anthology"
+        ]
+      },
+      "WorkStatus": {
+        "type": "string",
+        "enum": [
+          "upcoming",
+          "ongoing",
+          "completed",
+          "hiatus",
+          "abandoned"
+        ]
+      },
+      "CreditRole": {
+        "type": "string",
+        "enum": [
+          "story",
+          "art",
+          "colors",
+          "other"
+        ]
+      },
+      "RelationKind": {
+        "type": "string",
+        "enum": [
+          "sequel",
+          "prequel",
+          "spin_off",
+          "side_story",
+          "adaptation",
+          "alternate_version",
+          "shared_universe",
+          "contains",
+          "other"
+        ]
+      },
+      "PublisherKind": {
+        "type": "string",
+        "enum": [
+          "publisher",
+          "platform",
+          "self_published"
+        ]
+      },
+      "PersonKind": {
+        "type": "string",
+        "enum": [
+          "person",
+          "collective"
+        ]
+      },
+      "ExternalLinkKind": {
+        "type": "string",
+        "enum": [
+          "read",
+          "buy",
+          "website",
+          "social"
+        ]
+      },
+      "WorkLinkKind": {
+        "type": "string",
+        "enum": [
+          "read",
+          "buy"
+        ]
+      },
+      "PersonLinkKind": {
+        "type": "string",
+        "enum": [
+          "website",
+          "social"
+        ]
+      },
+      "TitleKind": {
+        "type": "string",
+        "enum": [
+          "translated",
+          "international",
+          "former",
+          "short"
+        ]
+      },
+      "SynopsisSource": {
+        "type": "string",
+        "enum": [
+          "official",
+          "human",
+          "machine"
+        ]
+      },
+      "GenreCategory": {
+        "type": "string",
+        "enum": [
+          "format",
+          "theme"
+        ]
+      },
+      "LibraryStatus": {
+        "type": "string",
+        "enum": [
+          "reading",
+          "completed",
+          "plan_to_read",
+          "on_hold",
+          "dropped"
+        ]
+      },
+      "UserRole": {
+        "type": "string",
+        "enum": [
+          "user",
+          "admin"
+        ]
+      },
+      "Visibility": {
+        "type": "string",
+        "enum": [
+          "public",
+          "private"
+        ]
+      },
       "Error": {
         "type": "object",
         "properties": {
@@ -4374,11 +4376,7 @@
             "type": "string"
           },
           "kind": {
-            "type": "string",
-            "enum": [
-              "person",
-              "collective"
-            ]
+            "$ref": "#/components/schemas/PersonKind"
           },
           "archived": {
             "type": "boolean"
@@ -4395,13 +4393,7 @@
               "type": "object",
               "properties": {
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "read",
-                    "buy",
-                    "website",
-                    "social"
-                  ]
+                  "$ref": "#/components/schemas/ExternalLinkKind"
                 },
                 "url": {
                   "type": "string"
@@ -4449,11 +4441,7 @@
                   "type": "string"
                 },
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "person",
-                    "collective"
-                  ]
+                  "$ref": "#/components/schemas/PersonKind"
                 },
                 "archived": {
                   "type": "boolean"
@@ -4511,12 +4499,7 @@
             "type": "string"
           },
           "kind": {
-            "type": "string",
-            "enum": [
-              "publisher",
-              "platform",
-              "self_published"
-            ]
+            "$ref": "#/components/schemas/PublisherKind"
           },
           "url": {
             "type": [
@@ -4561,12 +4544,7 @@
                   "type": "string"
                 },
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "publisher",
-                    "platform",
-                    "self_published"
-                  ]
+                  "$ref": "#/components/schemas/PublisherKind"
                 },
                 "url": {
                   "type": [
@@ -4634,22 +4612,10 @@
             "type": "string"
           },
           "type": {
-            "type": "string",
-            "enum": [
-              "series",
-              "oneshot",
-              "anthology"
-            ]
+            "$ref": "#/components/schemas/WorkType"
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "upcoming",
-              "ongoing",
-              "completed",
-              "hiatus",
-              "abandoned"
-            ]
+            "$ref": "#/components/schemas/WorkStatus"
           },
           "archived": {
             "type": "boolean"
@@ -4699,13 +4665,7 @@
                   "type": "string"
                 },
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "translated",
-                    "international",
-                    "former",
-                    "short"
-                  ]
+                  "$ref": "#/components/schemas/TitleKind"
                 },
                 "title": {
                   "type": "string"
@@ -4731,12 +4691,7 @@
                   "type": "string"
                 },
                 "source": {
-                  "type": "string",
-                  "enum": [
-                    "official",
-                    "human",
-                    "machine"
-                  ]
+                  "$ref": "#/components/schemas/SynopsisSource"
                 }
               },
               "required": [
@@ -4758,13 +4713,7 @@
                   "maximum": 9007199254740991
                 },
                 "role": {
-                  "type": "string",
-                  "enum": [
-                    "story",
-                    "art",
-                    "colors",
-                    "other"
-                  ]
+                  "$ref": "#/components/schemas/CreditRole"
                 }
               },
               "required": [
@@ -4800,18 +4749,7 @@
                   "maximum": 9007199254740991
                 },
                 "relation": {
-                  "type": "string",
-                  "enum": [
-                    "sequel",
-                    "prequel",
-                    "spin_off",
-                    "side_story",
-                    "adaptation",
-                    "alternate_version",
-                    "shared_universe",
-                    "contains",
-                    "other"
-                  ]
+                  "$ref": "#/components/schemas/RelationKind"
                 }
               },
               "required": [
@@ -4827,13 +4765,7 @@
               "type": "object",
               "properties": {
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "read",
-                    "buy",
-                    "website",
-                    "social"
-                  ]
+                  "$ref": "#/components/schemas/ExternalLinkKind"
                 },
                 "url": {
                   "type": "string"
@@ -4985,22 +4917,10 @@
                   "type": "string"
                 },
                 "type": {
-                  "type": "string",
-                  "enum": [
-                    "series",
-                    "oneshot",
-                    "anthology"
-                  ]
+                  "$ref": "#/components/schemas/WorkType"
                 },
                 "status": {
-                  "type": "string",
-                  "enum": [
-                    "upcoming",
-                    "ongoing",
-                    "completed",
-                    "hiatus",
-                    "abandoned"
-                  ]
+                  "$ref": "#/components/schemas/WorkStatus"
                 },
                 "archived": {
                   "type": "boolean"
@@ -5140,11 +5060,7 @@
                     "description": "Pseudo public, avec la casse choisie."
                   },
                   "role": {
-                    "type": "string",
-                    "enum": [
-                      "user",
-                      "admin"
-                    ]
+                    "$ref": "#/components/schemas/UserRole"
                   }
                 },
                 "required": [
@@ -5189,22 +5105,10 @@
                   "description": "Code ISO 639."
                 },
                 "type": {
-                  "type": "string",
-                  "enum": [
-                    "series",
-                    "oneshot",
-                    "anthology"
-                  ]
+                  "$ref": "#/components/schemas/WorkType"
                 },
                 "status": {
-                  "type": "string",
-                  "enum": [
-                    "upcoming",
-                    "ongoing",
-                    "completed",
-                    "hiatus",
-                    "abandoned"
-                  ]
+                  "$ref": "#/components/schemas/WorkStatus"
                 },
                 "formats": {
                   "type": "array",
@@ -5292,22 +5196,10 @@
                   "description": "Code ISO 639."
                 },
                 "type": {
-                  "type": "string",
-                  "enum": [
-                    "series",
-                    "oneshot",
-                    "anthology"
-                  ]
+                  "$ref": "#/components/schemas/WorkType"
                 },
                 "status": {
-                  "type": "string",
-                  "enum": [
-                    "upcoming",
-                    "ongoing",
-                    "completed",
-                    "hiatus",
-                    "abandoned"
-                  ]
+                  "$ref": "#/components/schemas/WorkStatus"
                 },
                 "formats": {
                   "type": "array",
@@ -5373,11 +5265,7 @@
                   "type": "string"
                 },
                 "category": {
-                  "type": "string",
-                  "enum": [
-                    "format",
-                    "theme"
-                  ]
+                  "$ref": "#/components/schemas/GenreCategory"
                 }
               },
               "required": [
@@ -5402,14 +5290,7 @@
                 "type": "object",
                 "properties": {
                   "status": {
-                    "type": "string",
-                    "enum": [
-                      "reading",
-                      "completed",
-                      "plan_to_read",
-                      "on_hold",
-                      "dropped"
-                    ]
+                    "$ref": "#/components/schemas/LibraryStatus"
                   },
                   "chaptersRead": {
                     "type": "integer",
@@ -5502,22 +5383,10 @@
                       "description": "Code ISO 639."
                     },
                     "type": {
-                      "type": "string",
-                      "enum": [
-                        "series",
-                        "oneshot",
-                        "anthology"
-                      ]
+                      "$ref": "#/components/schemas/WorkType"
                     },
                     "status": {
-                      "type": "string",
-                      "enum": [
-                        "upcoming",
-                        "ongoing",
-                        "completed",
-                        "hiatus",
-                        "abandoned"
-                      ]
+                      "$ref": "#/components/schemas/WorkStatus"
                     },
                     "formats": {
                       "type": "array",
@@ -5584,14 +5453,7 @@
                   "type": "object",
                   "properties": {
                     "status": {
-                      "type": "string",
-                      "enum": [
-                        "reading",
-                        "completed",
-                        "plan_to_read",
-                        "on_hold",
-                        "dropped"
-                      ]
+                      "$ref": "#/components/schemas/LibraryStatus"
                     },
                     "chaptersRead": {
                       "type": "integer",
@@ -5670,14 +5532,7 @@
           "statusCounts": {
             "type": "object",
             "propertyNames": {
-              "type": "string",
-              "enum": [
-                "reading",
-                "completed",
-                "plan_to_read",
-                "on_hold",
-                "dropped"
-              ]
+              "$ref": "#/components/schemas/LibraryStatus"
             },
             "additionalProperties": {
               "type": "integer",
@@ -5734,11 +5589,7 @@
             "description": "Pseudo public, avec la casse choisie."
           },
           "visibility": {
-            "type": "string",
-            "enum": [
-              "public",
-              "private"
-            ]
+            "$ref": "#/components/schemas/Visibility"
           },
           "isOwner": {
             "type": "boolean",
@@ -5774,14 +5625,7 @@
                       "statusCounts": {
                         "type": "object",
                         "propertyNames": {
-                          "type": "string",
-                          "enum": [
-                            "reading",
-                            "completed",
-                            "plan_to_read",
-                            "on_hold",
-                            "dropped"
-                          ]
+                          "$ref": "#/components/schemas/LibraryStatus"
                         },
                         "additionalProperties": {
                           "type": "integer",
@@ -5843,22 +5687,10 @@
                               "description": "Code ISO 639."
                             },
                             "type": {
-                              "type": "string",
-                              "enum": [
-                                "series",
-                                "oneshot",
-                                "anthology"
-                              ]
+                              "$ref": "#/components/schemas/WorkType"
                             },
                             "status": {
-                              "type": "string",
-                              "enum": [
-                                "upcoming",
-                                "ongoing",
-                                "completed",
-                                "hiatus",
-                                "abandoned"
-                              ]
+                              "$ref": "#/components/schemas/WorkStatus"
                             },
                             "formats": {
                               "type": "array",
@@ -5897,14 +5729,7 @@
                           "type": "object",
                           "properties": {
                             "status": {
-                              "type": "string",
-                              "enum": [
-                                "reading",
-                                "completed",
-                                "plan_to_read",
-                                "on_hold",
-                                "dropped"
-                              ]
+                              "$ref": "#/components/schemas/LibraryStatus"
                             },
                             "chaptersRead": {
                               "type": "integer",
@@ -5996,22 +5821,10 @@
                               "description": "Code ISO 639."
                             },
                             "type": {
-                              "type": "string",
-                              "enum": [
-                                "series",
-                                "oneshot",
-                                "anthology"
-                              ]
+                              "$ref": "#/components/schemas/WorkType"
                             },
                             "status": {
-                              "type": "string",
-                              "enum": [
-                                "upcoming",
-                                "ongoing",
-                                "completed",
-                                "hiatus",
-                                "abandoned"
-                              ]
+                              "$ref": "#/components/schemas/WorkStatus"
                             },
                             "formats": {
                               "type": "array",
@@ -6089,11 +5902,7 @@
         "type": "object",
         "properties": {
           "visibility": {
-            "type": "string",
-            "enum": [
-              "public",
-              "private"
-            ]
+            "$ref": "#/components/schemas/Visibility"
           }
         },
         "required": [
@@ -6120,22 +5929,10 @@
             "type": "string"
           },
           "type": {
-            "type": "string",
-            "enum": [
-              "series",
-              "oneshot",
-              "anthology"
-            ]
+            "$ref": "#/components/schemas/WorkType"
           },
           "status": {
-            "type": "string",
-            "enum": [
-              "upcoming",
-              "ongoing",
-              "completed",
-              "hiatus",
-              "abandoned"
-            ]
+            "$ref": "#/components/schemas/WorkStatus"
           },
           "synopsis": {
             "type": [
@@ -6152,12 +5949,7 @@
           "synopsisSource": {
             "anyOf": [
               {
-                "type": "string",
-                "enum": [
-                  "official",
-                  "human",
-                  "machine"
-                ]
+                "$ref": "#/components/schemas/SynopsisSource"
               },
               {
                 "type": "null"
@@ -6217,13 +6009,7 @@
                   "type": "string"
                 },
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "translated",
-                    "international",
-                    "former",
-                    "short"
-                  ]
+                  "$ref": "#/components/schemas/TitleKind"
                 },
                 "title": {
                   "type": "string"
@@ -6251,22 +6037,12 @@
                   "type": "string"
                 },
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "person",
-                    "collective"
-                  ]
+                  "$ref": "#/components/schemas/PersonKind"
                 },
                 "roles": {
                   "type": "array",
                   "items": {
-                    "type": "string",
-                    "enum": [
-                      "story",
-                      "art",
-                      "colors",
-                      "other"
-                    ]
+                    "$ref": "#/components/schemas/CreditRole"
                   }
                 },
                 "links": {
@@ -6275,13 +6051,7 @@
                     "type": "object",
                     "properties": {
                       "kind": {
-                        "type": "string",
-                        "enum": [
-                          "read",
-                          "buy",
-                          "website",
-                          "social"
-                        ]
+                        "$ref": "#/components/schemas/ExternalLinkKind"
                       },
                       "url": {
                         "type": "string"
@@ -6327,12 +6097,7 @@
                   "type": "string"
                 },
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "publisher",
-                    "platform",
-                    "self_published"
-                  ]
+                  "$ref": "#/components/schemas/PublisherKind"
                 },
                 "url": {
                   "type": [
@@ -6368,13 +6133,7 @@
               "type": "object",
               "properties": {
                 "kind": {
-                  "type": "string",
-                  "enum": [
-                    "read",
-                    "buy",
-                    "website",
-                    "social"
-                  ]
+                  "$ref": "#/components/schemas/ExternalLinkKind"
                 },
                 "url": {
                   "type": "string"
@@ -6400,18 +6159,7 @@
               "type": "object",
               "properties": {
                 "relation": {
-                  "type": "string",
-                  "enum": [
-                    "sequel",
-                    "prequel",
-                    "spin_off",
-                    "side_story",
-                    "adaptation",
-                    "alternate_version",
-                    "shared_universe",
-                    "contains",
-                    "other"
-                  ]
+                  "$ref": "#/components/schemas/RelationKind"
                 },
                 "direction": {
                   "type": "string",
@@ -6433,12 +6181,7 @@
                       "type": "string"
                     },
                     "type": {
-                      "type": "string",
-                      "enum": [
-                        "series",
-                        "oneshot",
-                        "anthology"
-                      ]
+                      "$ref": "#/components/schemas/WorkType"
                     }
                   },
                   "required": [
@@ -6648,22 +6391,10 @@
                   "description": "Code ISO 639."
                 },
                 "type": {
-                  "type": "string",
-                  "enum": [
-                    "series",
-                    "oneshot",
-                    "anthology"
-                  ]
+                  "$ref": "#/components/schemas/WorkType"
                 },
                 "status": {
-                  "type": "string",
-                  "enum": [
-                    "upcoming",
-                    "ongoing",
-                    "completed",
-                    "hiatus",
-                    "abandoned"
-                  ]
+                  "$ref": "#/components/schemas/WorkStatus"
                 },
                 "formats": {
                   "type": "array",
