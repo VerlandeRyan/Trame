@@ -74,9 +74,9 @@ if (import.meta.client) {
   onBeforeUnmount(removeLeaveGuard)
 }
 /** Leaves for the destination that was held back by the guard. */
-function leave() {
+async function leave() {
   isLeaving = true
-  if (pendingDestination) navigateTo(pendingDestination)
+  if (pendingDestination) await navigateTo(pendingDestination)
 }
 /** Asks the browser to confirm closing the tab while input is unsaved. */
 function warnBeforeUnload(event: BeforeUnloadEvent) {

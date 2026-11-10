@@ -127,7 +127,7 @@ async function loadEntryOnServer() {
 }
 await loadEntryOnServer()
 onMounted(() => {
-  if (isSignedIn.value && (isClientNavigation || !isLoaded.value)) library.load()
+  if (isSignedIn.value && (isClientNavigation || !isLoaded.value)) void library.load()
 })
 </script>
 
