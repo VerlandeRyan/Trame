@@ -1,3 +1,4 @@
+/** Confirmation asked before progress changes the reading status or the counters. */
 import {
   countersToTotals,
   keepsChangesOnDecline,
@@ -9,12 +10,13 @@ import {
   type ReadingPrompt,
 } from '~/utils/library'
 
-/** Ce que fait l'appelant selon la réponse : enregistrer les changements ou les abandonner. */
+/** What the caller does depending on the answer: save the changes or drop them. */
 interface PromptHandlers {
   apply: (changes: LibraryEntryChanges) => void
   discard: () => void
 }
 
+/** A question currently open, with the context needed to answer it. */
 interface AskedPrompt extends PromptHandlers {
   prompt: ReadingPrompt
   entry: LibraryEntry
@@ -22,20 +24,19 @@ interface AskedPrompt extends PromptHandlers {
   changes: LibraryEntryChanges
 }
 
+/** Whether the question proposes finishing the work. */
 const isFinishPrompt = (prompt: ReadingPrompt) =>
   prompt === 'finishChapters' || prompt === 'finishVolumes'
 
 /**
- * Question posée avant qu'un changement de la fiche de lecture ou de la liste ajuste le statut
- * ou les compteurs :
- * - « En cours » (une œuvre « À lire », « En pause » ou « Abandonné » avance) : seule la
- *   confirmation enregistre (compteur et statut) ; Annuler, la croix, Échap et un clic à côté
- *   abandonnent le changement.
- * - « Terminé » (le total connu est atteint) : la confirmation enregistre compteur et statut,
- *   « Garder » enregistre le compteur seul (sinon on ne pourrait pas saisir le total), la croix,
- *   Échap et un clic à côté abandonnent le changement.
- * - Passage en « Terminé » avec des compteurs sous le total connu : la confirmation les y met,
- *   « Garder mes compteurs » enregistre le statut seul, la croix et Échap abandonnent.
+ * Question asked before a change on the reading sheet or the list adjusts the status or counters:
+ * - "Reading" (a plan-to-read, on-hold or dropped work advances): only the confirmation saves
+ *   (counter and status); Cancel, the cross, Escape and a click outside drop the change.
+ * - "Completed" (the known total is reached): the confirmation saves counter and status, "Keep"
+ *   saves the counter alone (otherwise the total could not be entered), the cross, Escape and a
+ *   click outside drop the change.
+ * - Switching to "Completed" with counters below the known total: the confirmation sets them to
+ *   it, "Keep my counters" saves the status alone, the cross and Escape drop the change.
  */
 export function useReadingPrompt() {
   const { t } = useI18n()
@@ -47,12 +48,12 @@ export function useReadingPrompt() {
   const askedPrompt = computed(() => asked.value?.prompt ?? 'start')
   const isFinish = computed(() => isFinishPrompt(askedPrompt.value))
   const isCompleteCounters = computed(() => askedPrompt.value === 'completeCounters')
-  // Insécables : « En cours » ne se coupe jamais entre deux lignes d'un bouton.
+  // Non-breaking spaces: the 'reading' status label never splits across two lines of a button.
   const statusLabel = computed(() =>
     t(`readingStatus.${asked.value?.entry.status ?? 'plan_to_read'}`).replaceAll(' ', ' '),
   )
 
-  // Les totaux que la confirmation écrirait (le texte de la question tient sur une ligne).
+  // The totals the confirmation would write (the question text fits on one line).
   const counterTargets = computed(() => {
     const current = asked.value
     return current ? countersToTotals(current.entry, current.changes, current.totals) : {}
@@ -65,7 +66,7 @@ export function useReadingPrompt() {
   const text = computed(() => {
     const totals = asked.value?.totals
     switch (askedPrompt.value) {
-      // Pluriel : « le tome paru » pour un seul, « les 4 tomes parus » sinon.
+      // Plural: "the published volume" for one, "the 4 published volumes" otherwise.
       case 'finishChapters':
         return t(
           'library.readingPrompt.finishChapters',
@@ -102,7 +103,7 @@ export function useReadingPrompt() {
       : t('library.readingPrompt.cancel')
   })
 
-  /** Ouvre la question si le changement en demande une ; `false` : l'appelant l'applique tel quel. */
+  /** Opens the question if the change needs one; `false`: the caller applies it as is. */
   function request(
     entry: LibraryEntry,
     totals: KnownTotals,
@@ -118,14 +119,16 @@ export function useReadingPrompt() {
     return true
   }
 
+  /** Records that the user confirmed the question. */
   const confirm = () => {
     answer = 'confirmed'
   }
+  /** Records that the user declined the question. */
   const decline = () => {
     answer = 'declined'
   }
 
-  // Après la fermeture (`post` : le clic sur un bouton a eu le temps de noter la réponse).
+  // After closing (`post`: the button click has had time to record the answer).
   watch(
     isOpen,
     (open) => {

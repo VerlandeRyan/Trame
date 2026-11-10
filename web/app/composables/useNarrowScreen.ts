@@ -1,10 +1,11 @@
 /**
- * Vrai sur un écran de téléphone (≤ 767 px par défaut, ou jusqu'à `maxWidth`), mesuré après le
- * montage pour un rendu serveur identique.
+ * True on a phone-sized screen (≤ 767 px by default, or up to `maxWidth`), measured after
+ * mounting so the server render stays identical.
  */
 export function useNarrowScreen(maxWidth = 767) {
   const narrow = ref(false)
   let query: MediaQueryList | undefined
+  /** Follows the media query. */
   const update = (event: MediaQueryListEvent) => {
     narrow.value = event.matches
   }

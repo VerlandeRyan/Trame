@@ -1,3 +1,4 @@
+<!-- Error message announced as an alert, with an icon. -->
 <template>
   <p class="form-error" role="alert">
     <Icon name="tabler:alert-circle" size="18" aria-hidden="true" />

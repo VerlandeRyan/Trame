@@ -1,4 +1,4 @@
-// Pages d'administration : un visiteur revient à l'accueil (connexion), un membre simple voit une 404.
+/** Administration pages: a visitor goes back home (sign-in), a regular member sees a 404. */
 export default defineNuxtRouteMiddleware(() => {
   const { state } = useAuth()
   if (state.value.status === 'authenticated') {

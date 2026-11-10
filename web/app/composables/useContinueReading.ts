@@ -1,12 +1,12 @@
+/** State and actions of the home "Continue reading" strip. */
 import { incrementUnit } from '~/utils/home'
 import type { LibraryEntry, LibraryEntryChanges } from '~/utils/library'
 import type { ListedEntry } from '~/utils/reading-list'
 
 /**
- * Bande « Reprendre la lecture » de l'accueil : un +1 s'affiche aussitôt puis s'enregistre par
- * `PUT /works/:id/entry` (une requête à la fois). Finir l'œuvre demande d'abord confirmation
- * (`useReadingPrompt`) ; une œuvre qui n'est plus « En cours » quitte la bande. Un échec remet
- * l'entrée d'avant.
+ * Home "Continue reading" strip: a +1 shows at once and is then saved (one request at a time).
+ * Finishing the work asks for confirmation first (`useReadingPrompt`); a work that is no longer
+ * "reading" leaves the strip. A failure restores the previous entry.
  */
 export function useContinueReading(initialItems: () => ListedEntry[]) {
   const api = useApi()
@@ -16,10 +16,12 @@ export function useContinueReading(initialItems: () => ListedEntry[]) {
 
   watch(initialItems, (entries) => (items.value = entries), { immediate: true })
 
+  /** Replaces the entry of a work in the strip. */
   function replaceEntry(workId: number, entry: LibraryEntry) {
     items.value = items.value.map((item) => (item.work.id === workId ? { ...item, entry } : item))
   }
 
+  /** Shows the changes at once, saves them, and restores the previous entry on failure. */
   function saveChanges(item: ListedEntry, changes: LibraryEntryChanges) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
@@ -45,7 +47,7 @@ export function useContinueReading(initialItems: () => ListedEntry[]) {
     })
   }
 
-  /** +1 sur les chapitres, ou sur les tomes pour une œuvre suivie seulement par tomes. */
+  /** +1 on chapters, or on volumes for a work followed by volumes only. */
   function addOneToProgress(item: ListedEntry) {
     const { chaptersRead, volumesRead } = item.entry
     const changes: LibraryEntryChanges =

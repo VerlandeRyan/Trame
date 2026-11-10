@@ -1,7 +1,6 @@
 @use 'sass:map';
 
-// Survol à la souris seulement : sur écran tactile `:hover` reste collé après un toucher.
-// Jamais sur un élément désactivé.
+// Mouse hover only: on a touch screen `:hover` stays stuck after a tap.
 @mixin on-hover {
   @media (hover: hover) and (pointer: fine) {
     &:hover:not(:disabled, [aria-disabled='true']) {
@@ -10,10 +9,10 @@
   }
 }
 
-// Trois paliers d'inclinaison selon la largeur de l'élément, pour qu'un coin bouge à peu près de
-// la même distance (3 à 6 px) sans déborder sur les voisins du dessus et du dessous. Le palier
-// small convient aux boutons étroits (60 à 120 px), medium aux boutons courants, wide aux cartes,
-// aux boutons larges et à la pleine largeur.
+// Three tilt tiers by element width, so a corner moves about the same distance (3 to 6 px)
+// without overlapping the neighbours above and below. The `small` tier suits narrow buttons
+// (60 to 120 px), `medium` regular buttons, `wide` cards,
+// wide buttons and full width.
 $tilt-tiers: (
   small: (
     angle: -2.5deg,
@@ -29,8 +28,8 @@ $tilt-tiers: (
   ),
 );
 
-// Inclinaison « autocollant » avec rebond et fond plus soutenu. Le mouvement disparaît si
-// l'animation est réduite, pas la couleur.
+// Sticker-like tilt with a bounce and a stronger background. The movement disappears with
+// reduced motion, the colour does not.
 @mixin tilt-on-hover($hover-background: null, $tier: medium) {
   $angle: map.get($tilt-tiers, $tier, angle);
   $scale: map.get($tilt-tiers, $tier, scale);
@@ -59,8 +58,8 @@ $tilt-tiers: (
   }
 }
 
-// Enfoncement d'un bouton qui a une ombre au repos : il se décale de 2 px sur elle. Le sélecteur
-// est doublé (`.btn.btn`) pour l'emporter sur l'inclinaison du survol, où qu'il soit déclaré.
+// Press of a button that has a resting shadow: it shifts 2 px onto it. The selector
+// is doubled (`.btn.btn`) to win over the hover tilt, wherever it is declared.
 @mixin press-down {
   &#{&}:active:not(:disabled, [aria-disabled='true']) {
     box-shadow: 1px 1px 0 var(--color-ink);
@@ -68,16 +67,16 @@ $tilt-tiers: (
   }
 }
 
-// Appui (souris et doigt) : le fond du survol. L'enfoncement de 2 px est posé par le composant.
+// Press (mouse and finger): the hover background. The 2 px press is set by the component.
 @mixin press-background($background) {
   &:active:not(:disabled, [aria-disabled='true']) {
     background: $background;
   }
 }
 
-// Petits boutons carrés (flèches, −/+, croix) : trop petits pour s'incliner, ils montent d'1 px.
-// Fond du survol et de l'appui : `--color-cover-empty`. Sans ombre au repos, ils ne s'enfoncent pas :
-// l'appui les ramène à plat, à leur place.
+// Small square buttons (arrows, −/+, cross): too small to tilt, they lift by 1 px.
+// Hover and press background: `--color-cover-empty`. Without a resting shadow they do not sink:
+// pressing brings them back flat, in place.
 @mixin lift-on-hover {
   @media (prefers-reduced-motion: no-preference) {
     transition:
@@ -102,10 +101,10 @@ $tilt-tiers: (
   }
 }
 
-// Zone tactile de 44 px autour d'un petit lien, sans changer son aspect. Au doigt seulement : à la
-// souris, une zone invisible déclencherait le lien quand le curseur passe à côté. Elle ne grandit
-// qu'en hauteur et ne doit recouvrir aucun autre élément cliquable. `z-index` : elle passe devant
-// un filet ou une puce positionnés plus bas dans le DOM, qui la rogneraient sinon.
+// 44 px touch area around a small link, without changing its look. Finger only: with a
+// mouse an invisible area would trigger the link when the cursor passes nearby. It only grows
+// in height and must not cover any other clickable element. `z-index`: it sits in front of
+// a rule or bullet placed lower in the DOM, which would clip it otherwise.
 @mixin touch-target {
   position: relative;
 
@@ -119,16 +118,16 @@ $tilt-tiers: (
   }
 }
 
-// Barre d'onglets soulignés : le filet d'encre est une ombre interne (un défilement horizontal du
-// conteneur ne la coupe pas) ; le trait de l'onglet actif est posé juste au-dessus.
+// Underlined tab bar: the ink rule is an inner shadow (horizontal scrolling of the
+// container does not cut it); the active tab's line sits just above.
 @mixin underline-tab-bar {
   padding-bottom: 3px;
   border-bottom: 0;
   box-shadow: inset 0 -3px 0 var(--color-ink);
 }
 
-// Onglet souligné : texte seul, trait transparent au repos, bleu pâle au survol et à l'appui,
-// bleu plein sur l'onglet actif (`$active-class`, sans point).
+// Underlined tab: text only, transparent line at rest, pale blue on hover and press,
+// solid blue on the active tab (`$active-class`, without a dot).
 @mixin underline-tab($active-class) {
   border: 0;
   border-bottom: var(--border);
@@ -155,8 +154,8 @@ $tilt-tiers: (
   }
 }
 
-// Ouverture d'un menu déroulant : fondu et glissement de 4 px depuis le côté du bouton
-// (`$above` : le menu s'ouvre au-dessus, il vient donc du bas).
+// Dropdown opening: fade and 4 px slide from the button's side
+// (`$above`: the menu opens above, so it comes from the bottom).
 @mixin menu-open-animation($above: false) {
   $side: 'below';
   $offset: -4px;
@@ -180,9 +179,9 @@ $tilt-tiers: (
   }
 }
 
-// Trame (screentone) : points ronds en fondu, comme dans les maquettes.
-// À inclure dans un pseudo-élément ::before d'un parent `position: relative`.
-// $angle : direction depuis laquelle la trame est la plus dense (270deg = depuis la droite).
+// Screentone: round dots fading out.
+// Include in a `::before` pseudo-element of a `position: relative` parent.
+// $angle: direction from which the screentone is densest (270deg = from the right).
 @mixin screentone($color, $size, $angle, $fade-end: 100%) {
   content: '';
   position: absolute;

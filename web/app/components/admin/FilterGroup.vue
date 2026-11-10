@@ -1,10 +1,11 @@
 <script setup lang="ts">
-// Groupe repliable de cases à cocher de la feuille de filtres mobile. Volontairement distinct de
-// `search/FilterGroup` (facettes, compteurs par valeur, recherche, « Voir les N autres ») : celui-ci
-// reçoit des options toutes prêtes. L'état ouvert/fermé appartient au parent (`v-model:open`),
-// pour « Tout replier ».
+/**
+ * Collapsible group of checkboxes of the mobile filter sheet. Deliberately distinct from
+ * `search/FilterGroup` (facets, counts per value, search, "See the N others"): this one receives
+ * ready-made options. The open/closed state belongs to the parent (`v-model:open`), for "Collapse all".
+ */
 const props = defineProps<{
-  /** Nom du groupe, repris dans les `data-testid` des cases. */
+  /** Name of the group, reused in the checkboxes' test ids. */
   name: string
   label: string
   options: { value: string; label: string }[]
@@ -115,7 +116,7 @@ const selectedCount = computed(() => props.selected.length)
   cursor: pointer;
 }
 
-// Case dessinée : le rendu natif varie selon les navigateurs.
+// Drawn checkbox: the native look varies between browsers.
 .filter-group__checkbox {
   flex: none;
   width: 18px;

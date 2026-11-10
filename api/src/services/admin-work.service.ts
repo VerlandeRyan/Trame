@@ -1,3 +1,4 @@
+/** Business rules for administering works: reference checks, versioned updates and archiving. */
 import type { WorkStatus, WorkType } from '../domain/catalogue-enums.js';
 import { AppError } from '../errors.js';
 import type {
@@ -10,9 +11,10 @@ import type {
 } from '../repositories/admin-work.repository.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
 
-/** `updatedAt` : la version de la fiche lue avant modification ; sans elle, rien n'est contrôlé. */
+/** `updatedAt` is the record version read before editing; without it nothing is checked. */
 export type AdminWorkInput = WorkDraft & { updatedAt?: string };
 
+/** Sort orders of the work list. */
 export const ADMIN_WORK_SORTS = [
   'title',
   'title_desc',
@@ -21,34 +23,37 @@ export const ADMIN_WORK_SORTS = [
 ] as const;
 export type AdminWorkSort = (typeof ADMIN_WORK_SORTS)[number];
 
-/** Liste des œuvres : tri et filtres (une valeur d'un filtre suffit ; tous les filtres s'appliquent). */
+/** Work list: sort and filters (one value of a filter is enough; all filters apply). */
 export interface AdminWorkListInput extends AdminListInput {
   sort: AdminWorkSort;
   type?: WorkType[];
   status?: WorkStatus[];
-  /** Codes de format. */
+  /** Format codes. */
   format?: string[];
 }
 
+/** Work administration operations. */
 export interface AdminWorkService {
   list(input: AdminWorkListInput): Promise<Page<AdminWorkListItem>>;
   get(id: number): Promise<AdminWorkRecord>;
   create(input: AdminWorkInput): Promise<AdminWorkRecord>;
   update(id: number, input: AdminWorkInput): Promise<AdminWorkRecord>;
-  /** Les entrées de liste des lecteurs sont conservées ; l'œuvre disparaît seulement du public. */
+  /** Readers' list entries are kept; the work only disappears from the public. */
   archive(id: number, adminId: number): Promise<AdminWorkRecord>;
   restore(id: number, adminId: number): Promise<AdminWorkRecord>;
 }
 
+/** Whether any reference list is non-empty. */
 function hasAny(references: MissingReferences | ArchivedReferences): boolean {
   return Object.values(references).some((ids) => ids.length > 0);
 }
 
-/** Les fiches archivées que la fiche cite déjà restent permises : on ne les ajoute pas, on les garde. */
+/** Archived records the work already cites stay allowed: they are kept, not newly added. */
 function newlyArchived(
   archived: ArchivedReferences,
   current?: AdminWorkRecord,
 ): ArchivedReferences {
+  /** The identifiers that are not in the kept list. */
   const without = (ids: number[], kept: number[]) => ids.filter((id) => !kept.includes(id));
   return {
     personIds: without(archived.personIds, current?.credits.map((c) => c.personId) ?? []),
@@ -57,13 +62,16 @@ function newlyArchived(
   };
 }
 
+/** Creates the work administration service. */
 export function createAdminWorkService(repository: AdminWorkRepository): AdminWorkService {
+  /** Reads a work, archived or not; throws when it does not exist. */
   async function get(id: number): Promise<AdminWorkRecord> {
     const work = await repository.find(id);
     if (!work) throw new AppError('NOT_FOUND');
     return work;
   }
 
+  /** Rejects missing or newly archived references, and a work related to itself. */
   async function checkReferences(input: AdminWorkInput, current?: AdminWorkRecord): Promise<void> {
     if (input.relations.some((relation) => relation.relatedWorkId === current?.id)) {
       throw new AppError('INVALID_REFERENCE', { workIds: [current?.id] });

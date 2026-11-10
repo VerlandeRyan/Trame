@@ -1,26 +1,29 @@
+/** REST API client built on an injected fetcher, so it can be used and tested without Nuxt. */
 import { errorMessageKey, toApiError, type ApiError } from './api-error'
 
+/** HTTP call function (Nuxt's `$fetch` in the app). */
 type Fetcher = (url: string, options?: Record<string, unknown>) => Promise<unknown>
 
+/** What the client needs from its environment. */
 interface ApiClientDependencies {
-  /** Adresse interne de l'API (runtimeConfig.apiBase). */
+  /** Internal address of the API (the runtime config's API base). */
   baseURL: string
-  /** Appel HTTP (`$fetch` de Nuxt) ; injecté pour pouvoir être remplacé dans les tests. */
+  /** HTTP call; injected so tests can replace it. */
   fetcher: Fetcher
-  /** Dit si une clé de traduction existe (`te` de vue-i18n). */
+  /** Tells whether a translation key exists (vue-i18n's `te`). */
   hasTranslation: (key: string) => boolean
-  /** En-têtes de tous les appels : le cookie du visiteur au rendu serveur (absents au navigateur). */
+  /** Headers of every call: the visitor's cookie during server rendering (absent in the browser). */
   defaultHeaders?: Record<string, string>
 }
 
-/** Client de l'API REST sous `/api/v1`, sans dépendance à Nuxt. Voir `useApi()`. */
+/** Creates the client of the versioned REST API, with no dependency on Nuxt. See `useApi()`. */
 export function createApiClient({
   baseURL,
   fetcher,
   hasTranslation,
   defaultHeaders,
 }: ApiClientDependencies) {
-  /** Appelle l'API ; lève une `ApiError` (code stable) en cas d'échec. */
+  /** Calls the API; throws an `ApiError` (stable code) on failure. */
   async function request<T>(path: string, options: Record<string, unknown> = {}): Promise<T> {
     const headers = defaultHeaders
       ? { ...defaultHeaders, ...(options.headers as Record<string, string> | undefined) }
@@ -33,7 +36,7 @@ export function createApiClient({
     }
   }
 
-  /** Clé de traduction à afficher pour une erreur d'API. */
+  /** Translation key to display for an API error. */
   function messageKeyFor(error: ApiError): string {
     return errorMessageKey(error.code, hasTranslation)
   }

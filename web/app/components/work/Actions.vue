@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { isSafeLink, type ExternalLink } from '~/utils/work'
 
-// Boutons « Lire » et « Acheter » : liens externes en https uniquement, ouverts hors du site.
+/** "Read" and "Buy" buttons: https external links only, opened outside the site. */
 const props = defineProps<{ links: ExternalLink[] }>()
 const { t } = useI18n()
 
+/** The first safe link to read the work. */
 const readLink = computed(() => props.links.find((l) => l.kind === 'read' && isSafeLink(l.url)))
+/** The first safe link to buy the work. */
 const buyLink = computed(() => props.links.find((l) => l.kind === 'buy' && isSafeLink(l.url)))
 </script>
 
@@ -35,7 +37,6 @@ const buyLink = computed(() => props.links.find((l) => l.kind === 'buy' && isSaf
 </template>
 
 <style scoped lang="scss">
-// Deux boutons de même largeur (maquettes) : « Lire » et « Acheter » côte à côte.
 .actions {
   display: flex;
   gap: var(--space-2);

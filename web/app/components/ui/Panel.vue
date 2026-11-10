@@ -1,9 +1,10 @@
+<!-- White panel with an outline and an ink shadow: generic container of content blocks. -->
 <template>
   <div class="panel"><slot /></div>
 </template>
 
 <style scoped lang="scss">
-// Panneau blanc à contour et ombre d'encre : conteneur générique des blocs de contenu.
+// White panel with an outline and an ink shadow: generic container of content blocks.
 .panel {
   padding: 14px 16px;
   border: var(--border);

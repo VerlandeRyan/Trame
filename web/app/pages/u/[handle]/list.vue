@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { countEntriesOfAllStatuses, parseListQuery } from '~/utils/reading-list'
 
-// Liste de lecture d'un membre, en lecture seule (US-08) : la page « Ma liste » sans aucune
-// modification. Un profil privé n'est pas lisible : la page le dit au lieu de lister.
-// Son propre profil ouvre « Ma liste de lecture » (modifiable), avec la même adresse (onglet, tri…).
+/**
+ * A member's reading list, read-only: the "My list" page without any edit. A private profile is
+ * not readable: the page says so instead of listing. One's own list opens "My reading list"
+ * (editable), with the same address (tab, sort…).
+ */
 definePageMeta({
   middleware: (to) => {
     const { state } = useAuth()
@@ -28,7 +30,7 @@ const failureStatus = computed(
   () => (list.error.value as { statusCode?: number } | undefined)?.statusCode,
 )
 const isPrivate = computed(() => failureStatus.value === 403)
-// Un membre inconnu (ou un pseudo mal formé) est une page 404, comme son profil.
+/** An unknown member (or a malformed handle) is a 404 page, like their profile. */
 function failIfMemberUnknown() {
   if (failureStatus.value === 404 || failureStatus.value === 400) {
     throw createError({ statusCode: 404, fatal: true })
@@ -189,14 +191,14 @@ const sentinel = useLoadMoreOnScroll(list)
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// `minmax(0, 1fr)` : sans cela les pastilles de statut (sur une ligne) élargissent toute la page.
+// `minmax(0, 1fr)`: without it the single-line status pills widen the whole page.
 .member-list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-4);
 }
 
-// Une seule rangée au mobile comme « Ma liste » : le titre se resserre, la bascule reste à droite.
+// A single row on mobile, like 'My list': the title tightens, the toggle stays on the right.
 .member-list__head {
   display: flex;
   align-items: flex-end;
@@ -209,7 +211,7 @@ const sentinel = useLoadMoreOnScroll(list)
   }
 }
 
-// Lien discret en encre souligné, à l'écart du titre bleu pour ne pas se confondre avec lui.
+// Discreet underlined ink link, kept apart from the blue title so they are not confused.
 .member-list__back {
   display: inline-block;
   margin-bottom: var(--space-3);
@@ -230,7 +232,7 @@ const sentinel = useLoadMoreOnScroll(list)
   }
 }
 
-// Pastilles de statut basses, comme « Ma liste » : sans filet dessous, 44 px au doigt seulement.
+// Low status pills, like 'My list': no rule underneath, 44 px tall with a finger only.
 .member-list__tabs.member-list__tabs {
   padding-bottom: 0;
   scrollbar-width: none;
@@ -253,7 +255,7 @@ const sentinel = useLoadMoreOnScroll(list)
   }
 }
 
-// Recherche et tri sur une rangée, comme « Ma liste ».
+// Search and sort on one row, like 'My list'.
 .member-list__tools {
   display: flex;
   align-items: stretch;
@@ -265,7 +267,7 @@ const sentinel = useLoadMoreOnScroll(list)
   }
 }
 
-// Champ de 16 px au minimum : Safari iOS ne zoome pas.
+// 16 px minimum field: Safari iOS does not zoom.
 .member-list__search {
   flex: 1 1 0;
   min-width: 0;

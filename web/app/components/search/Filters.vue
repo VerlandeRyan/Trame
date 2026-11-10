@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { FILTER_KEYS, type FilterKey, type SearchFilters, type WorkFacets } from '~/utils/search'
 
-// `sheet` : dans la feuille mobile, titre et pied appartiennent à la feuille.
+/** Filter groups of the search page. `sheet`: inside the mobile sheet, whose title and footer belong to the sheet. */
 const props = withDefaults(
   defineProps<{ facets: WorkFacets; filters: SearchFilters; sheet?: boolean }>(),
   { sheet: false },
@@ -9,6 +9,7 @@ const props = withDefaults(
 const emit = defineEmits<{ toggle: [key: FilterKey, code: string]; reset: [] }>()
 const { t } = useI18n()
 
+/** Groups open at first. */
 const OPEN_BY_DEFAULT = new Set<FilterKey>(['type', 'format', 'genre'])
 
 const openGroups = reactive<Record<FilterKey, boolean>>(
@@ -20,7 +21,7 @@ const openGroups = reactive<Record<FilterKey, boolean>>(
   ) as Record<FilterKey, boolean>,
 )
 
-// Une valeur choisie ailleurs (pastille, lien) déplie son groupe.
+// A value chosen elsewhere (pill, link) expands its group.
 watch(
   () => props.filters,
   (filters) => {
@@ -30,11 +31,12 @@ watch(
 
 const allOpen = computed(() => FILTER_KEYS.every((key) => openGroups[key]))
 
+/** Opens or collapses every group. */
 function setAll(open: boolean) {
   for (const key of FILTER_KEYS) openGroups[key] = open
 }
 
-// La page pilote « Tout replier » depuis l'en-tête de la feuille.
+// The page drives "Collapse all" from the sheet header.
 defineExpose({ allOpen, setAll })
 </script>
 

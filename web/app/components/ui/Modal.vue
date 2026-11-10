@@ -1,14 +1,16 @@
 <script setup lang="ts">
-// Modale basée sur <dialog> natif (focus, Échap, inertie du fond gérés par le navigateur).
-// `placement="bottom"` : feuille basse, le slot `footer` reste visible sous le contenu défilant.
-// `plain` : fenêtre d'invitation, sans filet sous le titre.
+/**
+ * Modal built on the native dialog (focus, Escape and inert background handled by the browser).
+ * `placement="bottom"`: bottom sheet, the `footer` slot stays visible under the scrolling content.
+ * `plain`: invitation window, without a rule under the title.
+ */
 withDefaults(
   defineProps<{
     title: string
     closeLabel: string
     placement?: 'center' | 'bottom'
     plain?: boolean
-    // Action destructrice : titre rouge.
+    /** Destructive action: red title. */
     danger?: boolean
   }>(),
   { placement: 'center', plain: false, danger: false },
@@ -16,12 +18,12 @@ withDefaults(
 const open = defineModel<boolean>({ default: false })
 const dialog = ref<HTMLDialogElement | null>(null)
 
-// Le <dialog> ne reçoit un clic que sur son `::backdrop` : son contenu occupe toute la boîte.
+/** Closes the modal on a click on the backdrop: the dialog only receives such a click there, since its content fills the box. */
 function onDialogClick(event: MouseEvent) {
   if (event.target === dialog.value) open.value = false
 }
 
-// Le <dialog> existe dès le montage : ce watcher ne s'exécute qu'ensuite.
+// The dialog exists from mounting on: this watcher only runs afterwards.
 watch(open, (isOpen) => {
   const dialogElement = dialog.value as HTMLDialogElement
   if (isOpen && !dialogElement.open) dialogElement.showModal()
@@ -101,9 +103,9 @@ watch(open, (isOpen) => {
   }
 }
 
-// Déclaré après `modal--bottom` : à spécificité égale, ces règles l'emportent.
+// Declared after `modal--bottom`: at equal specificity, these rules win.
 .modal--plain {
-  // `--modal-width` : une fenêtre plus riche (formulaire) élargit la fenêtre d'invitation.
+  // `--modal-width`: a richer window (form) widens the invitation window.
   &.modal--center {
     width: min(var(--modal-width, 440px), calc(100vw - 2 * var(--space-4)));
   }
@@ -120,7 +122,7 @@ watch(open, (isOpen) => {
     font-weight: 800;
   }
 
-  // Croix de 28 px dans le coin, zone tactile de 44 px (`::after`).
+  // 28 px cross in the corner, 44 px touch area (`::after`).
   .modal__close {
     position: absolute;
     top: 12px;
@@ -138,7 +140,6 @@ watch(open, (isOpen) => {
       inset: -8px;
     }
 
-    // Même mouvement que les flèches du carrousel.
     @include lift-on-hover;
   }
 
@@ -191,7 +192,7 @@ watch(open, (isOpen) => {
 }
 </style>
 
-<!-- Non scopé : la règle vise <html>. Safari iOS ignore `overscroll-behavior` sur certains défilements. -->
+<!-- Not scoped: the rule targets <html>. Safari iOS ignores `overscroll-behavior` on some scrolling. -->
 <style lang="scss">
 html:has(dialog.modal--bottom[open]) {
   overflow: hidden;

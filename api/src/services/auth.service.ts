@@ -1,3 +1,4 @@
+/** Business rules of sign-in and account creation on top of Google identity. */
 import { AppError } from '../errors.js';
 import { isHandleAllowed } from '../handle-rules.js';
 import type { AuthUser, UserRepository } from '../repositories/user.repository.js';
@@ -8,17 +9,18 @@ import type {
   GoogleSecrets,
 } from './google-identity.js';
 
-/** Durée pendant laquelle une identité Google attend le choix du handle. */
+/** How long a Google identity waits for the handle to be chosen. */
 export const PENDING_SIGNUP_TTL_MS = 10 * 60 * 1000;
 
-/** Réponse de `GET /auth/me` ; `pending` : identité validée, handle à choisir. */
+/** Answer of the auth status read; `pending`: identity verified, handle still to choose. */
 export type AuthStatus =
   { status: 'anonymous' } | { status: 'pending' } | { status: 'authenticated'; user: AuthUser };
 
-/** Retour de Google : compte connu, ou nouvelle identité qui doit encore choisir son handle. */
+/** Return from Google: a known account, or a new identity that still has to choose its handle. */
 export type LoginOutcome =
   { kind: 'existing'; user: AuthUser } | { kind: 'new'; identity: GoogleIdentity };
 
+/** Authentication operations. */
 export interface AuthService {
   startLogin(): Promise<GoogleLogin>;
   finishLogin(code: string, secrets: GoogleSecrets): Promise<LoginOutcome>;
@@ -26,12 +28,14 @@ export interface AuthService {
   findUser(id: number): Promise<AuthUser | null>;
 }
 
+/** Creates the authentication service. */
 export function createAuthService(deps: {
   users: UserRepository;
   google: GoogleClient;
 }): AuthService {
   const { users, google } = deps;
 
+  /** The user of a Google account; `null` if none, and an error if the account was deleted. */
   async function activeAccount(sub: string): Promise<AuthUser | null> {
     const account = await users.findByGoogleSub(sub);
     if (account?.deleted) throw new AppError('UNAUTHENTICATED');

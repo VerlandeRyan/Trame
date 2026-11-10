@@ -1,13 +1,16 @@
+/** Input schemas of the reading list. */
 import { z } from 'zod';
 import { LIBRARY_STATUSES } from '../domain/user-enums.js';
 import type { EntryInput, ListEntriesInput } from '../services/library.service.js';
 import { commaSeparatedList, lang, MULTI_VALUE, pageQuery } from './common.js';
 
-/** Plus de chapitres qu'aucune œuvre n'en compte : borne la saisie, sans règle métier. */
+/** More chapters than any work has: bounds the input, not a business rule. */
 const MAX_COUNT = 99_999;
 
+/** Chapters or volumes read. */
 const counter = z.number().int().min(0).max(MAX_COUNT);
 
+/** Body to add or update a reading-list entry; omitted fields are left unchanged. */
 export const entryBody = z.strictObject({
   status: z.enum(LIBRARY_STATUSES).describe('Statut de lecture.'),
   chaptersRead: counter
@@ -40,6 +43,7 @@ export const entryBody = z.strictObject({
     .optional(),
 }) satisfies z.ZodType<EntryInput>;
 
+/** Query of a reading list: search, status filter, sort and pagination. */
 export const listEntriesQuery = z.object({
   q: z
     .string()

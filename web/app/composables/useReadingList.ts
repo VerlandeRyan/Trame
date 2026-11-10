@@ -1,3 +1,4 @@
+/** A reading list: paginated loading and immediate, server-reconciled edits. */
 import { LIBRARY_STATUSES, type LibraryEntry, type LibraryEntryChanges } from '~/utils/library'
 import {
   applyEntryChangeToCounts,
@@ -11,16 +12,16 @@ import {
   type StatusCounts,
 } from '~/utils/reading-list'
 
+/** Status counts all at zero, used before the first page arrives. */
 const NO_STATUS_COUNTS = Object.fromEntries(
   LIBRARY_STATUSES.map((status) => [status, 0]),
 ) as StatusCounts
 
 /**
- * Une liste de lecture (`source` : la mienne par défaut, ou celle d'un membre en lecture seule) :
- * première page lue dès le rendu serveur (cookie du visiteur transmis), pages suivantes au
- * défilement, modifications enregistrées par `PUT/DELETE /works/:id/entry`.
- * Un changement s'affiche aussitôt, compteurs et totaux compris, sans relire la liste ; en cas
- * d'échec la première page est relue. À appeler avant tout autre `await` de la page.
+ * A reading list (`source`: mine by default, or a member's read-only one): the first page is read
+ * during server rendering (visitor's cookie forwarded), later pages on scroll, edits saved through
+ * the entry endpoints. A change shows at once, counts and totals included, without reloading the
+ * list; after a failure the first page is read again. Call before any other `await` of the page.
  */
 export async function useReadingList(
   state: ComputedRef<ListState>,
@@ -37,13 +38,14 @@ export async function useReadingList(
   const hasLoadMoreFailed = ref(false)
   let loadedPages = 0
 
+  /** Reads one page of the list. */
   const fetchPage = (page: number) =>
     api.request<ListPage>(source, {
       query: toListApiQuery(state.value, { lang: locale.value, page }),
     })
 
-  // Relue seulement quand la requête change (onglet, recherche, tri, langue) : basculer entre liste
-  // et grille garde les pages déjà chargées.
+  // Read again only when the query changes (tab, search, sort, language): switching between list
+  // and grid keeps the pages already loaded.
   const firstPageQuery = computed(() =>
     JSON.stringify(toListApiQuery(state.value, { lang: locale.value, page: 1 })),
   )
@@ -68,6 +70,7 @@ export async function useReadingList(
 
   const hasMore = computed(() => hasMorePages(items.value.length, total.value))
 
+  /** Appends the next page, skipping works already shown. */
   async function loadMore() {
     if (isLoadingMore.value || !hasMore.value) return
     isLoadingMore.value = true
@@ -84,20 +87,21 @@ export async function useReadingList(
     }
   }
 
-  // Après un échec, la liste a pu s'écarter du serveur : on relit la première page.
+  // After a failure the list may have drifted from the server: read the first page again.
   const { run, isBusy, errorKey } = useOptimisticWrite({ resync: () => refresh() })
 
+  /** Replaces the entry of a work in the displayed list. */
   function replaceEntryInView(workId: number, entry: LibraryEntry) {
     items.value = items.value.map((item) => (item.work.id === workId ? { ...item, entry } : item))
   }
 
-  /** Une œuvre qui change d'onglet ou qu'on retire quitte la liste affichée. */
+  /** A work that changes tab or is removed leaves the displayed list. */
   function removeFromView(workId: number) {
     items.value = items.value.filter((item) => item.work.id !== workId)
     total.value -= 1
   }
 
-  /** Onglets et totaux suivent un changement local (`after` `null` : l'œuvre est retirée). */
+  /** Tabs and totals follow a local change (`after` `null`: the work is removed). */
   function updateStatusCountsAndTotals(before: LibraryEntry, after: LibraryEntry | null) {
     const next = applyEntryChangeToCounts(
       { statusCounts: statusCounts.value, totals: totals.value },
@@ -108,7 +112,7 @@ export async function useReadingList(
     totals.value = next.totals
   }
 
-  /** Applique `changes` à l'entrée (le statut est toujours envoyé, le reste seulement s'il change). */
+  /** Applies `changes` to the entry (the status is always sent, the rest only when it changes). */
   function changeEntry(item: ListedEntry, changes: LibraryEntryChanges) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
@@ -128,13 +132,14 @@ export async function useReadingList(
           })
         ).entry
       },
-      // Seules les dates peuvent différer de ce qui est affiché (le serveur les propose).
+      // Only the dates can differ from what is displayed (the server proposes them).
       reconcile: (saved) => {
         if (items.value.some((each) => each.work.id === workId)) replaceEntryInView(workId, saved)
       },
     })
   }
 
+  /** Removes a work from the list. */
   function removeEntry(item: ListedEntry) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry

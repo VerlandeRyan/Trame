@@ -1,7 +1,10 @@
 <script setup lang="ts">
-// `prefix` (ex. « @ ») précède la saisie ; `error` remplace l'aide ; `inputAttributes` complète l'`<input>`.
-// `inputAttributes.sanitize` nettoie la saisie au fil de la frappe (ex. chiffres seulement) : la
-// valeur affichée est réécrite même quand le modèle ne change pas.
+/**
+ * Labelled text field with hint and error. `prefix` (e.g. "@") precedes the input; `error`
+ * replaces the hint; `inputAttributes` completes the `<input>`. `inputAttributes.sanitize` cleans
+ * the input as it is typed (e.g. digits only): the displayed value is rewritten even when the
+ * model does not change.
+ */
 const props = defineProps<{
   label: string
   id: string
@@ -18,12 +21,14 @@ const props = defineProps<{
   }
 }>()
 const model = defineModel<string>({ default: '' })
+/** Attributes passed to the native input (everything but `sanitize`). */
 const nativeAttributes = computed(() => {
   const native = { ...props.inputAttributes }
   delete native.sanitize
   return native
 })
 
+/** Cleans the typed value, rewrites the input if needed and updates the model. */
 function onInput(event: Event) {
   const input = event.target as HTMLInputElement
   const sanitize = props.inputAttributes?.sanitize
@@ -32,6 +37,7 @@ function onInput(event: Event) {
   model.value = value
 }
 
+/** Identifier of the error or hint element describing the input. */
 const describedBy = computed(() => {
   if (props.error) return `${props.id}-error`
   return props.hint ? `${props.id}-hint` : undefined
@@ -61,7 +67,7 @@ const describedBy = computed(() => {
 <style scoped lang="scss">
 .field {
   display: grid;
-  // `minmax(0, …)` : un libellé long passe à la ligne au lieu d'élargir le champ.
+  // `minmax(0, …)`: a long label wraps instead of widening the field.
   grid-template-columns: minmax(0, 1fr);
   gap: var(--space-1);
 }
@@ -103,7 +109,7 @@ const describedBy = computed(() => {
   border: 0;
   background: transparent;
   color: inherit;
-  // 16 px minimum : évite le zoom automatique de Safari iOS à la prise de focus.
+  // 16 px minimum: avoids Safari iOS's automatic zoom on focus.
   font-size: 1rem;
 
   &:focus {

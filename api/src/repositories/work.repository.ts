@@ -1,3 +1,4 @@
+/** Queries behind the public catalogue: search, facet counts, home lists and the work detail. */
 import {
   sql,
   type Expression,
@@ -30,34 +31,36 @@ import {
 
 export type { MatchMode } from './work-sql.js';
 
+/** Search text, filters, language, sort and page of a catalogue search. */
 export interface WorkSearchCriteria {
-  /** Texte déjà nettoyé (espaces) et d'au moins 2 caractères. */
+  /** Text already trimmed and at least 2 characters long. */
   q?: string;
-  /** `all` (défaut) : chaque mot doit correspondre ; `any` : un seul suffit. */
+  /** `all` (default): every word must match; `any`: one is enough. */
   match?: MatchMode;
-  /** Valeurs multiples : OU, sauf `genre` (ET). Les filtres entre eux se combinent (ET). */
+  /** Multiple values: OR, except `genre` (AND). Filters combine with each other (AND). */
   type?: WorkType[];
   status?: WorkStatus[];
-  /** Codes de formats (ex. `manga`). */
+  /** Format codes (e.g. `manga`). */
   format?: string[];
-  /** Codes de genres thématiques (ex. `fantasy`). */
+  /** Theme genre codes (e.g. `fantasy`). */
   genre?: string[];
-  /** Langues originales (codes ISO 639, ex. `ja`). */
+  /** Original languages (ISO 639 codes, e.g. `ja`). */
   originalLanguage?: string[];
-  /** Langue de l'application : sert à choisir le titre affiché (repli sur le titre original). */
+  /** Application language: selects the displayed title (falls back to the original title). */
   lang?: string;
-  /** Ordre de la liste ; sans `q`, `relevance` retombe sur le titre. */
+  /** List order; without `q`, `relevance` falls back to the title. */
   sort?: WorkSort;
   limit: number;
   offset: number;
 }
 
-/** `relevance` : proximité avec `q` ; `title` : A→Z ; `recent` : dernières ajoutées d'abord. */
+/** `relevance`: closeness to `q`; `title`: A→Z; `recent`: latest added first. */
 export type WorkSort = 'relevance' | 'title' | 'recent';
 
-/** Filtres seuls : les compteurs ignorent la page, le tri et la langue. */
+/** Filters only: the counts ignore the page, the sort and the language. */
 export type WorkFacetCriteria = Omit<WorkSearchCriteria, 'lang' | 'sort' | 'limit' | 'offset'>;
 
+/** A work as shown on a list card. */
 export interface WorkSummary {
   id: number;
   title: string;
@@ -65,23 +68,25 @@ export interface WorkSummary {
   originalLanguage: string;
   type: WorkType;
   status: WorkStatus;
-  /** Codes des formats (catégorie `format`), triés. */
+  /** Sorted codes of the formats (`format` category). */
   formats: string[];
   coverPath: string | null;
   mainAuthor: string | null;
 }
 
+/** One page of search results with the total number of matches. */
 export interface WorkSearchResult {
   items: WorkSummary[];
   total: number;
 }
 
+/** Number of works for one filter value. */
 export interface FacetCount {
   code: string;
   count: number;
 }
 
-/** Œuvres par valeur de filtre ; chaque groupe ignore son propre filtre (sauf `genre`, en ET). */
+/** Works per filter value; each group ignores its own filter (except `genre`, which is AND). */
 export interface WorkFacets {
   type: FacetCount[];
   status: FacetCount[];
@@ -90,41 +95,43 @@ export interface WorkFacets {
   originalLanguage: FacetCount[];
 }
 
+/** A work featured on the home page. */
 export interface FeaturedWork extends WorkSummary {
   synopsis: string | null;
-  /** Ajouts à une liste dans la fenêtre « récente » (0 si aucun). */
+  /** Additions to a list within the "recent" window (0 if none). */
   recentAdditions: number;
 }
 
-/** Classement : ajouts à une liste depuis `sinceDays` jours (0 compris), puis œuvres les plus récentes. */
+/** Ranking: additions to a list over the last `sinceDays` days (zero included), then most recent works. */
 export interface FeaturedCriteria {
   lang?: string;
   sinceDays: number;
   limit: number;
 }
 
-/** Notes brutes : la moyenne est calculée par le service. */
+/** Raw ratings: the service computes the average. */
 export interface HomeRatedWork extends WorkSummary {
   ratingCount: number;
   ratingSum: number;
 }
 
+/** Language, minimum number of ratings and size of the top-rated list. */
 export interface RatedCriteria {
   lang?: string;
   minRatings: number;
   limit: number;
 }
 
-/** Fiche telle que lue en base : un crédit par (personne, rôle). Le service les regroupe par personne. */
+/** Work detail as read from the database: one credit per (person, role). The service groups them by person. */
 export interface WorkRecord {
   id: number;
-  /** Titre affiché : titre localisé dans la langue demandée, sinon titre original. */
+  /** Displayed title: localised title in the requested language, otherwise the original title. */
   title: string;
   originalTitle: string;
   originalLanguage: string;
   type: WorkType;
   status: WorkStatus;
-  /** Synopsis dans la langue demandée, sinon dans la langue originale ; `null` si aucun. */
+  /** Synopsis in the requested language, otherwise in the original language; `null` if none. */
   synopsis: string | null;
   synopsisLanguage: string | null;
   synopsisSource: SynopsisSource | null;
@@ -133,42 +140,43 @@ export interface WorkRecord {
   startedOn: string | null;
   endedOn: string | null;
   coverPath: string | null;
-  /** Titres alternatifs, toutes langues, triés par langue, nature puis titre. */
+  /** Alternative titles in every language, sorted by language, kind then title. */
   alternativeTitles: { language: string; kind: TitleKind; title: string }[];
   credits: { personId: number; name: string; kind: PersonKind; role: CreditRole }[];
-  /** Liens externes des personnes créditées (sites, réseaux), triés par personne puis nature. */
+  /** External links of the credited people (websites, social networks), sorted by person then kind. */
   personLinks: { personId: number; kind: ExternalLinkKind; url: string; label: string | null }[];
   publishers: { id: number; name: string; kind: PublisherKind; url: string | null }[];
-  /** Codes des formats (catégorie `format`), triés. */
+  /** Sorted codes of the formats (`format` category). */
   formats: string[];
-  /** Codes des genres thématiques (catégorie `theme`), triés. */
+  /** Sorted codes of the theme genres (`theme` category). */
   genres: string[];
   links: { kind: ExternalLinkKind; url: string; label: string | null }[];
-  /** Un seul sens est stocké : `outgoing` = cette œuvre est la source, `incoming` = elle est la cible. */
+  /** Only one direction is stored: `outgoing` = this work is the source, `incoming` = it is the target. */
   relations: {
     relation: RelationKind;
     direction: 'outgoing' | 'incoming';
     work: { id: number; title: string; type: WorkType };
   }[];
-  /** Lecteurs qui ont l'œuvre dans leur liste (profils privés inclus). */
+  /** Readers who have the work in their list (private profiles included). */
   memberCount: number;
-  /** Nombre de notes données et leur somme ; la moyenne et son seuil relèvent du service. */
+  /** Number of ratings given and their sum; the average and its threshold belong to the service. */
   ratingCount: number;
   ratingSum: number;
 }
 
+/** Public catalogue queries. */
 export interface WorkRepository {
   search(criteria: WorkSearchCriteria): Promise<WorkSearchResult>;
   facets(criteria: WorkFacetCriteria): Promise<WorkFacets>;
-  /** La plus ajoutée à une liste récemment d'abord. */
+  /** Most recently added to a list first. */
   findFeaturedWorks(criteria: FeaturedCriteria): Promise<FeaturedWork[]>;
-  /** Triées par moyenne, puis par nombre de notes. */
+  /** Sorted by average, then by number of ratings. */
   findTopRatedWorks(criteria: RatedCriteria): Promise<HomeRatedWork[]>;
-  /** Renvoie `undefined` si l'œuvre n'existe pas ou est archivée. */
+  /** Returns `undefined` if the work does not exist or is archived. */
   findById(id: number, lang?: string): Promise<WorkRecord | undefined>;
 }
 
-/** L'œuvre porte l'une des étiquettes `codes` de la catégorie. */
+/** The work has one of the `codes` labels of the category. */
 function hasGenre(codes: string[], category: GenreCategory): RawBuilder<boolean> {
   return sql<boolean>`EXISTS (
     SELECT 1 FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
@@ -176,7 +184,7 @@ function hasGenre(codes: string[], category: GenreCategory): RawBuilder<boolean>
   )`;
 }
 
-/** Synopsis dans la langue demandée, sinon dans la langue originale. `''` : aucune langue demandée. */
+/** Synopsis in the requested language, otherwise in the original language. `''`: no language requested. */
 function preferredSynopsis(lang = ''): RawBuilder<string | null> {
   return sql<string | null>`(
     SELECT s.text FROM work_synopsis s
@@ -186,6 +194,7 @@ function preferredSynopsis(lang = ''): RawBuilder<string | null> {
   )`;
 }
 
+/** Visibility, filters and search of the criteria combined into one condition. */
 function filters(criteria: WorkFacetCriteria) {
   return (eb: ExpressionBuilder<Database, 'work'>): Expression<SqlBool> => {
     const conditions: Expression<SqlBool>[] = [visibleWork(eb)];
@@ -195,7 +204,7 @@ function filters(criteria: WorkFacetCriteria) {
       conditions.push(eb('work.original_language', 'in', criteria.originalLanguage));
     }
     if (criteria.format !== undefined) conditions.push(hasGenre(criteria.format, 'format'));
-    // Genres : ET, une condition par genre choisi.
+    // Genres: AND, one condition per chosen genre.
     for (const code of criteria.genre ?? []) conditions.push(hasGenre([code], 'theme'));
     if (criteria.q !== undefined) {
       conditions.push(searchCondition(criteria.q, criteria.match ?? 'all'));
@@ -204,6 +213,7 @@ function filters(criteria: WorkFacetCriteria) {
   };
 }
 
+/** Creates the public catalogue repository. */
 export function createWorkRepository(db: Db): WorkRepository {
   return {
     async search(criteria) {
@@ -239,10 +249,12 @@ export function createWorkRepository(db: Db): WorkRepository {
     },
 
     async facets(criteria) {
+      /** The criteria without the filter of the group being counted. */
       const without = (omitted: keyof WorkFacetCriteria): WorkFacetCriteria => ({
         ...criteria,
         [omitted]: undefined,
       });
+      /** Counts works per value of a column. */
       const countBy = (column: string, omitted: keyof WorkFacetCriteria): Promise<FacetCount[]> => {
         const code = sql<string>`${sql.ref(column)}`;
         return db
@@ -254,8 +266,10 @@ export function createWorkRepository(db: Db): WorkRepository {
           .orderBy('code')
           .execute();
       };
-      // Formats (OU) : le groupe ignore son filtre. Genres (ET) : il le garde, et le compteur est
-      // ce que donnerait l'ajout de la valeur.
+      /**
+       * Counts works per genre of a category. Formats (OR): the group ignores its filter.
+       * Genres (AND): it keeps it, and the count is what adding the value would give.
+       */
       const countByGenre = (
         category: GenreCategory,
         omitted: 'format' | undefined,
@@ -449,6 +463,7 @@ export function createWorkRepository(db: Db): WorkRepository {
           .executeTakeFirstOrThrow(),
       ]);
 
+      /** Shapes a related work row with the direction of the relation. */
       const toRelation =
         (direction: 'outgoing' | 'incoming') =>
         (r: { relation: RelationKind; id: number; title: string; type: WorkType }) => ({
@@ -470,7 +485,7 @@ export function createWorkRepository(db: Db): WorkRepository {
               .orderBy('url')
               .execute();
 
-      // Langue demandée d'abord, sinon langue originale (repli ADR 0007).
+      // Requested language first, otherwise the original language.
       const synopsis = synopses.find((s) => s.language === lang) ?? synopses[0];
 
       return {

@@ -1,3 +1,4 @@
+/** Queries for administering publishers and platforms: list, read, write and archive. */
 import { sql } from 'kysely';
 import type { Db, PublisherKind } from '../db/database.js';
 import {
@@ -8,19 +9,22 @@ import {
   type ArchiveScope,
 } from './admin-sql.js';
 
+/** Data written when creating or replacing a publisher. */
 export interface AdminPublisherDraft {
   name: string;
   kind: PublisherKind;
   url: string | null;
 }
 
+/** A publisher as shown in lists and details. */
 export interface AdminPublisherSummary extends AdminPublisherDraft {
   id: number;
   archived: boolean;
-  /** Œuvres non archivées publiées par cet éditeur ou cette plateforme. */
+  /** Unarchived works published by this publisher or platform. */
   activeWorkCount: number;
 }
 
+/** Search, scope and page of a publisher list. */
 export interface AdminPublisherListCriteria {
   q?: string;
   scope: ArchiveScope;
@@ -28,18 +32,20 @@ export interface AdminPublisherListCriteria {
   offset: number;
 }
 
+/** Publisher administration queries. */
 export interface AdminPublisherRepository {
   list(
     criteria: AdminPublisherListCriteria,
   ): Promise<{ items: AdminPublisherSummary[]; total: number }>;
   find(id: number): Promise<AdminPublisherSummary | null>;
   create(draft: AdminPublisherDraft): Promise<number>;
-  /** Faux si l'éditeur n'existe pas. */
+  /** False if the publisher does not exist. */
   update(id: number, draft: AdminPublisherDraft): Promise<boolean>;
-  /** Faux si l'éditeur n'existe pas, ou, pour un archivage, si une œuvre non archivée le cite. */
+  /** False if the publisher does not exist, or, when archiving, if an unarchived work lists it. */
   setArchived(id: number, archived: boolean): Promise<boolean>;
 }
 
+/** Columns read for a publisher summary. */
 interface SummaryRow {
   id: number;
   name: string;
@@ -49,17 +55,19 @@ interface SummaryRow {
   activeWorkCount: number;
 }
 
+/** Number of unarchived works published by the publisher. */
 const ACTIVE_WORKS_OF_PUBLISHER = sql<number>`(
   SELECT count(*) FROM work_publisher wp JOIN work w ON w.id = wp.work_id
   WHERE wp.publisher_id = publisher.id AND w.deleted_at IS NULL
 )`;
 
-/** Garde de l'archivage, évaluée dans l'`UPDATE` : une œuvre ajoutée entre-temps le fait échouer. */
+/** Archive guard, evaluated inside the `UPDATE`: a work added in the meantime makes it fail. */
 const NO_ACTIVE_WORK_OF_PUBLISHER = sql<boolean>`NOT EXISTS (
   SELECT 1 FROM work_publisher wp JOIN work w ON w.id = wp.work_id
   WHERE wp.publisher_id = publisher.id AND w.deleted_at IS NULL
 )`;
 
+/** Converts a database row into a summary. */
 function toSummary(row: SummaryRow): AdminPublisherSummary {
   return {
     id: row.id,
@@ -71,7 +79,9 @@ function toSummary(row: SummaryRow): AdminPublisherSummary {
   };
 }
 
+/** Creates the publisher administration repository. */
 export function createAdminPublisherRepository(db: Db): AdminPublisherRepository {
+  /** Publishers matching the search text and archive scope. */
   function filtered({ q, scope }: Pick<AdminPublisherListCriteria, 'q' | 'scope'>) {
     let query = db.selectFrom('publisher');
     const archive = archiveCondition('publisher.deleted_at', scope);
@@ -80,6 +90,7 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
     return query;
   }
 
+  /** Adds the summary columns to a filtered query. */
   function selectSummaries(query: ReturnType<typeof filtered>) {
     return query
       .select(['publisher.id', 'publisher.name', 'publisher.kind', 'publisher.url'])

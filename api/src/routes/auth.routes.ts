@@ -1,3 +1,4 @@
+/** Routes of the Google sign-in flow, account creation and sign-out. */
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { createAuthController } from '../controllers/auth.controller.js';
@@ -6,6 +7,7 @@ import { validate } from '../middleware/validate.js';
 import { callbackQuery, handleBody, loginQuery } from '../schemas/auth.js';
 import type { AuthService } from '../services/auth.service.js';
 
+/** Builds the authentication router; the limiter is created here so static analysis recognises it. */
 export function createAuthRouter(
   service: AuthService,
   options: { webOrigin: string; secureCookies: boolean; rateLimit: RateLimitSettings },

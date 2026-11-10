@@ -1,3 +1,4 @@
+/** Queries behind a member's reading list: entries, reading journal and the filtered, counted list. */
 import {
   sql,
   type Expression,
@@ -15,7 +16,7 @@ import { LIBRARY_STATUSES, type LibraryStatus } from '../domain/user-enums.js';
 import type { WorkSummary } from './work.repository.js';
 import { displayTitle, searchCondition, visibleWork, workSummaryColumns } from './work-sql.js';
 
-/** Le suivi d'une œuvre par son lecteur. */
+/** How a reader follows one work. */
 export interface LibraryEntry {
   status: LibraryStatus;
   chaptersRead: number;
@@ -25,71 +26,76 @@ export interface LibraryEntry {
   finishedOn: string | null;
 }
 
-/** `updated` : dernière progression d'abord ; `title` : A→Z ; `rating` : mieux notées d'abord. */
+/** `updated`: latest progress first; `title`: A→Z; `rating`: best rated first. */
 export type LibrarySort = 'updated' | 'title' | 'rating';
 
+/** Search, filter, sort and page of a reading-list query. */
 export interface LibraryListCriteria {
   userId: number;
-  /** Texte déjà nettoyé (espaces) et d'au moins 2 caractères. */
+  /** Text already trimmed and at least 2 characters long. */
   q?: string;
-  /** Plusieurs statuts : OU. */
+  /** Several statuses: OR. */
   status?: LibraryStatus[];
-  /** Langue de l'application : sert à choisir le titre affiché (repli sur le titre original). */
+  /** Application language: selects the displayed title (falls back to the original title). */
   lang?: string;
   sort: LibrarySort;
   limit: number;
   offset: number;
 }
 
-/** Une œuvre de la liste, avec ses totaux publiés (`null` : inconnu ou en cours de publication). */
+/** A work of the list, with its published totals (`null`: unknown or still being published). */
 export interface ListedWork extends WorkSummary {
   chapters: number | null;
   volumes: number | null;
 }
 
+/** A work of the list together with the reader's entry. */
 export interface ListedEntry {
   work: ListedWork;
   entry: LibraryEntry;
 }
 
-/** Chapitres et tomes lus sur toute la liste : deux totaux, jamais additionnés. */
+/** Chapters and volumes read across the whole list: two totals, never added together. */
 export interface ReadingTotals {
   chaptersRead: number;
   volumesRead: number;
 }
 
+/** Number of works per reading status. */
 export type StatusCounts = Record<LibraryStatus, number>;
 
+/** A page of the list with the counts the screen needs. */
 export interface LibraryList {
-  /** La page demandée, filtrée par statut. */
+  /** The requested page, filtered by status. */
   items: ListedEntry[];
-  /** Œuvres par statut, selon la recherche `q` mais sans le filtre de statut (onglets). */
+  /** Works per status, following the search `q` but not the status filter (tabs). */
   statusCounts: StatusCounts;
-  /** Sur toute la liste, sans recherche ni filtre. */
+  /** Over the whole list, without search or filter. */
   totals: ReadingTotals;
 }
 
-/** Un changement à journaliser ; les compteurs portent la variation (négative si on retire). */
+/** A change to journal; counters carry the variation (negative when decreased). */
 export type NewReadingEvent =
   | { kind: 'chapters'; chaptersAdded: number }
   | { kind: 'volumes'; volumesAdded: number }
   | { kind: 'status'; status: LibraryStatus }
   | { kind: 'rating'; rating: number };
 
-/** Résultat d'une décision : l'entrée à enregistrer et ce qu'il faut ajouter au journal. */
+/** Outcome of a decision: the entry to store and what to append to the journal. */
 export interface EntryChange {
   entry: LibraryEntry;
   events: NewReadingEvent[];
 }
 
+/** Reading-list queries. */
 export interface LibraryRepository {
-  /** Vrai si l'œuvre existe et n'est pas archivée. */
+  /** True if the work exists and is not archived. */
   isWorkAvailable(workId: number): Promise<boolean>;
   find(userId: number, workId: number): Promise<LibraryEntry | null>;
   /**
-   * Enregistre l'entrée et son journal dans une même transaction. Les écritures d'un même lecteur
-   * sont sérialisées : `decide` reçoit l'entrée actuelle à jour, ce qui garde le journal exact
-   * même si deux requêtes se croisent, y compris sur une œuvre pas encore dans la liste.
+   * Stores the entry and its journal in one transaction. Writes of one reader are serialised:
+   * `decide` receives the up-to-date current entry, which keeps the journal exact even when two
+   * requests cross, including on a work not yet in the list.
    */
   save(
     userId: number,
@@ -97,11 +103,11 @@ export interface LibraryRepository {
     decide: (current: LibraryEntry | null) => EntryChange,
   ): Promise<LibraryEntry>;
   remove(userId: number, workId: number): Promise<void>;
-  /** Les œuvres archivées n'y figurent pas ; leur entrée est conservée. */
+  /** Archived works are left out; their entry is kept. */
   list(criteria: LibraryListCriteria): Promise<LibraryList>;
 }
 
-/** Entrées de l'utilisateur sur des œuvres non archivées, avec la recherche `q` si elle est donnée. */
+/** The user's entries on unarchived works, narrowed by the search `q` when given. */
 function ownEntries(userId: number, q: string | undefined) {
   return (eb: ExpressionBuilder<Database, 'library_entry' | 'work'>): Expression<SqlBool> => {
     const conditions: Expression<SqlBool>[] = [
@@ -113,10 +119,12 @@ function ownEntries(userId: number, q: string | undefined) {
   };
 }
 
+/** Status counts all set to zero. */
 export function zeroStatusCounts(): StatusCounts {
   return Object.fromEntries(LIBRARY_STATUSES.map((status) => [status, 0])) as StatusCounts;
 }
 
+/** Columns of an entry read on their own. */
 const ENTRY_COLUMNS = [
   'status',
   'chapters_read',
@@ -126,6 +134,7 @@ const ENTRY_COLUMNS = [
   'finished_on',
 ] as const;
 
+/** Converts a database row into an entry. */
 function toEntry(
   row: Pick<Selectable<LibraryEntryRow>, (typeof ENTRY_COLUMNS)[number]>,
 ): LibraryEntry {
@@ -139,7 +148,7 @@ function toEntry(
   };
 }
 
-/** Colonnes de l'entrée lues avec un résumé d'œuvre ; `entryStatus` évite le conflit avec `work.status`. */
+/** Entry columns read together with a work summary; `entryStatus` avoids a clash with `work.status`. */
 export const LISTED_ENTRY_COLUMNS = [
   'library_entry.status as entryStatus',
   'library_entry.chapters_read as chaptersRead',
@@ -149,9 +158,10 @@ export const LISTED_ENTRY_COLUMNS = [
   'library_entry.finished_on as finishedOn',
 ] as const;
 
+/** Shape of the entry columns once read with `LISTED_ENTRY_COLUMNS`. */
 type ListedEntryColumns = Omit<LibraryEntry, 'status'> & { entryStatus: LibraryStatus };
 
-/** Sépare une ligne lue avec `LISTED_ENTRY_COLUMNS` en œuvre et entrée. */
+/** Splits a row read with `LISTED_ENTRY_COLUMNS` into work and entry. */
 export function toListedEntry<Row extends ListedEntryColumns>(
   row: Row,
 ): { work: Omit<Row, keyof ListedEntryColumns>; entry: LibraryEntry } {
@@ -162,6 +172,7 @@ export function toListedEntry<Row extends ListedEntryColumns>(
   };
 }
 
+/** Converts a journal event into its database row. */
 function toEventRow(
   userId: number,
   workId: number,
@@ -187,6 +198,7 @@ function toEventRow(
   }
 }
 
+/** Creates the reading-list repository. */
 export function createLibraryRepository(db: Db): LibraryRepository {
   return {
     async isWorkAvailable(workId) {
@@ -211,7 +223,7 @@ export function createLibraryRepository(db: Db): LibraryRepository {
 
     async save(userId, workId, decide) {
       return db.transaction().execute(async (trx) => {
-        // `FOR UPDATE` ne verrouille rien tant que l'entrée n'existe pas : on sérialise le lecteur.
+        // `FOR UPDATE` locks nothing while the entry does not exist: serialise the reader instead.
         await sql`SELECT pg_advisory_xact_lock(${userId})`.execute(trx);
         const currentRow = await trx
           .selectFrom('library_entry')

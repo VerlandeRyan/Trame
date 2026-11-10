@@ -1,3 +1,4 @@
+/** A reader's tracking of one work: loading, saving and removing the entry. */
 import type { ApiError } from '~/utils/api-error'
 import {
   DEFAULT_LIBRARY_STATUS,
@@ -7,11 +8,11 @@ import {
 } from '~/utils/library'
 
 /**
- * Mon suivi d'une œuvre : lecture, ajout ou mise à jour (`PUT`) et retrait.
- * La lecture peut se faire au rendu serveur (cookie du visiteur transmis) : l'entrée et l'état
- * « chargé » passent par `useState`, la page arrive donc dans le bon état, sans clignotement.
- * Un changement s'affiche aussitôt ; les requêtes partent l'une après l'autre (des « +1 » enchaînés
- * ne se croisent jamais) et seule la dernière réponse, celle du serveur, remplace l'entrée.
+ * The reader's tracking of one work: read, add or update, and remove.
+ * Reading can happen during server rendering (the visitor's cookie is forwarded): the entry and
+ * the "loaded" flag go through `useState`, so the page arrives in the right state without flicker.
+ * A change shows at once; requests go out one after another (chained "+1" never cross) and only
+ * the last response, the server's, replaces the entry.
  */
 export function useLibraryEntry(workId: number) {
   const api = useApi()
@@ -19,13 +20,15 @@ export function useLibraryEntry(workId: number) {
   const isLoaded = useState(`library-loaded-${workId}`, () => false)
   const path = `/works/${workId}/entry`
 
+  /** Reads the entry from the API. */
   async function fetchEntry() {
     entry.value = (await api.request<{ entry: LibraryEntry | null }>(path)).entry
   }
 
-  // Après un échec, l'écran a pu s'écarter du serveur : on relit l'entrée.
+  // After a failure the screen may have drifted from the server: read the entry again.
   const { run, isBusy, errorKey } = useOptimisticWrite({ resync: fetchEntry })
 
+  /** Loads the entry and flags the state as loaded, even without an entry. */
   async function load() {
     let hasFailed = false
     try {
@@ -34,11 +37,11 @@ export function useLibraryEntry(workId: number) {
       hasFailed = true
       errorKey.value = libraryErrorKey((cause as ApiError).code)
     }
-    // Un échec au rendu serveur laisse « non chargé » : le navigateur réessaiera.
+    // A failure during server rendering leaves it "not loaded": the browser will retry.
     if (!(import.meta.server && hasFailed)) isLoaded.value = true
   }
 
-  /** Ajoute l'œuvre (statut « À lire ») ou applique `changes` à l'entrée existante. */
+  /** Adds the work (status plan to read) or applies `changes` to the existing entry. */
   function save(changes: LibraryEntryChanges) {
     return run({
       apply: () => {
@@ -54,6 +57,7 @@ export function useLibraryEntry(workId: number) {
     })
   }
 
+  /** Removes the work from the reading list. */
   function remove() {
     return run({
       send: () => api.request(path, { method: 'DELETE' }),

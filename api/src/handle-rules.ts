@@ -1,12 +1,13 @@
+/** Handle format and moderation rules: reserved words and offensive terms are refused. */
 import { z } from 'zod';
 
-/** Même format que la contrainte SQL de `app_user` ; la casse saisie est conservée. */
+/** Same format as the database constraint; the typed case is kept. */
 export const handleSchema = z
   .string()
   .trim()
   .regex(/^[A-Za-z0-9_-]{3,30}$/);
 
-/** Pages, actions, rôles et noms du service (la contrainte SQL n'en garde que le noyau). */
+/** Page names, actions, roles and service names (the database constraint only keeps the core). */
 const RESERVED = new Set([
   'admin',
   'administrator',
@@ -63,7 +64,7 @@ const RESERVED = new Set([
   'terms',
 ]);
 
-/** Mots offensants (français et anglais) refusés où qu'ils soient : aucun mot courant ne les contient. */
+/** Offensive words (French and English) refused anywhere in a handle: no common word contains them. */
 const OFFENSIVE_ANYWHERE = [
   'fuck',
   'shit',
@@ -92,7 +93,7 @@ const OFFENSIVE_ANYWHERE = [
   'violeur',
 ];
 
-/** Refusés seulement comme segment entier (`nazi_fan`) : ailleurs ils toucheraient Monique, Dickens, Nazir… */
+/** Refused only as a whole segment (`nazi_fan`): elsewhere they would hit ordinary names such as Monique or Dickens. */
 const OFFENSIVE_WHOLE = [
   'cunt',
   'dick',
@@ -114,6 +115,7 @@ const OFFENSIVE_WHOLE = [
   'viol',
 ];
 
+/** Digits read as the letters they imitate. */
 const LEET: Record<string, string> = {
   '0': 'o',
   '1': 'i',
@@ -124,12 +126,12 @@ const LEET: Record<string, string> = {
   '8': 'b',
 };
 
-/** Minuscules, chiffres lus comme les lettres qu'ils imitent (`sh1t` → `shit`). */
+/** Lowercases and reads look-alike digits as letters (`sh1t` → `shit`). */
 function readLookAlikes(text: string): string {
   return [...text.toLowerCase()].map((char) => LEET[char] ?? char).join('');
 }
 
-/** `true` si le handle n'est ni réservé ni offensant (son format est déjà validé par `handleSchema`). */
+/** Whether the handle is neither reserved nor offensive (its format is already checked by `handleSchema`). */
 export function isHandleAllowed(handle: string): boolean {
   if (RESERVED.has(handle.toLowerCase())) return false;
   const segments = handle.split(/[_-]/).map(readLookAlikes);

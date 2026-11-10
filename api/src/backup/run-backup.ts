@@ -1,3 +1,4 @@
+/** Entry point of the database backup script: dumps the local working database, then prunes old archives. */
 import { spawn } from 'node:child_process';
 import { createWriteStream } from 'node:fs';
 import { mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
@@ -10,15 +11,15 @@ import {
   selectArchivesToDelete,
 } from './retention.js';
 
-// Point d'entrée de `npm run db:backup` : sauvegarde de la base de travail du conteneur local.
 const repositoryRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const backupDir = process.env.BACKUP_DIR ?? '';
 const service = process.env.BACKUP_SERVICE ?? 'db';
 const database = process.env.POSTGRES_DB ?? '';
 const user = process.env.POSTGRES_USER ?? '';
 
+/** Streams a `pg_dump` of the database container into a file. */
 async function dumpTo(filePath: string): Promise<void> {
-  // Outil de développement local : `docker` vient du PATH du poste de Ryan, comme en ligne de commande.
+  // Local development tool: `docker` is resolved from the PATH, as on the command line.
   const dump = spawn(
     // eslint-disable-next-line sonarjs/no-os-command-from-path
     'docker',
@@ -34,12 +35,14 @@ async function dumpTo(filePath: string): Promise<void> {
   await Promise.all([pipeline(dump.stdout, createWriteStream(filePath)), exited]);
 }
 
+/** Deletes the archives outside the retention rules and returns their names. */
 async function removeOldArchives(): Promise<string[]> {
   const toDelete = selectArchivesToDelete(await readdir(backupDir));
   await Promise.all(toDelete.map((name) => rm(path.join(backupDir, name))));
   return toDelete;
 }
 
+/** Writes today's archive (via a partial file, so a failed dump leaves nothing) and prunes the old ones. */
 async function main(): Promise<void> {
   assertOutsideRepository(backupDir, repositoryRoot);
   if (!database || !user) {

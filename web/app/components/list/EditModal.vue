@@ -9,7 +9,7 @@ import type { ListedEntry } from '~/utils/reading-list'
 import { translatedCode } from '~/utils/search'
 import { coverUrl } from '~/utils/work'
 
-// « Modifier ma lecture » : statut, compteurs, note et dates d'une œuvre, enregistrés ensemble.
+/** "Edit my reading" window: status, counters, rating and dates of a work, saved together. */
 const props = defineProps<{ item: ListedEntry | null }>()
 const emit = defineEmits<{ save: [changes: LibraryEntryChanges]; remove: [] }>()
 const open = defineModel<boolean>({ default: false })
@@ -17,6 +17,7 @@ const { t, te } = useI18n()
 
 const NO_RATING = 0
 
+/** The form content, edited freely until saved. */
 interface Draft {
   status: LibraryStatus
   chaptersRead: number
@@ -36,7 +37,7 @@ const draft = reactive<Draft>({
 })
 const confirmingRemoval = ref(false)
 
-/** Le brouillon de saisie qui reproduit l'entrée telle qu'elle est enregistrée. */
+/** The form draft that reproduces the entry as saved. */
 function createDraftFromEntry(entry: LibraryEntry): Draft {
   return {
     status: entry.status,
@@ -48,11 +49,11 @@ function createDraftFromEntry(entry: LibraryEntry): Draft {
   }
 }
 
-// Le brouillon repart de l'entrée à chaque ouverture.
 watch(open, (isOpen) => {
   if (isOpen && props.item) Object.assign(draft, createDraftFromEntry(props.item.entry))
 })
 
+/** Rating choices: none, then 1 to 10 with their names. */
 const ratingOptions = computed(() =>
   [NO_RATING, ...Array.from({ length: RATING_MAX }, (_, index) => index + 1)].map((rating) => ({
     value: String(rating),
@@ -62,6 +63,7 @@ const ratingOptions = computed(() =>
         : t('list.ratingLabel', { rating, name: t(`list.ratingNames.${rating}`) }),
   })),
 )
+/** The chosen rating as the select's text value. */
 const ratingChoice = computed({
   get: () => String(draft.rating),
   set: (value: string) => {
@@ -69,8 +71,10 @@ const ratingChoice = computed({
   },
 })
 
+/** "of 12", or "of ?" when the published total is unknown. */
 const publishedTotalLabel = (total: number | null) =>
   total === null ? t('library.ofUnknown') : t('library.of', { total })
+/** "Type · Formats · Status" line under the title. */
 const kindLine = computed(() =>
   props.item
     ? [
@@ -81,7 +85,7 @@ const kindLine = computed(() =>
     : '',
 )
 
-/** Ce que le brouillon change par rapport à l'entrée : seuls les champs modifiés (une date vide l'efface). */
+/** What the draft changes compared with the entry: only the modified fields (an empty date clears it). */
 function changesMadeInDraft(entry: LibraryEntry): LibraryEntryChanges {
   const initial = createDraftFromEntry(entry)
   const changes: LibraryEntryChanges = {}
@@ -95,14 +99,16 @@ function changesMadeInDraft(entry: LibraryEntry): LibraryEntryChanges {
   return changes
 }
 
+/** Reports the changed fields, if any, and closes the window. */
 function saveChangesAndClose() {
   if (!props.item) return
   const changes = changesMadeInDraft(props.item.entry)
-  // Avant de fermer : la fermeture fait oublier l'œuvre à la page.
+  // Before closing: closing makes the page forget the work.
   if (Object.keys(changes).length > 0) emit('save', changes)
   open.value = false
 }
 
+/** Reports the removal and closes the window. */
 function removeFromListAndClose() {
   emit('remove')
   open.value = false
@@ -156,7 +162,7 @@ function removeFromListAndClose() {
           {{ t('list.rating') }}
         </span>
         <div class="edit__control">
-          <!-- Menu : on choisit la note d'un coup, « — » la retire. -->
+          <!-- Menu: the rating is chosen in one go, the dash removes it. -->
           <UiSelect
             v-model="ratingChoice"
             class="edit__rating"
@@ -204,7 +210,7 @@ function removeFromListAndClose() {
 </template>
 
 <style scoped lang="scss">
-// Plus large que les fenêtres d'invitation : un formulaire de six lignes.
+// Wider than the invitation windows: a six-row form.
 .edit-modal {
   --modal-width: 720px;
 }
@@ -233,7 +239,7 @@ function removeFromListAndClose() {
   font-size: 0.75rem;
 }
 
-// Libellé à gauche, contrôle à droite, séparés par un filet pointillé comme la maquette.
+// Label on the left, control on the right, separated by a dotted rule.
 .edit__field {
   display: grid;
   grid-template-columns: 6.5rem minmax(0, 1fr);
@@ -258,7 +264,7 @@ function removeFromListAndClose() {
   gap: var(--space-2);
 }
 
-// Menu de la note : cadre de la maquette, la valeur à gauche et la flèche à droite.
+// Rating menu: framed, value on the left and arrow on the right.
 .edit__rating {
   display: flex;
   flex: 0 1 13rem;
@@ -274,8 +280,8 @@ function removeFromListAndClose() {
     min-height: 36px;
   }
 
-  // Le menu s'ouvre vers le haut, sur les lignes déjà remplies, et défile : vers le bas il
-  // dépasserait la fenêtre et en ferait défiler le corps.
+  // The menu opens upwards, over the rows already filled, and scrolls: downwards it
+  // would overflow the window and make its body scroll.
   :deep(.select__menu) {
     inset: auto auto calc(100% + 4px) 0;
     width: max-content;
@@ -296,7 +302,7 @@ function removeFromListAndClose() {
   font-size: 0.6875rem;
 }
 
-// Le libellé de la ligne suffit à l'œil ; celui du compteur reste lu par les lecteurs d'écran.
+// The row label is enough visually; the counter's own label is still read by screen readers.
 .edit__field :deep(.counter__label) {
   position: absolute;
   width: 1px;
@@ -330,7 +336,7 @@ function removeFromListAndClose() {
   font-size: 0.8125rem;
 }
 
-// `flex: 1` : le pied de la fenêtre est un flex, sans cela les boutons restent collés à gauche.
+// `flex: 1`: the window footer is a flex container, without it the buttons stay stuck to the left.
 .edit__footer {
   display: flex;
   flex: 1;

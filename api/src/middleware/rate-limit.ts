@@ -1,24 +1,26 @@
+/** Rate limit settings and the options shared by every limiter. */
 import type { Options } from 'express-rate-limit';
 import { AppError } from '../errors.js';
 
+/** Time window and request quota of one limiter. */
 export interface RateLimitSettings {
   windowMs: number;
-  /** Nombre de requêtes autorisées par adresse IP pendant `windowMs`. */
+  /** Number of requests allowed per IP address during `windowMs`. */
   limit: number;
 }
 
-/** Connexion et création de compte : largement au-dessus d'un usage normal. */
+/** Sign-in and account creation: well above normal use. */
 export const AUTH_RATE_LIMIT: RateLimitSettings = { windowMs: 10 * 60 * 1000, limit: 30 };
 
-/** Écritures de la liste de lecture : de quoi enchaîner des +1 sans gêner un usage normal. */
+/** Reading-list writes: enough to chain +1 clicks without hindering normal use. */
 export const LIBRARY_RATE_LIMIT: RateLimitSettings = { windowMs: 60 * 1000, limit: 120 };
 
-/** Écritures du catalogue par les administrateurs. */
+/** Catalogue writes by administrators. */
 export const ADMIN_RATE_LIMIT: RateLimitSettings = { windowMs: 60 * 1000, limit: 120 };
 
 /**
- * Options communes à tous les limiteurs ; la route appelle elle-même `rateLimit(...)`.
- * Au-delà de la limite : `RATE_LIMITED` (429) avec l'en-tête `Retry-After`.
+ * Options shared by all limiters; the route itself calls `rateLimit(...)`.
+ * Beyond the limit: `RATE_LIMITED` (429) with a `Retry-After` header.
  */
 export function rateLimitOptions({ windowMs, limit }: RateLimitSettings): Partial<Options> {
   return {

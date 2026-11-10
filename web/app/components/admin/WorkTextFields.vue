@@ -8,7 +8,7 @@ import {
   type WorkDraft,
 } from '~/utils/admin'
 
-// Titres alternatifs (par langue) et synopsis (un par langue, avec sa source), chacun dans son panneau.
+/** Alternative titles (per language) and synopses (one per language, with its source), each in its own panel. */
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
 const uid = useId()
@@ -118,7 +118,7 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
   background: var(--color-surface);
   color: inherit;
   font: inherit;
-  // 16 px minimum : évite le zoom automatique de Safari iOS à la prise de focus.
+  // 16 px minimum: avoids Safari iOS's automatic zoom on focus.
   font-size: 1rem;
   resize: vertical;
 }

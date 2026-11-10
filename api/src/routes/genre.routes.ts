@@ -1,7 +1,9 @@
+/** Route listing the genres. */
 import { Router } from 'express';
 import { createGenreController } from '../controllers/genre.controller.js';
 import type { GenreService } from '../services/genre.service.js';
 
+/** Builds the genre router. */
 export function createGenreRouter(service: GenreService): Router {
   const controller = createGenreController(service);
   const router = Router();

@@ -1,7 +1,9 @@
-/** Nombre maximal de mots d'une recherche ; les suivants sont ignorés. */
+/** Splits a catalogue search into words. */
+
+/** Maximum number of words in a search; the following ones are ignored. */
 export const MAX_SEARCH_TERMS = 6;
 
-/** Mots séparés par des espaces, sans doublon (casse ignorée), `MAX_SEARCH_TERMS` au plus. */
+/** Whitespace-separated words, without duplicates (case ignored), at most `MAX_SEARCH_TERMS`. */
 export function searchTerms(q: string): string[] {
   const seen = new Set<string>();
   const terms: string[] = [];

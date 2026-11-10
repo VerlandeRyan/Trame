@@ -1,7 +1,9 @@
 <script setup lang="ts">
-// Compteur − / valeur saisissable / + (chapitres lus, tomes lus). Jamais additionnés entre eux.
-// `emptyLabel` remplace la valeur minimale à l'affichage (la note : « — » tant qu'on n'a pas noté).
-// `compact` : taille des maquettes de la fiche œuvre (boutons de 24 px, zone tactile de 44 px de haut).
+/**
+ * Counter with minus / editable value / plus (chapters read, volumes read), never added together.
+ * `emptyLabel` replaces the minimum value when displayed (the rating shows a dash until rated).
+ * `compact`: size used on the work page (24 px buttons, 44 px tall touch target).
+ */
 const props = withDefaults(
   defineProps<{
     label: string
@@ -15,10 +17,11 @@ const props = withDefaults(
 const value = defineModel<number>({ default: 0 })
 const { t } = useI18n()
 
+/** Text shown for a value, using `emptyLabel` at the minimum. */
 const displayFor = (amount: number) =>
   props.emptyLabel !== undefined && amount === props.min ? props.emptyLabel : String(amount)
 
-// Beaucoup de chiffres : la police rétrécit pour que toute la valeur reste visible.
+// Many digits: the font shrinks so the whole value stays visible.
 const LONG_VALUE_LENGTH = 4
 const LONGER_VALUE_LENGTH = 5
 const valueLengthClass = computed(() => {
@@ -30,20 +33,23 @@ const valueLengthClass = computed(() => {
 const canDecrease = computed(() => value.value > props.min)
 const canIncrease = computed(() => props.max === undefined || value.value < props.max)
 
+/** Clamps a value between the minimum and the maximum. */
 function keepInBounds(candidate: number): number {
   const upperBound = props.max ?? Number.POSITIVE_INFINITY
   return Math.min(upperBound, Math.max(props.min, candidate))
 }
 
+/** Removes one, down to the minimum. */
 function decrease() {
   value.value = keepInBounds(value.value - 1)
 }
 
+/** Adds one, up to the maximum. */
 function increase() {
   value.value = keepInBounds(value.value + 1)
 }
 
-// Validation de la saisie : on ne garde que les chiffres, bornés ; vide = minimum.
+/** Validates typed input: keeps digits only, within bounds; empty means the minimum. */
 function commitTypedValue(event: Event) {
   const field = event.target as HTMLInputElement
   const digits = field.value.replace(/\D/g, '')
@@ -120,7 +126,6 @@ function commitTypedValue(event: Event) {
   background: var(--color-surface);
   cursor: pointer;
 
-  // Même mouvement que les flèches du carrousel de l'accueil.
   @include lift-on-hover;
 
   &:disabled {
@@ -148,9 +153,9 @@ function commitTypedValue(event: Event) {
   font-size: 0.9375rem;
 }
 
-// Maquettes de la fiche œuvre : boutons de 24 px. La zone tactile fait 44 px de haut et s'arrête
-// au bord de la valeur (`--counter-gap`) : elle n'en recouvre jamais une autre. Le parent peut
-// resserrer l'ensemble avec `--counter-gap` et `--counter-value-width`.
+// Work page size: 24 px buttons. The touch area is 44 px tall and stops at the edge of the value
+// (`--counter-gap`): it never covers another one. The parent can tighten the whole with
+// `--counter-gap` and `--counter-value-width`.
 .counter--compact {
   --counter-size: 24px;
 
@@ -163,14 +168,14 @@ function commitTypedValue(event: Event) {
     gap: var(--counter-gap, 10px);
   }
 
-  // `padding: 0` : sans lui le bouton garde le retrait du navigateur et l'icône sort du centre.
+  // `padding: 0`: otherwise the button keeps the browser's inset and the icon moves off centre.
   .counter__button {
     position: relative;
     width: var(--counter-size);
     height: var(--counter-size);
     padding: 0;
 
-    // Zone de clic : le bouton à la souris, 44 px de haut au doigt.
+    // Click area: the button itself with a mouse, 44 px tall with a finger.
     &::after {
       content: '';
       position: absolute;

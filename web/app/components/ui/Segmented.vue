@@ -1,16 +1,19 @@
 <script setup lang="ts" generic="T extends string">
+/** One segment of the control. */
 export interface UiSegment<V extends string = string> {
   value: V
-  /** Nom entier : lu par les lecteurs d'écran et affiché au bureau. */
+  /** Full name: read by screen readers and displayed on desktop. */
   label: string
   icon: string
-  /** Remplace l'icône et le libellé au mobile ; sans lui, l'icône seule suffit. */
+  /** Replaces the icon and label on mobile; without it, the icon alone is enough. */
   shortLabel?: string
   testId?: string
 }
 
-// Choix unique en boutons accolés, sur de vrais boutons radio : le clavier (Tab, flèches) est celui
-// du navigateur. `prefix` (ex. « Compter ») ne s'affiche qu'au bureau.
+/**
+ * Single choice in joined buttons, built on real radio buttons: the keyboard (Tab, arrows) is the
+ * browser's. `prefix` (e.g. "Count") is only displayed on desktop.
+ */
 defineProps<{ label: string; options: UiSegment<T>[]; prefix?: string }>()
 const model = defineModel<T>({ required: true })
 const name = useId()
@@ -74,7 +77,7 @@ const name = useId()
   }
 }
 
-// Un `<fieldset>` nomme le groupe pour les lecteurs d'écran ; sa mise en forme native est remise à zéro.
+// A `<fieldset>` names the group for screen readers; its native styling is reset.
 .segmented__group {
   display: flex;
   min-width: 0;
@@ -111,7 +114,7 @@ const name = useId()
     min-height: var(--touch);
   }
 
-  // Survol souris : simple changement de couleur, sans animation.
+  // Mouse hover: a plain colour change, no animation.
   @include on-hover {
     &:not(:has(:checked)) {
       background: var(--color-cover-empty);
@@ -123,14 +126,14 @@ const name = useId()
     color: var(--color-surface);
   }
 
-  // Le contour reste à l'intérieur : le groupe rogne ce qui dépasse.
+  // The outline stays inside: the group clips what overflows.
   &:has(:focus-visible) {
     outline: 3px solid var(--color-blue);
     outline-offset: -3px;
   }
 }
 
-// Le bouton radio couvre toute l'option, invisible : le clic et le toucher l'atteignent.
+// The radio button covers the whole option, invisibly: clicks and taps reach it.
 .segmented__input {
   position: absolute;
   inset: 0;
@@ -139,8 +142,8 @@ const name = useId()
   cursor: pointer;
 }
 
-// Au mobile : le libellé court à la place de l'icône, ou l'icône seule s'il n'y en a pas.
-// Au bureau : l'icône et le libellé entier.
+// Mobile: the short label instead of the icon, or the icon alone if there is none.
+// Desktop: the icon and the full label.
 .segmented__icon--desktop-only {
   display: none;
 

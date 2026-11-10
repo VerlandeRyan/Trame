@@ -8,10 +8,13 @@ import {
 } from '~/utils/search'
 import { coverUrl, workSlug } from '~/utils/work'
 
-// Combobox ARIA : le focus reste dans le champ, la suggestion active est annoncée.
+/** Pause after the last keystroke before suggestions are requested. */
 const DEBOUNCE_MS = 200
 
-// `hero` : grand champ de l'accueil (maquettes 05 et 06), avec son propre texte d'aide.
+/**
+ * Search box with suggestions, an ARIA combobox: focus stays in the field, the active suggestion
+ * is announced. `hero`: large home field, with its own help text.
+ */
 const props = withDefaults(defineProps<{ variant?: 'header' | 'hero'; placeholder?: string }>(), {
   variant: 'header',
   placeholder: undefined,
@@ -32,40 +35,44 @@ const activeIndex = ref(-1)
 const root = ref<HTMLElement | null>(null)
 
 let timer: ReturnType<typeof setTimeout> | undefined
-// Seule la dernière requête compte.
+// Only the latest request counts.
 let latestRequest = 0
-// Évite de relancer une requête déjà faite ou en cours quand le menu se rouvre.
+// Avoids repeating a request already made or running when the menu reopens.
 let loadedFor = ''
 let pendingFor = ''
 
 const items = computed(() => suggestions.value?.items ?? [])
 const total = computed(() => suggestions.value?.total ?? 0)
-// +1 : la ligne « Voir les N résultats ».
+// +1: the "See the N results" row.
 const optionCount = computed(() => items.value.length + 1)
 const expanded = computed(() => open.value && items.value.length > 0)
 const activeId = computed(() =>
   expanded.value && activeIndex.value >= 0 ? `${uid}-option-${activeIndex.value}` : undefined,
 )
 
+/** Closes the suggestions and clears the active one. */
 function close() {
   open.value = false
   activeIndex.value = -1
 }
 
+/** Localised address of a work page. */
 function workPath(id: number, title: string) {
   return localePath(`/work/${workSlug(id, title)}`)
 }
 
+/** Address of the full results for the typed text. */
 function resultsPath() {
   return { path: localePath('/search'), query: { q: normalizeQuery(query.value) } }
 }
 
-/** « Série · Manga · Auteur A » */
+/** "Series · Manga · Author A" */
 function formatWorkSummary(work: WorkPage['items'][number]): string {
   const formats = work.formats.map((code) => translatedCode(t, te, 'genre', code))
   return [t(`workType.${work.type}`), ...formats, work.mainAuthor].filter(Boolean).join(' · ')
 }
 
+/** Requests the suggestions for the text and opens them, unless a newer request started. */
 async function load(text: string) {
   const request = ++latestRequest
   pendingFor = text
@@ -79,13 +86,14 @@ async function load(text: string) {
     activeIndex.value = -1
     open.value = true
   } catch {
-    // Les suggestions sont facultatives : Entrée mène toujours aux résultats.
+    // Suggestions are optional: Enter always leads to the results.
     if (request === latestRequest) close()
   } finally {
     if (request === latestRequest) pendingFor = ''
   }
 }
 
+/** Requests suggestions after a pause in typing; text that is too short clears them. */
 function onInput() {
   clearTimeout(timer)
   const text = normalizeQuery(query.value)
@@ -100,6 +108,7 @@ function onInput() {
   timer = setTimeout(() => void load(text), DEBOUNCE_MS)
 }
 
+/** Reopens the suggestions on focus, reloading them only if needed. */
 function reopen() {
   const text = normalizeQuery(query.value)
   if (text.length < MIN_QUERY_LENGTH || open.value || pendingFor === text) return
@@ -108,6 +117,7 @@ function reopen() {
   else void load(text)
 }
 
+/** Moves the active suggestion up or down, wrapping around. */
 function move(step: 1 | -1) {
   if (!expanded.value) {
     if (items.value.length > 0) open.value = true
@@ -117,13 +127,15 @@ function move(step: 1 | -1) {
   activeIndex.value = (from + step + optionCount.value) % optionCount.value
 }
 
-// Échap ne vide pas le champ (comportement de Chrome) ; menu fermé, l'événement remonte à l'en-tête.
+// Escape does not clear the field (Chrome's behaviour); with the menu closed, the event bubbles up to the header.
+/** Closes the open suggestions on Escape. */
 function onEscape(event: KeyboardEvent) {
   if (!expanded.value) return
   event.preventDefault()
   close()
 }
 
+/** Opens the active suggestion, or the full results for the typed text. */
 async function submit() {
   clearTimeout(timer)
   const chosen = expanded.value ? activeIndex.value : -1
@@ -136,13 +148,14 @@ async function submit() {
   if (normalizeQuery(query.value).length >= MIN_QUERY_LENGTH) await navigateTo(resultsPath())
 }
 
+/** Closes the suggestions on a press outside the box. */
 function onPointerDown(event: PointerEvent) {
   if (root.value && !root.value.contains(event.target as Node)) close()
 }
 
 const input = ref<HTMLInputElement | null>(null)
 
-// `submit` : le bouton « Rechercher » de l'accueil, placé hors du champ, lance la même recherche.
+// `submit`: the home "Search" button, placed outside the field, runs the same search.
 defineExpose({ focus: () => input.value?.focus(), submit })
 
 onMounted(() => document.addEventListener('pointerdown', onPointerDown))
@@ -256,7 +269,7 @@ watch(
   pointer-events: none;
 }
 
-// Libellé réservé aux lecteurs d'écran ; le texte d'aide est le placeholder.
+// Label reserved for screen readers; the help text is the placeholder.
 .search-box__label,
 .search-box__status {
   position: absolute;
@@ -267,7 +280,7 @@ watch(
   white-space: nowrap;
 }
 
-// 16 px au mobile : en dessous, Safari iOS zoome au focus.
+// 16 px on mobile: below that, Safari iOS zooms on focus.
 .search-box__input {
   width: 100%;
   min-height: var(--touch);
@@ -285,7 +298,7 @@ watch(
   }
 }
 
-// Accueil : champ plus haut, avec l'ombre d'encre des maquettes ; 16 px au mobile (zoom de Safari iOS).
+// Home: taller field with the ink shadow; 16 px on mobile (Safari iOS zoom).
 .search-box--hero {
   .search-box__icon {
     left: 14px;
@@ -321,8 +334,8 @@ watch(
 
   @include menu-open-animation;
 
-  // Champ étroit : la liste déborde à droite pour que les titres respirent ; champ large : elle
-  // garde sa largeur.
+  // Narrow field: the list overflows to the right so titles can breathe; wide field: it
+  // keeps its width.
   @media (min-width: 768px) {
     right: auto;
     width: max(100%, 22rem);
@@ -357,8 +370,8 @@ watch(
   font-size: 0.875rem;
   font-weight: 800;
 
-  // Survol ou sélection au clavier : même fond que les autres lignes, libellé souligné. Redéclaré
-  // ici car `--all` est écrit après `--active` et lui reprendrait son fond.
+  // Hover or keyboard selection: same background as the other rows, underlined label. Redeclared
+  // here because `--all` is written after `--active` and would take its background back.
   &.search-box__option--active {
     background: var(--color-cover-empty);
     text-decoration: underline;

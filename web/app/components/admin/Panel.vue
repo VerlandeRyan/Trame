@@ -1,6 +1,8 @@
 <script setup lang="ts">
-// Panneau d'une section de formulaire : titre de section en bleu, phrase d'aide facultative, puis le
-// contenu. Les champs gardent leur gabarit commun (libellé gras, 44 px).
+/**
+ * Panel of a form section: blue section title, optional hint sentence, then the content. Fields
+ * keep their common layout (bold label, 44 px).
+ */
 defineProps<{ title: string; hint?: string }>()
 const titleId = useId()
 </script>

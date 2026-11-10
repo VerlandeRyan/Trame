@@ -1,3 +1,4 @@
+/** Business rules for administering publishers and platforms. */
 import { AppError } from '../errors.js';
 import type {
   AdminPublisherDraft,
@@ -6,21 +7,25 @@ import type {
 } from '../repositories/admin-publisher.repository.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
 
+/** Data accepted to create or replace a publisher. */
 export type AdminPublisherInput = AdminPublisherDraft;
 
+/** Publisher administration operations. */
 export interface AdminPublisherService {
   list(input: AdminListInput): Promise<Page<AdminPublisherSummary>>;
   get(id: number): Promise<AdminPublisherSummary>;
   create(input: AdminPublisherInput): Promise<AdminPublisherSummary>;
   update(id: number, input: AdminPublisherInput): Promise<AdminPublisherSummary>;
-  /** Refusé tant que l'éditeur a des œuvres non archivées. */
+  /** Refused while the publisher has unarchived works. */
   archive(id: number): Promise<AdminPublisherSummary>;
   restore(id: number): Promise<AdminPublisherSummary>;
 }
 
+/** Creates the publisher administration service. */
 export function createAdminPublisherService(
   repository: AdminPublisherRepository,
 ): AdminPublisherService {
+  /** Reads a publisher, archived or not; throws when it does not exist. */
   async function get(id: number): Promise<AdminPublisherSummary> {
     const publisher = await repository.find(id);
     if (!publisher) throw new AppError('NOT_FOUND');

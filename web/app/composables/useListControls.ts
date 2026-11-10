@@ -1,3 +1,4 @@
+/** Controls of a reading-list page: status tabs, sort, view, counter unit and search. */
 import type { UiSegment } from '~/components/ui/Segmented.vue'
 import type { UiTab } from '~/components/ui/Tabs.vue'
 import { LIBRARY_STATUSES, type LibraryStatus } from '~/utils/library'
@@ -14,13 +15,15 @@ import {
 } from '~/utils/reading-list'
 import { counterKey } from '~/utils/units'
 
+/** Identifier of the tab that shows every status. */
 const ALL_TAB = 'all'
+/** Pause after the last keystroke before the search is applied. */
 const SEARCH_DELAY_MS = 250
 
 /**
- * Commandes d'une page de liste de lecture, toutes portées par l'adresse `path` : onglets de
- * statut, tri, vue et recherche (appliquée une fois la frappe finie). Fournit aussi les options des
- * boutons segmentés Liste / Grille et Chapitres / Tomes.
+ * Controls of a reading-list page, all carried by the address `path`: status tabs, sort, view and
+ * search (applied once typing stops). Also provides the options of the List / Grid and
+ * Chapters / Volumes segmented buttons.
  */
 export function useListControls(
   state: ComputedRef<ListState>,
@@ -31,7 +34,8 @@ export function useListControls(
   const { t } = useI18n()
   const localePath = useLocalePath()
 
-  // Les changements remplacent l'entrée d'historique : « Retour » quitte la liste.
+  // Changes replace the history entry: "Back" leaves the list.
+  /** Navigates to the list with the given state. */
   async function navigateToList(next: ListState): Promise<void> {
     await navigateTo({ path: localePath(path), query: toListRouteQuery(next) }, { replace: true })
   }
@@ -98,6 +102,7 @@ export function useListControls(
 
   const searchText = ref(parseListQuery(route.query).q)
   let searchTimer: ReturnType<typeof setTimeout> | undefined
+  /** Applies the typed search once the user pauses. */
   function onSearchInput() {
     clearTimeout(searchTimer)
     searchTimer = setTimeout(() => {

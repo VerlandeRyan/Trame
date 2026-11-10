@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Coquille de l'inscription : le logo seul, sans recherche ni compte.
+/** Sign-up shell: the logo alone, without search or account. */
 const { t } = useI18n()
 const localePath = useLocalePath()
 useHtmlLanguage()
@@ -48,7 +48,7 @@ useHtmlLanguage()
   background: var(--color-rose);
   border-bottom: var(--border);
 
-  // Même trame d'encre que l'en-tête du site.
+  // Same ink screentone as the site header.
   &::before {
     @include screentone(var(--color-ink), 6px, 270deg, 55%);
   }
@@ -75,7 +75,7 @@ useHtmlLanguage()
     padding: var(--space-8) 22px;
   }
 
-  // Comme le layout par défaut : `<main>` n'est pas un contrôle, son contour n'apporte rien.
+  // Like the default layout: `<main>` is not a control, its outline adds nothing.
   &:focus-visible {
     outline: none;
   }

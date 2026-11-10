@@ -1,29 +1,30 @@
+/** Playwright configuration: the real API and web servers are started against the test database. */
 import { fileURLToPath } from 'node:url'
 import { defineConfig, devices } from '@playwright/test'
 
-// `.env` racine pour le développement local (sans écraser une variable déjà définie, ex. en CI).
+// Root `.env` for local development (without overriding a variable already set, e.g. in CI).
 try {
   process.loadEnvFile(fileURLToPath(new URL('../.env', import.meta.url)))
 } catch {
-  // Pas de .env : les variables viennent de l'environnement.
+  // No .env: the variables come from the environment.
 }
 
-// La vraie API tourne sur la base de TEST, rechargée avec le jeu de démo (support/global-setup.ts).
+// The real API runs on the TEST database, reloaded with the demo data (support/global-setup.ts).
 const testDatabaseUrl = process.env.TEST_DATABASE_URL
 if (!testDatabaseUrl) {
   throw new Error('TEST_DATABASE_URL manquante (voir .env.example) : les E2E lisent la vraie API.')
 }
 
-// Deux instances du même build : la galerie de composants activée (par défaut) et désactivée
-// (comme en production), pour vérifier qu'elle y répond 404.
+// Two instances of the same build: the component gallery enabled (default) and disabled
+// (as in production), to check that it answers 404 there.
 const PORT = 3200
 const PORT_GALLERY_OFF = 3201
 const PORT_API = 3202
 const API_URL = `http://127.0.0.1:${PORT_API}`
 const WEB_URL = `http://127.0.0.1:${PORT}`
 
-// Le front et l'API doivent être construits avant (npm run build dans web/ et api/) : on teste la
-// sortie réelle de Nitro et le serveur compilé.
+// The front end and the API must be built beforehand: the tests run against Nitro's real output
+// and the compiled server.
 export default defineConfig({
   testDir: './tests',
   globalSetup: './support/global-setup.ts',
@@ -37,7 +38,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      // Point d'entrée E2E : Google est remplacé par une doublure, tout le reste est réel.
+      // E2E entry point: Google is replaced by a stand-in, everything else is real.
       command: 'node ../api/dist-e2e/server.e2e.js',
       url: `${API_URL}/health`,
       env: {
@@ -45,11 +46,11 @@ export default defineConfig({
         PORT: String(PORT_API),
         NODE_ENV: 'production',
         WEB_ORIGIN: WEB_URL,
-        // Un `.env` local peut porter les vrais identifiants Google : les E2E n'en veulent aucun.
+        // A local `.env` may carry real Google credentials: the E2E tests want none.
         GOOGLE_CLIENT_ID: '',
         GOOGLE_CLIENT_SECRET: '',
         GOOGLE_REDIRECT_URI: '',
-        // Valeurs propres aux E2E : API en HTTP local, donc cookies non `Secure`.
+        // E2E-only values: API over local HTTP, so cookies are not `Secure`.
         SESSION_SECRET: 'e2e-only-session-secret-not-for-real-use',
         SECURE_COOKIES: 'false',
       },

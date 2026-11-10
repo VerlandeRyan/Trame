@@ -2,16 +2,19 @@
 import { filterOptions, filterValueLabel, type FacetCount, type FilterKey } from '~/utils/search'
 import { foldAccents } from '~/utils/work'
 
-// L'état ouvert/fermé appartient au parent (`v-model:open`), pour « Tout replier ».
+/**
+ * Collapsible facet group of the search filters, with counts per value. The open/closed state
+ * belongs to the parent (`v-model:open`), for "Collapse all".
+ */
 const props = withDefaults(
   defineProps<{
     filterKey: FilterKey
     facets: FacetCount[]
     selected?: string[]
     open: boolean
-    /** Champ pour filtrer la liste des valeurs. */
+    /** Field to filter the list of values. */
     searchable?: boolean
-    /** Valeurs visibles avant « Voir les N autres ». */
+    /** Values visible before "See the N others". */
     limit?: number
   }>(),
   { selected: () => [], searchable: false, limit: 5 },
@@ -24,6 +27,7 @@ const panelId = `${uid}-panel`
 const needle = ref('')
 const expanded = ref(false)
 
+/** Every value with its label, narrowed by the typed text. */
 const options = computed(() => {
   const all = filterOptions(props.facets, props.selected).map((facet) => ({
     ...facet,
@@ -33,10 +37,10 @@ const options = computed(() => {
   return search === '' ? all : all.filter((option) => foldAccents(option.label).includes(search))
 })
 
+/** Values currently shown, before the "See the N others" fold. */
 const visible = computed(() => {
   if (expanded.value || needle.value.trim() !== '') return options.value
   const head = options.value.slice(0, props.limit)
-  // Les valeurs choisies restent visibles au-delà de la limite.
   const chosen = options.value.filter(
     (option) => props.selected.includes(option.code) && !head.includes(option),
   )
@@ -192,7 +196,7 @@ const selectedCount = computed(() => props.selected.length)
   }
 }
 
-// Case dessinée : le rendu natif varie selon les navigateurs.
+// Drawn checkbox: the native look varies between browsers.
 .filter-group__checkbox {
   flex: none;
   width: 18px;

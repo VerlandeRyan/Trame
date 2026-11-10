@@ -1,13 +1,15 @@
 <script setup lang="ts">
+/**
+ * Multiple-choice filter: a framed button that opens a panel of checkboxes. The frame sets it
+ * apart from the sort (`UiSelect`, flat text); no selection means "all".
+ */
 import { MENU_PREFERRED_HEIGHT_PX, MENU_ROW_HEIGHT_PX } from '~/utils/menu'
 
-// Filtre à choix multiples : bouton à cadre qui ouvre un panneau de cases à cocher. Le cadre le
-// distingue du tri (`UiSelect`, texte plat) ; aucune sélection veut dire « tous ».
 const props = defineProps<{
   options: { value: string; label: string }[]
-  /** Nom du filtre (« Type »). */
+  /** Name of the filter ("Type"). */
   label: string
-  /** Texte du bouton quand rien n'est coché (« Tous »). */
+  /** Button text when nothing is ticked ("All"). */
   emptyLabel: string
   clearLabel: string
   triggerTestId?: string
@@ -20,11 +22,12 @@ const root = ref<HTMLElement | null>(null)
 const trigger = ref<HTMLButtonElement | null>(null)
 const { isOpen, close } = useDismissableMenu(root, () => trigger.value?.focus())
 
-// Le panneau s'ouvre sous le bouton (il défile si la place manque), et au-dessus seulement quand le
-// dessous est trop court.
+// The panel opens under the button (it scrolls if room is short), and above only when the space
+// below is too short.
 const panelHeight = ref(MENU_PREFERRED_HEIGHT_PX)
 const isAbove = ref(false)
 const placeMenu = useMenuPlacement()
+/** Opens or closes the panel, placing it first. */
 function toggle() {
   if (!isOpen.value && root.value) {
     const placement = placeMenu(
@@ -37,16 +40,21 @@ function toggle() {
   isOpen.value = !isOpen.value
 }
 
+/** Label of the first selected option. */
 const firstLabel = computed(
   () => props.options.find((option) => option.value === model.value[0])?.label ?? '',
 )
+/** Button text: the empty label, or the first selected option. */
 const summary = computed(() => (model.value.length === 0 ? props.emptyLabel : firstLabel.value))
+/** Number of selected options beyond the first. */
 const extraCount = computed(() => Math.max(0, model.value.length - 1))
 
+/** Ticks the option, or unticks it if it was ticked. */
 const toggleOption = (value: string) =>
   (model.value = model.value.includes(value)
     ? model.value.filter((code) => code !== value)
     : [...model.value, value])
+/** Clears the selection and closes the panel. */
 const clear = () => {
   model.value = []
   close({ restoreFocus: true })
@@ -200,7 +208,7 @@ const clear = () => {
   }
 }
 
-// Case dessinée : le rendu natif varie selon les navigateurs.
+// Drawn checkbox: the native look varies between browsers.
 .multi-select__checkbox {
   flex: none;
   width: 18px;

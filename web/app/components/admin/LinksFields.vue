@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { isLinkRowFilled, optionsOf, type AdminLink } from '~/utils/admin'
 
-// Liens externes (https) d'une œuvre ou d'une personne, chacun dans une carte ; `kinds` limite les
-// types proposés (le premier est celui d'un nouveau lien).
+/**
+ * External (https) links of a work or a person, each in a card; `kinds` limits the offered
+ * kinds (the first one is that of a new link).
+ */
 const props = defineProps<{ kinds: readonly AdminLink['kind'][] }>()
 const links = defineModel<{ kind: string; url: string; label: string }[]>({ required: true })
 const { t } = useI18n()

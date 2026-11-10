@@ -1,36 +1,44 @@
-// Recherche : types des réponses de l'API et logique pure de la page de résultats.
+/** Search: API response types and pure logic of the results page. */
 import { WORK_STATUSES, WORK_TYPES, type FacetCount, type WorkSummary } from '../contract/api'
 
 export type { FacetCount, WorkFacets, WorkPage, WorkSummary } from '../contract/api'
 
+/** Shortest search text sent to the API. */
 export const MIN_QUERY_LENGTH = 2
+/** Results per page. */
 export const PAGE_SIZE = 20
+/** Number of suggestions offered while typing. */
 export const SUGGESTION_COUNT = 3
 
+/** Filter groups of the search. */
 export type FilterKey = 'type' | 'format' | 'genre' | 'status' | 'originalLanguage'
 
 export const FILTER_KEYS: FilterKey[] = ['type', 'format', 'genre', 'status', 'originalLanguage']
 
-/** Plusieurs valeurs par groupe (OU, sauf les genres en ET) ; les groupes se combinent (ET). */
+/** Several values per group (OR, except genres which are AND); groups combine together (AND). */
 export type SearchFilters = Partial<Record<FilterKey, string[]>>
 
+/** Maximum number of values in one filter group. */
 export const MAX_FILTER_VALUES = 10
 
+/** Sort orders of the results. */
 export type SearchSort = 'relevance' | 'title' | 'recent'
 export const SORTS: SearchSort[] = ['relevance', 'title', 'recent']
 
-/** Tri par défaut de l'API. */
+/** The API's default sort. */
 const API_DEFAULT_SORT: SearchSort = 'relevance'
 
+/** Whether the text is long enough to be sent as a search. */
 export function hasSearchText(q: string): boolean {
   return q.length >= MIN_QUERY_LENGTH
 }
 
-/** Avec du texte : pertinence ; sans : le catalogue, du plus récemment ajouté. */
+/** With text: relevance; without: the catalogue, most recently added first. */
 export function defaultSort(q: string): SearchSort {
   return hasSearchText(q) ? 'relevance' : 'recent'
 }
 
+/** The search page state kept in the address: text, page, sort and filters. */
 export interface SearchState {
   q: string
   page: number
@@ -43,7 +51,7 @@ const WORK_STATUS_CODES = new Set<string>(WORK_STATUSES)
 const GENRE_CODE = /^[a-z0-9]+(_[a-z0-9]+)*$/
 const LANGUAGE_CODE = /^[a-z]{2,3}$/
 
-/** Valeurs acceptées par l'API ; le reste est ignoré plutôt que de provoquer une 400. */
+/** Values the API accepts; anything else is ignored rather than causing a 400. */
 const FILTER_VALIDATORS: Record<FilterKey, (value: string) => boolean> = {
   type: (value) => WORK_TYPE_CODES.has(value),
   status: (value) => WORK_STATUS_CODES.has(value),
@@ -52,20 +60,22 @@ const FILTER_VALIDATORS: Record<FilterKey, (value: string) => boolean> = {
   originalLanguage: (value) => LANGUAGE_CODE.test(value),
 }
 
+/** First string of a query value (which may be repeated), empty when there is none. */
 function firstString(value: unknown): string {
   const single = Array.isArray(value) ? value[0] : value
   return typeof single === 'string' ? single : ''
 }
 
-/** Espaces réduits, 100 caractères au plus (limite de l'API). */
+/** Collapses whitespace and keeps at most 100 characters (the API limit). */
 export function normalizeQuery(raw: string): string {
   return raw.replace(/\s+/g, ' ').trim().slice(0, 100)
 }
 
+/** Reads the search state from the address; invalid values are ignored. */
 export function parseSearchQuery(query: Record<string, unknown>): SearchState {
   const filters: SearchFilters = {}
   for (const key of FILTER_KEYS) {
-    // `status=ongoing,hiatus` : valeurs invalides et doublons ignorés.
+    // `status=ongoing,hiatus`: invalid values and duplicates are ignored.
     const values = [
       ...new Set(
         firstString(query[key])
@@ -80,7 +90,7 @@ export function parseSearchQuery(query: Record<string, unknown>): SearchState {
   const page = Number.parseInt(firstString(query.page), 10)
   const q = normalizeQuery(firstString(query.q))
   const requested = SORTS.find((candidate) => candidate === firstString(query.sort))
-  // Pas de pertinence sans texte de recherche.
+  // No relevance sort without search text.
   const sort =
     requested === undefined || (requested === 'relevance' && !hasSearchText(q))
       ? defaultSort(q)
@@ -93,12 +103,12 @@ export function parseSearchQuery(query: Record<string, unknown>): SearchState {
   }
 }
 
-/** Texte envoyé à l'API : vide s'il fait moins de `MIN_QUERY_LENGTH` caractères. */
+/** Text sent to the API: empty if shorter than `MIN_QUERY_LENGTH` characters. */
 export function activeQuery(state: SearchState): string {
   return hasSearchText(state.q) ? state.q : ''
 }
 
-/** Query string de l'URL : seulement ce qui s'écarte des défauts. */
+/** Query string of the address: only what differs from the defaults. */
 export function toRouteQuery(state: SearchState): Record<string, string> {
   const query: Record<string, string> = {}
   if (state.q !== '') query.q = state.q
@@ -111,7 +121,7 @@ export function toRouteQuery(state: SearchState): Record<string, string> {
   return query
 }
 
-/** Paramètres de la liste (`page: true`) ou des compteurs (sans langue, page ni tri). */
+/** Parameters of the list (`page: true`) or of the facet counts (without language, page or sort). */
 export function toApiQuery(
   state: SearchState,
   options: { lang: string; page?: boolean; pageSize?: number },
@@ -124,17 +134,18 @@ export function toApiQuery(
     query.lang = options.lang
     query.page = state.page
     query.pageSize = options.pageSize ?? PAGE_SIZE
-    // Pertinence par défaut côté API : le tri n'est envoyé que s'il en diffère.
+    // Relevance is the API default: the sort is only sent when it differs.
     if (state.sort !== API_DEFAULT_SORT) query.sort = state.sort
   }
   return query
 }
 
+/** Every selected filter value as a (group, code) pair. */
 export function activeFilters(state: SearchState): { key: FilterKey; code: string }[] {
   return FILTER_KEYS.flatMap((key) => (state.filters[key] ?? []).map((code) => ({ key, code })))
 }
 
-/** Ajoute la valeur au groupe, ou la retire si elle y était (10 au plus, groupe vide supprimé). */
+/** Adds the value to the group, or removes it if it was there (10 at most, empty group dropped). */
 export function toggleFilter(state: SearchState, key: FilterKey, code: string): SearchState {
   const { [key]: current = [], ...others } = state.filters
   let values = current.includes(code)
@@ -145,15 +156,17 @@ export function toggleFilter(state: SearchState, key: FilterKey, code: string): 
   return { ...state, filters, page: 1 }
 }
 
+/** Clears every filter and goes back to the first page. */
 export function resetFilters(state: SearchState): SearchState {
   return { ...state, filters: {}, page: 1 }
 }
 
+/** Changes the sort and goes back to the first page. */
 export function changeSort(state: SearchState, sort: SearchSort): SearchState {
   return { ...state, sort, page: 1 }
 }
 
-/** Valeurs de l'API plus les valeurs choisies, même à zéro (pour pouvoir les retirer). */
+/** The API's values plus the selected ones, even at zero (so they can be removed). */
 export function filterOptions(facets: FacetCount[], selected: string[]): FacetCount[] {
   const missing = selected.filter((code) => !facets.some((facet) => facet.code === code))
   return missing.length === 0 ? facets : [...facets, ...missing.map((code) => ({ code, count: 0 }))]
@@ -162,7 +175,7 @@ export function filterOptions(facets: FacetCount[], selected: string[]): FacetCo
 type Translate = (key: string) => string
 type HasTranslation = (key: string) => boolean
 
-/** Traduction du code si elle existe, sinon le code tel quel. */
+/** The code's translation if it exists, otherwise the code itself. */
 export function translatedCode(
   translate: Translate,
   hasTranslation: HasTranslation,
@@ -173,6 +186,7 @@ export function translatedCode(
   return hasTranslation(key) ? translate(key) : code
 }
 
+/** Translation key prefix of the values of each filter group. */
 const FILTER_VALUE_PREFIX: Record<FilterKey, string> = {
   type: 'workType',
   status: 'workStatus',
@@ -181,7 +195,7 @@ const FILTER_VALUE_PREFIX: Record<FilterKey, string> = {
   originalLanguage: 'language',
 }
 
-/** Libellé d'une valeur de filtre ; une langue sans traduction s'affiche en majuscules. */
+/** Label of a filter value; a language without a translation is shown in capitals. */
 export function filterValueLabel(
   translate: Translate,
   hasTranslation: HasTranslation,
@@ -192,9 +206,10 @@ export function filterValueLabel(
   return key === 'originalLanguage' && label === code ? code.toUpperCase() : label
 }
 
+/** An entry of the pagination bar: a page number or a gap ("…"). */
 export type PageItem = number | 'gap'
 
-/** Première, dernière et voisinage de la page courante, avec des « … » entre. */
+/** First, last and neighbours of the current page, with gaps between. */
 export function pageItems(current: number, totalPages: number): PageItem[] {
   const wanted = new Set([1, totalPages, current - 1, current, current + 1])
   const pages = [...wanted].filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b)
@@ -207,16 +222,18 @@ export function pageItems(current: number, totalPages: number): PageItem[] {
   return items
 }
 
+/** Number of pages for a total, at least one. */
 export function totalPages(total: number, pageSize: number = PAGE_SIZE): number {
   return Math.max(1, Math.ceil(total / pageSize))
 }
 
-/** Langue d'origine (« FR : Aube Fictive ») quand elle diffère de celle de l'interface. */
+/** Original language line ("FR : Some Title") shown when it differs from the interface language. */
 export interface OriginalLine {
   language: string
   title: string
 }
 
+/** The original-title line of a work, or `null` when it is already in the interface language. */
 export function originalLine(
   work: Pick<WorkSummary, 'originalTitle' | 'originalLanguage'>,
   uiLanguage: string,

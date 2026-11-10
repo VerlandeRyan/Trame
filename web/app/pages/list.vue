@@ -7,7 +7,7 @@ import {
   type ListUnit,
 } from '~/utils/reading-list'
 
-// Ma liste de lecture (US-07) : l'URL porte l'onglet de statut, la recherche, le tri et la vue.
+/** My reading list: the address carries the status tab, the search, the sort and the view. */
 definePageMeta({ middleware: 'authenticated' })
 
 const route = useRoute()
@@ -36,15 +36,17 @@ useSeoMeta({ title: () => t('list.title'), robots: 'noindex, nofollow' })
 const { tabs, tab, sortOptions, sort, view, viewOptions, unitOptions, searchText, onSearchInput } =
   useListControls(state, list.statusCounts, '/list')
 
-// La grille compte les chapitres ou les tomes, au choix.
+// The grid counts chapters or volumes, as chosen.
 const unit = ref<ListUnit>('chapters')
+/** Singular name of the counted unit. */
 const unitName = computed(() =>
   t(unit.value === 'chapters' ? 'list.unitChapter' : 'list.unitVolume'),
 )
 
-// Un changement peut demander une confirmation avant d'être enregistré ; si rien n'est enregistré,
-// les compteurs relisent la vraie valeur.
+// A change may ask for confirmation before being saved; if nothing is saved, the counters read
+// the real value again.
 const counterKey = ref(0)
+/** Saves a change, or first asks the confirmation it needs. */
 function changeEntryOrAskFirst(item: ListedEntry, changes: LibraryEntryChanges) {
   const isAsking = requestPrompt(
     item.entry,
@@ -59,25 +61,29 @@ function changeEntryOrAskFirst(item: ListedEntry, changes: LibraryEntryChanges) 
 }
 
 const editedWorkId = ref<number | null>(null)
-// La fenêtre enregistre ce qu'on y a saisi ; seul un passage en « Terminé » peut proposer de
-// mettre les compteurs aux totaux parus (les autres questions concernent les boutons +1).
+/**
+ * Saves what was entered in the window; only a switch to "completed" can offer to set the
+ * counters to the published totals (the other questions concern the +1 buttons).
+ */
 function saveEditedEntry(changes: LibraryEntryChanges) {
   const item = list.items.value.find((each) => each.work.id === editedWorkId.value)
   if (!item) return
   if (changes.status === 'completed') changeEntryOrAskFirst(item, changes)
   else void list.changeEntry(item, changes)
 }
+/** Whether the edit window is open. */
 const isEditing = computed({
   get: () => editedWorkId.value !== null,
   set: (open: boolean) => {
     if (!open) editedWorkId.value = null
   },
 })
+/** The entry being edited. */
 const editedItem = computed(
   () => list.items.value.find((item) => item.work.id === editedWorkId.value) ?? null,
 )
 
-// Liste vide : aucune œuvre au total, aucun filtre actif.
+// Empty list: no work at all and no active filter.
 const isFilterActive = computed(() => state.value.status !== null || state.value.q !== '')
 const isEmptyList = computed(
   () =>
@@ -149,7 +155,7 @@ const sentinel = useLoadMoreOnScroll(list)
         {{ t(list.errorKey.value) }}
       </UiFormError>
 
-      <!-- Grille : le nombre d'œuvres à gauche, ce que la grille compte à droite, puis l'aide. -->
+      <!-- Grid: the number of works on the left, what the grid counts on the right, then the help. -->
       <div v-if="state.view === 'grid'" class="list__grid-head">
         <div class="list__grid-bar">
           <p class="list__count" data-testid="list-count">
@@ -162,7 +168,7 @@ const sentinel = useLoadMoreOnScroll(list)
             :prefix="t('list.unitPrefix')"
           />
         </div>
-        <!-- Le glissement n'existe qu'au doigt : à la souris l'aide parle des boutons. -->
+        <!-- Swiping only exists with a finger: with a mouse the help talks about the buttons. -->
         <p v-if="list.items.value.length" class="list__hint" data-testid="list-grid-hint">
           <span class="list__hint-touch">{{ t('list.gridHint', { unit: unitName }) }}</span>
           <span class="list__hint-mouse">{{ t('list.gridHintMouse', { unit: unitName }) }}</span>
@@ -249,7 +255,7 @@ const sentinel = useLoadMoreOnScroll(list)
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// `minmax(0, 1fr)` : sans cela les pastilles de statut (sur une ligne) élargissent toute la page.
+// `minmax(0, 1fr)`: without it the single-line status pills widen the whole page.
 .list {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -270,12 +276,12 @@ const sentinel = useLoadMoreOnScroll(list)
   font-size: 1.75rem;
 }
 
-// Sur un écran étroit le titre prend la ligne : la bascule passe dessous, mais reste à droite.
+// On a narrow screen the title takes the row: the toggle drops below but stays on the right.
 .list__view {
   margin-left: auto;
 }
 
-// Pastilles de la maquette : basses, sans filet dessous ; 44 px au doigt seulement.
+// Low pills, no rule underneath; 44 px tall with a finger only.
 .list__tabs.list__tabs {
   padding-bottom: 0;
   scrollbar-width: none;
@@ -286,7 +292,7 @@ const sentinel = useLoadMoreOnScroll(list)
     min-height: 32px;
     font-size: 0.8125rem;
 
-    // Survol souris : simple changement de couleur, sans animation.
+    // Mouse hover: a plain colour change, no animation.
     @include on-hover {
       &:not(.tabs__tab--active) {
         background: var(--color-cover-empty);
@@ -299,7 +305,7 @@ const sentinel = useLoadMoreOnScroll(list)
   }
 }
 
-// Une seule rangée au mobile : recherche et tri de même hauteur (le tri encadré est plus haut que 44 px).
+// A single row on mobile: search and sort at the same height (the framed sort is taller than 44 px).
 .list__tools {
   display: flex;
   align-items: stretch;
@@ -315,7 +321,7 @@ const sentinel = useLoadMoreOnScroll(list)
   flex: none;
 }
 
-// Champ de 16 px au minimum : Safari iOS ne zoome pas.
+// 16 px minimum field: Safari iOS does not zoom.
 .list__search {
   flex: 1 1 0;
   min-width: 0;
@@ -340,7 +346,7 @@ const sentinel = useLoadMoreOnScroll(list)
   font-weight: 700;
 }
 
-// Appareil à souris : l'aide des boutons ; au doigt : celle du glissement.
+// Mouse device: the buttons' help; with a finger: the swipe's.
 .list__hint-mouse {
   display: none;
 
@@ -362,7 +368,7 @@ const sentinel = useLoadMoreOnScroll(list)
   font-size: 0.75rem;
 }
 
-// Pendant le chargement, la liste précédente reste affichée, estompée.
+// While loading, the previous list stays displayed, faded.
 .list__results--loading {
   opacity: 0.5;
 }

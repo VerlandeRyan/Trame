@@ -1,50 +1,50 @@
-// Liste de lecture : types de la réponse `GET /works/:id/entry` et logique pure (testée sans Nuxt).
-
+/** Reading list: entry response types and pure logic (tested without Nuxt). */
 import type { LibraryEntry, LibraryStatus } from '../contract/api'
 
 export type { LibraryEntry, LibraryStatus } from '../contract/api'
 
-/** Valeurs d'exécution du statut (menus, onglets), générées avec le contrat. */
+/** Runtime values of the status (menus, tabs), generated with the contract. */
 export { LIBRARY_STATUSES } from '../contract/api'
 
-/** Statut d'une œuvre qu'on vient d'ajouter à sa liste. */
+/** Status of a work that has just been added to the list. */
 export const DEFAULT_LIBRARY_STATUS: LibraryStatus = 'plan_to_read'
 
-/** Corps de `PUT /works/:id/entry` : le statut est toujours envoyé, le reste seulement s'il change. */
+/** Body of an entry update: the status is always sent, the rest only when it changes. */
 export type LibraryEntryChanges = Partial<LibraryEntry>
 
-/** Note de 1 à 10 (la valeur 0 du compteur signifie « pas de note »). */
+/** Rating from 1 to 10 (a counter value of 0 means "no rating"). */
 export const RATING_MAX = 10
 
 /**
- * Question posée avant de changer le statut à cause d'une progression :
- * `start` (« À lire » → « En cours »), `resume` (« En pause » ou « Abandonné » → « En cours »),
- * `finishChapters` / `finishVolumes` (le total connu est atteint → « Terminé »),
- * `completeCounters` (on passe en « Terminé » avec des compteurs sous le total connu → les y mettre).
+ * Question asked before changing the status because of progress:
+ * `start` (plan to read → reading), `resume` (on hold or dropped → reading),
+ * `finishChapters` / `finishVolumes` (the known total is reached → completed),
+ * `completeCounters` (switching to completed with counters below the known total → set them to it).
  */
 export type ReadingPrompt =
   'start' | 'resume' | 'finishChapters' | 'finishVolumes' | 'completeCounters'
 
-/** Totaux parus connus (`null` : inconnu, jamais de proposition de fin). */
+/** Known published totals (`null`: unknown, never a proposal to finish). */
 export interface KnownTotals {
   chapters: number | null
   volumes: number | null
 }
 
+/** Prompt triggered by progress, according to the current status. */
 const READING_PROMPTS: Partial<Record<LibraryStatus, ReadingPrompt>> = {
   plan_to_read: 'start',
   on_hold: 'resume',
   dropped: 'resume',
 }
 
-/** Le compteur franchit le total connu (le total connu veut dire que la publication est finie). */
+/** The counter crosses the known total (a known total means the publication is finished). */
 function hasReachedTotal(before: number, after: number | undefined, total: number | null) {
   return total !== null && after !== undefined && before < total && after >= total
 }
 
 /**
- * Les compteurs à porter au total paru connu quand l'œuvre passe en « Terminé » : seulement ceux
- * qui sont encore en dessous (un compteur saisi dans les mêmes changements compte déjà).
+ * Counters to raise to the known published total when the work becomes completed: only those
+ * still below it (a counter entered in the same changes already counts).
  */
 export function countersToTotals(
   entry: LibraryEntry,
@@ -60,11 +60,11 @@ export function countersToTotals(
 }
 
 /**
- * Faut-il demander avant de changer le statut ? Passer en « Terminé » avec des compteurs sous le
- * total paru connu propose de les y mettre. Atteindre le total connu de chapitres ou de tomes
- * propose « Terminé » (sauf si l'œuvre l'est déjà) ; sinon un chapitre ou un tome de plus sur une
- * œuvre « À lire », « En pause » ou « Abandonné » propose « En cours ». `null` : rien à demander,
- * y compris quand le changement fixe déjà un autre statut.
+ * Whether to ask before changing the status. Switching to completed with counters below the known
+ * published total offers to set them to it. Reaching the known chapter or volume total offers
+ * completed (unless the work already is); otherwise one more chapter or volume on a plan-to-read,
+ * on-hold or dropped work offers reading. `null`: nothing to ask, including when the change
+ * already sets another status.
  */
 export function readingPrompt(
   entry: LibraryEntry,
@@ -90,7 +90,7 @@ export function readingPrompt(
   return hasAdvanced ? (READING_PROMPTS[entry.status] ?? null) : null
 }
 
-/** Les changements une fois la question confirmée : le statut proposé (et, pour `completeCounters`, les compteurs aux totaux). */
+/** The changes once the question is confirmed: the proposed status (and, for `completeCounters`, counters at the totals). */
 export function withPromptStatus(
   prompt: ReadingPrompt,
   changes: LibraryEntryChanges,
@@ -103,16 +103,17 @@ export function withPromptStatus(
   return { ...changes, status: isFinish ? 'completed' : 'reading' }
 }
 
-/** Sur ces questions, « refuser » enregistre quand même le changement demandé (compteur ou statut seul). */
+/** On these questions, declining still saves the requested change (counter or status alone). */
 export function keepsChangesOnDecline(prompt: ReadingPrompt): boolean {
   return prompt === 'finishChapters' || prompt === 'finishVolumes' || prompt === 'completeCounters'
 }
 
-/** Avertissement non bloquant : on a lu plus que ce que le catalogue connaît (total inconnu : jamais). */
+/** Non-blocking warning: more was read than the catalogue knows (unknown total: never). */
 export function exceedsKnownTotal(value: number, total: number | null): boolean {
   return total !== null && value > total
 }
 
+/** Translation key of the message shown for each handled API error code. */
 const LIBRARY_ERROR_KEYS = new Map([
   ['UNAUTHENTICATED', 'library.error.signedOut'],
   ['HANDLE_REQUIRED', 'library.error.signedOut'],
@@ -120,7 +121,7 @@ const LIBRARY_ERROR_KEYS = new Map([
   ['RATE_LIMITED', 'error.RATE_LIMITED'],
 ])
 
-/** Clé de traduction du message à afficher pour un code d'erreur de l'API. */
+/** Translation key of the message to display for an API error code. */
 export function libraryErrorKey(code: string): string {
   return LIBRARY_ERROR_KEYS.get(code) ?? 'library.error.generic'
 }

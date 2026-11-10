@@ -1,21 +1,23 @@
+/** Writes whose effect shows immediately, sent in order and reconciled with the server. */
 import type { ApiError } from '~/utils/api-error'
 import { libraryErrorKey } from '~/utils/library'
 
+/** One optimistic write: what to show, what to send and how to recover. */
 interface OptimisticStep<Result> {
-  /** Change l'affichage tout de suite, avant la réponse du serveur. */
+  /** Changes the display at once, before the server answers. */
   apply?: () => void
-  /** La requête d'écriture, envoyée après celles déjà en route. */
+  /** The write request, sent after those already on their way. */
   send: () => Promise<Result>
-  /** Reçoit la réponse du serveur, seulement si aucune demande plus récente n'est en route. */
+  /** Receives the server's answer, only if no more recent request is on its way. */
   reconcile?: (result: Result) => void
-  /** Remet l'affichage d'avant ; sans lui, c'est `resync` qui le recale sur le serveur. */
+  /** Restores the previous display; without it, `resync` realigns the screen with the server. */
   revert?: () => void
 }
 
 /**
- * Écriture à effet immédiat : le changement s'affiche aussitôt, les requêtes partent l'une après
- * l'autre et seule la dernière réponse remplace l'affichage. Un échec est annoncé par `errorKey`,
- * puis l'écran est remis d'aplomb (`revert` de l'étape, sinon `resync`).
+ * Write with immediate effect: the change shows at once, requests go out one after another and
+ * only the last response replaces the display. A failure is announced by `errorKey`, then the
+ * screen is put right (the step's `revert`, otherwise `resync`).
  */
 export function useOptimisticWrite(options: { resync?: () => Promise<void> } = {}) {
   const errorKey = ref<string | null>(null)
@@ -24,20 +26,22 @@ export function useOptimisticWrite(options: { resync?: () => Promise<void> } = {
     onStart: () => {
       errorKey.value = null
     },
-    // Les échecs sont traités dans `run`, où l'on connaît `revert`.
+    // Failures are handled in `run`, where `revert` is known.
     onError: () => undefined,
   })
 
+  /** Announces the failure, then restores the screen. */
   async function recoverFrom(cause: unknown, revert: (() => void) | undefined) {
     errorKey.value = libraryErrorKey((cause as ApiError).code)
     if (revert) return revert()
     try {
       await options.resync?.()
     } catch {
-      // Le message d'erreur est déjà affiché ; l'affichage reste tel qu'il est.
+      // The error message is already shown; the display stays as it is.
     }
   }
 
+  /** Applies the step now and queues its request. */
   function run<Result>(step: OptimisticStep<Result>): Promise<void> {
     step.apply?.()
     return enqueue(async () => {

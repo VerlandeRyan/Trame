@@ -1,24 +1,24 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
-// `.env` racine pour le développement local (sans écraser une variable déjà définie, ex. en CI).
+// Root `.env` for local development (without overriding a variable already set, e.g. in CI).
 try {
   process.loadEnvFile(fileURLToPath(new URL('../.env', import.meta.url)));
 } catch {
-  // Pas de .env : les variables viennent de l'environnement.
+  // No .env: the variables come from the environment.
 }
 
 export default defineConfig({
   test: {
-    // Tests colocalisés : `foo.ts` + `foo.test.ts` dans le même dossier de `src/`.
+    // Colocated tests: `foo.ts` + `foo.test.ts` in the same `src/` folder.
     include: ['src/**/*.test.ts'],
-    // Les tests partagent une même base : exécution en série.
+    // Tests share one database: run them serially.
     fileParallelism: false,
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
-      // Amorçage du processus (écoute, signaux) : aucune logique métier, exclu du calcul ; les
-      // tests et leur support (`src/testing/`) ne sont pas du code à couvrir.
+      // Process bootstrap (listening, signals): no business logic, excluded from the count; the
+      // tests and their support (`src/testing/`) are not code to cover.
       exclude: [
         'src/server.ts',
         'src/server.e2e.ts',

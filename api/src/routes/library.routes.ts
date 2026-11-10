@@ -1,3 +1,4 @@
+/** Routes of the signed-in user's reading list. */
 import { Router } from 'express';
 import { rateLimit } from 'express-rate-limit';
 import { createLibraryController } from '../controllers/library.controller.js';
@@ -8,7 +9,7 @@ import { idParams } from '../schemas/common.js';
 import { entryBody, listEntriesQuery } from '../schemas/library.js';
 import type { LibraryService } from '../services/library.service.js';
 
-/** Monté sous `/me` : la liste de lecture de l'utilisateur connecté. */
+/** Mounted under the current-user prefix: the signed-in user's whole list. */
 export function createMyLibraryRouter(service: LibraryService): Router {
   const controller = createLibraryController(service);
   const router = Router();
@@ -16,7 +17,7 @@ export function createMyLibraryRouter(service: LibraryService): Router {
   return router;
 }
 
-/** Monté sous `/works` : le suivi d'une œuvre par l'utilisateur connecté. */
+/** Mounted under the works prefix: how the signed-in user follows one work. */
 export function createLibraryRouter(
   service: LibraryService,
   options: { rateLimit: RateLimitSettings },

@@ -1,5 +1,5 @@
-// Charge (ou retire avec `--remove`) db/demo-bulk.sql dans la base de travail (DATABASE_URL), en
-// local uniquement. N'agit que sur les lignes « [Démo] » / « (démo) ».
+// Loads (or removes with `--remove`) db/demo-bulk.sql into the working database (DATABASE_URL),
+// locally only. Only touches the rows marked '[Démo]' / '(démo)'.
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
@@ -32,7 +32,7 @@ try {
   await client.query('COMMIT');
   console.log(remove ? 'Jeu en volume retiré.' : 'Jeu en volume chargé (48 œuvres « [Démo] »).');
   if (!remove) {
-    // Les identifiants changent à chaque chargement.
+    // Identifiers change on every load.
     const examples = await client.query(
       "SELECT id, title FROM work WHERE title IN ('[Démo] Brume Pâle 1', '[Démo] Havre Pâle 7') ORDER BY title",
     );

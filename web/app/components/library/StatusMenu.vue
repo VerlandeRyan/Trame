@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { LibraryEntry, LibraryStatus } from '~/utils/library'
 
-// Bouton unique au-dessus de « Lire / Acheter » (maquettes de la fiche œuvre) :
-// « Ajouter à ma liste + » tant que l'œuvre n'y est pas, puis le statut dans sa couleur, qui ouvre
-// le menu des statuts et « Retirer de ma liste ».
+/**
+ * Single button above "Read / Buy" on the work page: "Add to my list +" while the work is not in
+ * it, then the status in its colour, which opens the status menu and "Remove from my list".
+ */
 defineProps<{
   entry: LibraryEntry | null
   isSignedIn: boolean
-  /** Faux tant que l'entrée n'est pas lue : on ne propose pas d'ajouter une œuvre déjà suivie. */
+  /** False until the entry is read: a work already followed is not offered for adding. */
   isLoaded: boolean
   isBusy: boolean
   errorKey: string | null
@@ -18,6 +19,7 @@ const signInOpen = useSignInModal()
 
 const confirmingRemoval = ref(false)
 
+/** Closes the status menu and asks for confirmation before removing the work. */
 function askRemoval(closeMenu: () => void) {
   closeMenu()
   confirmingRemoval.value = true
@@ -36,7 +38,7 @@ function askRemoval(closeMenu: () => void) {
       {{ t('action.addToList') }} +
     </UiButton>
 
-    <!-- Entrée pas encore lue : ni « Ajouter » ni statut, pour ne jamais montrer un faux état. -->
+    <!-- Entry not read yet: neither 'Add' nor a status, so a false state is never shown. -->
     <div
       v-else-if="!entry && !isLoaded"
       class="status-menu__loading"
@@ -103,7 +105,7 @@ function askRemoval(closeMenu: () => void) {
   gap: var(--space-2);
 }
 
-// Même encombrement que le bouton, pour que la page ne bouge pas quand l'état arrive.
+// Same footprint as the button, so the page does not shift when the state arrives.
 .status-menu__loading {
   min-height: var(--touch);
   border: var(--border);
@@ -111,8 +113,8 @@ function askRemoval(closeMenu: () => void) {
   background: var(--color-field-soft);
 }
 
-// Libellés plus petits que le texte courant (12 px dans la maquette). Une seule ligne : « + » ne
-// doit jamais passer sous le libellé.
+// Labels smaller than body text (12 px). A single line: "+" must
+// never wrap under the label.
 .status-menu__add,
 .status-menu__trigger {
   font-size: 0.8125rem;

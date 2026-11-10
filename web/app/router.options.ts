@@ -1,8 +1,9 @@
+/** Router scroll behaviour: restore the saved position, jump to an anchor, or go to the top. */
 import type { RouterConfig } from '@nuxt/schema'
 import { shouldScrollToTop } from '~/utils/scroll'
 
 export default <RouterConfig>{
-  // Vue Router attend ce type composé : position mémorisée, ancre, haut de page ou rien.
+  // Vue Router expects this mixed return type: saved position, anchor, top of page or nothing.
   // eslint-disable-next-line sonarjs/function-return-type
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) return savedPosition

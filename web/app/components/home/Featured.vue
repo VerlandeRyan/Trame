@@ -3,40 +3,45 @@ import { circularIndex, swipeDirection, type FeaturedWork } from '~/utils/home'
 import { translatedCode } from '~/utils/search'
 import { coverUrl, workSlug } from '~/utils/work'
 
+/** Distance the slide travels during the transition. */
 const SLIDE_SHIFT_PX = 24
 
-// Une œuvre à la fois, sans défilement automatique.
+/** Home carousel of featured works: one at a time, without automatic scrolling. */
 const props = defineProps<{ works: FeaturedWork[] }>()
 const { t, te } = useI18n()
 const localePath = useLocalePath()
 const headingId = `${useId()}-heading`
 
 const position = ref(0)
-// 1 : vers la suite. La transition glisse dans ce sens.
+// 1: towards the next one. The transition slides in that direction.
 const direction = ref<1 | -1>(1)
-// Repli sur la première œuvre si la liste raccourcit entre deux chargements.
+// Falls back to the first work if the list shrinks between two loads.
 const work = computed(() => props.works[position.value] ?? props.works[0])
 const hasSeveral = computed(() => props.works.length > 1)
 const slideShift = computed(() => `${direction.value * SLIDE_SHIFT_PX}px`)
 
+/** Shows the next or previous work, wrapping around. */
 function showAdjacentWork(step: 1 | -1) {
   direction.value = step
   position.value = circularIndex(position.value, step, props.works.length)
 }
 
+/** Shows the work at the index, sliding in the matching direction. */
 function showWorkAt(index: number) {
   if (index === position.value) return
   direction.value = index > position.value ? 1 : -1
   position.value = index
 }
 
-// Doigt ou stylet seulement : la souris a les flèches et les pastilles.
+// Finger or stylus only: the mouse has the arrows and the dots.
 let swipeStart: { x: number; y: number } | null = null
 
+/** Remembers where a touch swipe starts. */
 function startSwipe(event: PointerEvent) {
   swipeStart = event.pointerType === 'mouse' ? null : { x: event.clientX, y: event.clientY }
 }
 
+/** Moves to the next or previous work if the swipe is long and horizontal enough. */
 function endSwipe(event: PointerEvent) {
   if (!swipeStart) return
   const step = swipeDirection(event.clientX - swipeStart.x, event.clientY - swipeStart.y)
@@ -44,6 +49,7 @@ function endSwipe(event: PointerEvent) {
   if (step !== 0 && hasSeveral.value) showAdjacentWork(step)
 }
 
+/** "Author · Type · Formats · Status" line of the displayed work. */
 const descriptionLine = computed(() => {
   const current = work.value
   if (!current) return ''
@@ -173,7 +179,7 @@ const descriptionLine = computed(() => {
   font-size: 1.0625rem;
 }
 
-// 14 px : les zones tactiles de 44 px des flèches se touchent sans se recouvrir.
+// 14 px: the arrows' 44 px touch areas touch without overlapping.
 .featured__controls {
   display: flex;
   gap: 14px;
@@ -193,7 +199,7 @@ const descriptionLine = computed(() => {
   color: var(--color-ink);
   cursor: pointer;
 
-  // Zone de clic : la flèche à la souris, 44 px au doigt.
+  // Click area: the arrow itself with a mouse, 44 px with a finger.
   &::after {
     position: absolute;
     inset: 0;
@@ -207,8 +213,8 @@ const descriptionLine = computed(() => {
   @include lift-on-hover;
 }
 
-// `pan-y` : le défilement vertical reste au navigateur. `overflow-x: clip` empêche la carte qui
-// glisse hors du cadre d'élargir la page ; la marge compense l'ombre de la carte.
+// `pan-y`: vertical scrolling stays with the browser. `overflow-x: clip` stops the sliding
+// card from widening the page; the margin makes room for the card's shadow.
 .featured__stage {
   margin-right: -4px;
   padding-right: 4px;
@@ -216,8 +222,8 @@ const descriptionLine = computed(() => {
   touch-action: pan-y;
 }
 
-// Bureau : couverture à gauche du texte. Mobile : le badge et le titre sont à côté de la couverture,
-// le reste (`display: contents` sur le corps) prend toute la largeur dessous.
+// Desktop: cover left of the text. Mobile: the badge and title sit beside the cover, the rest
+// (`display: contents` on the body) takes the full width below.
 .featured__slide {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -235,8 +241,8 @@ const descriptionLine = computed(() => {
 .featured__body {
   display: contents;
 
-  // Bureau, trois blocs sur la hauteur de la couverture : en-tête en haut, bouton en bas,
-  // synopsis (et lecteurs) répartis entre les deux.
+  // Desktop, three blocks over the cover's height: header on top, button at the bottom,
+  // synopsis (and readers) spread between them.
   @media (min-width: 768px) {
     display: flex;
     flex-direction: column;
@@ -251,13 +257,13 @@ const descriptionLine = computed(() => {
   }
 }
 
-// Au mobile, le haut du badge est aligné sur le haut de la couverture.
+// On mobile, the top of the badge lines up with the top of the cover.
 .featured__head {
   min-width: 0;
   align-self: start;
 }
 
-// Texte en crimson sur le blanc de la carte (contraste AA vérifié).
+// Crimson text on the card's white (AA contrast checked).
 .featured__readers {
   margin: var(--space-2) 0 0;
   color: var(--color-crimson);
@@ -265,7 +271,7 @@ const descriptionLine = computed(() => {
   font-weight: 700;
 }
 
-// En bloc (et non en ligne) : pas d'interligne au-dessus, le haut du badge touche le haut de la couverture.
+// Block (not inline): no line spacing above, so the top of the badge touches the top of the cover.
 .featured__badge {
   display: block;
   width: fit-content;
@@ -294,7 +300,7 @@ const descriptionLine = computed(() => {
   font-size: 0.75rem;
 }
 
-// `--slide-shift` porte le sens : positif vers la suite.
+// `--slide-shift` carries the direction: positive towards the next item.
 @media (prefers-reduced-motion: no-preference) {
   .featured-slide-enter-active,
   .featured-slide-leave-active {
@@ -314,7 +320,7 @@ const descriptionLine = computed(() => {
   }
 }
 
-// Hauteur réservée : la page ne saute pas d'une œuvre à l'autre.
+// Reserved height: the page does not jump from one work to the next.
 .featured__synopsis {
   display: -webkit-box;
   min-height: 4.5em;
@@ -327,19 +333,19 @@ const descriptionLine = computed(() => {
   -webkit-line-clamp: 3;
   line-clamp: 3;
 
-  // Bureau : le synopsis reste près de l'en-tête, le blanc libre est avant le bouton.
+  // Desktop: the synopsis stays near the header, the free space sits before the button.
   @media (min-width: 768px) {
     margin-top: var(--space-6);
   }
 }
 
-// Même apparence que `UiButton`, mais c'est un lien.
+// Looks like `UiButton`, but it is a link.
 .featured__open {
   display: inline-flex;
   align-items: center;
   min-height: var(--touch);
   margin-top: var(--space-3);
-  // Au mobile (grille), le lien ne s'étire pas sur toute la largeur de la carte.
+  // On mobile (grid), the link does not stretch over the card's full width.
   justify-self: start;
   padding: 0 var(--space-4);
   border: var(--border);
@@ -350,7 +356,7 @@ const descriptionLine = computed(() => {
   font-weight: 700;
   text-decoration: none;
 
-  // Bureau : bouton en bas du corps, sa largeur naturelle.
+  // Desktop: button at the bottom of the body, at its natural width.
   @media (min-width: 768px) {
     align-self: flex-start;
     margin-top: auto;
@@ -361,8 +367,8 @@ const descriptionLine = computed(() => {
   @include press-down;
 }
 
-// Boutons côte à côte, sans recouvrement : 32 × 28 px à la souris, 32 × 44 px au doigt. Le rond de
-// 14 px est dessiné au centre par `::before`.
+// Side-by-side buttons without overlap: 32 × 28 px with a mouse, 32 × 44 px with a finger. The
+// 14 px dot is drawn in the centre by `::before`.
 .featured__dots {
   display: flex;
   justify-content: center;
@@ -405,7 +411,7 @@ const descriptionLine = computed(() => {
     }
   }
 
-  // Jamais sur la pastille déjà sélectionnée.
+  // Never on the already selected dot.
   &:not(.featured__dot--active) {
     @include on-hover {
       &::before {

@@ -1,3 +1,4 @@
+/** Builds the OpenAPI document of the API from the Zod request and response schemas. */
 import { z } from 'zod';
 import {
   CREDIT_ROLES,
@@ -52,12 +53,12 @@ import {
   workPageSchema,
 } from './schemas.js';
 
-/** Préfixe sous lequel `routes/index.ts` monte les routes versionnées. */
+/** Prefix under which the versioned routes are mounted. */
 export const API_PREFIX = '/api/v1';
 
 type JsonSchema = Record<string, unknown>;
 
-/** Énumérations publiées comme composants nommés : le web en génère ses valeurs d'exécution. */
+/** Enumerations published as named components: the web app generates its runtime values from them. */
 const NAMED_ENUMS: Record<string, readonly string[]> = {
   WorkType: WORK_TYPES,
   WorkStatus: WORK_STATUSES,
@@ -73,14 +74,16 @@ const NAMED_ENUMS: Record<string, readonly string[]> = {
   GenreCategory: GENRE_CATEGORIES,
   LibraryStatus: LIBRARY_STATUSES,
   UserRole: USER_ROLES,
-  // `ProfileVisibility` désigne déjà la réponse de `PATCH /me/profile`.
+  // `ProfileVisibility` already names the response of the visibility update.
   Visibility: PROFILE_VISIBILITIES,
 };
 
+/** Component name looked up by the joined values of an enumeration. */
 const enumNameByValues = new Map(
   Object.entries(NAMED_ENUMS).map(([name, values]) => [values.join('|'), name]),
 );
 
+/** The named enumerations as JSON Schema components. */
 const enumComponents = Object.fromEntries(
   Object.entries(NAMED_ENUMS).map(([name, values]) => [
     name,
@@ -88,7 +91,7 @@ const enumComponents = Object.fromEntries(
   ]),
 );
 
-/** Remplace toute énumération inline qui reprend les valeurs d'un composant nommé par un `$ref`. */
+/** Replaces every inline enumeration that repeats a named component's values with a `$ref`. */
 function referenceNamedEnums(node: unknown): unknown {
   if (Array.isArray(node)) return node.map(referenceNamedEnums);
   if (node === null || typeof node !== 'object') return node;
@@ -100,12 +103,13 @@ function referenceNamedEnums(node: unknown): unknown {
   );
 }
 
+/** Converts a Zod schema to JSON Schema, with enumerations replaced by references. */
 function toJsonSchema(schema: z.ZodType, io: 'input' | 'output'): JsonSchema {
   const { $schema: _ignored, ...rest } = z.toJSONSchema(schema, { io }) as JsonSchema;
   return referenceNamedEnums(rest) as JsonSchema;
 }
 
-/** Une entrée de paramètre OpenAPI par propriété du schéma. */
+/** One OpenAPI parameter entry per property of the schema. */
 function toParameters(schema: z.ZodObject, location: 'query' | 'path') {
   const { properties = {}, required = [] } = toJsonSchema(schema, 'input') as {
     properties?: Record<string, JsonSchema>;
@@ -120,18 +124,22 @@ function toParameters(schema: z.ZodObject, location: 'query' | 'path') {
   }));
 }
 
+/** Reference to a named schema component. */
 const schemaRef = (name: string) => ({ $ref: `#/components/schemas/${name}` });
 
+/** A JSON response described by a named schema. */
 const jsonResponse = (name: string, description: string) => ({
   description,
   content: { 'application/json': { schema: schemaRef(name) } },
 });
 
+/** A redirect response carrying a `Location` header. */
 const redirectResponse = (description: string) => ({
   description,
   headers: { Location: { schema: { type: 'string' } } },
 });
 
+/** An error response; the stable code is appended to the description. */
 const errorResponse = (code: ErrorCode, description: string) => ({
   description: `${description} Code : \`${code}\`.`,
   content: { 'application/json': { schema: schemaRef('Error') } },
@@ -143,26 +151,28 @@ const rateLimited = errorResponse(
   'Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`.',
 );
 
+/** Describes one administered resource so its six operations can be generated. */
 interface AdminResource {
-  /** Segment d'URL sous `/admin`. */
+  /** URL segment under the admin prefix. */
   path: string;
-  /** Nom de la ressource dans les `operationId` d'administration (`listAdminPeople` → `People`). */
+  /** Resource name inside the administration `operationId`s (`listAdminPeople` → `People`). */
   plural: string;
   singular: string;
-  /** Composants de réponse : un enregistrement et une page. */
+  /** Response components: one record and one page. */
   record: string;
   page: string;
   body: z.ZodType;
-  /** Paramètres de la liste (recherche, portée, page, et filtres propres à la ressource). */
+  /** List parameters (search, scope, page, and filters specific to the resource). */
   listQuery: z.ZodObject;
-  /** Code renvoyé (409) quand l'archivage est refusé, le cas échéant. */
+  /** Code returned (409) when archiving is refused, if applicable. */
   archiveBlockedBy?: ErrorCode;
-  /** Code renvoyé (400) quand le corps cite un enregistrement inexistant, le cas échéant. */
+  /** Whether the body can cite a missing record (400). */
   invalidReference?: boolean;
-  /** Le remplacement porte la version lue (`updatedAt`) et répond 409 `STALE_RECORD` si elle a changé. */
+  /** The replacement carries the version that was read (`updatedAt`) and answers 409 `STALE_RECORD` if it changed. */
   versioned?: boolean;
 }
 
+/** Error responses common to every administration operation. */
 const adminErrors = {
   '401': errorResponse('UNAUTHENTICATED', 'Connexion requise.'),
   '403': errorResponse(
@@ -174,7 +184,7 @@ const adminErrors = {
 
 const adminSecurity = [{ sessionCookie: [] }];
 
-/** Les six opérations d'une ressource du catalogue : liste, lecture, création, remplacement, archivage, restauration. */
+/** The six operations of a catalogue resource: list, read, create, replace, archive, restore. */
 function adminResourcePaths(resource: AdminResource) {
   const base = `${API_PREFIX}/admin/${resource.path}`;
   const idParameters = toParameters(idParams, 'path');
@@ -287,7 +297,7 @@ function adminResourcePaths(resource: AdminResource) {
   };
 }
 
-/** Document OpenAPI 3.1, construit depuis les schémas Zod des routes et des réponses. */
+/** OpenAPI 3.1 document, built from the Zod schemas of the routes and responses. */
 export function buildOpenApiDocument() {
   return {
     openapi: '3.1.0',
@@ -297,8 +307,8 @@ export function buildOpenApiDocument() {
       description:
         'Catalogue de la création européenne, d’auteurs indépendants comme d’éditeurs établis. Toutes les erreurs ont la forme `{ code, message, details? }` ; le `code` est stable.',
     },
-    // Chemins complets : `/health` est à la racine, hors `/api/v1`, et les clients (Scalar) ignorent
-    // les serveurs propres à un chemin.
+    // Full paths: the health probe sits at the root, outside the API prefix, and clients ignore
+    // path-specific servers.
     servers: [{ url: '/' }],
     paths: {
       '/health': {

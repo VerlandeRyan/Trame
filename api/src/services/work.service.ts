@@ -1,3 +1,4 @@
+/** Business rules of the public catalogue: search fallback, credit grouping, home lists and rating averages. */
 import {
   CREDIT_ROLE_RANK,
   type CreditRole,
@@ -19,10 +20,10 @@ import type {
   WorkSummary,
 } from '../repositories/work.repository.js';
 
-/** Recherche et filtres, partagés par la liste et les compteurs. */
+/** Search and filters, shared by the list and the facet counts. */
 export interface WorkFilterInput {
   q?: string;
-  /** La liste décide seule du mode ; les compteurs le reçoivent. */
+  /** The list decides the mode by itself; the counts receive it. */
   match?: MatchMode;
   type?: WorkType[];
   status?: WorkStatus[];
@@ -31,6 +32,7 @@ export interface WorkFilterInput {
   originalLanguage?: string[];
 }
 
+/** Search, filters, language, sort and page of the catalogue list. */
 export interface ListWorksInput extends WorkFilterInput {
   lang?: string;
   sort?: WorkSort;
@@ -38,68 +40,74 @@ export interface ListWorksInput extends WorkFilterInput {
   pageSize: number;
 }
 
+/** A page of the catalogue list. */
 export interface WorkPage {
   items: WorkSummary[];
   page: number;
   pageSize: number;
   total: number;
-  /** Aucune œuvre ne contient tous les mots : la liste donne celles qui en ont au moins un. */
+  /** No work contains every word: the list gives those that have at least one. */
   approximate: boolean;
 }
 
-/** Une personne et l'ensemble de ses rôles sur l'œuvre. */
+/** A person and all their roles on the work. */
 export interface Credit {
   personId: number;
   name: string;
   kind: PersonKind;
   roles: CreditRole[];
-  /** Sites et réseaux de la personne. */
+  /** The person's websites and social networks. */
   links: { kind: ExternalLinkKind; url: string; label: string | null }[];
 }
 
-/** RG-04 : la note moyenne n'est publiée qu'à partir de ce nombre de notes. */
+/** The average rating is only published from this number of ratings. */
 export const MIN_RATINGS_FOR_AVERAGE = 10;
 
+/** Work detail as returned to clients: credits grouped by person and the rating average. */
 export type WorkDetail = Omit<WorkRecord, 'credits' | 'personLinks' | 'ratingSum'> & {
   credits: Credit[];
-  /** Moyenne sur une décimale ; `null` sous `MIN_RATINGS_FOR_AVERAGE` notes. */
+  /** Average to one decimal; `null` below `MIN_RATINGS_FOR_AVERAGE` ratings. */
   ratingAverage: number | null;
 };
 
 /**
- * « À la une » : 3 œuvres au plus, classées par ajouts à une liste sur 7 jours puis par nouveauté.
- * À partir de `FEATURED_POPULAR_MIN_ADDITIONS` ajouts, l'œuvre est dite populaire.
+ * Home "featured": at most 3 works, ranked by additions to a list over 7 days then by recency.
+ * From `FEATURED_POPULAR_MIN_ADDITIONS` additions, a work counts as popular.
  */
 export const FEATURED_POPULAR_MIN_ADDITIONS = 3;
 export const FEATURED_WINDOW_DAYS = 7;
 export const FEATURED_LIMIT = 3;
-/** « Mieux notées » : de quoi remplir une rangée sur grand écran. */
+/** Home "top rated": enough to fill one row on a large screen. */
 export const HOME_TOP_RATED_LIMIT = 12;
 
+/** A featured work with its popularity flag. */
 export interface FeaturedItem extends FeaturedWork {
-  /** Vrai à partir de `FEATURED_POPULAR_MIN_ADDITIONS` ajouts récents. */
+  /** True from `FEATURED_POPULAR_MIN_ADDITIONS` recent additions. */
   isPopular: boolean;
 }
 
+/** A top-rated work with its average. */
 export interface TopRatedWork extends Omit<HomeRatedWork, 'ratingSum'> {
-  /** Moyenne sur une décimale. */
+  /** Average to one decimal. */
   ratingAverage: number;
 }
 
+/** Public catalogue operations. */
 export interface WorkService {
   list(input: ListWorksInput): Promise<WorkPage>;
   facets(input: WorkFilterInput): Promise<WorkFacets>;
   listFeaturedWorks(lang?: string): Promise<{ items: FeaturedItem[] }>;
   listTopRatedWorks(lang?: string): Promise<{ items: TopRatedWork[] }>;
-  /** Lève `NOT_FOUND` si l'œuvre n'existe pas ou est archivée. `lang` : langue de l'application. */
+  /** Throws `NOT_FOUND` if the work does not exist or is archived. `lang` is the application language. */
   get(id: number, lang?: string): Promise<WorkDetail>;
 }
 
+/** Display rank of a credit role (0 = first). */
 const roleRank = (role: CreditRole): number => CREDIT_ROLE_RANK[role];
 
 /**
- * Regroupe les crédits par personne. Rôles dans l'ordre scénario, dessin, couleur, autre ;
- * personnes triées par rôle le plus important, puis par nom.
+ * Groups credits by person. Roles are ordered story, art, colors, other;
+ * people are sorted by their most important role, then by name.
  */
 function groupCredits(
   rows: WorkRecord['credits'],
@@ -125,15 +133,18 @@ function groupCredits(
   }
   const credits = [...byPerson.values()];
   for (const credit of credits) credit.roles.sort((a, b) => roleRank(a) - roleRank(b));
+  /** Rank of the person's most important role. */
   const bestRank = (credit: Credit): number => Math.min(...credit.roles.map(roleRank));
   return credits.sort((a, b) => bestRank(a) - bestRank(b) || a.name.localeCompare(b.name, 'fr'));
 }
 
+/** Collapses the whitespace of the search text; an empty search becomes none. */
 function normalizeFilters({ q, ...rest }: WorkFilterInput): WorkFilterInput {
   const normalizedQuery = q?.replace(/\s+/g, ' ').trim();
   return { ...rest, q: normalizedQuery || undefined };
 }
 
+/** Creates the public catalogue service. */
 export function createWorkService(repository: WorkRepository): WorkService {
   return {
     async list({ lang, sort, page, pageSize, ...filters }) {
@@ -146,7 +157,7 @@ export function createWorkService(repository: WorkRepository): WorkService {
       };
       let result = await repository.search(criteria);
       let approximate = false;
-      // Aucune œuvre n'a tous les mots : repli sur celles qui en ont au moins un.
+      // No work has every word: fall back to those that have at least one.
       if (result.total === 0 && searchTerms(criteria.q ?? '').length > 1) {
         result = await repository.search({ ...criteria, match: 'any' });
         approximate = result.total > 0;

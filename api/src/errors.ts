@@ -1,6 +1,6 @@
 /**
- * Codes d'erreur stables exposés par l'API : ne jamais en improviser en dehors de cette liste.
- * Le `message` est un texte technique en anglais, jamais affiché : le front traduit à partir de `code`.
+ * Stable error codes exposed by the API: never invent one outside this list.
+ * The `message` is a technical English text that is never displayed: the front end translates from `code`.
  */
 export const ERROR_CODES = {
   NOT_FOUND: { status: 404, message: 'Resource not found.' },
@@ -25,14 +25,17 @@ export const ERROR_CODES = {
   INTERNAL_ERROR: { status: 500, message: 'Internal error.' },
 } as const;
 
+/** One of the stable error codes. */
 export type ErrorCode = keyof typeof ERROR_CODES;
 
+/** JSON body of every error response. */
 export interface ErrorBody {
   code: ErrorCode;
   message: string;
   details?: unknown;
 }
 
+/** Expected error carrying a stable code; the error handler turns it into the HTTP response. */
 export class AppError extends Error {
   readonly code: ErrorCode;
   readonly status: number;
@@ -45,6 +48,7 @@ export class AppError extends Error {
     this.details = details;
   }
 
+  /** Builds the response body of this error. */
   toBody(): ErrorBody {
     const body: ErrorBody = { code: this.code, message: this.message };
     if (this.details !== undefined) body.details = this.details;

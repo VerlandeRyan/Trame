@@ -1,11 +1,13 @@
 <script setup lang="ts" generic="T">
-// Liste de lignes modifiables : le contenu d'une ligne vient du slot, l'ajout et le retrait sont
-// émis (le parent tient le tableau).
-// `columns` : colonnes (CSS) des champs d'une ligne dès la tablette ; une colonne en dessous.
-// `rowLabel` : chaque ligne devient une carte à en-tête (« Titre 1 » et le bouton de retrait) ; sans
-// elle, le bouton de retrait est à droite des champs.
-// `isFilled` : une ligne qui répond « vrai » demande confirmation avant d'être retirée ; sans lui (ou
-// pour une ligne vide) le retrait est immédiat.
+/**
+ * List of editable rows: a row's content comes from the slot, adding and removing are emitted
+ * (the parent holds the array).
+ * `columns`: CSS columns of a row's fields from tablet width; one column below.
+ * `rowLabel`: each row becomes a card with a header ("Title 1" and the remove button); without it,
+ * the remove button sits to the right of the fields.
+ * `isFilled`: a row that answers true asks for confirmation before being removed; without it (or
+ * for an empty row) the removal is immediate.
+ */
 const props = defineProps<{
   items: T[]
   addLabel: string
@@ -16,9 +18,10 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ add: []; remove: [index: number] }>()
 const isConfirming = ref(false)
-// Gardé après la fermeture de la modale : elle se ferme avant d'émettre « confirm ».
+// Kept after the modal closes: it closes before emitting "confirm".
 const pendingIndex = ref(0)
 
+/** Removes the row at once, or asks for confirmation if it is filled in. */
 function requestRemove(index: number) {
   if (props.isFilled?.(props.items[index] as T)) {
     pendingIndex.value = index
@@ -114,7 +117,7 @@ function requestRemove(index: number) {
   padding-inline: 0;
 }
 
-// Carte : en-tête (libellé à gauche, retrait à droite) puis les champs sur toute la largeur.
+// Card: header (label on the left, remove on the right), then the fields over the full width.
 .row-list__row--card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

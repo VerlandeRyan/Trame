@@ -1,13 +1,13 @@
+/** Fake Google client used by the end-to-end tests, so no network call is made. */
 import { AppError } from '../errors.js';
 import type { GoogleClient } from '../services/google-identity.js';
 
-/** Le `code` d'une fausse connexion a la forme `e2e:<sub>:<e-mail>`. */
+/** The `code` of a fake sign-in has the form `e2e:<sub>:<email>`. */
 export const FAKE_CODE_PREFIX = 'e2e:';
 
 /**
- * Remplace Google dans les E2E (voir `server.e2e.ts`) ; le callback, la session et le cookie sont
- * ceux de l'API. `start()` fournit une identité neuve ; un test en impose une en appelant le
- * callback avec son propre `code`.
+ * Replaces Google in the E2E tests; the callback, session and cookie are the API's own.
+ * `start()` provides a fresh identity; a test imposes one by calling the callback with its own `code`.
  */
 export function createFakeGoogleClient(callbackUrl: string): GoogleClient {
   return {

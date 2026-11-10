@@ -1,18 +1,19 @@
 /**
- * File de requêtes d'écriture : elles partent l'une après l'autre (des « +1 » enchaînés ne se
- * croisent jamais). `isLatest` dit si la requête en cours est la dernière demandée : seule sa
- * réponse, celle du serveur, doit remplacer l'état affiché.
+ * Queue of write requests: they go out one after another (chained "+1" never cross). `isLatest`
+ * tells whether the running request is the last one asked for: only its response, the server's,
+ * should replace the displayed state.
  */
 export function useRequestQueue(handlers: {
-  /** Avant chaque requête (par exemple effacer l'erreur précédente). */
+  /** Before each request (for example clear the previous error). */
   onStart: () => void
-  /** Une requête a échoué : l'écran a pu s'écarter du serveur. */
+  /** A request failed: the screen may have drifted from the server. */
   onError: (cause: unknown) => Promise<void> | void
 }) {
   const isBusy = ref(false)
   let pendingCount = 0
   let queue: Promise<void> = Promise.resolve()
 
+  /** Adds a task after those already queued. */
   function enqueue(task: () => Promise<void>): Promise<void> {
     pendingCount += 1
     isBusy.value = true
@@ -29,6 +30,7 @@ export function useRequestQueue(handlers: {
     return queue
   }
 
+  /** Whether the running request is the last one asked for. */
   const isLatest = () => pendingCount === 1
 
   return { enqueue, isBusy, isLatest }

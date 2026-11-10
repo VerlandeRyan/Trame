@@ -1,10 +1,12 @@
-// Contraste WCAG entre deux couleurs `#rrggbb` : sert à garder les couleurs de survol lisibles..
+/** WCAG contrast between two `#rrggbb` colours, used to keep hover colours readable. */
 
+/** Linear value of one 0–255 colour channel. */
 function toLinearChannel(value: number): number {
   const scaled = value / 255
   return scaled <= 0.03928 ? scaled / 12.92 : ((scaled + 0.055) / 1.055) ** 2.4
 }
 
+/** Relative luminance of a `#rrggbb` colour. */
 function relativeLuminance(hex: string): number {
   const red = Number.parseInt(hex.slice(1, 3), 16)
   const green = Number.parseInt(hex.slice(3, 5), 16)
@@ -14,7 +16,7 @@ function relativeLuminance(hex: string): number {
   )
 }
 
-/** De 1 à 21 ; 4,5 est le seuil AA pour du texte courant. */
+/** Contrast ratio from 1 to 21; 4.5 is the AA threshold for body text. */
 export function contrastRatio(foreground: string, background: string): number {
   const [lighter, darker] = [relativeLuminance(foreground), relativeLuminance(background)].sort(
     (a, b) => b - a,

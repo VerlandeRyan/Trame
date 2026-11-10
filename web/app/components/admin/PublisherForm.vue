@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { optionsOf, PUBLISHER_KINDS, type PublisherDraft } from '~/utils/admin'
 
-// Formulaire d'un éditeur ou d'une plateforme : nom, nature, site.
+/** Form of a publisher or a platform: name, kind, website. */
 defineProps<{ errorKey?: string; saving: boolean }>()
 const draft = defineModel<PublisherDraft>({ required: true })
 const emit = defineEmits<{ submit: [] }>()

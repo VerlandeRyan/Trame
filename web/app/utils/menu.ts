@@ -1,17 +1,18 @@
-// Placement des menus déroulants : logique pure, testée sans Nuxt.
+/** Placement of dropdown menus: pure logic, tested without Nuxt. */
 
-/** Hauteur d'une ligne de menu (zone tactile). */
+/** Height of a menu row (touch target). */
 export const MENU_ROW_HEIGHT_PX = 44
-/** Hauteur souhaitée d'un menu de choix avant défilement interne (18 rem). */
+/** Wanted height of a choice menu before it scrolls internally (18 rem). */
 export const MENU_PREFERRED_HEIGHT_PX = 288
+/** Gap kept between a menu and the window edge. */
 const MENU_EDGE_GAP_PX = 16
 const MENU_MIN_HEIGHT_PX = 132
-/** Lignes qu'un menu doit pouvoir montrer sous le bouton, en défilant, avant de s'ouvrir au-dessus. */
+/** Rows a menu must be able to show under its button, scrolling, before it opens above. */
 const MENU_MIN_OPEN_ROWS = 3
 
 /**
- * Hauteur d'un menu qui s'ouvre sous son bouton : celle voulue, réduite à la place restante dans
- * la fenêtre (le menu défile alors) pour ne jamais rallonger la page ; trois options au moins.
+ * Height of a menu opening under its button: the wanted one, reduced to the room left in the
+ * window (the menu then scrolls) so the page never grows; at least three options.
  */
 export function menuMaxHeight(triggerBottom: number, viewportHeight: number): number {
   const room = viewportHeight - triggerBottom - MENU_EDGE_GAP_PX
@@ -19,8 +20,8 @@ export function menuMaxHeight(triggerBottom: number, viewportHeight: number): nu
 }
 
 /**
- * Faut-il ouvrir le menu au-dessus de son bouton ? Oui quand le dessous de l'écran ne le contient
- * pas en entier et que le dessus offre plus de place.
+ * Whether to open the menu above its button: yes when the space below cannot hold it entirely
+ * and the space above offers more room.
  */
 export function shouldOpenAbove(
   trigger: { top: number; bottom: number },
@@ -33,10 +34,10 @@ export function shouldOpenAbove(
 }
 
 /**
- * Où ouvrir un menu. Il s'ouvre sous son bouton, en défilant si la place manque ; il passe au-dessus
- * seulement quand le dessous ne peut pas en montrer trois lignes et que le dessus a plus de place.
- * `topInset` est la hauteur de l'en-tête collant, qui cache le haut de la fenêtre ; `contentHeight`
- * celle du menu s'il n'avait pas à défiler (par défaut la hauteur voulue).
+ * Where to open a menu. It opens under its button, scrolling if room is short; it goes above
+ * only when the space below cannot show three rows and the space above has more room.
+ * `topInset` is the height of the sticky header, which hides the top of the window; `contentHeight`
+ * is the menu height if it did not have to scroll (the wanted height by default).
  */
 export function menuPlacement(
   trigger: { top: number; bottom: number },

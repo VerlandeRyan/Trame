@@ -1,3 +1,4 @@
+/** Input schemas of the catalogue administration (lists, people, publishers, works). */
 import { z } from 'zod';
 import {
   CREDIT_ROLES,
@@ -23,15 +24,19 @@ import type { AdminPersonInput } from '../services/admin-person.service.js';
 import type { AdminPublisherInput } from '../services/admin-publisher.service.js';
 import { commaSeparatedList, genreCode, pageQuery } from './common.js';
 
+/** Name or title: trimmed, non-empty text. */
 const name = z.string().trim().min(1).max(200);
+/** Lowercase ISO 639 language code. */
 const language = z
   .string()
   .regex(/^[a-z]{2,3}$/)
   .describe('Code ISO 639, en minuscules.');
 const httpsUrl = z.url({ protocol: /^https$/ }).max(2000);
 const positiveId = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
+/** Chapter or volume total. */
 const counter = z.number().int().min(0).max(99_999);
 
+/** Schema of a list of external links restricted to the given kinds. */
 const linksOf = (kinds: readonly [ExternalLinkKind, ...ExternalLinkKind[]]) =>
   z
     .array(
@@ -46,6 +51,7 @@ const linksOf = (kinds: readonly [ExternalLinkKind, ...ExternalLinkKind[]]) =>
 const workLinks = linksOf(WORK_LINK_KINDS);
 const personLinks = linksOf(PERSON_LINK_KINDS);
 
+/** Query of the administration lists: search text, archive scope and pagination. */
 export const adminListQuery = z.object({
   q: z
     .string()
@@ -61,7 +67,7 @@ export const adminListQuery = z.object({
   ...pageQuery('Éléments'),
 }) satisfies z.ZodType<AdminListInput>;
 
-/** Liste des œuvres : mêmes paramètres, plus tri et filtres (valeurs d'un filtre : OU ; filtres entre eux : ET). */
+/** Work list: same parameters plus sort and filters (values of one filter: OR; filters together: AND). */
 export const adminWorkListQuery = adminListQuery.extend({
   sort: z
     .enum(ADMIN_WORK_SORTS)
@@ -89,25 +95,29 @@ export const adminWorkListQuery = adminListQuery.extend({
     .optional(),
 }) satisfies z.ZodType<AdminWorkListInput>;
 
+/** Body to create or replace a person. */
 export const personBody = z.strictObject({
   name,
   kind: z.enum(PERSON_KINDS),
   links: personLinks.default([]),
 }) satisfies z.ZodType<AdminPersonInput>;
 
+/** Body to create or replace a publisher. */
 export const publisherBody = z.strictObject({
   name,
   kind: z.enum(PUBLISHER_KINDS),
   url: httpsUrl.nullable().default(null),
 }) satisfies z.ZodType<AdminPublisherInput>;
 
+/** A validation problem attached to a field of the work body. */
 type KeyedIssue = { path: string; message: string };
 
-/** Vrai si deux éléments de la liste ont la même clé. */
+/** Whether two items of the list share the same key. */
 function hasDuplicate<T>(items: T[], key: (item: T) => string): boolean {
   return new Set(items.map(key)).size !== items.length;
 }
 
+/** Reports every list of the work that contains duplicate entries. */
 function duplicateIssues(work: AdminWorkInput): KeyedIssue[] {
   const checks: [string, boolean][] = [
     ['titles', hasDuplicate(work.titles, (t) => `${t.language}|${t.title}`)],
@@ -115,7 +125,7 @@ function duplicateIssues(work: AdminWorkInput): KeyedIssue[] {
     ['credits', hasDuplicate(work.credits, (c) => `${c.personId}|${c.role}`)],
     ['publisherIds', hasDuplicate(work.publisherIds, String)],
     ['genres', hasDuplicate(work.genres, (code) => code)],
-    // RG-17 : une seule relation principale par œuvre liée.
+    // A single relation per related work.
     ['relations', hasDuplicate(work.relations, (r) => String(r.relatedWorkId))],
   ];
   return checks
@@ -123,9 +133,10 @@ function duplicateIssues(work: AdminWorkInput): KeyedIssue[] {
     .map(([path]) => ({ path, message: 'Duplicate entries.' }));
 }
 
+/** Reports the business rules a work breaks: duplicates, totals while ongoing, date order. */
 function ruleIssues(work: AdminWorkInput): KeyedIssue[] {
   const issues = duplicateIssues(work);
-  // RG-18 : tant que l'œuvre est en cours, les totaux restent vides.
+  // While the work is ongoing, the totals stay empty.
   if (work.status === 'ongoing' && work.chapters !== null) {
     issues.push({ path: 'chapters', message: 'Totals stay empty while ongoing.' });
   }
@@ -138,6 +149,7 @@ function ruleIssues(work: AdminWorkInput): KeyedIssue[] {
   return issues;
 }
 
+/** Body to create or replace a work, with its titles, credits, genres, relations and links. */
 export const workBody = z
   .strictObject({
     title: name.describe('Titre dans la langue originale.'),

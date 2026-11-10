@@ -1,6 +1,5 @@
 <script setup lang="ts">
-// Barre de l'administration (maquette 22) : seul le catalogue existe, les autres entrées sont
-// visibles mais inactives en attendant leur ticket.
+/** Administration bar: only the catalogue exists, the other entries are visible but inactive for now. */
 const { t } = useI18n()
 const localePath = useLocalePath()
 </script>
@@ -27,7 +26,7 @@ const localePath = useLocalePath()
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Bande blanche pleine largeur sous l'en-tête : elle annule les marges de `<main>` comme l'accueil.
+// Full-width white band under the header: it cancels `<main>`'s margins, like the home page.
 .admin-nav {
   display: flex;
   gap: 0;
@@ -43,7 +42,7 @@ const localePath = useLocalePath()
   align-items: center;
   min-height: calc(var(--touch) + var(--space-2));
   min-width: 0;
-  // Au mobile les trois entrées se partagent la largeur (dès 320 px), sans faire défiler la page.
+  // On mobile the three entries share the width (from 320 px) without making the page scroll.
   flex: 1 1 auto;
   justify-content: center;
   padding: 0 var(--space-1);

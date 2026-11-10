@@ -11,10 +11,11 @@ import {
   type WorkDraft,
 } from '~/utils/admin'
 
-// Ce qui relie l'œuvre au reste du catalogue : auteurs, éditeurs, œuvres liées (RG-17 : une seule
-// relation par œuvre liée).
-// `part` : « people » (auteurs et éditeurs) ou « relations » (œuvres liées), un onglet chacun.
-// `showErrors` : après un enregistrement refusé, les lignes sans fiche choisie sont marquées.
+/**
+ * What links the work to the rest of the catalogue: authors, publishers, related works (a single
+ * relation per related work). `part`: "people" (authors and publishers) or "relations" (related
+ * works), one tab each. `showErrors`: after a refused save, rows without a chosen record are marked.
+ */
 const props = defineProps<{
   part: 'people' | 'relations'
   search: (kind: AdminKind, text: string) => Promise<RecordRef[]>
@@ -24,6 +25,7 @@ const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
 const roleOptions = optionsOf(CREDIT_ROLES, (code) => t(`admin.option.creditRole.${code}`))
 const relationOptions = optionsOf(RELATION_KINDS, (code) => t(`admin.option.relation.${code}`))
+/** Search function restricted to one kind of record. */
 const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
 </script>
 

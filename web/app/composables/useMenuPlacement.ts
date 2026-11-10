@@ -1,8 +1,9 @@
+/** Placement of dropdown menus relative to the window and the sticky header. */
 import { menuPlacement } from '~/utils/menu'
 
 /**
- * Place un menu déroulant dans la fenêtre : sous son bouton, ou au-dessus s'il manque de la place.
- * L'en-tête collant cache le haut de la fenêtre : il est retiré de la place disponible au-dessus.
+ * Places a dropdown menu in the window: under its button, or above it when room is short.
+ * The sticky header hides the top of the window: it is subtracted from the room available above.
  */
 export function useMenuPlacement() {
   return (trigger: { top: number; bottom: number }, contentHeight?: number) => {

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { adminEditPath, itemLabel, type AdminKind, type AdminListItem } from '~/utils/admin'
 
-// Feuille d'actions d'une fiche, ouverte par « ⋮ » au mobile (maquette 7). Archiver ne se fait pas
-// ici : le parent ouvre sa confirmation (`archive`).
+/**
+ * Action sheet of a record, opened by "⋮" on mobile. Archiving is not done here: the parent
+ * opens its confirmation (`archive`).
+ */
 const props = defineProps<{ kind: AdminKind; item: AdminListItem | null }>()
 const isOpen = defineModel<boolean>({ default: false })
 const emit = defineEmits<{ restore: [item: AdminListItem]; archive: [item: AdminListItem] }>()
@@ -11,14 +13,17 @@ const localePath = useLocalePath()
 
 const isWorks = computed(() => props.kind === 'works')
 
+/** Edit address of the record, optionally opening a section. */
 const editLocation = (item: AdminListItem, section?: string) =>
   localePath({ path: adminEditPath(props.kind, item.id), query: section ? { section } : {} })
 
+/** Closes the sheet and reports the restoration. */
 function restore(item: AdminListItem) {
   isOpen.value = false
   emit('restore', item)
 }
 
+/** Closes the sheet and asks the parent to confirm the archiving. */
 function askArchive(item: AdminListItem) {
   isOpen.value = false
   emit('archive', item)

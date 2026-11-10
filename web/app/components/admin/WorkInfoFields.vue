@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { digitsOnly, optionsOf, WORK_STATUSES, WORK_TYPES, type WorkDraft } from '~/utils/admin'
 
-// Informations d'une œuvre sur deux colonnes : identité et publication à gauche, dates, formats et
-// genres à droite. Chaque champ n'accepte que ce que l'API accepte (chiffres, lettres, date).
+/**
+ * Work information on two columns: identity and publication on the left, dates, formats and
+ * genres on the right. Each field only accepts what the API accepts (digits, letters, date).
+ */
 const props = defineProps<{ genres: { code: string; category: string }[] }>()
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
@@ -10,8 +12,9 @@ const genreLabel = useGenreLabel()
 const languageOptionsFor = useLanguageOptions()
 const typeOptions = optionsOf(WORK_TYPES, (code) => t(`admin.option.workType.${code}`))
 const statusOptions = optionsOf(WORK_STATUSES, (code) => t(`admin.option.workStatus.${code}`))
-// RG-18 : les totaux restent vides tant que l'œuvre est en cours.
+// Totals stay empty while the work is ongoing.
 const isOngoing = computed(() => draft.value.status === 'ongoing')
+/** Genre options of one category. */
 const optionsIn = (category: string) =>
   props.genres
     .filter((genre) => genre.category === category)
@@ -19,11 +22,12 @@ const optionsIn = (category: string) =>
 const formatOptions = computed(() => optionsIn('format'))
 const themeOptions = computed(() => optionsIn('theme'))
 
-/** Coche ou décoche des codes d'une catégorie sans toucher à ceux de l'autre. */
+/** Ticks or unticks the codes of one category without touching those of the other. */
 function setCategory(options: { value: string }[], chosen: string[]) {
   const codes = new Set(options.map((option) => option.value))
   draft.value.genres = [...draft.value.genres.filter((code) => !codes.has(code)), ...chosen]
 }
+/** The chosen codes that belong to the given options. */
 const chosenIn = (options: { value: string }[]) =>
   draft.value.genres.filter((code) => options.some((option) => option.value === code))
 </script>
@@ -118,7 +122,7 @@ const chosenIn = (options: { value: string }[]) =>
   gap: var(--space-3);
 }
 
-// Les deux dates l'une sous l'autre au mobile : côte à côte, le champ date est rogné.
+// The two dates stack on mobile: side by side, the date field gets clipped.
 .info__dates {
   display: grid;
   gap: var(--space-3);

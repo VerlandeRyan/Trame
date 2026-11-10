@@ -1,6 +1,6 @@
-// Charge db/demo-data.sql (jeu de démonstration fictif) dans la base de TEST (TEST_DATABASE_URL).
-// Le fichier vide d'abord les tables : refus sur tout ce qui n'est pas une base locale, sauf les
-// hôtes listés dans TEST_DATABASE_ALLOWED_HOSTS (la CI y met le nom du service Postgres).
+// Loads db/demo-data.sql (fictitious demo data) into the TEST database (TEST_DATABASE_URL).
+// The file empties the tables first: refuses anything that is not a local database, except the
+// hosts listed in TEST_DATABASE_ALLOWED_HOSTS (CI puts the Postgres service name there).
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
