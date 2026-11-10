@@ -300,8 +300,8 @@ const nextVisibility = computed<ProfileVisibility>(() => (isPublic.value ? 'priv
 <style scoped lang="scss">
 @use '~/assets/styles/mixins' as *;
 
-// Desktop: identity column on the left; mobile: everything in one column
-// (monogram beside the handle, statistics reduced to the totals and the bar).
+// On desktop the identity sits in a left column. On mobile everything is in one column, with
+// the monogram beside the handle and the statistics reduced to the totals and the bar.
 .profile {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

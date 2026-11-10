@@ -173,7 +173,7 @@ const addOneLabel = (item: ListedEntry) =>
   font-weight: 800;
 }
 
-// Mobile: stacked cards; desktop: up to three side by side.
+// Cards are stacked on mobile, and up to three sit side by side on desktop.
 .continue-reading__list {
   display: grid;
   gap: var(--space-3);
