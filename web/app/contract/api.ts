@@ -4,6 +4,22 @@ import type { components } from './api-schema'
 
 type Schemas = components['schemas']
 
+// Valeurs d'exécution des énumérations, générées avec les types (`--enum-values`) : jamais recopiées.
+export {
+  creditRoleValues as CREDIT_ROLES,
+  externalLinkKindValues as LINK_KINDS,
+  libraryStatusValues as LIBRARY_STATUSES,
+  personKindValues as PERSON_KINDS,
+  personLinkKindValues as PERSON_LINK_KINDS,
+  publisherKindValues as PUBLISHER_KINDS,
+  relationKindValues as RELATION_KINDS,
+  synopsisSourceValues as SYNOPSIS_SOURCES,
+  titleKindValues as TITLE_KINDS,
+  workLinkKindValues as WORK_LINK_KINDS,
+  workStatusValues as WORK_STATUSES,
+  workTypeValues as WORK_TYPES,
+} from './api-schema'
+
 // Œuvres
 export type WorkPage = Schemas['WorkPage']
 export type WorkSummary = WorkPage['items'][number]

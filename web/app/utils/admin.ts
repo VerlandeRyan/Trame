@@ -1,5 +1,16 @@
 // Administration du catalogue : types des réponses de `/admin/*`, brouillons de formulaire et
 // conversions pures (testées sans Nuxt).
+import {
+  CREDIT_ROLES,
+  LINK_KINDS,
+  PERSON_KINDS,
+  PUBLISHER_KINDS,
+  RELATION_KINDS,
+  SYNOPSIS_SOURCES,
+  TITLE_KINDS,
+  WORK_STATUSES,
+  WORK_TYPES,
+} from '../contract/api'
 import type { ApiError } from './api-error'
 
 export type AdminKind = 'works' | 'people' | 'publishers'
@@ -8,10 +19,21 @@ export const ADMIN_KINDS: readonly AdminKind[] = ['works', 'people', 'publishers
 export type AdminScope = 'active' | 'archived' | 'all'
 export const ADMIN_SCOPES: readonly AdminScope[] = ['active', 'archived', 'all']
 
-export const WORK_TYPES = ['series', 'oneshot', 'anthology'] as const
-export const WORK_STATUSES = ['upcoming', 'ongoing', 'completed', 'hiatus', 'abandoned'] as const
-export const PERSON_KINDS = ['person', 'collective'] as const
-export const PUBLISHER_KINDS = ['publisher', 'platform', 'self_published'] as const
+// Valeurs d'exécution tirées du contrat. Une œuvre se lit ou s'achète (`WORK_LINK_KINDS`) ; le site
+// et les réseaux sociaux sont ceux d'une personne (`PERSON_LINK_KINDS`).
+export { PERSON_LINK_KINDS, WORK_LINK_KINDS } from '../contract/api'
+export {
+  CREDIT_ROLES,
+  LINK_KINDS,
+  PERSON_KINDS,
+  PUBLISHER_KINDS,
+  RELATION_KINDS,
+  SYNOPSIS_SOURCES,
+  TITLE_KINDS,
+  WORK_STATUSES,
+  WORK_TYPES,
+}
+
 /** Sections de la fiche œuvre ; la première est celle d'ouverture. */
 export const WORK_SECTIONS = ['info', 'texts', 'relations', 'links', 'people'] as const
 export type WorkSection = (typeof WORK_SECTIONS)[number]
@@ -20,25 +42,6 @@ export type WorkSection = (typeof WORK_SECTIONS)[number]
 export function parseWorkSection(value: unknown): WorkSection {
   return WORK_SECTIONS.find((section) => section === value) ?? WORK_SECTIONS[0]
 }
-
-export const LINK_KINDS = ['read', 'buy', 'website', 'social'] as const
-// Une œuvre se lit ou s'achète ; le site et les réseaux sociaux sont ceux d'une personne.
-export const WORK_LINK_KINDS = ['read', 'buy'] as const
-export const PERSON_LINK_KINDS = ['website', 'social'] as const
-export const TITLE_KINDS = ['translated', 'international', 'former', 'short'] as const
-export const SYNOPSIS_SOURCES = ['official', 'human', 'machine'] as const
-export const CREDIT_ROLES = ['story', 'art', 'colors', 'other'] as const
-export const RELATION_KINDS = [
-  'sequel',
-  'prequel',
-  'spin_off',
-  'side_story',
-  'adaptation',
-  'alternate_version',
-  'shared_universe',
-  'contains',
-  'other',
-] as const
 
 export interface AdminPage<T> {
   items: T[]

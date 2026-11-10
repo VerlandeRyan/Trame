@@ -1,5 +1,5 @@
 // Recherche : types des réponses de l'API et logique pure de la page de résultats.
-import type { FacetCount, WorkSummary } from '../contract/api'
+import { WORK_STATUSES, WORK_TYPES, type FacetCount, type WorkSummary } from '../contract/api'
 
 export type { FacetCount, WorkFacets, WorkPage, WorkSummary } from '../contract/api'
 
@@ -38,15 +38,15 @@ export interface SearchState {
   filters: SearchFilters
 }
 
-const WORK_TYPES = new Set(['series', 'oneshot', 'anthology'])
-const WORK_STATUSES = new Set(['upcoming', 'ongoing', 'completed', 'hiatus', 'abandoned'])
+const WORK_TYPE_CODES = new Set<string>(WORK_TYPES)
+const WORK_STATUS_CODES = new Set<string>(WORK_STATUSES)
 const GENRE_CODE = /^[a-z0-9]+(_[a-z0-9]+)*$/
 const LANGUAGE_CODE = /^[a-z]{2,3}$/
 
 /** Valeurs acceptées par l'API ; le reste est ignoré plutôt que de provoquer une 400. */
 const FILTER_VALIDATORS: Record<FilterKey, (value: string) => boolean> = {
-  type: (value) => WORK_TYPES.has(value),
-  status: (value) => WORK_STATUSES.has(value),
+  type: (value) => WORK_TYPE_CODES.has(value),
+  status: (value) => WORK_STATUS_CODES.has(value),
   format: (value) => value.length <= 50 && GENRE_CODE.test(value),
   genre: (value) => value.length <= 50 && GENRE_CODE.test(value),
   originalLanguage: (value) => LANGUAGE_CODE.test(value),

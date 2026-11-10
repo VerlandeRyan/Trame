@@ -74,6 +74,7 @@ Réponse unique `{ code, message, details? }` ; `message` est un texte technique
 - `document.ts` construit le document (`GET /api/v1/openapi.json`) : paramètres tirés des schémas Zod de `routes/` (`describe` = texte de la doc), réponses décrites dans `schemas.ts` (liés aux types des services par `satisfies`, `strictObject`).
 - **Nouvelle route ⇒ nouveau chemin dans `document.ts` + schéma de réponse** ; `openapi.test.ts` échoue si une route montée n'est pas documentée (ou l'inverse) ou si une réponse s'écarte de son schéma.
 - **`api/openapi.json` est commité** : le web en génère ses types (`web/`, `npm run api:types`). Après tout changement de contrat : `npm run openapi:export` puis, dans `web/`, `npm run api:types` ; `openapi-file.test.ts` échoue si le fichier est périmé. Chaque `operationId` est unique (les routes d'administration portent `Admin` : `listAdminWorks`).
+- **Énumérations nommées** : `NAMED_ENUMS` (`document.ts`) publie chaque énumération du domaine en composant (`LibraryStatus`, `WorkType`…) et `referenceNamedEnums` remplace toute copie inline de mêmes valeurs par un `$ref`. Nouvelle énumération du domaine ⇒ une entrée dans `NAMED_ENUMS` (nom unique parmi les composants) ; le web en reçoit les valeurs via `--enum-values`.
 - `/docs` (Scalar, chargé par import dynamique) n'est monté que si `server.ts` fournit `docs`, c'est-à-dire hors `NODE_ENV=production`. L'image Docker est en production ; `docker-compose.yml` (développement local) force `NODE_ENV: development` pour l'activer.
 
 ## Commandes

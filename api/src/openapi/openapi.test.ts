@@ -6,6 +6,21 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { z } from 'zod';
 import { createApp } from '../app.js';
 import { createDb } from '../db/database.js';
+import {
+  CREDIT_ROLES,
+  EXTERNAL_LINK_KINDS,
+  GENRE_CATEGORIES,
+  PERSON_KINDS,
+  PERSON_LINK_KINDS,
+  PUBLISHER_KINDS,
+  RELATION_KINDS,
+  SYNOPSIS_SOURCES,
+  TITLE_KINDS,
+  WORK_LINK_KINDS,
+  WORK_STATUSES,
+  WORK_TYPES,
+} from '../domain/catalogue-enums.js';
+import { LIBRARY_STATUSES, PROFILE_VISIBILITIES, USER_ROLES } from '../domain/user-enums.js';
 import { ERROR_CODES } from '../errors.js';
 import { ADMIN_RATE_LIMIT, AUTH_RATE_LIMIT, LIBRARY_RATE_LIMIT } from '../middleware/rate-limit.js';
 import { createHealthRouter } from '../routes/health.routes.js';
@@ -97,6 +112,51 @@ describe('document OpenAPI', () => {
       properties: { code: { enum: string[] } };
     };
     expect(schema.properties.code.enum).toEqual(Object.keys(ERROR_CODES));
+  });
+});
+
+describe('énumérations nommées', () => {
+  const schemas = document.components.schemas as Record<string, unknown>;
+  const expected = {
+    WorkType: WORK_TYPES,
+    WorkStatus: WORK_STATUSES,
+    CreditRole: CREDIT_ROLES,
+    RelationKind: RELATION_KINDS,
+    PublisherKind: PUBLISHER_KINDS,
+    PersonKind: PERSON_KINDS,
+    ExternalLinkKind: EXTERNAL_LINK_KINDS,
+    WorkLinkKind: WORK_LINK_KINDS,
+    PersonLinkKind: PERSON_LINK_KINDS,
+    TitleKind: TITLE_KINDS,
+    SynopsisSource: SYNOPSIS_SOURCES,
+    GenreCategory: GENRE_CATEGORIES,
+    LibraryStatus: LIBRARY_STATUSES,
+    UserRole: USER_ROLES,
+    Visibility: PROFILE_VISIBILITIES,
+  };
+
+  it.each(Object.entries(expected))(
+    '%s est un composant aux valeurs du domaine',
+    (name, values) => {
+      expect(schemas[name]).toEqual({ type: 'string', enum: [...values] });
+    },
+  );
+
+  it('les paramètres et schémas y renvoient par $ref au lieu de recopier les valeurs', () => {
+    const namedValues = new Set(Object.values(expected).map((values) => values.join('|')));
+    const copies: string[] = [];
+    const walk = (node: unknown, path: string) => {
+      if (node === null || typeof node !== 'object') return;
+      for (const [key, value] of Object.entries(node)) {
+        const here = `${path}.${key}`;
+        const isCopy = key === 'enum' && namedValues.has((value as string[]).join('|'));
+        if (isCopy && !Object.hasOwn(schemas, path.split('.').at(-1) ?? '')) copies.push(here);
+        else walk(value, here);
+      }
+    };
+    walk(document.paths, 'paths');
+    walk(document.components.schemas, 'schemas');
+    expect(copies).toEqual([]);
   });
 });
 

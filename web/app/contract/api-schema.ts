@@ -526,6 +526,36 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        WorkType: "series" | "oneshot" | "anthology";
+        /** @enum {string} */
+        WorkStatus: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+        /** @enum {string} */
+        CreditRole: "story" | "art" | "colors" | "other";
+        /** @enum {string} */
+        RelationKind: "sequel" | "prequel" | "spin_off" | "side_story" | "adaptation" | "alternate_version" | "shared_universe" | "contains" | "other";
+        /** @enum {string} */
+        PublisherKind: "publisher" | "platform" | "self_published";
+        /** @enum {string} */
+        PersonKind: "person" | "collective";
+        /** @enum {string} */
+        ExternalLinkKind: "read" | "buy" | "website" | "social";
+        /** @enum {string} */
+        WorkLinkKind: "read" | "buy";
+        /** @enum {string} */
+        PersonLinkKind: "website" | "social";
+        /** @enum {string} */
+        TitleKind: "translated" | "international" | "former" | "short";
+        /** @enum {string} */
+        SynopsisSource: "official" | "human" | "machine";
+        /** @enum {string} */
+        GenreCategory: "format" | "theme";
+        /** @enum {string} */
+        LibraryStatus: "reading" | "completed" | "plan_to_read" | "on_hold" | "dropped";
+        /** @enum {string} */
+        UserRole: "user" | "admin";
+        /** @enum {string} */
+        Visibility: "public" | "private";
         /** @description Réponse d’erreur unique. */
         Error: {
             /**
@@ -546,14 +576,12 @@ export interface components {
         AdminPerson: {
             id: number;
             name: string;
-            /** @enum {string} */
-            kind: "person" | "collective";
+            kind: components["schemas"]["PersonKind"];
             archived: boolean;
             /** @description Œuvres non archivées où la personne est créditée. */
             activeWorkCount: number;
             links: {
-                /** @enum {string} */
-                kind: "read" | "buy" | "website" | "social";
+                kind: components["schemas"]["ExternalLinkKind"];
                 url: string;
                 label: string | null;
             }[];
@@ -562,8 +590,7 @@ export interface components {
             items: {
                 id: number;
                 name: string;
-                /** @enum {string} */
-                kind: "person" | "collective";
+                kind: components["schemas"]["PersonKind"];
                 archived: boolean;
                 /** @description Œuvres non archivées où la personne est créditée. */
                 activeWorkCount: number;
@@ -575,8 +602,7 @@ export interface components {
         AdminPublisher: {
             id: number;
             name: string;
-            /** @enum {string} */
-            kind: "publisher" | "platform" | "self_published";
+            kind: components["schemas"]["PublisherKind"];
             url: string | null;
             archived: boolean;
             /** @description Œuvres non archivées publiées. */
@@ -586,8 +612,7 @@ export interface components {
             items: {
                 id: number;
                 name: string;
-                /** @enum {string} */
-                kind: "publisher" | "platform" | "self_published";
+                kind: components["schemas"]["PublisherKind"];
                 url: string | null;
                 archived: boolean;
                 /** @description Œuvres non archivées publiées. */
@@ -601,10 +626,8 @@ export interface components {
             id: number;
             title: string;
             originalLanguage: string;
-            /** @enum {string} */
-            type: "series" | "oneshot" | "anthology";
-            /** @enum {string} */
-            status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+            type: components["schemas"]["WorkType"];
+            status: components["schemas"]["WorkStatus"];
             archived: boolean;
             chapters: number | null;
             volumes: number | null;
@@ -612,32 +635,27 @@ export interface components {
             endedOn: string | null;
             titles: {
                 language: string;
-                /** @enum {string} */
-                kind: "translated" | "international" | "former" | "short";
+                kind: components["schemas"]["TitleKind"];
                 title: string;
             }[];
             synopses: {
                 language: string;
                 text: string;
-                /** @enum {string} */
-                source: "official" | "human" | "machine";
+                source: components["schemas"]["SynopsisSource"];
             }[];
             credits: {
                 personId: number;
-                /** @enum {string} */
-                role: "story" | "art" | "colors" | "other";
+                role: components["schemas"]["CreditRole"];
             }[];
             publisherIds: number[];
             /** @description Codes de format et de genre. */
             genres: string[];
             relations: {
                 relatedWorkId: number;
-                /** @enum {string} */
-                relation: "sequel" | "prequel" | "spin_off" | "side_story" | "adaptation" | "alternate_version" | "shared_universe" | "contains" | "other";
+                relation: components["schemas"]["RelationKind"];
             }[];
             links: {
-                /** @enum {string} */
-                kind: "read" | "buy" | "website" | "social";
+                kind: components["schemas"]["ExternalLinkKind"];
                 url: string;
                 label: string | null;
             }[];
@@ -669,10 +687,8 @@ export interface components {
                 id: number;
                 title: string;
                 originalLanguage: string;
-                /** @enum {string} */
-                type: "series" | "oneshot" | "anthology";
-                /** @enum {string} */
-                status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                type: components["schemas"]["WorkType"];
+                status: components["schemas"]["WorkStatus"];
                 archived: boolean;
                 /** @description Codes de format, triés. */
                 formats: string[];
@@ -706,8 +722,7 @@ export interface components {
                 id: number;
                 /** @description Pseudo public, avec la casse choisie. */
                 handle: string;
-                /** @enum {string} */
-                role: "user" | "admin";
+                role: components["schemas"]["UserRole"];
             };
         };
         /** @description Jusqu’à 3 œuvres, la plus ajoutée à une liste récemment d’abord ; vide si aucune. */
@@ -719,10 +734,8 @@ export interface components {
                 originalTitle: string;
                 /** @description Code ISO 639. */
                 originalLanguage: string;
-                /** @enum {string} */
-                type: "series" | "oneshot" | "anthology";
-                /** @enum {string} */
-                status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                type: components["schemas"]["WorkType"];
+                status: components["schemas"]["WorkStatus"];
                 /** @description Codes des formats, triés. */
                 formats: string[];
                 coverPath: string | null;
@@ -744,10 +757,8 @@ export interface components {
                 originalTitle: string;
                 /** @description Code ISO 639. */
                 originalLanguage: string;
-                /** @enum {string} */
-                type: "series" | "oneshot" | "anthology";
-                /** @enum {string} */
-                status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                type: components["schemas"]["WorkType"];
+                status: components["schemas"]["WorkStatus"];
                 /** @description Codes des formats, triés. */
                 formats: string[];
                 coverPath: string | null;
@@ -760,16 +771,14 @@ export interface components {
         GenreList: {
             items: {
                 code: string;
-                /** @enum {string} */
-                category: "format" | "theme";
+                category: components["schemas"]["GenreCategory"];
             }[];
         };
         /** @description Suivi d’une œuvre par l’utilisateur connecté. */
         LibraryEntryResponse: {
             /** @description `null` tant que l’œuvre n’est pas dans la liste de l’utilisateur. */
             entry: {
-                /** @enum {string} */
-                status: "reading" | "completed" | "plan_to_read" | "on_hold" | "dropped";
+                status: components["schemas"]["LibraryStatus"];
                 /** @description Chapitres lus, indépendants des tomes. */
                 chaptersRead: number;
                 /** @description Tomes lus, indépendants des chapitres. */
@@ -792,10 +801,8 @@ export interface components {
                     originalTitle: string;
                     /** @description Code ISO 639. */
                     originalLanguage: string;
-                    /** @enum {string} */
-                    type: "series" | "oneshot" | "anthology";
-                    /** @enum {string} */
-                    status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                    type: components["schemas"]["WorkType"];
+                    status: components["schemas"]["WorkStatus"];
                     /** @description Codes des formats, triés. */
                     formats: string[];
                     coverPath: string | null;
@@ -806,8 +813,7 @@ export interface components {
                     volumes: number | null;
                 };
                 entry: {
-                    /** @enum {string} */
-                    status: "reading" | "completed" | "plan_to_read" | "on_hold" | "dropped";
+                    status: components["schemas"]["LibraryStatus"];
                     /** @description Chapitres lus, indépendants des tomes. */
                     chaptersRead: number;
                     /** @description Tomes lus, indépendants des chapitres. */
@@ -838,8 +844,7 @@ export interface components {
         Profile: {
             /** @description Pseudo public, avec la casse choisie. */
             handle: string;
-            /** @enum {string} */
-            visibility: "public" | "private";
+            visibility: components["schemas"]["Visibility"];
             /** @description Vrai si le lecteur connecté est ce membre. */
             isOwner: boolean;
             /** @description `null` si le profil est privé et que le lecteur n’en est pas le propriétaire. */
@@ -871,18 +876,15 @@ export interface components {
                         originalTitle: string;
                         /** @description Code ISO 639. */
                         originalLanguage: string;
-                        /** @enum {string} */
-                        type: "series" | "oneshot" | "anthology";
-                        /** @enum {string} */
-                        status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                        type: components["schemas"]["WorkType"];
+                        status: components["schemas"]["WorkStatus"];
                         /** @description Codes des formats, triés. */
                         formats: string[];
                         coverPath: string | null;
                         mainAuthor: string | null;
                     };
                     entry: {
-                        /** @enum {string} */
-                        status: "reading" | "completed" | "plan_to_read" | "on_hold" | "dropped";
+                        status: components["schemas"]["LibraryStatus"];
                         /** @description Chapitres lus, indépendants des tomes. */
                         chaptersRead: number;
                         /** @description Tomes lus, indépendants des chapitres. */
@@ -906,10 +908,8 @@ export interface components {
                         originalTitle: string;
                         /** @description Code ISO 639. */
                         originalLanguage: string;
-                        /** @enum {string} */
-                        type: "series" | "oneshot" | "anthology";
-                        /** @enum {string} */
-                        status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                        type: components["schemas"]["WorkType"];
+                        status: components["schemas"]["WorkStatus"];
                         /** @description Codes des formats, triés. */
                         formats: string[];
                         coverPath: string | null;
@@ -921,21 +921,18 @@ export interface components {
         };
         /** @description Visibilité enregistrée. */
         ProfileVisibility: {
-            /** @enum {string} */
-            visibility: "public" | "private";
+            visibility: components["schemas"]["Visibility"];
         };
         WorkDetail: {
             id: number;
             title: string;
             originalTitle: string;
             originalLanguage: string;
-            /** @enum {string} */
-            type: "series" | "oneshot" | "anthology";
-            /** @enum {string} */
-            status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+            type: components["schemas"]["WorkType"];
+            status: components["schemas"]["WorkStatus"];
             synopsis: string | null;
             synopsisLanguage: string | null;
-            synopsisSource: ("official" | "human" | "machine") | null;
+            synopsisSource: components["schemas"]["SynopsisSource"] | null;
             chapters: number | null;
             volumes: number | null;
             /** @description Date ISO. */
@@ -945,20 +942,17 @@ export interface components {
             coverPath: string | null;
             alternativeTitles: {
                 language: string;
-                /** @enum {string} */
-                kind: "translated" | "international" | "former" | "short";
+                kind: components["schemas"]["TitleKind"];
                 title: string;
             }[];
             /** @description Une entrée par personne, avec l’ensemble de ses rôles. */
             credits: {
                 personId: number;
                 name: string;
-                /** @enum {string} */
-                kind: "person" | "collective";
-                roles: ("story" | "art" | "colors" | "other")[];
+                kind: components["schemas"]["PersonKind"];
+                roles: components["schemas"]["CreditRole"][];
                 links: {
-                    /** @enum {string} */
-                    kind: "read" | "buy" | "website" | "social";
+                    kind: components["schemas"]["ExternalLinkKind"];
                     url: string;
                     label: string | null;
                 }[];
@@ -966,21 +960,18 @@ export interface components {
             publishers: {
                 id: number;
                 name: string;
-                /** @enum {string} */
-                kind: "publisher" | "platform" | "self_published";
+                kind: components["schemas"]["PublisherKind"];
                 url: string | null;
             }[];
             formats: string[];
             genres: string[];
             links: {
-                /** @enum {string} */
-                kind: "read" | "buy" | "website" | "social";
+                kind: components["schemas"]["ExternalLinkKind"];
                 url: string;
                 label: string | null;
             }[];
             relations: {
-                /** @enum {string} */
-                relation: "sequel" | "prequel" | "spin_off" | "side_story" | "adaptation" | "alternate_version" | "shared_universe" | "contains" | "other";
+                relation: components["schemas"]["RelationKind"];
                 /**
                  * @description `outgoing` : cette œuvre est la source ; `incoming` : elle est la cible.
                  * @enum {string}
@@ -989,8 +980,7 @@ export interface components {
                 work: {
                     id: number;
                     title: string;
-                    /** @enum {string} */
-                    type: "series" | "oneshot" | "anthology";
+                    type: components["schemas"]["WorkType"];
                 };
             }[];
             /** @description Lecteurs qui ont l’œuvre dans leur liste. */
@@ -1030,10 +1020,8 @@ export interface components {
                 originalTitle: string;
                 /** @description Code ISO 639. */
                 originalLanguage: string;
-                /** @enum {string} */
-                type: "series" | "oneshot" | "anthology";
-                /** @enum {string} */
-                status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                type: components["schemas"]["WorkType"];
+                status: components["schemas"]["WorkStatus"];
                 /** @description Codes des formats, triés. */
                 formats: string[];
                 coverPath: string | null;
@@ -1689,11 +1677,8 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /**
-                     * @description `public` par défaut ; `private` masque tout sauf le pseudo.
-                     * @enum {string}
-                     */
-                    visibility: "public" | "private";
+                    /** @description `public` par défaut ; `private` masque tout sauf le pseudo. */
+                    visibility: components["schemas"]["Visibility"];
                 };
             };
         };
@@ -1958,11 +1943,8 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": {
-                    /**
-                     * @description Statut de lecture.
-                     * @enum {string}
-                     */
-                    status: "reading" | "completed" | "plan_to_read" | "on_hold" | "dropped";
+                    /** @description Statut de lecture. */
+                    status: components["schemas"]["LibraryStatus"];
                     /** @description Chapitres lus, indépendants des tomes ; omis : inchangé (0 à la création). */
                     chaptersRead?: number;
                     /** @description Tomes lus, indépendants des chapitres ; omis : inchangé (0 à la création). */
@@ -2221,12 +2203,10 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    /** @enum {string} */
-                    kind: "person" | "collective";
+                    kind: components["schemas"]["PersonKind"];
                     /** @default [] */
                     links?: {
-                        /** @enum {string} */
-                        kind: "website" | "social";
+                        kind: components["schemas"]["PersonLinkKind"];
                         /**
                          * Format: uri
                          * @description Adresse en `https://`.
@@ -2375,12 +2355,10 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    /** @enum {string} */
-                    kind: "person" | "collective";
+                    kind: components["schemas"]["PersonKind"];
                     /** @default [] */
                     links?: {
-                        /** @enum {string} */
-                        kind: "website" | "social";
+                        kind: components["schemas"]["PersonLinkKind"];
                         /**
                          * Format: uri
                          * @description Adresse en `https://`.
@@ -2695,8 +2673,7 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    /** @enum {string} */
-                    kind: "publisher" | "platform" | "self_published";
+                    kind: components["schemas"]["PublisherKind"];
                     /** @default null */
                     url?: string | null;
                 };
@@ -2839,8 +2816,7 @@ export interface operations {
             content: {
                 "application/json": {
                     name: string;
-                    /** @enum {string} */
-                    kind: "publisher" | "platform" | "self_published";
+                    kind: components["schemas"]["PublisherKind"];
                     /** @default null */
                     url?: string | null;
                 };
@@ -3160,10 +3136,8 @@ export interface operations {
                     title: string;
                     /** @description Code ISO 639, en minuscules. */
                     originalLanguage: string;
-                    /** @enum {string} */
-                    type: "series" | "oneshot" | "anthology";
-                    /** @enum {string} */
-                    status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                    type: components["schemas"]["WorkType"];
+                    status: components["schemas"]["WorkStatus"];
                     /** @description Vide tant que l’œuvre est en cours. */
                     chapters: number | null;
                     /** @description Vide tant que l’œuvre est en cours. */
@@ -3174,8 +3148,7 @@ export interface operations {
                     titles?: {
                         /** @description Code ISO 639, en minuscules. */
                         language: string;
-                        /** @enum {string} */
-                        kind: "translated" | "international" | "former" | "short";
+                        kind: components["schemas"]["TitleKind"];
                         title: string;
                     }[];
                     /** @default [] */
@@ -3183,14 +3156,12 @@ export interface operations {
                         /** @description Code ISO 639, en minuscules. */
                         language: string;
                         text: string;
-                        /** @enum {string} */
-                        source: "official" | "human" | "machine";
+                        source: components["schemas"]["SynopsisSource"];
                     }[];
                     /** @default [] */
                     credits?: {
                         personId: number;
-                        /** @enum {string} */
-                        role: "story" | "art" | "colors" | "other";
+                        role: components["schemas"]["CreditRole"];
                     }[];
                     /** @default [] */
                     publisherIds?: number[];
@@ -3202,13 +3173,11 @@ export interface operations {
                     /** @default [] */
                     relations?: {
                         relatedWorkId: number;
-                        /** @enum {string} */
-                        relation: "sequel" | "prequel" | "spin_off" | "side_story" | "adaptation" | "alternate_version" | "shared_universe" | "contains" | "other";
+                        relation: components["schemas"]["RelationKind"];
                     }[];
                     /** @default [] */
                     links?: {
-                        /** @enum {string} */
-                        kind: "read" | "buy";
+                        kind: components["schemas"]["WorkLinkKind"];
                         /**
                          * Format: uri
                          * @description Adresse en `https://`.
@@ -3365,10 +3334,8 @@ export interface operations {
                     title: string;
                     /** @description Code ISO 639, en minuscules. */
                     originalLanguage: string;
-                    /** @enum {string} */
-                    type: "series" | "oneshot" | "anthology";
-                    /** @enum {string} */
-                    status: "upcoming" | "ongoing" | "completed" | "hiatus" | "abandoned";
+                    type: components["schemas"]["WorkType"];
+                    status: components["schemas"]["WorkStatus"];
                     /** @description Vide tant que l’œuvre est en cours. */
                     chapters: number | null;
                     /** @description Vide tant que l’œuvre est en cours. */
@@ -3379,8 +3346,7 @@ export interface operations {
                     titles?: {
                         /** @description Code ISO 639, en minuscules. */
                         language: string;
-                        /** @enum {string} */
-                        kind: "translated" | "international" | "former" | "short";
+                        kind: components["schemas"]["TitleKind"];
                         title: string;
                     }[];
                     /** @default [] */
@@ -3388,14 +3354,12 @@ export interface operations {
                         /** @description Code ISO 639, en minuscules. */
                         language: string;
                         text: string;
-                        /** @enum {string} */
-                        source: "official" | "human" | "machine";
+                        source: components["schemas"]["SynopsisSource"];
                     }[];
                     /** @default [] */
                     credits?: {
                         personId: number;
-                        /** @enum {string} */
-                        role: "story" | "art" | "colors" | "other";
+                        role: components["schemas"]["CreditRole"];
                     }[];
                     /** @default [] */
                     publisherIds?: number[];
@@ -3407,13 +3371,11 @@ export interface operations {
                     /** @default [] */
                     relations?: {
                         relatedWorkId: number;
-                        /** @enum {string} */
-                        relation: "sequel" | "prequel" | "spin_off" | "side_story" | "adaptation" | "alternate_version" | "shared_universe" | "contains" | "other";
+                        relation: components["schemas"]["RelationKind"];
                     }[];
                     /** @default [] */
                     links?: {
-                        /** @enum {string} */
-                        kind: "read" | "buy";
+                        kind: components["schemas"]["WorkLinkKind"];
                         /**
                          * Format: uri
                          * @description Adresse en `https://`.
@@ -3658,3 +3620,45 @@ export interface operations {
         };
     };
 }
+type FlattenedDeepRequired<T> = {
+    [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
+};
+type ReadonlyArray<T> = [
+    Exclude<T, undefined>
+] extends [
+    unknown[]
+] ? Readonly<Exclude<T, undefined>> : Readonly<Exclude<T, undefined>[]>;
+export const pathsApiV1WorksGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/works"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
+export const pathsApiV1WorksGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/works"]["get"]["parameters"]["query"]["sort"]> = ["relevance", "title", "recent"];
+export const pathsApiV1WorksFacetsGetParametersQueryMatchValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/works/facets"]["get"]["parameters"]["query"]["match"]> = ["all", "any"];
+export const pathsApiV1WorksFeaturedGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/works/featured"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
+export const pathsApiV1WorksTopRatedGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/works/top-rated"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
+export const pathsApiV1WorksIdGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/works/{id}"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
+export const pathsApiV1MeEntriesGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/me/entries"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
+export const pathsApiV1MeEntriesGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/me/entries"]["get"]["parameters"]["query"]["sort"]> = ["updated", "title", "rating"];
+export const pathsApiV1UsersHandleGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
+export const pathsApiV1UsersHandleEntriesGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}/entries"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
+export const pathsApiV1UsersHandleEntriesGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}/entries"]["get"]["parameters"]["query"]["sort"]> = ["updated", "title", "rating"];
+export const pathsApiV1AdminPeopleGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/people"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
+export const pathsApiV1AdminPublishersGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/publishers"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
+export const pathsApiV1AdminWorksGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
+export const pathsApiV1AdminWorksGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["sort"]> = ["title", "title_desc", "completeness", "completeness_desc"];
+export const workTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkType"]> = ["series", "oneshot", "anthology"];
+export const workStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkStatus"]> = ["upcoming", "ongoing", "completed", "hiatus", "abandoned"];
+export const creditRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CreditRole"]> = ["story", "art", "colors", "other"];
+export const relationKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["RelationKind"]> = ["sequel", "prequel", "spin_off", "side_story", "adaptation", "alternate_version", "shared_universe", "contains", "other"];
+export const publisherKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PublisherKind"]> = ["publisher", "platform", "self_published"];
+export const personKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PersonKind"]> = ["person", "collective"];
+export const externalLinkKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["ExternalLinkKind"]> = ["read", "buy", "website", "social"];
+export const workLinkKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkLinkKind"]> = ["read", "buy"];
+export const personLinkKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PersonLinkKind"]> = ["website", "social"];
+export const titleKindValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["TitleKind"]> = ["translated", "international", "former", "short"];
+export const synopsisSourceValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["SynopsisSource"]> = ["official", "human", "machine"];
+export const genreCategoryValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["GenreCategory"]> = ["format", "theme"];
+export const libraryStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LibraryStatus"]> = ["reading", "completed", "plan_to_read", "on_hold", "dropped"];
+export const userRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["UserRole"]> = ["user", "admin"];
+export const visibilityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Visibility"]> = ["public", "private"];
+export const errorCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Error"]["code"]> = ["NOT_FOUND", "VALIDATION_ERROR", "INVALID_JSON", "UNAUTHENTICATED", "HANDLE_REQUIRED", "SIGNUP_EXPIRED", "ADMIN_REQUIRED", "PROFILE_PRIVATE", "PERSON_HAS_WORKS", "PUBLISHER_HAS_WORKS", "INVALID_REFERENCE", "ARCHIVED_REFERENCE", "STALE_RECORD", "FORBIDDEN_ORIGIN", "HANDLE_NOT_ALLOWED", "HANDLE_TAKEN", "AUTH_STATE_INVALID", "AUTH_UNAVAILABLE", "RATE_LIMITED", "INTERNAL_ERROR"];
+export const workDetailRelationsDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkDetail"]["relations"]["direction"]> = ["outgoing", "incoming"];
+export const healthStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Health"]["status"]> = ["ok", "degraded"];
+export const healthDatabaseValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Health"]["database"]> = ["up", "down"];
