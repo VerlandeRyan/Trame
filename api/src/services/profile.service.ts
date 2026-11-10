@@ -69,7 +69,7 @@ const sumOf = (counts: StatusCounts): number =>
   Object.values(counts).reduce((sum, count) => sum + count, 0);
 
 /** Rounds to one decimal place. */
-const roundToOneDecimal =(value: number): number => Math.round(value * 10) / 10;
+const roundToOneDecimal = (value: number): number => Math.round(value * 10) / 10;
 
 /** Creates the profile service; the list of a member reuses the reading-list service. */
 export function createProfileService(deps: {
