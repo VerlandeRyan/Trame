@@ -2,10 +2,11 @@
 import type { ApiError } from '~/utils/api-error'
 import {
   DEFAULT_LIBRARY_STATUS,
-  libraryErrorKey,
+  singleCounterOf,
   type LibraryEntry,
   type LibraryEntryChanges,
 } from '~/utils/library'
+import { writeErrorHintKey, writeErrorKey } from '~/utils/write-errors'
 
 /**
  * The reader's tracking of one work: read, add or update, and remove.
@@ -26,7 +27,8 @@ export function useLibraryEntry(workId: number) {
   }
 
   // After a failure the screen may have drifted from the server: read the entry again.
-  const { run, isBusy, errorKey } = useOptimisticWrite({ resync: fetchEntry })
+  const { run, isBusy } = useOptimisticWrite({ resync: fetchEntry })
+  const { show: showToast } = useToasts()
 
   /** Loads the entry and flags the state as loaded, even without an entry. */
   async function load() {
@@ -35,7 +37,15 @@ export function useLibraryEntry(workId: number) {
       await fetchEntry()
     } catch (cause) {
       hasFailed = true
-      errorKey.value = libraryErrorKey((cause as ApiError).code)
+      // Server rendering stays silent: the browser retries the read and announces its own failure.
+      if (import.meta.client) {
+        const { code } = cause as ApiError
+        showToast({
+          tone: 'error',
+          messageKey: writeErrorKey(code),
+          hintKey: writeErrorHintKey(code),
+        })
+      }
     }
     // A failure during server rendering leaves it "not loaded": the browser will retry.
     if (!(import.meta.server && hasFailed)) isLoaded.value = true
@@ -44,6 +54,7 @@ export function useLibraryEntry(workId: number) {
   /** Adds the work (status plan to read) or applies `changes` to the existing entry. */
   function save(changes: LibraryEntryChanges) {
     return run({
+      overwriteKey: singleCounterOf(changes),
       apply: () => {
         if (entry.value) entry.value = { ...entry.value, ...changes }
       },
@@ -67,5 +78,5 @@ export function useLibraryEntry(workId: number) {
     })
   }
 
-  return { entry, isLoaded, isBusy, errorKey, load, save, remove }
+  return { entry, isLoaded, isBusy, load, save, remove }
 }

@@ -3,8 +3,8 @@ import {
   countersToTotals,
   exceedsKnownTotal,
   keepsChangesOnDecline,
-  libraryErrorKey,
   readingPrompt,
+  singleCounterOf,
   withPromptStatus,
   type LibraryEntry,
   type LibraryEntryChanges,
@@ -166,12 +166,16 @@ describe('exceedsKnownTotal', () => {
   })
 })
 
-describe('libraryErrorKey', () => {
-  it('traduit les codes connus et se replie sur un message générique', () => {
-    expect(libraryErrorKey('UNAUTHENTICATED')).toBe('library.error.signedOut')
-    expect(libraryErrorKey('NOT_FOUND')).toBe('library.error.notFound')
-    expect(libraryErrorKey('RATE_LIMITED')).toBe('error.RATE_LIMITED')
-    expect(libraryErrorKey('INTERNAL_ERROR')).toBe('library.error.generic')
-    expect(libraryErrorKey('constructor')).toBe('library.error.generic')
+describe('singleCounterOf', () => {
+  it('reconnaît une écriture qui ne touche qu’un compteur', () => {
+    expect(singleCounterOf({ chaptersRead: 6 })).toBe('chaptersRead')
+    expect(singleCounterOf({ volumesRead: 2 })).toBe('volumesRead')
+  })
+
+  it('ne retient rien dès que l’écriture porte aussi autre chose', () => {
+    expect(singleCounterOf({ status: 'completed' })).toBeUndefined()
+    expect(singleCounterOf({ status: 'completed', chaptersRead: 12 })).toBeUndefined()
+    expect(singleCounterOf({ chaptersRead: 6, volumesRead: 2 })).toBeUndefined()
+    expect(singleCounterOf({})).toBeUndefined()
   })
 })

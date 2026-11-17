@@ -1,6 +1,6 @@
 /** State and actions of the home "Continue reading" strip. */
 import { incrementUnit } from '~/utils/home'
-import type { LibraryEntry, LibraryEntryChanges } from '~/utils/library'
+import { singleCounterOf, type LibraryEntry, type LibraryEntryChanges } from '~/utils/library'
 import type { ListedEntry } from '~/utils/reading-list'
 
 /**
@@ -12,7 +12,7 @@ export function useContinueReading(initialItems: () => ListedEntry[]) {
   const api = useApi()
   const items = ref<ListedEntry[]>([])
   const readingPrompt = useReadingPrompt()
-  const { run, errorKey } = useOptimisticWrite()
+  const { run } = useOptimisticWrite()
 
   watch(initialItems, (entries) => (items.value = entries), { immediate: true })
 
@@ -26,7 +26,9 @@ export function useContinueReading(initialItems: () => ListedEntry[]) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
     const after = { ...before, ...changes }
+    const counter = singleCounterOf(changes)
     return run({
+      overwriteKey: counter && `${workId}:${counter}`,
       apply: () => {
         replaceEntry(workId, after)
         if (after.status !== 'reading') {
@@ -62,5 +64,5 @@ export function useContinueReading(initialItems: () => ListedEntry[]) {
     if (!isAsking) void saveChanges(item, changes)
   }
 
-  return { items, errorKey, readingPrompt, addOneToProgress }
+  return { items, readingPrompt, addOneToProgress }
 }

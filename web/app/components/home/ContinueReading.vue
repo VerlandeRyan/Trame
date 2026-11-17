@@ -15,7 +15,7 @@ const { t, te } = useI18n()
 const localePath = useLocalePath()
 const headingId = `${useId()}-heading`
 
-const { items, errorKey, readingPrompt, addOneToProgress } = useContinueReading(() => props.entries)
+const { items, readingPrompt, addOneToProgress } = useContinueReading(() => props.entries)
 
 /** Localised address of the work page. */
 const workPath = (item: ListedEntry) =>
@@ -109,10 +109,6 @@ const addOneLabel = (item: ListedEntry) =>
       </li>
     </ul>
 
-    <div v-if="errorKey" class="continue-reading__error">
-      <UiFormError data-testid="continue-reading-error">{{ t(errorKey) }}</UiFormError>
-    </div>
-
     <UiConfirm
       v-model="readingPrompt.isOpen.value"
       :title="readingPrompt.title.value"
@@ -142,9 +138,8 @@ const addOneLabel = (item: ListedEntry) =>
 
 // From 768 px the strip never exceeds the width of its cards (12 px column gap): with
 // fewer cards than columns, "See my list" stays attached to the last card.
-.continue-reading__header,
 .continue-reading__list,
-.continue-reading__error {
+.continue-reading__header {
   @media (min-width: 768px) {
     max-width: calc(
       (100% - (var(--continue-reading-columns) - 1) * var(--space-3)) /
@@ -253,9 +248,5 @@ const addOneLabel = (item: ListedEntry) =>
     @include tilt-on-hover(null, small);
     @include press-down;
   }
-}
-
-.continue-reading__error {
-  margin-top: var(--space-2);
 }
 </style>

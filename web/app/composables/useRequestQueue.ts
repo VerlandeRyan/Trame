@@ -4,8 +4,6 @@
  * should replace the displayed state.
  */
 export function useRequestQueue(handlers: {
-  /** Before each request (for example clear the previous error). */
-  onStart: () => void
   /** A request failed: the screen may have drifted from the server. */
   onError: (cause: unknown) => Promise<void> | void
 }) {
@@ -18,10 +16,7 @@ export function useRequestQueue(handlers: {
     pendingCount += 1
     isBusy.value = true
     queue = queue
-      .then(() => {
-        handlers.onStart()
-        return task()
-      })
+      .then(task)
       .catch(handlers.onError)
       .finally(() => {
         pendingCount -= 1

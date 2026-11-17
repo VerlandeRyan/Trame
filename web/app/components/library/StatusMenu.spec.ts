@@ -19,7 +19,6 @@ function mountMenu(props: Partial<InstanceType<typeof LibraryStatusMenu>['$props
       isSignedIn: true,
       isLoaded: true,
       isBusy: false,
-      errorKey: null,
       ...props,
     },
     attachTo: document.body,
@@ -122,11 +121,5 @@ describe('LibraryStatusMenu', () => {
     await nextTick()
 
     expect(wrapper.get('[data-testid="library-status"]').attributes('aria-expanded')).toBe('false')
-  })
-
-  it('annonce une erreur', async () => {
-    const wrapper = await mountMenu({ errorKey: 'library.error.generic' })
-
-    expect(wrapper.get('[role="alert"]').text()).toContain("Impossible d'enregistrer")
   })
 })

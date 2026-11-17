@@ -3,6 +3,7 @@
 import { COVER_SIZES, type CoverSize } from '~/utils/cover'
 import type { LibraryStatus } from '~/utils/library'
 import type { ListUnit, ListView } from '~/utils/reading-list'
+import { RETRY_HINT_KEY } from '~/utils/write-errors'
 
 definePageMeta({ middleware: 'component-gallery' })
 
@@ -54,6 +55,17 @@ const sampleGenres = [
 const isModalOpen = ref(false)
 const isConfirmOpen = ref(false)
 const signInOpen = useSignInModal()
+const { show: showToast } = useToasts()
+
+/** Shows an error toast with its "Retry" button, as a failed write would. */
+function showErrorToast() {
+  showToast({
+    tone: 'error',
+    messageKey: 'writeError.generic',
+    hintKey: RETRY_HINT_KEY,
+    retry: () => undefined,
+  })
+}
 const sampleHandle = ref('lecteur')
 const searchText = ref('')
 const chaptersRead = ref(12)
@@ -194,6 +206,9 @@ const tabs = computed(() => [
         </UiButton>
         <UiButton variant="secondary" @click="isConfirmOpen = true">
           {{ t('gallery.openConfirm') }}
+        </UiButton>
+        <UiButton variant="secondary" @click="showErrorToast">
+          {{ t('gallery.showToast') }}
         </UiButton>
       </div>
       <AuthNotice />

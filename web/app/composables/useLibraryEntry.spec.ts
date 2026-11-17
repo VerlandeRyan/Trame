@@ -129,7 +129,9 @@ describe('useLibraryEntry', () => {
 
     await library.save({ chaptersRead: 99 })
 
-    expect(library.errorKey).toBe('library.error.generic')
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'error', messageKey: 'writeError.generic' },
+    ])
     expect(library.entry?.chaptersRead).toBe(10)
   })
 
@@ -156,7 +158,9 @@ describe('useLibraryEntry', () => {
 
     await library.load()
 
-    expect(library.errorKey).toBe('library.error.signedOut')
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'error', messageKey: 'writeError.signedOut' },
+    ])
     expect(library.isLoaded).toBe(true)
   })
 })

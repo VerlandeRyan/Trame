@@ -125,11 +125,34 @@ test('un +1 perdu par une panne réseau revient à la valeur d’avant et prévi
   )
   await page.getByTestId('continue-reading-add-one').click()
 
-  await expect(page.getByTestId('continue-reading-error')).toBeVisible()
+  await expect(page.getByTestId('toast')).toContainText("Impossible d'enregistrer")
   await expect(progress).toHaveText('Manga · Chapitre 5')
   await page.unroute('**/api/v1/works/*/entry')
   const stored = await context.request.get(`/api/v1/works/${CHRONIQUES}/entry`)
   expect((await stored.json()).entry.chaptersRead).toBe(5)
+})
+
+test('« Réessayer » rejoue le +1 perdu une fois le réseau revenu', async ({ page, context }) => {
+  await signUp(context)
+  const added = await context.request.put(`/api/v1/works/${CHRONIQUES}/entry`, {
+    data: { status: 'reading', chaptersRead: 5 },
+  })
+  expect(added.status()).toBe(200)
+  await openHome(page)
+  const progress = page.getByTestId('continue-reading-progress')
+  await page.route('**/api/v1/works/*/entry', (route) =>
+    route.request().method() === 'PUT' ? route.abort('connectionfailed') : route.continue(),
+  )
+  await page.getByTestId('continue-reading-add-one').click()
+  await expect(page.getByTestId('toast')).toBeVisible()
+  await page.unroute('**/api/v1/works/*/entry')
+
+  await page.getByTestId('toast-retry').click()
+
+  await expect(progress).toHaveText('Manga · Chapitre 6')
+  await expect(page.getByTestId('toast')).toHaveCount(0)
+  const stored = await context.request.get(`/api/v1/works/${CHRONIQUES}/entry`)
+  expect((await stored.json()).entry.chaptersRead).toBe(6)
 })
 
 test('un membre sans œuvre est accueilli et part d’un format', async ({ page, context }) => {

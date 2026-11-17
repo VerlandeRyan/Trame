@@ -151,10 +151,6 @@ const sentinel = useLoadMoreOnScroll(list)
         />
       </div>
 
-      <UiFormError v-if="list.errorKey.value" data-testid="list-error">
-        {{ t(list.errorKey.value) }}
-      </UiFormError>
-
       <!-- Grid: the number of works on the left, what the grid counts on the right, then the help. -->
       <div v-if="state.view === 'grid'" class="list__grid-head">
         <div class="list__grid-bar">

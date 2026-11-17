@@ -96,7 +96,7 @@ const relationGroups = groupRelations(detail.relations)
 const { state: auth } = useAuth()
 const isSignedIn = computed(() => auth.value.status === 'authenticated')
 const library = useLibraryEntry(workId)
-const { entry, isLoaded, isBusy, errorKey } = library
+const { entry, isLoaded, isBusy } = library
 // Switching to "completed" with counters below the published total offers to set them to it.
 const {
   isOpen: isAskingToRead,
@@ -143,7 +143,6 @@ onMounted(() => {
         :is-signed-in="isSignedIn"
         :is-loaded="isLoaded"
         :is-busy="isBusy"
-        :error-key="errorKey"
         @add="library.save({})"
         @change-status="changeStatus"
         @remove="library.remove()"
