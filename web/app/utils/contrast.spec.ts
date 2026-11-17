@@ -6,11 +6,13 @@ import { contrastRatio } from './contrast'
 // Vitest s'exécute depuis `web/` ; `import.meta.url` n'est pas un fichier dans l'environnement Nuxt.
 const tokens = readFileSync(resolve(process.cwd(), 'app/assets/styles/_tokens.scss'), 'utf8')
 
-/** Valeur `#rrggbb` d'un jeton de `_tokens.scss`. */
+/** `#rrggbb` value of a `_tokens.scss` token (a `#rgb` is expanded). */
 function token(name: string): string {
-  const match = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`).exec(tokens)
-  if (!match) throw new Error(`Jeton --${name} introuvable`)
-  return match[1]!
+  const match = new RegExp(`--${name}:\\s*#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})\\s*;`).exec(tokens)
+  if (!match) throw new Error(`Jeton --${name} absent ou non écrit en hexadécimal`)
+  const digits = match[1]!
+  const full = digits.length === 3 ? [...digits].map((digit) => digit + digit).join('') : digits
+  return `#${full}`
 }
 
 describe('contrastRatio', () => {
@@ -45,10 +47,17 @@ describe('boutons colorés au survol', () => {
   )
 
   it('texte blanc lisible sur le rouge de confirmation, au repos et au survol', () => {
-    expect(contrastRatio('#ffffff', token('color-danger'))).toBeGreaterThanOrEqual(4.5)
-    expect(contrastRatio('#ffffff', token('color-danger-strong'))).toBeGreaterThanOrEqual(
-      contrastRatio('#ffffff', token('color-danger')),
+    expect(contrastRatio(token('color-surface'), token('color-danger'))).toBeGreaterThanOrEqual(4.5)
+    expect(
+      contrastRatio(token('color-surface'), token('color-danger-strong')),
+    ).toBeGreaterThanOrEqual(contrastRatio(token('color-surface'), token('color-danger')))
+  })
+
+  it('étoile des champs obligatoires lisible sur le blanc et sur le papier', () => {
+    expect(contrastRatio(token('color-crimson'), token('color-surface'))).toBeGreaterThanOrEqual(
+      4.5,
     )
+    expect(contrastRatio(token('color-crimson'), token('color-paper'))).toBeGreaterThanOrEqual(4.5)
   })
 
   it('rouge de « Archiver » lisible au survol sur le rose pâle', () => {
@@ -91,7 +100,9 @@ describe('couleurs de survol', () => {
   })
 
   it('« N lecteurs l’ont ajoutée » lisible sur le blanc de la carte', () => {
-    expect(contrastRatio(token('color-crimson'), '#ffffff')).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(token('color-crimson'), token('color-surface'))).toBeGreaterThanOrEqual(
+      4.5,
+    )
   })
 
   it('lien « Tout voir » lisible au survol sur le papier', () => {
@@ -101,7 +112,9 @@ describe('couleurs de survol', () => {
   })
 
   it('texte blanc lisible sur le bleu et sur le bleu de survol', () => {
-    expect(contrastRatio('#ffffff', token('color-blue'))).toBeGreaterThanOrEqual(4.5)
-    expect(contrastRatio('#ffffff', token('color-blue-strong'))).toBeGreaterThanOrEqual(4.5)
+    expect(contrastRatio(token('color-surface'), token('color-blue'))).toBeGreaterThanOrEqual(4.5)
+    expect(
+      contrastRatio(token('color-surface'), token('color-blue-strong')),
+    ).toBeGreaterThanOrEqual(4.5)
   })
 })

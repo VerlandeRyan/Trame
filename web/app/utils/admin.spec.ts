@@ -10,8 +10,15 @@ import {
   emptyPersonDraft,
   emptyPublisherDraft,
   emptyWorkDraft,
-  hasIncompleteRows,
+  formatCodesOf,
+  hasIncompleteForm,
+  hasInvalidLinkUrl,
   incompleteSections,
+  isBlank,
+  isHttpsUrl,
+  URL_MAX_LENGTH,
+  urlErrorKey,
+  missingWorkFields,
   isCreditRowFilled,
   isLinkRowFilled,
   isPublisherRowFilled,
@@ -278,12 +285,50 @@ describe('récapitulatif d’archivage', () => {
   })
 })
 
-describe('lignes incomplètes', () => {
-  const complete = workToDraft(WORK)
+describe('champs obligatoires', () => {
+  const FORMATS = ['manga', 'bd']
 
-  it('accepte une fiche dont toutes les lignes sont choisies, ou vides', () => {
-    expect(hasIncompleteRows(complete)).toBe(false)
-    expect(hasIncompleteRows(emptyWorkDraft())).toBe(false)
+  it('repère le titre vide et l’absence de format', () => {
+    expect(missingWorkFields(emptyWorkDraft(), FORMATS)).toEqual({ title: true, formats: true })
+    const filled = { ...emptyWorkDraft(), title: ' Aube ', genres: ['fantasy', 'bd'] }
+    expect(missingWorkFields(filled, FORMATS)).toEqual({ title: false, formats: false })
+  })
+
+  it('un genre thématique ne tient pas lieu de format', () => {
+    const draft = { ...emptyWorkDraft(), title: 'Aube', genres: ['fantasy'] }
+    expect(missingWorkFields(draft, FORMATS).formats).toBe(true)
+  })
+
+  it('ne réclame pas de format quand le catalogue n’en propose aucun', () => {
+    expect(missingWorkFields(emptyWorkDraft(), []).formats).toBe(false)
+  })
+
+  it('distingue les formats des genres thématiques', () => {
+    const genres = [
+      { code: 'manga', category: 'format' },
+      { code: 'fantasy', category: 'theme' },
+    ]
+    expect(formatCodesOf(genres)).toEqual(['manga'])
+  })
+
+  it('isBlank ignore les espaces', () => {
+    expect(isBlank('  ')).toBe(true)
+    expect(isBlank(' a ')).toBe(false)
+  })
+})
+
+describe('lignes incomplètes', () => {
+  const FORMATS = ['manga', 'bd']
+  const complete = { ...workToDraft(WORK), genres: ['manga'] }
+
+  it('accepte une fiche complète dont toutes les lignes sont choisies, ou vides', () => {
+    expect(hasIncompleteForm(complete, FORMATS)).toBe(false)
+  })
+
+  it('signale le titre ou le format manquant, dans la section « info »', () => {
+    expect(hasIncompleteForm(emptyWorkDraft(), FORMATS)).toBe(true)
+    expect(incompleteSections({ ...complete, title: ' ' }, FORMATS)).toEqual(['info'])
+    expect(incompleteSections({ ...complete, genres: [] }, FORMATS)).toEqual(['info'])
   })
 
   it.each([
@@ -292,7 +337,7 @@ describe('lignes incomplètes', () => {
     ['une œuvre liée sans choix', { relations: [{ work: null, relation: 'other' }] }],
     ['un libellé de lien sans adresse', { links: [{ kind: 'read', url: ' ', label: 'Lire' }] }],
   ])('signale %s', (_label, overrides) => {
-    expect(hasIncompleteRows({ ...complete, ...overrides })).toBe(true)
+    expect(hasIncompleteForm({ ...complete, ...overrides }, FORMATS)).toBe(true)
   })
 
   it.each([
@@ -305,16 +350,66 @@ describe('lignes incomplètes', () => {
     ],
     ['un lien sans adresse', { links: [{ kind: 'read', url: '', label: 'Lire' }] }, ['links']],
   ])('place %s dans sa section', (_label, overrides, sections) => {
-    expect(incompleteSections({ ...complete, ...overrides })).toEqual(sections)
+    expect(incompleteSections({ ...complete, ...overrides }, FORMATS)).toEqual(sections)
   })
 
   it('ne signale aucune section pour une fiche complète', () => {
-    expect(incompleteSections(complete)).toEqual([])
+    expect(incompleteSections(complete, FORMATS)).toEqual([])
   })
 
-  it('laisse passer un lien entièrement vide', () => {
+  it('une ligne existante doit avoir ses champs obligatoires, même entièrement vide', () => {
     const links = [{ kind: 'read', url: '', label: '' }]
-    expect(hasIncompleteRows({ ...complete, links })).toBe(false)
+    expect(incompleteSections({ ...complete, links }, FORMATS)).toEqual(['links'])
+    const titles = [{ language: 'en', kind: 'international', title: ' ' }]
+    expect(incompleteSections({ ...complete, titles }, FORMATS)).toEqual(['texts'])
+    const synopses = [{ language: 'fr', source: 'official', text: '' }]
+    expect(incompleteSections({ ...complete, synopses }, FORMATS)).toEqual(['texts'])
+  })
+
+  it('ne signale pas les lignes dont les champs obligatoires sont remplis', () => {
+    const filled = {
+      ...complete,
+      titles: [{ language: 'en', kind: 'international', title: 'Dawn' }],
+      synopses: [{ language: 'fr', source: 'official', text: 'Un résumé.' }],
+      links: [{ kind: 'read', url: 'https://exemple.test', label: '' }],
+    }
+    expect(incompleteSections(filled, FORMATS)).toEqual([])
+  })
+
+  it('repère un lien sans adresse ou à l’adresse invalide', () => {
+    expect(hasInvalidLinkUrl([{ url: 'https://exemple.test' }, { url: ' ' }])).toBe(true)
+    expect(hasInvalidLinkUrl([{ url: 'http://exemple.test' }])).toBe(true)
+    expect(hasInvalidLinkUrl([{ url: 'https://exemple.test' }])).toBe(false)
+    expect(hasInvalidLinkUrl([])).toBe(false)
+  })
+
+  it('signale dans l’onglet « Liens » une adresse mal formée', () => {
+    const links = [{ kind: 'read', url: 'exemple.test', label: '' }]
+    expect(incompleteSections({ ...complete, links }, FORMATS)).toEqual(['links'])
+  })
+})
+
+describe('adresses https', () => {
+  it.each([
+    ['https://exemple.test', true],
+    ['  https://exemple.test/chemin?q=1#haut ', true],
+    ['HTTPS://Exemple.test', true],
+    ['http://exemple.test', false],
+    ['exemple.test', false],
+    ['https://', false],
+    ['https:/exemple.test', false],
+    ['ftp://exemple.test', false],
+    ['', false],
+    [`https://exemple.test/${'a'.repeat(URL_MAX_LENGTH)}`, false],
+  ])('isHttpsUrl(%j) = %s', (value, expected) => {
+    expect(isHttpsUrl(value)).toBe(expected)
+  })
+
+  it('donne la clé d’erreur d’une adresse : vide si obligatoire, ou invalide', () => {
+    expect(urlErrorKey('', true)).toBe('admin.error.required')
+    expect(urlErrorKey('  ', false)).toBeUndefined()
+    expect(urlErrorKey('exemple.test', false)).toBe('admin.error.invalidUrl')
+    expect(urlErrorKey('https://exemple.test', true)).toBeUndefined()
   })
 })
 

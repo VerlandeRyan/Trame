@@ -106,7 +106,8 @@ function requestRemove(index: number) {
 
   @media (min-width: 768px) {
     grid-template-columns: var(--row-columns);
-    align-items: end;
+    // Labels stay on one line even when a field shows an error message under it.
+    align-items: start;
   }
 }
 

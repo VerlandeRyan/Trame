@@ -26,12 +26,29 @@ export function isValidHandle(handle: string): boolean {
   )
 }
 
+/** The path without its `auth_error` parameter: a banner must not come back with the page after a sign-in. */
+function withoutAuthError(path: string): string {
+  if (!path.includes('auth_error')) return path
+  const hashAt = path.indexOf('#')
+  const hash = hashAt === -1 ? '' : path.slice(hashAt)
+  const beforeHash = hashAt === -1 ? path : path.slice(0, hashAt)
+  const queryAt = beforeHash.indexOf('?')
+  if (queryAt === -1) return path
+  // Only the parameter goes: the rest of the address stays byte for byte as it was.
+  const kept = beforeHash
+    .slice(queryAt + 1)
+    .split('&')
+    .filter((pair) => pair.split('=')[0] !== 'auth_error')
+  const query = kept.length > 0 ? `?${kept.join('&')}` : ''
+  return `${beforeHash.slice(0, queryAt)}${query}${hash}`
+}
+
 /** Page to return to after sign-in: a path of this site only, otherwise the home page. */
 export function safeReturnTo(raw: unknown): string {
   const path = Array.isArray(raw) ? raw[0] : raw
   const valid =
     typeof path === 'string' && path.length <= RETURN_TO_MAX_LENGTH && RETURN_TO_PATTERN.test(path)
-  return valid ? path : HOME_PATH
+  return valid ? withoutAuthError(path) : HOME_PATH
 }
 
 /** Address that starts the Google sign-in (full navigation, relayed to the API). */

@@ -82,6 +82,7 @@ async function abandonSignup() {
     <h1 class="handle__title">{{ t('auth.handle.title') }}</h1>
     <p class="handle__intro">{{ t('auth.handle.intro') }}</p>
     <form class="handle__form" novalidate @submit.prevent="submitHandle">
+      <UiRequiredLegend />
       <UiField
         id="handle"
         v-model="handle"
@@ -89,7 +90,11 @@ async function abandonSignup() {
         :hint="t('auth.handle.hint')"
         :error="errorMessage"
         prefix="@"
-        :input-attributes="{ maxlength: HANDLE_MAX_LENGTH, autocomplete: 'username' }"
+        :input-attributes="{
+          maxlength: HANDLE_MAX_LENGTH,
+          autocomplete: 'username',
+          required: true,
+        }"
       />
       <p v-if="isValidHandle(handle)" class="handle__address" data-testid="handle-address">
         {{ t('auth.handle.profileAddress') }} <strong>/u/{{ handle }}</strong>

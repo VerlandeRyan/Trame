@@ -174,7 +174,11 @@
     "wideLink": "Lien pleine largeur",
     "openSignIn": "Fenêtre de connexion",
     "openConfirm": "Fenêtre de confirmation",
-    "showToast": "Annonce d'erreur"
+    "showToast": "Annonce d'erreur",
+    "showNotice": "Bandeau de connexion"
+  },
+  "form": {
+    "requiredLegend": "champ obligatoire"
   },
   "action": {
     "addToList": "Ajouter à ma liste",
@@ -598,7 +602,7 @@
     "back": "Catalogue",
     "save": "Enregistrer",
     "pickerRequired": "Choisis une proposition dans la liste.",
-    "sectionIncomplete": "Contient une ligne incomplète",
+    "sectionIncomplete": "Contient un champ obligatoire vide ou une ligne incomplète",
     "rowRemove": {
       "title": "Retirer cette ligne ?",
       "text": "Ce que tu as saisi dans cette ligne sera perdu.",
@@ -612,8 +616,11 @@
       "cancel": "Rester"
     },
     "error": {
-      "validation": "Certains champs ne sont pas valides. Vérifie les totaux (vides tant que l'œuvre est en cours), les dates, les langues et les adresses en https.",
-      "incompleteRows": "Certaines lignes sont incomplètes (auteur, éditeur, œuvre liée ou adresse manquants) : complète-les ou retire-les."
+      "validation": "Certains champs sont vides ou invalides. Remplis les champs obligatoires (*) et vérifie les totaux (vides tant que l'œuvre est en cours), les dates, les langues et les adresses en https.",
+      "incompleteForm": "Il manque des informations ou une adresse est invalide : remplis les champs obligatoires (*), saisis les adresses en https et complète ou retire les lignes incomplètes.",
+      "required": "Champ obligatoire",
+      "formatRequired": "Choisis au moins un format.",
+      "invalidUrl": "Adresse invalide : saisis une adresse complète en https:// (ex. https://exemple.org)."
     },
     "links": {
       "title": "Liens",

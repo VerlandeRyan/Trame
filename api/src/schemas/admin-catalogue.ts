@@ -179,7 +179,11 @@ export const workBody = z
       .max(50)
       .default([]),
     publisherIds: z.array(positiveId).max(20).default([]),
-    genres: z.array(genreCode).max(30).default([]).describe('Codes de format et de genre.'),
+    genres: z
+      .array(genreCode)
+      .max(30)
+      .default([])
+      .describe('Codes de format et de genre ; au moins un format (`VALIDATION_ERROR` sinon).'),
     relations: z
       .array(z.strictObject({ relatedWorkId: positiveId, relation: z.enum(RELATION_KINDS) }))
       .max(50)

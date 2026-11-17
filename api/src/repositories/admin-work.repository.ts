@@ -124,6 +124,12 @@ export interface MissingReferences {
   genres: string[];
 }
 
+/** What a draft cites: the references that do not exist, and whether one of its genres is a format. */
+export interface ReferenceLookup {
+  missing: MissingReferences;
+  hasFormat: boolean;
+}
+
 /** References of a draft that exist but are archived. */
 export interface ArchivedReferences {
   personIds: number[];
@@ -149,7 +155,8 @@ export interface AdminWorkRepository {
   list(criteria: AdminWorkListCriteria): Promise<{ items: AdminWorkListItem[]; total: number }>;
   /** Archived or not. */
   find(id: number): Promise<AdminWorkRecord | null>;
-  findMissingReferences(draft: WorkDraft): Promise<MissingReferences>;
+  /** Looks up what the draft cites: the references that do not exist, and whether it carries a format. */
+  lookUpReferences(draft: WorkDraft): Promise<ReferenceLookup>;
   findArchivedReferences(draft: WorkDraft): Promise<ArchivedReferences>;
   create(draft: WorkDraft): Promise<number>;
   /** False if the work does not exist, or if `version` is no longer the record's. */
@@ -501,7 +508,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
       };
     },
 
-    async findMissingReferences(draft) {
+    async lookUpReferences(draft) {
       const personIds = [...new Set(draft.credits.map((credit) => credit.personId))];
       const workIds = draft.relations.map((relation) => relation.relatedWorkId);
       const [people, publishers, works, genres] = await Promise.all([
@@ -510,14 +517,21 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         findExistingIds('work', workIds),
         draft.genres.length === 0
           ? []
-          : db.selectFrom('genre').select('code').where('code', 'in', draft.genres).execute(),
+          : db
+              .selectFrom('genre')
+              .select(['code', 'category'])
+              .where('code', 'in', draft.genres)
+              .execute(),
       ]);
       const knownGenres = new Set(genres.map((genre) => genre.code));
       return {
-        personIds: personIds.filter((id) => !people.has(id)),
-        publisherIds: draft.publisherIds.filter((id) => !publishers.has(id)),
-        workIds: workIds.filter((id) => !works.has(id)),
-        genres: draft.genres.filter((code) => !knownGenres.has(code)),
+        missing: {
+          personIds: personIds.filter((id) => !people.has(id)),
+          publisherIds: draft.publisherIds.filter((id) => !publishers.has(id)),
+          workIds: workIds.filter((id) => !works.has(id)),
+          genres: draft.genres.filter((code) => !knownGenres.has(code)),
+        },
+        hasFormat: genres.some((genre) => genre.category === 'format'),
       };
     },
 

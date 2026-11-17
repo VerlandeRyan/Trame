@@ -20,6 +20,22 @@ describe('AdminSelectField', () => {
     expect(wrapper.get('[role="combobox"]').text()).toContain('Officiel')
   })
 
+  it('obligatoire : étoile après le nom et aria-required sur la liste', async () => {
+    const wrapper = await mountSuspended(AdminSelectField, {
+      props: { modelValue: 'official', options: OPTIONS, label: 'Source', required: true },
+    })
+
+    expect(wrapper.get('.select-field__label').text()).toBe('Source*')
+    expect(wrapper.get('[role="combobox"]').attributes('aria-required')).toBe('true')
+  })
+
+  it('facultatif : ni étoile ni aria-required', async () => {
+    const wrapper = await mountField()
+
+    expect(wrapper.get('.select-field__label').text()).toBe('Source')
+    expect(wrapper.get('[role="combobox"]').attributes('aria-required')).toBeUndefined()
+  })
+
   it('émet le choix fait dans la liste', async () => {
     const wrapper = await mountField()
 

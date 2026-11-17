@@ -1,6 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { NAVIGATION_TIMEOUT_MS } from '~~/vitest.support'
 import AuthNotice from './Notice.vue'
 
 // Une instance restée montée verrait le même avis et l'effacerait à la navigation.
@@ -40,6 +41,30 @@ describe('AuthNotice', () => {
     await vi.waitFor(() => expect(useRoute().query).toEqual({ utm: '1' }))
   })
 
+  it('repart à zéro quand un avis de même texte mais de teinte différente le remplace', async () => {
+    const wrapper = await mountSuspended(AuthNotice, { route: '/' })
+    useAuthNotice().value = { key: 'auth.signedOut', tone: 'success' }
+    await nextTick()
+    const first = wrapper.get('[data-testid="auth-notice"]').element
+
+    useAuthNotice().value = { key: 'auth.signedOut', tone: 'error' }
+    await nextTick()
+
+    const second = wrapper.get('[data-testid="auth-notice"]')
+    expect(second.element).not.toBe(first)
+    expect(second.attributes('style')).toContain('--dismiss-duration: 10000ms')
+    useAuthNotice().value = null
+  })
+
+  it('disparaît quand l’adresse perd son motif (autre connexion, autre page)', async () => {
+    const wrapper = await mountSuspended(AuthNotice, { route: '/?auth_error=signup_cancelled' })
+    expect(wrapper.find('[data-testid="auth-notice"]').exists()).toBe(true)
+
+    await navigateTo('/search')
+
+    await vi.waitFor(() => expect(wrapper.find('[data-testid="auth-notice"]').exists()).toBe(false))
+  })
+
   it('colore l’avis selon sa nature : jaune, vert ou rouge', async () => {
     const info = await mountSuspended(AuthNotice, { route: '/?auth_error=cancelled' })
     expect(info.get('[data-testid="auth-notice"]').classes()).toContain('auth-notice--info')
@@ -74,7 +99,7 @@ describe('AuthNotice', () => {
     const isShown = () => wrapper.find('[data-testid="auth-notice"]').exists()
 
     await navigateTo('/')
-    await vi.waitFor(() => expect(useRoute().path).toBe('/'))
+    await vi.waitFor(() => expect(useRoute().path).toBe('/'), { timeout: NAVIGATION_TIMEOUT_MS })
     await flushPromises()
     expect(isShown()).toBe(true)
 

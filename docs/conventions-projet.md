@@ -3,9 +3,11 @@
 > Dernière mise à jour : 2026-11-10
 
 ## 1. Dépôt
+
 - **Un monorepo** public, sans fichier LICENSE pour l'instant : `api/`, `web/`, `db/`, `e2e/`, `docs/`, `.github/`.
 - `private/` est ignoré par git (notes privées, données du catalogue, références de comptes). **Règle** : `docs/` contient ce dont un lecteur ou contributeur a besoin (spécifications, modèle, architecture, conventions) ; stratégie, analyse juridique, budgets et historique de réflexion restent dans `private/`.
 - Structure cible :
+
 ```
 trame/
 ├─ CLAUDE.md                 règles de travail (court)
@@ -20,6 +22,7 @@ trame/
 ```
 
 ## 2. Garde-fous du dépôt public
+
 1. Compte GitHub avec **2FA**.
 2. **Secret scanning + push protection** activés.
 3. **Protection de `main`** : PR obligatoire et CI verte.
@@ -30,25 +33,29 @@ trame/
 8. `SECURITY.md` à jour.
 9. Hooks locaux (section 4) + mêmes contrôles en CI.
 10. Dépendances surveillées (Renovate ou Dependabot).
-En cas d'erreur : **révoquer/changer le secret immédiatement** ; réécrire l'historique ne suffit pas une fois publié.
+    En cas d'erreur : **révoquer/changer le secret immédiatement** ; réécrire l'historique ne suffit pas une fois publié.
 
 ## 3. Git
+
 - Branches : `feat/12-recherche`, `fix/…`, `docs/…`, `chore/…`, `refactor/…`, `hotfix/…` (numéro du ticket GitHub). Un travail de type `test` ou `ci` prend le préfixe `chore/`.
 - Commits : `type(scope): message (#12)` — types `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `ci`.
 - Une PR par ticket, `Closes #12`, fusion en squash.
 - `main` est toujours déployable.
 
 ## 4. Hooks locaux (`lefthook`, fonctionnent sans GitHub)
+
 - **pre-commit** : `gitleaks` (secrets) et ESLint sur les fichiers modifiés de `web/`, `api/` et `e2e/`, et `shellcheck` sur les `scripts/*.sh` modifiés (même contrôle en CI). Prettier n'y est pas : lancer `format:check` avant de proposer un commit.
 - **commit-msg** : `commitlint` (format ci-dessus) et contrôle du préfixe de branche (`scripts/check-branch.sh`).
 
 ## 5. Tickets
+
 GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`, `refactor`, `debt`) et `area:*` (`api`, `web`, `db`, `infra`, `ci`, `docs`, `e2e`, `design`, `mobile`). `type:debt` marque un raccourci assumé : le ticket est ouvert dans la PR qui le laisse. Le backlog vit dans GitHub Issues. **Ordre entre tickets** : une dépendance (« à faire avant / après #n ») s'écrit dans une section « Coordination » des **deux** tickets, jamais d'un seul côté ; un ticket fermé n'impose plus d'ordre et sa mention est retirée ou corrigée.
 
 ## 6. Qualité et tests
+
 - Lint : ESLint + `eslint-plugin-vue` + Prettier ; types : `vue-tsc`, TypeScript strict (6, partout).
 - **Avant de proposer un commit** : typecheck, lint, `format:check` et tests (avec couverture) sont lancés par l'assistant, pas laissés à Ryan.
-- **Règles Sonar avant le push** : `npm run lint` (web, api, e2e) applique `eslint-plugin-sonarjs` en lint typé, comme le hook et la CI. Ce qu'un linter ne voit pas, et que le quality gate des PR refuse :
+- **Règles Sonar avant le push** : `npm run lint` (web, api, e2e) applique `eslint-plugin-sonarjs` en lint typé, comme la CI. Ce qu'un linter ne voit pas, et que le quality gate des PR refuse :
   - `void` seulement devant une vraie `Promise` : une fonction au type mixte (`navigateTo`) passe par une fonction `async` ;
   - pas de bloc recopié entre deux pages ou composants (≤ 3 % de duplication) : extraire un composable ;
   - chaque ligne nouvelle est testée (≥ 80 % du nouveau code) : lancer `npm run test:coverage` avant le push ;
@@ -61,36 +68,44 @@ GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`
 - Sécurité : gitleaks, Semgrep CE, CodeQL et SonarQube Cloud en CI, Renovate pour les dépendances. Pas encore en place : OSV-Scanner, Lighthouse CI, SQLFluff.
 
 ## 6 ter. Commentaires
+
 Le code se reprend sans ouvrir d'autres fichiers ; le commentaire est court, utile, en **anglais**.
+
 - **En-tête de fichier** : une ligne `/** … */` en tête (dans `<script>` pour un `.vue`, commentaire HTML avant `<template>` sinon) qui dit ce que le fichier contient ou fait.
 - **Un élément, une ligne** : chaque fonction (exportée ou non), composable, store, type, énumération et constante exportés, et chaque composant a une ligne `/** … */` qui dit **ce que c'est ou ce que ça renvoie**, pas comment. Pas de `@param` ni `@returns` sauf si le nom et le type ne suffisent pas.
 - **Rien d'évident** : ni le nom, ni le type, ni ce que le code dit déjà.
 - **`//` = un « pourquoi » non intuitif** (piège navigateur, ordre qui compte, contrainte métier, choix qui surprendrait). Un `//` qui décrit simplement un élément devient un `/** */`.
 - **Jamais** de numéro de ticket, de renvoi à une maquette, à une règle de gestion ou à une user story, ni d'historique d'une décision (git le garde).
 - **Hors périmètre** : fichiers générés (`db/generated.ts`, `contract/api-schema.ts`) et tests (`*.test.ts`, `*.spec.ts`), qui ne sont pas commentés élément par élément.
-- **Contrôles** : `eslint-plugin-jsdoc` (`npm run lint`, aussi lancé par le hook après chaque édition) impose la ligne par fonction, interface et classe (les types dérivés d'une constante documentée n'ont pas leur propre ligne) ; un test d'en-têtes (`file-headers.test.ts` côté API, `file-headers.spec.ts` côté web) impose l'en-tête de fichier. Aucun outil ne juge la qualité : voir ci-dessous.
+- **Contrôles** : `eslint-plugin-jsdoc` (`npm run lint`) impose la ligne par fonction, interface et classe (les types dérivés d'une constante documentée n'ont pas leur propre ligne) ; un test d'en-têtes (`file-headers.test.ts` côté API, `file-headers.spec.ts` côté web) impose l'en-tête de fichier. Aucun outil ne juge la qualité : voir ci-dessous.
 - **Relecture** : avant de rendre un travail, se demander « un nouveau venu comprendrait-il ce fichier sans ouvrir les autres ? » et relire le diff avec `/simplify` (ou `/code-review` sur une PR) pour retirer ce qui redit le code. L'assistant prend cette habitude à chaque tâche.
 
 ## 6 bis. Budget de documentation
+
 La documentation doit rester petite pour rester juste et peu coûteuse à lire.
+
 - **Un fait, un seul endroit** : valeurs énumérées (types, statuts, rôles) uniquement dans le [modèle de données](modele-de-donnees.md) ; comportements dans les [spécifications](specifications-fonctionnelles.md) ; choix techniques difficiles à défaire dans un ADR. Les autres documents renvoient au lieu de recopier.
 - **Plafonds** : chaque `CLAUDE.md` ≤ 150 lignes ; `web/CLAUDE.md` ≤ 10 Ko (règles et pièges seulement, le comportement des écrans va dans `docs/web/`) ; `private/etat-courant.md` ≤ 25 lignes ; un ADR ≤ 25 lignes ; tout autre document ≤ 250 lignes. Pas de plafond sur le total de `docs/` : tant que chaque document est à jour, clair, précis, concis et bien structuré, l'assistant ne lit que ce dont il a besoin.
 - **Au-delà d'un plafond, on dédoublonne ou on découpe avant d'ajouter.** Un backlog vit dans GitHub Issues, pas dans `docs/`.
 - Un ADR n'est écrit que pour une décision difficile à défaire ; sinon la règle va dans les spécifications ou le modèle.
 
 ## 7. Definition of Done
+
 - Code et tests écrits et verts ; lint et types verts.
 - Documentation concernée mise à jour (spécifications, modèle, ADR si décision structurante).
 - Aucun secret ni donnée réelle ; erreurs avec codes stables.
 - Passation de session (`private/etat-courant.md`) mise à jour en fin de session seulement.
 
 ## 8. CI (GitHub Actions)
+
 `ci.yml` : secrets (gitleaks), workflows (actionlint), Semgrep, commitlint, web (types, lint, tests, build, Sonar), API (migrations, tests, Sonar), E2E Playwright (Chromium bureau et WebKit iPhone), images Docker (build, puis `scripts/smoke-test-images.sh` : `/health` de l'API et `/api/v1/works/facets` via le web) ; `codeql.yml` : CodeQL ; `pr-lien-ticket.yml` : lien PR ↔ ticket. Déploiement à définir avec l'hébergement.
 
 ## 9. Technologies
+
 Node LTS, TypeScript stable, aucune version préliminaire, versions épinglées, mises à jour par Renovate, une montée de version majeure à la fois.
 
 ## 10. Travail avec l'assistant
+
 - `CLAUDE.md` court (≤ 150 lignes) ; chaque sous-dossier peut avoir le sien.
 - Sessions légères : une session = un sujet ; prompt de démarrage ci-dessous ; passation dans `private/etat-courant.md` (hors dépôt).
 - Modifications de fichiers via les outils d'édition (diffs visibles) ; modifications groupées puis une vérification.
@@ -100,7 +115,9 @@ Node LTS, TypeScript stable, aucune version préliminaire, versions épinglées,
 - Autorisations locales (`.claude/settings.local.json`, non versionné) : commandes nommées plutôt que génériques ; pas d'exécution de code arbitraire (`node -e`, `npx` libre) ni de requête réseau libre.
 
 ### Prompt de démarrage d'une session
+
 Les règles vivent dans `CLAUDE.md` (« Démarrage de session » et « Façon de travailler ») : le prompt ne les recopie pas.
+
 ```text
 Projet Trame (voir CLAUDE.md). Lis CLAUDE.md, private/etat-courant.md puis
 docs/conventions-projet.md (les bonnes manières de faire). N'ouvre un autre document
@@ -115,18 +132,23 @@ Fin de session (seulement si je te le demande) : réécris private/etat-courant.
 questions ouvertes), refais le contrôle git en lecture seule, propose un message de commit,
 puis résume en 5 lignes.
 ```
+
 Bonnes pratiques : un sujet par session ; demander « mets à jour etat-courant.md » une seule fois, avant de fermer ; « lis ce fichier » plutôt que « rappelle-toi » ; pas de sous-agents sauf besoin ; un changement de décision structurant = un ADR, pas seulement une phrase en conversation.
 
 ## 11. Contenu utilisateur et modèles de langage
+
 Aucune fonction du produit n'appelle un modèle aujourd'hui. Le jour où l'une le fera (traduction automatique des synopsis, aide à la modération des soumissions et signalements…) :
+
 - tout contenu d'utilisateur (soumissions, signalements, synopsis, pseudos) est transmis comme **donnée**, jamais mêlé aux instructions ;
 - le modèle n'a accès ni aux outils, ni aux secrets, ni à la base ;
 - sa sortie n'est ni exécutée, ni rendue en HTML (pas de `v-html`), ni écrite en base sans validation ; une décision de modération reste humaine.
 
 ## 12. Conception du front
+
 Règles de conception communes à tous les écrans (comportement écran par écran : [docs/web/](web/composants.md)).
 
 ### Jetons, textes, icônes
+
 - **Jetons d'abord** : couleurs, ombres, espacements viennent de `app/assets/styles/_tokens.scss` (variables CSS). Jamais de valeur de couleur en dur dans un composant.
 - **Contour** : `--border` (3 px d'encre, relevé des 2 px des maquettes qui paraissaient trop fins à l'écran) pour tous les cadres, champs, boutons et séparateurs : ne jamais écrire une épaisseur en dur.
 - **Icônes** : `<Icon name="tabler:…" />` uniquement ; aucune police d'icônes ni CDN.
@@ -134,8 +156,18 @@ Règles de conception communes à tous les écrans (comportement écran par écr
 - **Pas de pied de page** tant qu'il n'est pas maquetté ; à définir en temps voulu (mentions légales : #35).
 - **Lisibilité** : noms explicites (pas d'abréviations d'une lettre), classes BEM par composant (`counter__button`), pas de ternaires imbriqués, un fichier = une responsabilité.
 
+### Cohérence visuelle
+
+Une nouveauté ne doit créer **aucune divergence** : deux éléments qui jouent le même rôle ont le même aspect partout.
+
+- **Réutiliser avant de styler** : avant d'écrire un élément (message d'erreur, aide, icône, champ, ligne de formulaire, bouton, pastille), chercher le composant ou le jeton qui rend déjà ce rôle (`UiFormError` pour toute erreur, `UiField`, `UiButton`, `UiRequiredMark`…) et l'utiliser. Jamais de variante locale (taille, icône, couleur ou espacement différents), jamais de bloc de style recopié avec d'autres valeurs.
+- **Deux rouges, deux sens** : `--color-crimson` = erreur et obligation (messages et cadres d'erreur, étoile « obligatoire », point d'alerte d'un onglet, annonce d'erreur) ; `--color-danger` = action destructrice (« Archiver », confirmation de perte de données). Un nouvel élément prend l'un ou l'autre selon son sens, jamais une teinte intermédiaire.
+- **Comparer avant de rendre** : regarder le nouvel élément à côté de ses voisins (taille de texte, taille d'icône, couleur, alignement), au bureau et à 390 px, et corriger l'écart avant de le montrer. Si un composant partagé convient presque, l'étendre (en demandant à Ryan s'il change d'aspect ailleurs) plutôt que d'en dupliquer l'aspect.
+
 ### Survol et appui
+
 Système unique (#164). **Souris seulement**, via les mixins de `_mixins.scss` : `on-hover` (`@media (hover: hover) and (pointer: fine)`, jamais sur un élément désactivé), `tilt-on-hover` (inclinaison « autocollant » avec rebond), `lift-on-hover` (montée d'1 px) et `press-background` (fond d'appui). Sur écran tactile seul `:active` répond (sinon `:hover` reste collé après un toucher).
+
 - **Blanc ou papier** (bouton, −/+, flèche, croix, onglet à cadre, déroulant, ligne de menu, pastille, pagination, bascule) : fond `--color-cover-empty`. L'inclinaison suit trois paliers de largeur (`tilt-on-hover`, jamais un angle libre) pour que les coins bougent à peu près de la même distance : `small` −2,5° (`UiButton size="small"`), `medium` −1,6° (boutons courants), `wide` −1,2° (cartes et chips d'Explorer, « Voir tout le catalogue », `block`). Les petits boutons carrés (flèches, −/+, croix, pagination) montent d'1 px avec ombre (`lift-on-hover`) ; pastilles, bascules et lignes de menu ne bougent pas.
 - **Bouton coloré** : inclinaison et fond plus foncé, **texte intact** (`rose-strong`, `blue-strong`, `danger-strong`, `--status-*-strong`). Jamais de `filter: brightness()` : un test (`hover-rules.spec.ts`) le refuse.
 - **Bouton blanc à contour rouge** (« Archiver », `UiButton variant="danger"`) : exception à la règle des boutons blancs, son survol est un fond rose pâle (`--color-chip`), cadre et texte restent rouges. Toute action destructrice du même style suit cette règle.
@@ -151,15 +183,19 @@ Système unique (#164). **Souris seulement**, via les mixins de `_mixins.scss` :
 - `utils/contrast.spec.ts` lit `_tokens.scss` et garde ces fonds au seuil AA avec le texte d'encre ; les `--status-*-strong` assombrissent de 10 % ; « Terminé » (4,4:1) et « Abandonné » (3,8:1) passent sous 4,5:1 le temps du survol, exception assumée.
 
 ### Zones de clic
+
 - Une zone tactile invisible de 44 px (`::after`, ou un bouton de 32 × 44 px pour les pastilles du carrousel) **ne doit jamais en recouvrir une autre** : la dernière dans le DOM capte le clic de sa voisine. Écarts qui en découlent : 14 px entre les flèches, boutons de pastilles côte à côte, 16 px entre les pastilles d'Explorer.
 - **La zone dépend de l'appareil** : à la souris (`pointer: fine`) elle épouse l'élément (pastille de carrousel : 32 × 28 px, flèche : ses 30 px, pastille d'Explorer : son cadre) pour que le curseur n'active pas un bouton situé à côté ; au doigt (`pointer: coarse`) elle monte à 44 px. Le test E2E `elementFromPoint` de l'accueil le contrôle à 1280 et 390 px.
 - **Petits liens** (`.link-underlined`, logo, titres de résultats) : mixin `touch-target` (`_mixins.scss`), un `::after` invisible qui porte la zone à 44 px de haut **au doigt seulement** (`pointer: coarse`, pas selon la largeur d'écran) ; `utils/touch-target-rules.spec.ts` et `e2e/tests/touch-targets.spec.ts` le contrôlent. Les boutons (« Filtres », « + ») passent à `min-height: var(--touch)`.
 - Boutons inactifs (`UiButton disabled`) : opacité 0,5, ombre conservée, curseur d'interdiction.
+
 ### Animations
+
 Toute transition ou animation se déclare dans `@media (prefers-reduced-motion: no-preference)`, jamais de `!important` ni de règle globale « reduce » (Sonar le signale).
 **Ouverture d'un menu déroulant** : un seul mixin, `menu-open-animation` (`_mixins.scss`) : fondu et glissement de 4 px (0,12 s) depuis le côté du bouton, `($above: true)` pour un menu qui s'ouvre au-dessus. Tout nouveau menu l'inclut ; `utils/menu-rules.spec.ts` le contrôle.
 
 ### Accessibilité et appareils
+
 - **Contraste AA** (mesuré le 2026-10-14) : encre `#1b2a5c` sur les cinq couleurs de statut ≥ 4,59:1, sur le rose 5,20:1 ; blanc sur bleu 8,41:1. Ne jamais mettre de texte blanc sur une couleur de statut (1,45 à 2,98:1).
 - **Appareils** : zones tactiles ≥ 44 px (`--touch`), champs à 16 px minimum (Safari iOS), pas de défilement horizontal, `100dvh` plutôt que `100vh` seul. Points de rupture : 768 et 1024 px. **Tablette (768 à 1023 px)** : un tableau ou une rangée de colonnes qui n'y tient pas garde la mise en page du téléphone jusqu'à 1023 px (« Ma liste », catalogue d'administration) ; au plus deux cartes côte à côte (« Reprendre la lecture ») ; l'aide du champ de recherche de l'en-tête est raccourcie (`useNarrowScreen(1023)`). `utils/tablet-layout-rules.spec.ts` le contrôle.
 - Pas de `v-html` sur du contenu utilisateur ; données de démo fictives uniquement.

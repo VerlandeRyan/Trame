@@ -295,7 +295,7 @@ function registerButton(element: unknown, index: number) {
   flex: none;
   width: 9px;
   height: 9px;
-  fill: var(--color-danger);
+  fill: var(--color-crimson);
 }
 
 .tabs__count {

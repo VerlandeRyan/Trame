@@ -393,24 +393,73 @@ export function workToDraft(work: AdminWork): WorkDraft {
   }
 }
 
-/** Error shown when saving is refused because of `hasIncompleteRows`. */
-export const INCOMPLETE_ROWS_ERROR_KEY = 'admin.error.incompleteRows'
+/** Error shown when saving is refused because of `hasIncompleteForm` (or an empty name). */
+export const INCOMPLETE_FORM_ERROR_KEY = 'admin.error.incompleteForm'
 
-/**
- * Whether a credit, publisher or related-work row has no record chosen, or a link has a label but
- * no address: `draftToWorkBody` would ignore them and the input would be lost silently.
- */
-export function hasIncompleteRows(draft: WorkDraft): boolean {
-  return incompleteSections(draft).length > 0
+/** Whether the text is empty once trimmed. */
+export const isBlank = (value: string) => value.trim() === ''
+
+/** Longest address the API accepts. */
+export const URL_MAX_LENGTH = 2000
+
+/** Whether the text is a full `https://` address, the only kind the API accepts. */
+export function isHttpsUrl(value: string): boolean {
+  const text = value.trim()
+  if (text.length > URL_MAX_LENGTH || !/^https:\/\//i.test(text)) return false
+  try {
+    return new URL(text).hostname !== ''
+  } catch {
+    return false
+  }
 }
 
-/** The sections of the form that contain an incomplete row (rule of `hasIncompleteRows`). */
-export function incompleteSections(draft: WorkDraft): WorkSection[] {
+/** Error key of an address field: empty while required, or not a valid https address. */
+export function urlErrorKey(value: string, isRequired: boolean): string | undefined {
+  if (isBlank(value)) return isRequired ? 'admin.error.required' : undefined
+  return isHttpsUrl(value) ? undefined : 'admin.error.invalidUrl'
+}
+
+/** Whether a link row has no address or an invalid one (the address is required once the row exists). */
+export const hasInvalidLinkUrl = (links: readonly { url: string }[]) =>
+  links.some((link) => urlErrorKey(link.url, true) !== undefined)
+
+/** Codes of the genres that are formats (manga, webtoon…). */
+export const formatCodesOf = (genres: readonly { code: string; category: string }[]) =>
+  genres.filter((genre) => genre.category === 'format').map((genre) => genre.code)
+
+/**
+ * The required fields of a work left empty: the title, and the format (at least one, only checked
+ * when the catalogue offers formats).
+ */
+export function missingWorkFields(draft: WorkDraft, formatCodes: readonly string[]) {
+  return {
+    title: isBlank(draft.title),
+    formats: formatCodes.length > 0 && !draft.genres.some((code) => formatCodes.includes(code)),
+  }
+}
+
+/**
+ * Whether a required field is empty, including the required fields of a row that exists (title,
+ * synopsis text, link address, credit, publisher or related work): `draftToWorkBody` would ignore
+ * such a row and the input would be lost silently.
+ */
+export function hasIncompleteForm(draft: WorkDraft, formatCodes: readonly string[]): boolean {
+  return incompleteSections(draft, formatCodes).length > 0
+}
+
+/** The sections of the form that contain a gap (rule of `hasIncompleteForm`). */
+export function incompleteSections(
+  draft: WorkDraft,
+  formatCodes: readonly string[],
+): WorkSection[] {
+  const missing = missingWorkFields(draft, formatCodes)
   const isIncomplete: Record<WorkSection, boolean> = {
-    info: false,
-    texts: false,
+    info: missing.title || missing.formats,
+    texts:
+      draft.titles.some((row) => isBlank(row.title)) ||
+      draft.synopses.some((row) => isBlank(row.text)),
     relations: draft.relations.some((row) => row.work === null),
-    links: draft.links.some((row) => row.url.trim() === '' && row.label.trim() !== ''),
+    links: hasInvalidLinkUrl(draft.links),
     people:
       draft.credits.some((row) => row.person === null) ||
       draft.publishers.some((row) => row.publisher === null),
@@ -420,7 +469,7 @@ export function incompleteSections(draft: WorkDraft): WorkSection[] {
 
 // A row counts as filled in when removing it would lose something: it then asks for confirmation.
 /** Whether the text has content once trimmed. */
-const hasText = (value: string) => value.trim() !== ''
+const hasText = (value: string) => !isBlank(value)
 
 /** Whether a title row has text. */
 export const isTitleRowFilled = (row: WorkDraft['titles'][number]) => hasText(row.title)

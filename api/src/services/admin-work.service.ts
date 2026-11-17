@@ -71,13 +71,16 @@ export function createAdminWorkService(repository: AdminWorkRepository): AdminWo
     return work;
   }
 
-  /** Rejects missing or newly archived references, and a work related to itself. */
+  /** Rejects a work without format, missing or newly archived references, and a work related to itself. */
   async function checkReferences(input: AdminWorkInput, current?: AdminWorkRecord): Promise<void> {
     if (input.relations.some((relation) => relation.relatedWorkId === current?.id)) {
       throw new AppError('INVALID_REFERENCE', { workIds: [current?.id] });
     }
-    const missing = await repository.findMissingReferences(input);
+    const { missing, hasFormat } = await repository.lookUpReferences(input);
     if (hasAny(missing)) throw new AppError('INVALID_REFERENCE', missing);
+    if (!hasFormat) {
+      throw new AppError('VALIDATION_ERROR', [{ path: ['genres'], code: 'too_small' }]);
+    }
     const archived = newlyArchived(await repository.findArchivedReferences(input), current);
     if (hasAny(archived)) throw new AppError('ARCHIVED_REFERENCE', archived);
   }

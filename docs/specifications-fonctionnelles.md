@@ -89,7 +89,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 ### Administration
 **US-10 — Traiter les soumissions** (administrateur) : liste triée par complétude, comparaison avec les doublons candidats, actions Corriger, Accepter (crée un **brouillon** de fiche, éditable avant publication) / Refuser (avec motif court ; pour un doublon, l'œuvre dupliquée est indiquée). Les corrections avant décision sont historisées (qui, quand, avant/après).
 
-**US-11 — Gérer le catalogue** (administrateur) : créer, modifier, archiver et restaurer une œuvre, une personne, un éditeur/plateforme ; gérer relations, genres, liens et couvertures ; consulter les archives. Archiver une personne ou un éditeur/plateforme encore lié à des œuvres non archivées est refusé (`PERSON_HAS_WORKS`, `PUBLISHER_HAS_WORKS`) tant que les liens ne sont pas retirés.
+**US-11 — Gérer le catalogue** (administrateur) : créer, modifier, archiver et restaurer une œuvre, une personne, un éditeur/plateforme ; gérer relations, genres, liens et couvertures ; consulter les archives. Les champs obligatoires sont ceux de RG-22. Archiver une personne ou un éditeur/plateforme encore lié à des œuvres non archivées est refusé (`PERSON_HAS_WORKS`, `PUBLISHER_HAS_WORKS`) tant que les liens ne sont pas retirés.
 
 **US-14 — Demander le retrait d'un contenu** (auteur, éditeur ou tout visiteur) : page de contact dédiée ; objectif de traitement sous 48 h.
 
@@ -116,6 +116,7 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 | RG-13 | La couverture n'est affichée que si `cover_consent` est vrai ou si l'administrateur l'a explicitement validée. |
 | RG-19 | Une œuvre a une **langue originale** obligatoire. Elle est visible et suivable par tout utilisateur, quelle que soit la langue de l'interface ; aucune disponibilité par pays n'est calculée (ADR 0007). |
 | RG-20 | Le **titre** affiché est celui de la langue de l'interface s'il existe, sinon le titre original. Les autres titres (traduit, international, ancien, court) restent recherchables. |
+| RG-22 | **Champs obligatoires** de l'administration (marqués d'une étoile rouge dans les formulaires ; l'enregistrement est refusé sinon, `VALIDATION_ERROR`) : œuvre = titre, langue originale, type, statut et au moins un format ; chaque ligne de titre alternatif = langue, type et titre ; de synopsis = langue, source et texte ; de crédit = personne et rôle ; de relation = œuvre liée et relation ; de lien = type et adresse ; personne et éditeur = nom et genre. Le pseudo l'est aussi à l'inscription. Tout le reste est facultatif. |
 | RG-21 | Le **synopsis** affiché est celui de la langue de l'interface (officiel de préférence, puis saisi, puis automatique), sinon celui de la langue originale. Un synopsis traduit automatiquement est signalé comme tel. |
 
 ## 3. Cas limites

@@ -26,7 +26,9 @@ export default withNuxt(
     languageOptions: {
       parserOptions: {
         // Vitest's files are in none of Nuxt's tsconfigs.
-        projectService: { allowDefaultProject: ['vitest.config.ts', 'vitest.setup.ts'] },
+        projectService: {
+          allowDefaultProject: ['vitest.config.ts', 'vitest.setup.ts', 'vitest.support.ts'],
+        },
         tsconfigRootDir: import.meta.dirname,
         extraFileExtensions: ['.vue'],
       },

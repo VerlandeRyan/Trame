@@ -50,11 +50,13 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             :clear-label="t('action.clearChoice')"
             :search="searchIn('people')"
             :invalid="showErrors && item.person === null"
+            required
           />
           <AdminSelectField
             v-model="item.role"
             :options="roleOptions"
             :label="t('admin.work.role')"
+            required
           />
         </template>
       </AdminRowList>
@@ -77,6 +79,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             :clear-label="t('action.clearChoice')"
             :search="searchIn('publishers')"
             :invalid="showErrors && item.publisher === null"
+            required
           />
         </template>
       </AdminRowList>
@@ -100,11 +103,13 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
             :clear-label="t('action.clearChoice')"
             :search="searchIn('works')"
             :invalid="showErrors && item.work === null"
+            required
           />
           <AdminSelectField
             v-model="item.relation"
             :options="relationOptions"
             :label="t('admin.work.relation')"
+            required
           />
         </template>
       </AdminRowList>

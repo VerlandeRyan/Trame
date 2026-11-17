@@ -10,7 +10,8 @@
 .form-error {
   display: flex;
   gap: var(--space-1);
-  align-items: center;
+  // The icon stays on the first line when the message wraps.
+  align-items: flex-start;
   margin: 0;
   color: var(--color-crimson);
   font-size: 0.875rem;

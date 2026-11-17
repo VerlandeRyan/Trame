@@ -6,7 +6,8 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 - `Button` : avec `href`, un lien à l'aspect d'un bouton ; `block` : pleine largeur, survol au palier `wide` (−1,2°) au lieu de `medium` (−1,6°) pour ne pas déborder sur les voisins. La règle `:active` est déclarée **après** les variantes, sinon l'inclinaison du survol l'emporte et le bouton ne s'enfonce pas au clic.
 - `Chip`.
 - `Counter` : − / saisie / +.
-- `Field` : préfixe, erreur annoncée, `inputAttributes`.
+- `Field` : préfixe, erreur annoncée, `inputAttributes` ; `inputAttributes.required` ajoute l'étoile et `aria-required`, jamais l'attribut natif `required` (les formulaires se valident eux-mêmes).
+- `RequiredMark` : étoile rouge (`--color-crimson`, comme les erreurs ; `aria-hidden`) après le libellé d'un champ obligatoire ; `Field`, `Select` (`required` : `aria-required`), `admin/SelectField`, `admin/PillGroup` (choix unique : `role="radiogroup"` + `aria-required`), `admin/RecordPicker` l'utilisent. `RequiredLegend` : ligne « * champ obligatoire » en tête de chaque formulaire (œuvre, personne, éditeur, pseudo). Les champs marqués sont ceux que le contrat exige et ne laisse pas nuls : `utils/required-fields.spec.ts` le contrôle.
 - `FormError` : ligne d'erreur `role="alert"` avec l'icône d'alerte de 18 px ; erreur en ligne des champs, des formulaires d'administration et du chargement de la suite d'une liste.
 - `Toasts` : pile d'annonces fixée en bas de l'écran (monté dans le layout par défaut, alimenté par `useToasts().show`). Trois tons (jaune information, vert réussite, rouge erreur ; `role="alert"` pour l'erreur, `role="status"` sinon), croix de fermeture, bouton « Réessayer » si l'annonce porte une action. Chaque annonce est un `ToastItem` qui se ferme seul (10 s pour une erreur, 5 s sinon), sauf tant que la souris la survole ou que le focus y est ; une barre de décompte au bord bas montre le délai restant (absente avec `prefers-reduced-motion`). Un nouvel envoi d'écriture retire le « Réessayer » de l'échec précédent. La croix s'assombrit au survol par un voile de la couleur du texte. L'annonce peut porter une seconde phrase de conseil (`hintKey`), affichée dès 768 px seulement. Trois annonces au plus, une annonce identique remplace la précédente. Les échecs d'écriture à effet immédiat (`useOptimisticWrite`) passent par elle : `utils/write-errors.ts` donne le texte (`writeErrorKey` : code d'erreur → clé `writeError.*`, `writeErrorHintKey` : phrase de conseil), et `overwriteKey` (un par compteur, ex. `2:chaptersRead`, calculé par `singleCounterOf`) ferme l'annonce d'un échec quand une écriture suivante du même compteur réussit.
 - `Modal`.
@@ -33,7 +34,7 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 - `list/` (`Summary`, `StatusButton`, `Row`, `GridItem`, `EditModal`) : [liste-et-profil.md](liste-et-profil.md).
 - `admin/` (`WorkForm`, `PersonForm`, `PublisherForm`, `RowList`, `RecordPicker`, `LinksFields`, `PillGroup`, `TagPicker`, `Nav`, `Filters`, `FilterGroup`, `ResourceRows`, `RowMenu`, `ArchiveConfirm`, `RowRemoveConfirm`) : [administration.md](administration.md).
 - `home/` (`Pitch`, `ContinueReading`, `Featured`, `Shelf`, `Explore`) et `search/` (`Filters`, `FilterGroup`, `ResultItem`) : [accueil-recherche.md](accueil-recherche.md).
-- `auth/` (`SignInModal`, `Notice`) : [connexion-compte.md](connexion-compte.md).
+- `auth/` (`SignInModal`, `Notice`, `NoticeBar`) : [connexion-compte.md](connexion-compte.md).
 
 ## Galerie `/components`
 404 en production (`NODE_ENV=production`), sauf `NUXT_PUBLIC_COMPONENT_GALLERY=true` (les E2E et docker-compose l'activent) ; indicateur unique `runtimeConfig.public.componentGallery`.

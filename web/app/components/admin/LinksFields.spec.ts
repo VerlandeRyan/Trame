@@ -22,6 +22,31 @@ describe('AdminLinksFields', () => {
     )
   })
 
+  it('sans refus d’enregistrement, ne signale aucune adresse', async () => {
+    const wrapper = await mountLinks([{ kind: 'read', url: 'exemple', label: '' }])
+
+    expect(wrapper.find('[aria-invalid="true"]').exists()).toBe(false)
+  })
+
+  it('après un refus, distingue l’adresse vide de l’adresse mal formée', async () => {
+    const wrapper = await mountSuspended(AdminLinksFields, {
+      props: {
+        modelValue: reactive([
+          { kind: 'read', url: '', label: '' },
+          { kind: 'read', url: 'exemple.test', label: '' },
+          { kind: 'read', url: 'https://exemple.test', label: '' },
+        ]),
+        kinds: ['read', 'buy'],
+        showErrors: true,
+      },
+    })
+
+    const messages = wrapper.findAll('[role="alert"]').map((alert) => alert.text())
+    expect(messages).toHaveLength(2)
+    expect(messages[0]).toBe('Champ obligatoire')
+    expect(messages[1]).toContain('Adresse invalide')
+  })
+
   it('ajoute un lien du premier type autorisé, puis le retire', async () => {
     const links: Links = []
     const wrapper = await mountLinks(links, ['website', 'social'])

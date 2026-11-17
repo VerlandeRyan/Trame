@@ -19,6 +19,8 @@ Comportement côté front (Nuxt) de la connexion Google, de l'inscription (choix
 ## Avis (`auth/Notice`)
 - Affiché dans le layout par défaut : avis de `/?auth_error=` (`cancelled` ou code d'erreur) puis nettoyage de l'URL.
 - Il affiche aussi l'avis posé par le code (`useAuthNotice()` : « Tu es déconnecté » en vert après une déconnexion, « Déconnexion impossible… » en rouge si elle échoue), qui disparaît à la navigation suivante (sauf `keepOnce`, posé avant une redirection : il survit à ce changement d'adresse seulement, `auth/Notice` ne l'efface qu'au suivant).
+- Le bandeau lui-même est `auth/NoticeBar` : il se ferme seul (5 s, 10 s pour une erreur, comme les annonces), avec une barre de décompte, en pause tant que la souris le survole ou que le focus y est ; la croix a le même survol que celle des annonces (mixins `countdown-bar` et `dismiss-button`, composable `useAutoDismiss`, partagés avec `ui/ToastItem`). `auth/Notice` suit l'adresse : sans `auth_error`, plus d'avis de ce type. `safeReturnTo` retire ce paramètre du `returnTo`, sinon l'avis revenait après une connexion faite depuis la page qui l'affichait.
+- Se déconnecter avec une fiche d'administration modifiée (`useUnsavedChanges`, posé par la page) demande d'abord « Quitter sans enregistrer ? » ; « Rester » annule tout, « Quitter » ouvre la confirmation « Se déconnecter ? », puis la page ne redemande rien. Avant, la déconnexion se faisait avant la question.
 - Se déconnecter depuis une page réservée (middleware `authenticated` ou `admin`) ramène à l'accueil : les middlewares ne jouent qu'à la navigation.
 - Teintes : jaune = information (annulations), vert = réussite, rouge = erreur (codes d'erreur de l'API, échecs).
 

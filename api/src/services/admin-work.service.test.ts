@@ -40,11 +40,12 @@ function fakeRepository(
   missing: MissingReferences = NOTHING_MISSING,
   archived: ArchivedReferences = NOTHING_ARCHIVED,
   isUpToDate = true,
+  hasFormat = true,
 ): AdminWorkRepository {
   return {
     list: vi.fn(async () => ({ items: [], total: 0 })),
     find: vi.fn(async () => record),
-    findMissingReferences: vi.fn(async () => missing),
+    lookUpReferences: vi.fn(async () => ({ missing, hasFormat })),
     findArchivedReferences: vi.fn(async () => archived),
     create: vi.fn(async () => 1),
     update: vi.fn(async () => isUpToDate),
@@ -72,6 +73,20 @@ describe('références', () => {
       details: missing,
     });
     expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('refuse une œuvre sans format, à la création comme à la modification', async () => {
+    const repository = fakeRepository(record(), NOTHING_MISSING, NOTHING_ARCHIVED, true, false);
+    const service = createAdminWorkService(repository);
+    const expected = {
+      code: 'VALIDATION_ERROR',
+      details: [{ path: ['genres'], code: 'too_small' }],
+    };
+
+    await expect(service.create(draft)).rejects.toMatchObject(expected);
+    await expect(service.update(1, draft)).rejects.toMatchObject(expected);
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('refuse une relation de l’œuvre avec elle-même', async () => {

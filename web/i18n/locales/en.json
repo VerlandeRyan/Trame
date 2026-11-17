@@ -170,7 +170,11 @@
     "emptyTitle": "Nothing to show yet",
     "emptyText": "The catalogue will appear here.",
     "modalText": "Window content.",
-    "showToast": "Error toast"
+    "showToast": "Error toast",
+    "showNotice": "Sign-in banner"
+  },
+  "form": {
+    "requiredLegend": "required field"
   },
   "action": {
     "addToList": "Add to my list",
@@ -594,7 +598,7 @@
     "back": "Catalogue",
     "save": "Save",
     "pickerRequired": "Choose a suggestion from the list.",
-    "sectionIncomplete": "Contains an incomplete row",
+    "sectionIncomplete": "Contains an empty required field or an incomplete row",
     "rowRemove": {
       "title": "Remove this row?",
       "text": "What you entered in this row will be lost.",
@@ -608,8 +612,11 @@
       "cancel": "Stay"
     },
     "error": {
-      "validation": "Some fields are not valid. Check the totals (empty while the work is ongoing), the dates, the languages and the https addresses.",
-      "incompleteRows": "Some rows are incomplete (missing author, publisher, related work or address): complete them or remove them."
+      "validation": "Some fields are empty or not valid. Fill in the required fields (*) and check the totals (empty while the work is ongoing), the dates, the languages and the https addresses.",
+      "incompleteForm": "Some information is missing or an address is invalid: fill in the required fields (*), enter https addresses and complete or remove the incomplete rows.",
+      "required": "Required field",
+      "formatRequired": "Choose at least one format.",
+      "invalidUrl": "Invalid address: enter a full https:// address (e.g. https://example.org)."
     },
     "links": {
       "title": "Links",

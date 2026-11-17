@@ -1,5 +1,6 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { NAVIGATION_TIMEOUT_MS } from '~~/vitest.support'
 import LayoutSearchBox from './SearchBox.vue'
 
 const requests: Record<string, unknown>[] = []
@@ -75,7 +76,10 @@ describe('LayoutSearchBox', () => {
     expect(input.attributes('aria-activedescendant')).toMatch(/-option-1$/)
     await wrapper.get('form').trigger('submit')
 
-    await vi.waitFor(() => expect(useRoute().path).toBe('/work/2-etoile-brisee'))
+    // The first navigation to a page loads its component: slow on a loaded machine (default 1 s is too tight).
+    await vi.waitFor(() => expect(useRoute().path).toBe('/work/2-etoile-brisee'), {
+      timeout: NAVIGATION_TIMEOUT_MS,
+    })
   })
 
   it('boucle sur la liste avec les flèches et la referme avec Échap', async () => {
@@ -97,7 +101,9 @@ describe('LayoutSearchBox', () => {
 
     await wrapper.get('form').trigger('submit')
 
-    await vi.waitFor(() => expect(useRoute().path).toBe('/search'))
+    await vi.waitFor(() => expect(useRoute().path).toBe('/search'), {
+      timeout: NAVIGATION_TIMEOUT_MS,
+    })
     expect(useRoute().query.q).toBe('étoile vagabonde')
   })
 
