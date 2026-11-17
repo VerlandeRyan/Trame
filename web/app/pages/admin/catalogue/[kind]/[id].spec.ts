@@ -161,11 +161,12 @@ describe('page d’édition du catalogue', () => {
   it('reste sur la fiche et annonce l’erreur quand l’API refuse', async () => {
     failWith = 'VALIDATION_ERROR'
     const wrapper = await mountEdit('/admin/catalogue/works/new')
+    await wrapper.get('#work-title').setValue('Aube Fictive')
 
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('ne sont pas valides')
+    expect(wrapper.get('[role="alert"]').text()).toContain('sont vides ou invalides')
     expect(useRouter().currentRoute.value.path).not.toBe('/admin/catalogue')
   })
 
@@ -205,6 +206,32 @@ describe('page d’édition du catalogue', () => {
     expect((second.get('#work-title').element as HTMLInputElement).value).toBe('')
   })
 
+  it.each([
+    ['une œuvre sans titre', 'works', 'work-title'],
+    ['une personne sans nom', 'people', 'person-name'],
+    ['un éditeur sans nom', 'publishers', 'publisher-name'],
+  ])('refuse d’enregistrer %s, sans appeler l’API', async (_label, kind, fieldId) => {
+    const wrapper = await mountEdit(`/admin/catalogue/${kind}/new`)
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(sent).toEqual([])
+    expect(wrapper.text()).toContain('Il manque des informations')
+    expect(wrapper.get(`#${fieldId}`).attributes('aria-invalid')).toBe('true')
+  })
+
+  it('partage l’état « modifications non enregistrées » et le libère en quittant la page', async () => {
+    const wrapper = await mountEdit('/admin/catalogue/people/new')
+    expect(useUnsavedChanges().value).toBe(false)
+
+    await wrapper.get('#person-name').setValue('Léa')
+    expect(useUnsavedChanges().value).toBe(true)
+
+    wrapper.unmount()
+    expect(useUnsavedChanges().value).toBe(false)
+  })
+
   it('refuse d’enregistrer une ligne d’auteur sans personne choisie', async () => {
     const wrapper = await mountEdit('/admin/catalogue/works/new')
     useState<WorkDraft>('admin-work-works-new').value.credits.push({ person: null, role: 'art' })
@@ -214,7 +241,7 @@ describe('page d’édition du catalogue', () => {
     await flushPromises()
 
     expect(sent).toEqual([])
-    expect(wrapper.get('[role="alert"]').text()).toContain('lignes sont incomplètes')
+    expect(wrapper.text()).toContain('lignes incomplètes')
   })
 
   it('renvoie la version lue et annonce une fiche modifiée entre-temps', async () => {

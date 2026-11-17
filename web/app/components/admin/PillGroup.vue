@@ -8,9 +8,16 @@ const props = defineProps<{
   label: string
   options: { value: string; label: string }[]
   multiple?: boolean
+  /** Adds the red star; a single choice also becomes a required `radiogroup`. */
+  required?: boolean
+  /** Message under the pills when the group is flagged (red, announced). */
+  error?: string
 }>()
 const model = defineModel<string | string[]>({ required: true })
+const { t } = useI18n()
 const uid = useId()
+// `aria-required` is only allowed on a radio group, not on a plain group of checkboxes.
+const isRequiredSingle = computed(() => props.required === true && !props.multiple)
 
 /** Whether the value is currently chosen. */
 const isChosen = (value: string) =>
@@ -29,8 +36,16 @@ function choose(value: string) {
 </script>
 
 <template>
-  <fieldset class="pills">
-    <legend class="pills__legend">{{ label }}</legend>
+  <fieldset
+    class="pills"
+    :role="isRequiredSingle ? 'radiogroup' : undefined"
+    :aria-required="isRequiredSingle ? 'true' : undefined"
+    :aria-describedby="error ? `${uid}-error` : undefined"
+  >
+    <legend class="pills__legend">
+      {{ label }}<UiRequiredMark v-if="required" />
+      <span v-if="required && multiple" class="sr-only">, {{ t('form.requiredLegend') }}</span>
+    </legend>
     <label v-for="option in options" :key="option.value" class="pills__pill">
       <input
         :type="multiple ? 'checkbox' : 'radio'"
@@ -41,6 +56,7 @@ function choose(value: string) {
       />
       {{ option.label }}
     </label>
+    <UiFormError v-if="error" :id="`${uid}-error`" class="pills__error">{{ error }}</UiFormError>
   </fieldset>
 </template>
 
@@ -61,6 +77,10 @@ function choose(value: string) {
   margin-bottom: var(--space-1);
   padding: 0;
   font-weight: 700;
+}
+
+.pills__error {
+  width: 100%;
 }
 
 .pills__pill {

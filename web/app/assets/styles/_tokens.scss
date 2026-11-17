@@ -2,7 +2,7 @@
 :root {
   // Couleurs
   --color-paper: #f7f4ef;
-  --color-surface: #fff;
+  --color-surface: #ffffff;
   --color-ink: #1b2a5c;
   --color-ink-soft: #4d5a8a;
   --color-blue: #2340b8;
@@ -36,14 +36,12 @@
   // Line of a hovered underlined tab (3:1 on paper).
   --color-blue-line: #6f86e6;
   --color-rule: rgb(27 42 92 / 27%);
-
   // Format cards of the Explore menu (an unknown format keeps --color-field-soft)
   --color-format-manga: #ffd3ea;
   --color-format-manhwa: #e5d9fb;
   --color-format-webtoon: #fff3b8;
   --color-format-bd: #dde4ff;
   --color-format-webcomic: #d6f8f4;
-
   // Reading statuses (keys are the library entry status codes)
   --status-reading: #4cc38a;
   --status-completed: #7fa0ff;
@@ -57,19 +55,16 @@
   --status-plan_to_read-strong: #baafdd;
   --status-on_hold-strong: #ddbe60;
   --status-dropped-strong: #d16570;
-
   // Forme
   --border: 3px solid var(--color-ink);
   --header-height: 76px;
   --radius: 4px;
   --shadow: 3px 3px 0 var(--color-ink);
   --shadow-small: 2px 2px 0 var(--color-ink);
-
   // Typography: system stack, and Poppins 800 (self-hosted, `nuxt.config.ts`) for headline titles.
   --font-sans: system-ui, -apple-system, 'Segoe UI', roboto, 'Helvetica Neue', arial, sans-serif;
   --font-display: 'Poppins', var(--font-sans);
   --weight-title: 800;
-
   // Spacing (4 px scale)
   --space-1: 4px;
   --space-2: 8px;
@@ -77,7 +72,6 @@
   --space-4: 16px;
   --space-6: 24px;
   --space-8: 32px;
-
   // Minimum touch target size (WCAG)
   --touch: 44px;
 }

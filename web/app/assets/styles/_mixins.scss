@@ -179,6 +179,65 @@ $tilt-tiers: (
   }
 }
 
+// Countdown bar along the bottom edge of a toast or banner that hides itself: it empties over
+// `--dismiss-duration` and stops while the element has the class `$paused-class`. The element is
+// `position: relative` with `overflow: hidden`, so the bar stays inside its rounded corners.
+@mixin countdown-bar($paused-class) {
+  @media (prefers-reduced-motion: no-preference) {
+    &::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 4px;
+      background: currentcolor;
+      opacity: 0.55;
+      transform-origin: left;
+      animation: dismiss-countdown var(--dismiss-duration) linear forwards;
+    }
+
+    &.#{$paused-class}::after {
+      animation-play-state: paused;
+    }
+
+    @at-root {
+      @keyframes dismiss-countdown {
+        to {
+          transform: scaleX(0);
+        }
+      }
+    }
+  }
+}
+
+// Close cross of a toast or banner. The hover is a veil of the text colour: readable on every
+// tone, and nothing moves, so the cross stays aligned with the buttons next to it.
+@mixin dismiss-button {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: var(--touch);
+  height: var(--touch);
+  border: 0;
+  border-radius: var(--radius);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+
+  @media (prefers-reduced-motion: no-preference) {
+    transition: background-color 0.15s;
+  }
+
+  @include on-hover {
+    background: color-mix(in srgb, currentcolor 25%, transparent);
+  }
+
+  &:active {
+    background: color-mix(in srgb, currentcolor 25%, transparent);
+  }
+}
+
 // Screentone: round dots fading out.
 // Include in a `::before` pseudo-element of a `position: relative` parent.
 // $angle: direction from which the screentone is densest (270deg = from the right).
@@ -189,6 +248,6 @@ $tilt-tiers: (
   pointer-events: none;
   background-image: radial-gradient(circle, $color 36%, transparent 42%);
   background-size: #{$size} #{$size};
-  -webkit-mask-image: linear-gradient($angle, #000, transparent $fade-end);
-  mask-image: linear-gradient($angle, #000, transparent $fade-end);
+  -webkit-mask-image: linear-gradient($angle, #000000, transparent $fade-end);
+  mask-image: linear-gradient($angle, #000000, transparent $fade-end);
 }

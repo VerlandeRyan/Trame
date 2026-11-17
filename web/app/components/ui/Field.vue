@@ -18,13 +18,17 @@ const props = defineProps<{
     inputmode?: 'numeric'
     min?: string
     sanitize?: (value: string) => string
+    /** Red star after the label and `aria-required`; never the native `required` (forms validate themselves). */
+    required?: boolean
   }
 }>()
 const model = defineModel<string>({ default: '' })
-/** Attributes passed to the native input (everything but `sanitize`). */
+const isRequired = computed(() => props.inputAttributes?.required === true)
+/** Attributes passed to the native input (everything but `sanitize` and `required`). */
 const nativeAttributes = computed(() => {
   const native = { ...props.inputAttributes }
   delete native.sanitize
+  delete native.required
   return native
 })
 
@@ -46,7 +50,7 @@ const describedBy = computed(() => {
 
 <template>
   <div class="field" :class="{ 'field--error': error }">
-    <label :for="id" class="field__label">{{ label }}</label>
+    <label :for="id" class="field__label">{{ label }}<UiRequiredMark v-if="isRequired" /></label>
     <div class="field__box">
       <span v-if="prefix" class="field__prefix" aria-hidden="true">{{ prefix }}</span>
       <input
@@ -54,6 +58,7 @@ const describedBy = computed(() => {
         :value="model"
         class="field__input"
         v-bind="nativeAttributes"
+        :aria-required="isRequired ? 'true' : undefined"
         :aria-invalid="error ? 'true' : undefined"
         :aria-describedby="describedBy"
         @input="onInput"

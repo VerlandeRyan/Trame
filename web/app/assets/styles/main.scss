@@ -26,6 +26,11 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+// An icon never shrinks when its text wraps (flex rows: errors, toasts, banners, buttons).
+.iconify {
+  flex: none;
+}
+
 p,
 dl,
 dd,

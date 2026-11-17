@@ -82,6 +82,8 @@ function workBody(overrides: Record<string, unknown> = {}) {
     volumes: 3,
     startedOn: '2020-01-01',
     endedOn: '2021-06-30',
+    // A work needs at least one format.
+    genres: ['manga'],
     ...overrides,
   };
 }
@@ -396,13 +398,30 @@ describe('œuvres', () => {
       links: [{ kind: 'read', url: 'https://exemple.test/a' }],
     });
 
-    const res = await admin.put(`${ADMIN}/works/${id}`).send(workBody({ title: `${PREFIX} Neuf` }));
+    const res = await admin
+      .put(`${ADMIN}/works/${id}`)
+      .send(workBody({ title: `${PREFIX} Neuf`, genres: ['bd'] }));
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       title: `${PREFIX} Neuf`,
       credits: [],
-      genres: [],
+      genres: ['bd'],
       links: [],
+    });
+  });
+
+  it.each([
+    ['aucun genre', []],
+    ['un genre thématique seul', ['fantasy']],
+  ])('refuse une œuvre sans format : %s', async (_label, genres) => {
+    const admin = await newAdmin();
+
+    const res = await admin.post(`${ADMIN}/works`).send(workBody({ genres }));
+
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({
+      code: 'VALIDATION_ERROR',
+      details: [{ path: ['genres'], code: 'too_small' }],
     });
   });
 

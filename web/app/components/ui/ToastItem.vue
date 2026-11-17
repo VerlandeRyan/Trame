@@ -16,32 +16,7 @@ const TONE_ICONS: Record<ToastTone, string> = {
 }
 
 const durationMs = autoDismissDelay(props.toast.tone)
-const isHovered = ref(false)
-const hasFocus = ref(false)
-const isPaused = computed(() => isHovered.value || hasFocus.value)
-
-let remainingMs = durationMs
-let startedAt = 0
-let timer: ReturnType<typeof setTimeout> | undefined
-
-/** Starts (or restarts) the countdown with the time left. */
-function startTimer() {
-  startedAt = Date.now()
-  timer = setTimeout(() => emit('dismiss'), remainingMs)
-}
-
-/** Stops the countdown and keeps the time left. */
-function stopTimer() {
-  if (timer === undefined) return
-  clearTimeout(timer)
-  timer = undefined
-  remainingMs -= Date.now() - startedAt
-}
-
-// The timer only runs in the browser: a toast rendered on the server starts it once mounted.
-onMounted(startTimer)
-onBeforeUnmount(stopTimer)
-watch(isPaused, (paused) => (paused ? stopTimer() : startTimer()))
+const { isPaused, pauseListeners } = useAutoDismiss(durationMs, () => emit('dismiss'))
 </script>
 
 <template>
@@ -49,12 +24,9 @@ watch(isPaused, (paused) => (paused ? stopTimer() : startTimer()))
     class="toast"
     :class="[`toast--${toast.tone}`, { 'toast--paused': isPaused }]"
     :role="toast.tone === 'error' ? 'alert' : 'status'"
-    :style="{ '--toast-duration': `${durationMs}ms` }"
+    :style="{ '--dismiss-duration': `${durationMs}ms` }"
     data-testid="toast"
-    @pointerenter="isHovered = $event.pointerType === 'mouse'"
-    @pointerleave="isHovered = false"
-    @focusin="hasFocus = true"
-    @focusout="hasFocus = false"
+    v-on="pauseListeners"
   >
     <Icon :name="TONE_ICONS[toast.tone]" size="20" aria-hidden="true" />
     <p class="toast__text">
@@ -100,37 +72,15 @@ watch(isPaused, (paused) => (paused ? stopTimer() : startTimer()))
 
   @media (prefers-reduced-motion: no-preference) {
     animation: toast-in 0.15s ease-out;
-
-    // Countdown bar along the bottom edge: it empties as long as the toast stays.
-    &::after {
-      content: '';
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      height: 4px;
-      background: currentcolor;
-      opacity: 0.55;
-      transform-origin: left;
-      animation: toast-countdown var(--toast-duration) linear forwards;
-    }
-
-    &--paused::after {
-      animation-play-state: paused;
-    }
   }
+
+  @include countdown-bar('toast--paused');
 }
 
 @keyframes toast-in {
   from {
     opacity: 0;
     transform: translateY(8px);
-  }
-}
-
-@keyframes toast-countdown {
-  to {
-    transform: scaleX(0);
   }
 }
 
@@ -164,30 +114,7 @@ watch(isPaused, (paused) => (paused ? stopTimer() : startTimer()))
   }
 }
 
-// The hover is a veil of the text colour: readable on every tone, and nothing moves, so the
-// cross stays aligned with the "Retry" button.
 .toast__close {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: var(--touch);
-  height: var(--touch);
-  border: 0;
-  border-radius: var(--radius);
-  background: none;
-  color: inherit;
-  cursor: pointer;
-
-  @media (prefers-reduced-motion: no-preference) {
-    transition: background-color 0.15s;
-  }
-
-  @include on-hover {
-    background: color-mix(in srgb, currentcolor 25%, transparent);
-  }
-
-  &:active {
-    background: color-mix(in srgb, currentcolor 25%, transparent);
-  }
+  @include dismiss-button;
 }
 </style>

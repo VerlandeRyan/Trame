@@ -16,7 +16,7 @@ describe('AdminFormActions', () => {
       props: { saving: true, errorKey: 'admin.error.validation' },
     })
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('ne sont pas valides')
+    expect(wrapper.get('[role="alert"]').text()).toContain('sont vides ou invalides')
     expect(wrapper.get('[data-testid="admin-save"]').attributes('disabled')).toBeDefined()
   })
 })

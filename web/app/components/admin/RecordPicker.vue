@@ -12,6 +12,8 @@ const props = defineProps<{
   clearLabel: string
   search: (text: string) => Promise<RecordRef[]>
   invalid?: boolean
+  /** Adds the red star and `aria-required` on the search field. */
+  required?: boolean
 }>()
 const model = defineModel<RecordRef | null>({ default: null })
 const { t } = useI18n()
@@ -82,7 +84,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 <template>
   <div ref="root" class="picker">
     <template v-if="model">
-      <span class="picker__name">{{ label }}</span>
+      <span class="picker__name">{{ label }}<UiRequiredMark v-if="required" /></span>
       <div class="picker__chosen" data-testid="picker-chosen">
         <span class="picker__label">{{ model.label }}</span>
         <button
@@ -98,7 +100,9 @@ onBeforeUnmount(() => clearTimeout(timer))
       </div>
     </template>
     <template v-else>
-      <label :for="`${uid}-input`" class="picker__name">{{ label }}</label>
+      <label :for="`${uid}-input`" class="picker__name"
+        >{{ label }}<UiRequiredMark v-if="required"
+      /></label>
       <div class="picker__search">
         <UiSearchField
           :id="`${uid}-input`"
@@ -108,6 +112,7 @@ onBeforeUnmount(() => clearTimeout(timer))
           :placeholder="placeholder"
           class="picker__field"
           :class="{ 'picker__field--invalid': invalid }"
+          :aria-required="required ? 'true' : undefined"
           :aria-invalid="invalid ? 'true' : undefined"
           :aria-describedby="invalid ? `${uid}-error` : undefined"
           data-testid="picker-input"
@@ -129,10 +134,9 @@ onBeforeUnmount(() => clearTimeout(timer))
           </li>
         </ul>
       </div>
-      <p v-if="invalid" :id="`${uid}-error`" class="picker__error" data-testid="picker-error">
-        <Icon name="tabler:alert-circle" size="16" aria-hidden="true" />
+      <UiFormError v-if="invalid" :id="`${uid}-error`" data-testid="picker-error">
         {{ t('admin.pickerRequired') }}
-      </p>
+      </UiFormError>
     </template>
   </div>
 </template>
@@ -156,17 +160,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 }
 
 .picker__field--invalid {
-  border-color: var(--color-danger);
-}
-
-.picker__error {
-  display: flex;
-  gap: var(--space-1);
-  align-items: center;
-  margin: 0;
-  color: var(--color-danger);
-  font-size: 0.8125rem;
-  font-weight: 700;
+  border-color: var(--color-crimson);
 }
 
 .picker__chosen {

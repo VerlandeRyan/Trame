@@ -4,7 +4,7 @@ import { reactive } from 'vue'
 import { emptyWorkDraft } from '~/utils/admin'
 import AdminWorkForm from './WorkForm.vue'
 
-function mountForm(props: { errorKey?: string; saving?: boolean } = {}) {
+function mountForm(props: { errorKey?: string; showErrors?: boolean; saving?: boolean } = {}) {
   const draft = reactive(emptyWorkDraft())
   return mountSuspended(AdminWorkForm, {
     props: {
@@ -28,6 +28,12 @@ const visibleSections = (wrapper: Awaited<ReturnType<typeof mountForm>>['wrapper
 
 const sectionOf = (wrapper: Awaited<ReturnType<typeof mountForm>>['wrapper'], selector: string) =>
   wrapper.get(selector).element.closest('[role="tabpanel"]')!
+
+const alertedTabs = (wrapper: Awaited<ReturnType<typeof mountForm>>['wrapper']) =>
+  wrapper
+    .findAll('[role="tab"]')
+    .filter((tab) => tab.find('.tabs__alert').exists())
+    .map((tab) => tab.text())
 
 // Le routeur est partagé entre les tests : chacun repart d'une adresse sans section.
 beforeEach(async () => {
@@ -91,19 +97,54 @@ describe('AdminWorkForm', () => {
   it('annonce l’erreur de l’API et bloque l’envoi pendant l’enregistrement', async () => {
     const { wrapper } = await mountForm({ errorKey: 'admin.error.validation', saving: true })
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('ne sont pas valides')
+    expect(wrapper.get('[role="alert"]').text()).toContain('sont vides ou invalides')
     expect(wrapper.get('[data-testid="admin-save"]').attributes('disabled')).toBeDefined()
   })
 
-  describe('lignes incomplètes refusées à l’enregistrement', () => {
-    const alertedTabs = (wrapper: Awaited<ReturnType<typeof mountForm>>['wrapper']) =>
-      wrapper
-        .findAll('[role="tab"]')
-        .filter((tab) => tab.find('.tabs__alert').exists())
-        .map((tab) => tab.text())
+  describe('champs obligatoires et lignes incomplètes refusés à l’enregistrement', () => {
+    it('marque l’onglet « Informations », le titre et le format vides', async () => {
+      const { wrapper } = await mountForm({ showErrors: true })
+
+      expect(alertedTabs(wrapper)).toEqual(['Informations'])
+      expect(wrapper.get('#work-title').attributes('aria-invalid')).toBe('true')
+      expect(wrapper.text()).toContain('Champ obligatoire')
+      expect(wrapper.text()).toContain('Choisis au moins un format.')
+    })
+
+    it('marque aussi « Titres et synopsis » et « Liens » quand une ligne a un champ obligatoire vide', async () => {
+      const { wrapper, draft } = await mountForm({ showErrors: true })
+      draft.title = 'Aube Fictive'
+      draft.genres = ['manga']
+      draft.titles.push({ language: 'en', kind: 'international', title: '' })
+      draft.synopses.push({ language: 'fr', source: 'official', text: ' ' })
+      draft.links.push({ kind: 'read', url: '', label: '' })
+      await wrapper.vm.$nextTick()
+
+      expect(alertedTabs(wrapper)).toEqual(['Titres et synopsis', 'Liens'])
+      expect(wrapper.findAll('[aria-invalid="true"]')).toHaveLength(3)
+      expect(wrapper.findAll('.texts__area--invalid')).toHaveLength(1)
+    })
+
+    it('désactive la validation du navigateur : seuls nos messages s’affichent', async () => {
+      const { wrapper } = await mountForm()
+
+      expect(wrapper.get('form').attributes('novalidate')).toBeDefined()
+    })
+
+    it('ne marque plus les champs remplis', async () => {
+      const { wrapper, draft } = await mountForm({ showErrors: true })
+      draft.title = 'Aube Fictive'
+      draft.genres = ['manga']
+      await wrapper.vm.$nextTick()
+
+      expect(alertedTabs(wrapper)).toEqual([])
+      expect(wrapper.text()).not.toContain('Champ obligatoire')
+    })
 
     it('marque l’onglet et le champ de la ligne dont la fiche n’est pas choisie', async () => {
-      const { wrapper, draft } = await mountForm({ errorKey: 'admin.error.incompleteRows' })
+      const { wrapper, draft } = await mountForm({ showErrors: true })
+      draft.title = 'Aube Fictive'
+      draft.genres = ['manga']
       draft.publishers.push({ publisher: null })
       await wrapper.vm.$nextTick()
 

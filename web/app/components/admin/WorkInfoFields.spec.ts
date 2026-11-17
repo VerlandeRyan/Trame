@@ -84,7 +84,7 @@ describe('AdminWorkInfoFields', () => {
     const { wrapper, draft } = await mountFields({ genres: ['fantasy'] })
     const legends = wrapper.findAll('legend').map((legend) => legend.text())
 
-    expect(legends).toContain('Formats')
+    expect(legends).toContain('Formats*, champ obligatoire')
     expect(wrapper.find('label[for$="-input"]').text()).toBe('Genres')
     await wrapper.get('[data-testid="pill-manga"]').trigger('change')
     expect(draft.genres).toEqual(['fantasy', 'manga'])

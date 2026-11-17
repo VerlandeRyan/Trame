@@ -249,8 +249,8 @@ useHead({ title: () => t('app.name') })
     background-size: 7px 7px;
     opacity: 0.4;
     pointer-events: none;
-    -webkit-mask-image: linear-gradient(270deg, #000, transparent 90%);
-    mask-image: linear-gradient(270deg, #000, transparent 90%);
+    -webkit-mask-image: linear-gradient(270deg, #000000, transparent 90%);
+    mask-image: linear-gradient(270deg, #000000, transparent 90%);
     content: '';
   }
 

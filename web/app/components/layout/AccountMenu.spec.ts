@@ -180,6 +180,66 @@ describe('LayoutAccountMenu', () => {
     },
   )
 
+  describe('avec des modifications non enregistrées', () => {
+    /** Ouvre le menu d'un admin sur une fiche modifiée et clique « Se déconnecter ». */
+    async function startSignOutWithUnsavedInput() {
+      useUnsavedChanges().value = true
+      useState('auth').value = {
+        status: 'authenticated',
+        user: { id: 1, handle: 'Ryan', role: 'admin' },
+      }
+      const wrapper = await mountSuspended(LayoutAccountMenu, {
+        props: { handle: 'Ryan' },
+        route: '/admin/catalogue',
+      })
+      await wrapper.get('[data-testid="account-menu"]').trigger('click')
+      await wrapper.get('[data-testid="sign-out"]').trigger('click')
+      return wrapper
+    }
+
+    it('demande d’abord de quitter sans enregistrer, puis de se déconnecter', async () => {
+      const wrapper = await startSignOutWithUnsavedInput()
+      const leave = wrapper.get('[data-testid="sign-out-leave-confirm"]')
+      expect(leave.text()).toContain('Quitter sans enregistrer ?')
+
+      await leave.get('[data-testid="confirm-accept"]').trigger('click')
+      await vi.waitFor(() => expect(wrapper.get('dialog[open] h2').text()).toBe('Se déconnecter ?'))
+      expect(loggedOut).toBe(0)
+
+      await wrapper.get('dialog[open] [data-testid="confirm-accept"]').trigger('click')
+      await vi.waitFor(() => expect(useState('auth').value).toEqual({ status: 'anonymous' }))
+      expect(useUnsavedChanges().value).toBe(false)
+      useAuthNotice().value = null
+    })
+
+    it('rester sur la fiche annule la déconnexion, sans seconde fenêtre', async () => {
+      const wrapper = await startSignOutWithUnsavedInput()
+
+      await wrapper
+        .get('[data-testid="sign-out-leave-confirm"] [data-testid="confirm-cancel"]')
+        .trigger('click')
+
+      expect(wrapper.find('dialog[open]').exists()).toBe(false)
+      expect(loggedOut).toBe(0)
+      expect(useState('auth').value).toMatchObject({ status: 'authenticated' })
+      expect(useUnsavedChanges().value).toBe(true)
+      useUnsavedChanges().value = false
+    })
+  })
+
+  it('sans modification non enregistrée, ne demande que la déconnexion', async () => {
+    useUnsavedChanges().value = false
+    useState('auth').value = {
+      status: 'authenticated',
+      user: { id: 1, handle: 'Ryan', role: 'user' },
+    }
+    const wrapper = await mountSuspended(LayoutAccountMenu, { props: { handle: 'Ryan' } })
+    await wrapper.get('[data-testid="account-menu"]').trigger('click')
+    await wrapper.get('[data-testid="sign-out"]').trigger('click')
+
+    expect(wrapper.get('dialog[open] h2').text()).toBe('Se déconnecter ?')
+  })
+
   it('reste sur une page publique après la déconnexion', async () => {
     await signOutFrom('/search', 'user')
 

@@ -1,6 +1,7 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { readBody, setResponseStatus } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { NAVIGATION_TIMEOUT_MS } from '~~/vitest.support'
 import HandlePage from './handle.vue'
 
 let created: string[] = []
@@ -98,7 +99,7 @@ describe('page de choix du pseudo', () => {
 
     await wrapper.get('form').trigger('submit')
 
-    await vi.waitFor(() => expect(useRoute().path).toBe('/'))
+    await vi.waitFor(() => expect(useRoute().path).toBe('/'), { timeout: NAVIGATION_TIMEOUT_MS })
   })
 
   it.each([
@@ -168,6 +169,6 @@ describe('page de choix du pseudo', () => {
 
     await mountPage()
 
-    await vi.waitFor(() => expect(useRoute().path).toBe('/'))
+    await vi.waitFor(() => expect(useRoute().path).toBe('/'), { timeout: NAVIGATION_TIMEOUT_MS })
   })
 })

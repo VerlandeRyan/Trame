@@ -10,6 +10,23 @@ describe('UiField', () => {
     expect(wrapper.get('input').attributes('id')).toBe('pseudo')
   })
 
+  it("obligatoire : étoile après le libellé et aria-required, sans l'attribut natif required", async () => {
+    const wrapper = await mountSuspended(UiField, {
+      props: { id: 'pseudo', label: 'Pseudo', inputAttributes: { required: true } },
+    })
+
+    expect(wrapper.get('label').text()).toBe('Pseudo*')
+    expect(wrapper.get('input').attributes('aria-required')).toBe('true')
+    expect(wrapper.get('input').attributes('required')).toBeUndefined()
+  })
+
+  it('facultatif : ni étoile ni aria-required', async () => {
+    const wrapper = await mountSuspended(UiField, { props: { id: 'pseudo', label: 'Pseudo' } })
+
+    expect(wrapper.get('label').text()).toBe('Pseudo')
+    expect(wrapper.get('input').attributes('aria-required')).toBeUndefined()
+  })
+
   it('émet la valeur saisie', async () => {
     const wrapper = await mountSuspended(UiField, { props: { id: 'pseudo', label: 'Pseudo' } })
 

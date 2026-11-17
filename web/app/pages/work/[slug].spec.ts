@@ -1,6 +1,7 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { flushPromises } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { NAVIGATION_TIMEOUT_MS } from '~~/vitest.support'
 import WorkPage from './[slug].vue'
 
 const work = {
@@ -68,7 +69,9 @@ describe('page de fiche', () => {
   it("redirige un slug erroné vers l'URL canonique", async () => {
     await mountSuspended(WorkPage, { route: '/work/42-nimporte-quoi' })
 
-    await vi.waitFor(() => expect(useRoute().path).toBe('/work/42-aube-fictive'))
+    await vi.waitFor(() => expect(useRoute().path).toBe('/work/42-aube-fictive'), {
+      timeout: NAVIGATION_TIMEOUT_MS,
+    })
   })
 
   it.each(['/work/404-inconnue', '/work/aube-fictive'])(

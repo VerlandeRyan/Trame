@@ -1,11 +1,23 @@
 <script setup lang="ts">
-import { digitsOnly, optionsOf, WORK_STATUSES, WORK_TYPES, type WorkDraft } from '~/utils/admin'
+import {
+  digitsOnly,
+  formatCodesOf,
+  missingWorkFields,
+  optionsOf,
+  WORK_STATUSES,
+  WORK_TYPES,
+  type WorkDraft,
+} from '~/utils/admin'
 
 /**
  * Work information on two columns: identity and publication on the left, dates, formats and
  * genres on the right. Each field only accepts what the API accepts (digits, letters, date).
  */
-const props = defineProps<{ genres: { code: string; category: string }[] }>()
+const props = defineProps<{
+  genres: { code: string; category: string }[]
+  /** Flags the required fields left empty (after a refused save). */
+  showErrors?: boolean
+}>()
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
 const genreLabel = useGenreLabel()
@@ -20,6 +32,7 @@ const optionsIn = (category: string) =>
     .filter((genre) => genre.category === category)
     .map(({ code }) => ({ value: code, label: genreLabel(code) }))
 const formatOptions = computed(() => optionsIn('format'))
+const missing = computed(() => missingWorkFields(draft.value, formatCodesOf(props.genres)))
 const themeOptions = computed(() => optionsIn('theme'))
 
 /** Ticks or unticks the codes of one category without touching those of the other. */
@@ -39,18 +52,26 @@ const chosenIn = (options: { value: string }[]) =>
         id="work-title"
         v-model="draft.title"
         :label="t('admin.work.title')"
-        :input-attributes="{ maxlength: 200 }"
+        :error="showErrors && missing.title ? t('admin.error.required') : undefined"
+        :input-attributes="{ maxlength: 200, required: true }"
       />
       <AdminSelectField
         v-model="draft.originalLanguage"
         :label="t('admin.work.originalLanguage')"
         :options="languageOptionsFor(draft.originalLanguage)"
+        required
       />
-      <AdminPillGroup v-model="draft.type" :label="t('admin.work.type')" :options="typeOptions" />
+      <AdminPillGroup
+        v-model="draft.type"
+        :label="t('admin.work.type')"
+        :options="typeOptions"
+        required
+      />
       <AdminPillGroup
         v-model="draft.status"
         :label="t('admin.work.status')"
         :options="statusOptions"
+        required
       />
       <p v-if="isOngoing" class="info__note">{{ t('admin.work.totalsOngoing') }}</p>
       <div v-else class="info__pair">
@@ -86,7 +107,9 @@ const chosenIn = (options: { value: string }[]) =>
       <AdminPillGroup
         v-if="formatOptions.length > 0"
         multiple
+        required
         :label="t('admin.work.formats')"
+        :error="showErrors && missing.formats ? t('admin.error.formatRequired') : undefined"
         :options="formatOptions"
         :model-value="chosenIn(formatOptions)"
         @update:model-value="setCategory(formatOptions, $event as string[])"

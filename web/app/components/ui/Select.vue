@@ -11,6 +11,8 @@ const props = defineProps<{
   triggerTestId?: string
   /** White frame, like `UiMultiSelect` (default: flat text). */
   boxed?: boolean
+  /** Announces the field as required (`aria-required`); the star is drawn by the parent. */
+  required?: boolean
 }>()
 const model = defineModel<string>({ required: true })
 
@@ -144,6 +146,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onPointerDown)
       role="combobox"
       aria-haspopup="listbox"
       :aria-expanded="open"
+      :aria-required="required ? 'true' : undefined"
       :aria-controls="listboxId"
       :aria-activedescendant="activeId"
       :aria-label="`${label} : ${currentLabel}`"

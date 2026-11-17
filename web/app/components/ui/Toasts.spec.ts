@@ -58,8 +58,8 @@ describe('UiToasts', () => {
     const [error, success] = wrapper.findAll('[data-testid="toast"]')
     expect(error?.get('.toast__hint').text()).toBe('Réessaie dans un instant.')
     expect(success?.find('.toast__hint').exists()).toBe(false)
-    expect(error?.attributes('style')).toContain('--toast-duration: 10000ms')
-    expect(success?.attributes('style')).toContain('--toast-duration: 5000ms')
+    expect(error?.attributes('style')).toContain('--dismiss-duration: 10000ms')
+    expect(success?.attributes('style')).toContain('--dismiss-duration: 5000ms')
   })
 
   it('se ferme avec la croix, nommée pour les lecteurs d’écran', async () => {

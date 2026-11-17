@@ -23,11 +23,17 @@ const trigger = ref<{ $el: HTMLElement } | null>(null)
 const { isOpen, close } = useDismissableMenu(root, () => trigger.value?.$el.focus())
 const menuId = useId()
 
+const hasUnsavedChanges = useUnsavedChanges()
+const confirmingLeave = ref(false)
 const confirmingSignOut = ref(false)
-/** Closes the menu and asks for confirmation before signing out. */
+/**
+ * Closes the menu and asks for confirmation before signing out. With unsaved input on the page,
+ * the user first confirms leaving it; staying cancels the sign-out.
+ */
 function askSignOut() {
   close()
-  confirmingSignOut.value = true
+  if (hasUnsavedChanges.value) confirmingLeave.value = true
+  else confirmingSignOut.value = true
 }
 
 // Middlewares only run on navigation: a members-only or admin page stays displayed after sign-out
@@ -49,6 +55,8 @@ async function confirmSignOut() {
     notice.value = { key: 'auth.signOutFailed', tone: 'error' }
     return
   }
+  // The confirmation already warned about the loss: the page must not ask a second time, once signed out.
+  hasUnsavedChanges.value = false
   const isRedirected = isMemberPage()
   notice.value = { key: 'auth.signedOut', tone: 'success', ...(isRedirected && { keepOnce: true }) }
   if (isRedirected) await navigateTo(localePath('/'))
@@ -140,6 +148,17 @@ async function confirmSignOut() {
       :cancel-label="t('auth.signOutConfirm.keep')"
       :close-label="t('action.close')"
       @confirm="confirmSignOut"
+    />
+    <UiConfirm
+      v-model="confirmingLeave"
+      danger
+      data-testid="sign-out-leave-confirm"
+      :title="t('admin.leave.title')"
+      :text="t('admin.leave.text')"
+      :confirm-label="t('admin.leave.confirm')"
+      :cancel-label="t('admin.leave.cancel')"
+      :close-label="t('action.close')"
+      @confirm="confirmingSignOut = true"
     />
   </div>
 </template>

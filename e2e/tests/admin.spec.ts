@@ -67,6 +67,7 @@ test('un administrateur crée une personne, un éditeur et une œuvre qui les ci
   await page.goto('/admin/catalogue/works/new')
   await waitForHydration(page)
   await page.locator('#work-title').fill(WORK)
+  await page.getByTestId('pill-manga').click()
   await page.getByRole('combobox', { name: /^Langue originale/ }).click()
   await page.getByRole('option', { name: 'allemand (de)' }).click()
   await page.getByRole('tab', { name: 'Auteurs et éditeurs' }).click()
@@ -88,6 +89,86 @@ test('un administrateur crée une personne, un éditeur et une œuvre qui les ci
   }[]
   expect(work?.mainAuthor).toBe(PERSON)
   expect(work?.originalLanguage).toBe('de')
+})
+
+test('les formulaires marquent les champs obligatoires d’une étoile et l’expliquent', async ({
+  page,
+}) => {
+  await page.goto('/admin/catalogue/people/new')
+  await waitForHydration(page)
+  const personForm = page.getByTestId('person-form')
+  await expect(personForm.getByText('* champ obligatoire')).toBeVisible()
+  await expect(personForm.locator('label[for="person-name"]')).toHaveText("Nom d'usage*")
+  await expect(page.locator('#person-name')).toHaveAttribute('aria-required', 'true')
+  await expect(personForm.getByRole('radiogroup')).toHaveCount(1)
+
+  await page.goto('/admin/catalogue/works/new')
+  await waitForHydration(page)
+  await expect(page.getByTestId('work-form').getByText('* champ obligatoire')).toBeVisible()
+  await expect(page.locator('label[for="work-title"]')).toHaveText('Titre original*')
+  await expect(page.locator('label[for="work-started"]')).not.toContainText('*')
+  await expect(page.locator('#work-started')).not.toHaveAttribute('aria-required')
+})
+
+test('enregistrer une fiche d’œuvre vide met en avant les champs obligatoires', async ({
+  page,
+}) => {
+  await page.goto('/admin/catalogue/works/new')
+  await waitForHydration(page)
+  await expect(page.getByText('Champ obligatoire', { exact: true })).toHaveCount(0)
+
+  await page.getByTestId('admin-save').click()
+
+  await expect(page).toHaveURL(/works\/new/)
+  await expect(page.locator('#work-title')).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByText('Champ obligatoire', { exact: true })).toBeVisible()
+  await expect(page.getByText('Choisis au moins un format.')).toBeVisible()
+  await expect(
+    page.getByRole('tab', { name: 'Informations' }).getByRole('img'),
+  ).toHaveAccessibleName('Contient un champ obligatoire vide ou une ligne incomplète')
+
+  await page.locator('#work-title').fill(`${WORK} complétée`)
+  await page.getByTestId('pill-manga').click()
+  await expect(page.getByText('Champ obligatoire', { exact: true })).toHaveCount(0)
+  await expect(page.getByText('Choisis au moins un format.')).toHaveCount(0)
+})
+
+test('une adresse qui n’est pas en https est refusée avec un message clair', async ({ page }) => {
+  await page.goto('/admin/catalogue/publishers/new')
+  await waitForHydration(page)
+  await page.locator('#publisher-name').fill(`${PUBLISHER} adresse`)
+  await page.locator('#publisher-url').fill('maison.test')
+
+  await page.getByTestId('admin-save').click()
+
+  await expect(page).toHaveURL(/publishers\/new/)
+  await expect(page.locator('#publisher-url')).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByText('Adresse invalide', { exact: false })).toBeVisible()
+
+  await page.locator('#publisher-url').fill('https://maison.test')
+  await expect(page.locator('#publisher-url')).not.toHaveAttribute('aria-invalid')
+})
+
+test('une ligne existante sans champ obligatoire est signalée dans son onglet', async ({
+  page,
+}) => {
+  await page.goto('/admin/catalogue/works/new')
+  await waitForHydration(page)
+  await page.locator('#work-title').fill(`${WORK} lignes vides`)
+  await page.getByTestId('pill-manga').click()
+  await page.getByRole('tab', { name: 'Liens' }).click()
+  await page.getByRole('button', { name: 'Ajouter un lien' }).click()
+
+  await page.getByTestId('admin-save').click()
+
+  await expect(page).toHaveURL(/works\/new/)
+  const alertLabel = 'Contient un champ obligatoire vide ou une ligne incomplète'
+  await expect(page.getByRole('tab', { name: 'Liens' }).getByRole('img')).toHaveAccessibleName(
+    alertLabel,
+  )
+  await expect(
+    page.locator('[role="tabpanel"]:visible').getByText('Champ obligatoire', { exact: true }),
+  ).toBeVisible()
 })
 
 test('les filtres et le tri de la liste des œuvres se combinent', async ({ page }) => {
@@ -196,6 +277,7 @@ test('un texte tapé sans choisir de proposition est refusé et la ligne est mar
   await page.goto('/admin/catalogue/works/new')
   await waitForHydration(page)
   await page.locator('#work-title').fill(`${WORK} sans éditeur choisi`)
+  await page.getByTestId('pill-manga').click()
   await page.getByRole('tab', { name: 'Auteurs et éditeurs' }).click()
   const panel = page.locator('[role="tabpanel"]:visible')
   await panel.getByRole('button', { name: 'Ajouter un éditeur' }).click()
@@ -204,13 +286,13 @@ test('un texte tapé sans choisir de proposition est refusé et la ligne est mar
 
   await page.getByTestId('admin-save').click()
 
-  await expect(page.getByRole('alert')).toContainText('lignes sont incomplètes')
+  await expect(page.getByRole('alert').filter({ hasText: 'lignes incomplètes' })).toBeVisible()
   await expect(panel.getByTestId('picker-error')).toHaveText(
     'Choisis une proposition dans la liste.',
   )
   await expect(
     page.getByRole('tab', { name: 'Auteurs et éditeurs' }).getByRole('img'),
-  ).toHaveAccessibleName('Contient une ligne incomplète')
+  ).toHaveAccessibleName('Contient un champ obligatoire vide ou une ligne incomplète')
   await expect(page).toHaveURL(/works\/new/)
 })
 
@@ -280,6 +362,40 @@ test('se déconnecter depuis une page d’administration ramène à l’accueil'
   await expect(page).toHaveURL(/\/$/)
   await expect(page.getByTestId('sign-in')).toBeVisible()
   await expect(page.getByTestId('auth-notice')).toContainText('Tu es déconnecté')
+})
+
+test('se déconnecter avec une fiche modifiée demande d’abord de quitter, puis de se déconnecter', async ({
+  page,
+}) => {
+  await page.goto('/admin/catalogue/works/new')
+  await waitForHydration(page)
+  await page.locator('#work-title').fill(`${WORK} non enregistrée`)
+
+  await page.getByTestId('account-menu').click()
+  await page.getByTestId('sign-out').click()
+  const dialog = page.getByRole('dialog')
+  await expect(dialog).toContainText('Quitter sans enregistrer ?')
+  await dialog.getByTestId('confirm-accept').click()
+  await expect(dialog).toContainText('Se déconnecter ?')
+  await dialog.getByTestId('confirm-accept').click()
+
+  await expect(page).toHaveURL(/\/$/)
+  await expect(page.getByTestId('sign-in')).toBeVisible()
+  await expect(page.getByTestId('leave-confirm')).toHaveCount(0)
+})
+
+test('rester sur la fiche annule la déconnexion, sans seconde fenêtre', async ({ page }) => {
+  await page.goto('/admin/catalogue/works/new')
+  await waitForHydration(page)
+  await page.locator('#work-title').fill(`${WORK} gardée`)
+
+  await page.getByTestId('account-menu').click()
+  await page.getByTestId('sign-out').click()
+  await page.getByRole('dialog').getByTestId('confirm-cancel').click()
+
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await expect(page.getByTestId('account-menu')).toBeVisible()
+  await expect(page.locator('#work-title')).toHaveValue(`${WORK} gardée`)
 })
 
 test('un membre simple voit une 404, un visiteur revient à l’accueil', async ({ browser }) => {

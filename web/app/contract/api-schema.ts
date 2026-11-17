@@ -3166,7 +3166,7 @@ export interface operations {
                     /** @default [] */
                     publisherIds?: number[];
                     /**
-                     * @description Codes de format et de genre.
+                     * @description Codes de format et de genre ; au moins un format (`VALIDATION_ERROR` sinon).
                      * @default []
                      */
                     genres?: string[];
@@ -3364,7 +3364,7 @@ export interface operations {
                     /** @default [] */
                     publisherIds?: number[];
                     /**
-                     * @description Codes de format et de genre.
+                     * @description Codes de format et de genre ; au moins un format (`VALIDATION_ERROR` sinon).
                      * @default []
                      */
                     genres?: string[];

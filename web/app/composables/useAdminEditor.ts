@@ -22,6 +22,8 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   const publisher = useState<PublisherDraft>(stateKey('publisher'), emptyPublisherDraft)
   const record = useState<EditedRecord | null>(stateKey('record'), () => null)
   const errorKey = ref<string>()
+  /** Whether the last save was refused for an empty required field or an incomplete row: the form flags them. */
+  const showErrors = computed(() => errorKey.value === INCOMPLETE_FORM_ERROR_KEY)
   const saving = ref(false)
 
   // A new record always starts empty: the state survives navigation within the site.
@@ -73,11 +75,19 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
       : draftToPublisherBody(publisher.value)
   }
 
+  /** Whether a required field is empty or a row is incomplete (`formatCodes`: formats a work may carry). */
+  function isIncomplete(formatCodes: readonly string[]): boolean {
+    if (kind === 'works') return hasIncompleteForm(work.value, formatCodes)
+    if (kind === 'people')
+      return isBlank(person.value.name) || hasInvalidLinkUrl(person.value.links)
+    return isBlank(publisher.value.name) || urlErrorKey(publisher.value.url, false) !== undefined
+  }
+
   /** Saves; true if the API accepted, otherwise `errorKey` says why. */
-  async function save(): Promise<boolean> {
+  async function save(formatCodes: readonly string[] = []): Promise<boolean> {
     errorKey.value = undefined
-    if (kind === 'works' && hasIncompleteRows(work.value)) {
-      errorKey.value = INCOMPLETE_ROWS_ERROR_KEY
+    if (isIncomplete(formatCodes)) {
+      errorKey.value = INCOMPLETE_FORM_ERROR_KEY
       return false
     }
     saving.value = true
@@ -114,6 +124,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     publisher,
     record,
     errorKey,
+    showErrors,
     saving,
     isDirty,
     load,

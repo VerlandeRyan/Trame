@@ -71,6 +71,9 @@ test('première connexion : pseudo refusé puis accepté, retour sur la fiche, d
   await expect(page.getByRole('heading', { name: 'Choisis ton pseudo' })).toBeVisible()
   await waitForHydration(page)
   await expect(page.getByTestId('handle-submit')).toBeDisabled()
+  await expect(page.getByText('* champ obligatoire')).toBeVisible()
+  await expect(page.locator('label[for="handle"]')).toHaveText('Pseudo*')
+  await expect(page.locator('#handle')).toHaveAttribute('aria-required', 'true')
 
   await chooseHandle(page, 'admin')
   await expect(page.getByRole('alert')).toHaveText('Ce pseudo est réservé. Choisis-en un autre.')
@@ -251,6 +254,20 @@ test('un retour de Google annulé affiche un avis, qu’on peut fermer', async (
   await notice.getByRole('button', { name: 'Fermer' }).click()
 
   await expect(notice).toBeHidden()
+  await expect(page).toHaveURL('/')
+})
+
+test('un avis se ferme seul après son délai et retire son paramètre de l’adresse', async ({
+  page,
+}) => {
+  await page.goto('/?auth_error=cancelled')
+  await waitForHydration(page)
+
+  const notice = page.getByTestId('auth-notice')
+  await expect(notice).toBeVisible()
+
+  // Le délai d'une information est de 5 s (celui des annonces).
+  await expect(notice).toBeHidden({ timeout: 10_000 })
   await expect(page).toHaveURL('/')
 })
 

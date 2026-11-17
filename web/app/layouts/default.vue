@@ -69,9 +69,11 @@ useHtmlLanguage()
   opacity: 0.23;
   pointer-events: none;
   -webkit-mask-image:
-    linear-gradient(270deg, #000, transparent 90%), linear-gradient(180deg, #000 55%, transparent);
+    linear-gradient(270deg, #000000, transparent 90%),
+    linear-gradient(180deg, #000000 55%, transparent);
   mask-image:
-    linear-gradient(270deg, #000, transparent 90%), linear-gradient(180deg, #000 55%, transparent);
+    linear-gradient(270deg, #000000, transparent 90%),
+    linear-gradient(180deg, #000000 55%, transparent);
   -webkit-mask-composite: source-in;
   mask-composite: intersect;
 

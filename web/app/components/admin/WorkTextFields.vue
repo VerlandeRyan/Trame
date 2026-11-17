@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  isBlank,
   isSynopsisRowFilled,
   isTitleRowFilled,
   optionsOf,
@@ -8,7 +9,13 @@ import {
   type WorkDraft,
 } from '~/utils/admin'
 
-/** Alternative titles (per language) and synopses (one per language, with its source), each in its own panel. */
+/**
+ * Alternative titles (per language) and synopses (one per language, with its source), each in its
+ * own panel. `showErrors` flags the required fields left empty (after a refused save).
+ */
+const props = defineProps<{ showErrors?: boolean }>()
+/** Whether a required text is flagged: empty, after a refused save. */
+const isFlagged = (text: string) => props.showErrors === true && isBlank(text)
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
 const uid = useId()
@@ -35,17 +42,20 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
             v-model="item.language"
             :label="t('admin.work.language')"
             :options="languageOptionsFor(item.language)"
+            required
           />
           <AdminSelectField
             v-model="item.kind"
             :options="titleKindOptions"
             :label="t('admin.work.titleKind')"
+            required
           />
           <UiField
             :id="`${uid}-title-${index}`"
             v-model="item.title"
             :label="t('admin.work.alternativeTitle')"
-            :input-attributes="{ maxlength: 200 }"
+            :error="isFlagged(item.title) ? t('admin.error.required') : undefined"
+            :input-attributes="{ maxlength: 200, required: true }"
           />
         </template>
       </AdminRowList>
@@ -67,23 +77,34 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
             v-model="item.language"
             :label="t('admin.work.language')"
             :options="languageOptionsFor(item.language)"
+            required
           />
           <AdminSelectField
             v-model="item.source"
             :options="sourceOptions"
             :label="t('admin.work.synopsisSource')"
+            required
           />
           <div class="texts__text">
-            <label :for="`${uid}-synopsis-${index}`" class="texts__label">
-              {{ t('admin.work.synopsis') }}
-            </label>
+            <label :for="`${uid}-synopsis-${index}`" class="texts__label"
+              >{{ t('admin.work.synopsis') }}<UiRequiredMark
+            /></label>
             <textarea
               :id="`${uid}-synopsis-${index}`"
               v-model="item.text"
               class="texts__area"
+              :class="{ 'texts__area--invalid': isFlagged(item.text) }"
               rows="6"
               maxlength="5000"
+              aria-required="true"
+              :aria-invalid="isFlagged(item.text) ? 'true' : undefined"
+              :aria-describedby="
+                isFlagged(item.text) ? `${uid}-synopsis-${index}-error` : undefined
+              "
             />
+            <UiFormError v-if="isFlagged(item.text)" :id="`${uid}-synopsis-${index}-error`">
+              {{ t('admin.error.required') }}
+            </UiFormError>
           </div>
         </template>
       </AdminRowList>
@@ -121,5 +142,9 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
   // 16 px minimum: avoids Safari iOS's automatic zoom on focus.
   font-size: 1rem;
   resize: vertical;
+}
+
+.texts__area--invalid {
+  border-color: var(--color-crimson);
 }
 </style>

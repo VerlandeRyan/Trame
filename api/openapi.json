@@ -3360,7 +3360,7 @@
                   },
                   "genres": {
                     "default": [],
-                    "description": "Codes de format et de genre.",
+                    "description": "Codes de format et de genre ; au moins un format (`VALIDATION_ERROR` sinon).",
                     "maxItems": 30,
                     "type": "array",
                     "items": {
@@ -3790,7 +3790,7 @@
                   },
                   "genres": {
                     "default": [],
-                    "description": "Codes de format et de genre.",
+                    "description": "Codes de format et de genre ; au moins un format (`VALIDATION_ERROR` sinon).",
                     "maxItems": 30,
                     "type": "array",
                     "items": {

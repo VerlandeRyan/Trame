@@ -66,6 +66,11 @@ function showErrorToast() {
     retry: () => undefined,
   })
 }
+const authNotice = useAuthNotice()
+/** Shows the sign-in banner, as a sign-out would. */
+function showNotice() {
+  authNotice.value = { key: 'auth.signedOut', tone: 'success' }
+}
 const sampleHandle = ref('lecteur')
 const searchText = ref('')
 const chaptersRead = ref(12)
@@ -199,6 +204,13 @@ const tabs = computed(() => [
         :error="t('error.HANDLE_TAKEN')"
         prefix="@"
       />
+      <UiRequiredLegend />
+      <UiField
+        id="gallery-required"
+        v-model="sampleHandle"
+        :label="t('auth.handle.label')"
+        :input-attributes="{ required: true }"
+      />
       <UiButton block variant="secondary" href="#">{{ t('gallery.wideLink') }}</UiButton>
       <div class="gallery__row">
         <UiButton variant="secondary" @click="signInOpen = true">
@@ -209,6 +221,9 @@ const tabs = computed(() => [
         </UiButton>
         <UiButton variant="secondary" @click="showErrorToast">
           {{ t('gallery.showToast') }}
+        </UiButton>
+        <UiButton variant="secondary" @click="showNotice">
+          {{ t('gallery.showNotice') }}
         </UiButton>
       </div>
       <AuthNotice />

@@ -21,6 +21,36 @@ describe('AdminPillGroup', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual(['c'])
   })
 
+  it('obligatoire (choix unique) : étoile dans la légende, groupe de boutons radio requis', async () => {
+    const wrapper = await mountSuspended(AdminPillGroup, {
+      props: { label: 'Type', options: OPTIONS, modelValue: 'a', required: true },
+    })
+
+    expect(wrapper.get('legend').text()).toBe('Type*')
+    expect(wrapper.get('fieldset').attributes('role')).toBe('radiogroup')
+    expect(wrapper.get('fieldset').attributes('aria-required')).toBe('true')
+  })
+
+  it('obligatoire (choix multiple) : étoile seule, pas de rôle ni aria-required', async () => {
+    const wrapper = await mountSuspended(AdminPillGroup, {
+      props: { label: 'Genres', options: OPTIONS, multiple: true, modelValue: [], required: true },
+    })
+
+    expect(wrapper.get('legend').text()).toBe('Genres*, champ obligatoire')
+    // `aria-required` is not allowed on a plain group: the legend says it instead.
+    expect(wrapper.get('legend .sr-only').text()).toBe(', champ obligatoire')
+    expect(wrapper.get('fieldset').attributes('aria-required')).toBeUndefined()
+  })
+
+  it('facultatif : ni étoile ni aria-required', async () => {
+    const wrapper = await mountSuspended(AdminPillGroup, {
+      props: { label: 'Type', options: OPTIONS, modelValue: 'a' },
+    })
+
+    expect(wrapper.get('legend').text()).toBe('Type')
+    expect(wrapper.get('fieldset').attributes('aria-required')).toBeUndefined()
+  })
+
   it('choix multiple : ajoute puis retire une valeur', async () => {
     const wrapper = await mountSuspended(AdminPillGroup, {
       props: { label: 'Genres', options: OPTIONS, multiple: true, modelValue: ['a'] },

@@ -1,14 +1,29 @@
 <script setup lang="ts">
-import { isLinkRowFilled, optionsOf, type AdminLink } from '~/utils/admin'
+import {
+  isLinkRowFilled,
+  optionsOf,
+  URL_MAX_LENGTH,
+  urlErrorKey,
+  type AdminLink,
+} from '~/utils/admin'
 
 /**
  * External (https) links of a work or a person, each in a card; `kinds` limits the offered
  * kinds (the first one is that of a new link).
  */
-const props = defineProps<{ kinds: readonly AdminLink['kind'][] }>()
+const props = defineProps<{
+  kinds: readonly AdminLink['kind'][]
+  /** Flags the addresses left empty (after a refused save). */
+  showErrors?: boolean
+}>()
 const links = defineModel<{ kind: string; url: string; label: string }[]>({ required: true })
 const { t } = useI18n()
 const uid = useId()
+/** Message under an address when it is empty or not a valid https address (after a refused save). */
+function urlError(value: string): string | undefined {
+  const key = props.showErrors ? urlErrorKey(value, true) : undefined
+  return key ? t(key) : undefined
+}
 const kindOptions = optionsOf(props.kinds, (code) => t(`admin.option.link.${code}`))
 </script>
 
@@ -24,12 +39,23 @@ const kindOptions = optionsOf(props.kinds, (code) => t(`admin.option.link.${code
     @remove="links.splice($event, 1)"
   >
     <template #default="{ item, index }">
-      <AdminSelectField v-model="item.kind" :options="kindOptions" :label="t('admin.links.kind')" />
+      <AdminSelectField
+        v-model="item.kind"
+        :options="kindOptions"
+        :label="t('admin.links.kind')"
+        required
+      />
       <UiField
         :id="`${uid}-url-${index}`"
         v-model="item.url"
         :label="t('admin.links.url')"
-        :input-attributes="{ type: 'url', autocomplete: 'off' }"
+        :error="urlError(item.url)"
+        :input-attributes="{
+          type: 'url',
+          autocomplete: 'off',
+          maxlength: URL_MAX_LENGTH,
+          required: true,
+        }"
       />
       <UiField
         :id="`${uid}-label-${index}`"

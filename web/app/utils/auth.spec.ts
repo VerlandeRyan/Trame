@@ -41,6 +41,19 @@ describe('safeReturnTo', () => {
   it('lit la première valeur quand le paramètre est répété', () => {
     expect(safeReturnTo(['/search', '/autre'])).toBe('/search')
   })
+
+  it('retire le motif de retour de Google, pour que le bandeau ne revienne pas après la connexion', () => {
+    expect(safeReturnTo('/?auth_error=signup_cancelled')).toBe('/')
+    expect(safeReturnTo('/search?q=aube&auth_error=cancelled#haut')).toBe('/search?q=aube#haut')
+    expect(safeReturnTo('/en/?auth_error=AUTH_UNAVAILABLE&x=1')).toBe('/en/?x=1')
+  })
+
+  it('ne touche à rien d’autre dans l’adresse de retour', () => {
+    expect(safeReturnTo('/search?q=a%20b&auth_error=cancelled&p=%2B')).toBe('/search?q=a%20b&p=%2B')
+    expect(safeReturnTo('/a/../b?auth_error=x')).toBe('/a/../b')
+    expect(safeReturnTo('/p?auth_error=x&auth_error_other=1')).toBe('/p?auth_error_other=1')
+    expect(safeReturnTo('/p#auth_error')).toBe('/p#auth_error')
+  })
 })
 
 describe('hasSessionCookie', () => {

@@ -13,7 +13,7 @@ const { t } = useI18n()
 const target = parseAdminEditRoute(route.params) ?? { kind: 'works' as const, id: 'new' as const }
 const { kind, id } = target
 const editor = useAdminEditor(kind, id)
-const { record, errorKey, saving } = editor
+const { record, errorKey, showErrors, saving } = editor
 // Arrived without going through the list (direct address): "Back" leads to this record's tab.
 const { last: lastList, location: listLocation } = useAdminListLocation()
 lastList.value ??= parseAdminListQuery({ kind })
@@ -43,7 +43,7 @@ const backToList = () => navigateTo(listLocation.value)
 
 /** Saves, then goes back to the list if the API accepted. */
 async function submit() {
-  if (await editor.save()) await backToList()
+  if (await editor.save(formatCodesOf(genres.value?.items ?? []))) await backToList()
 }
 
 const confirmingArchive = ref(false)
@@ -57,7 +57,11 @@ async function archive() {
 /** Restores the record. */
 const restore = () => editor.setArchived(false)
 
-// Leaving the record with unsaved input asks for confirmation.
+// Leaving the record with unsaved input asks for confirmation. The flag is shared so that signing
+// out (account menu) warns first instead of signing out and then asking.
+const hasUnsavedChanges = useUnsavedChanges()
+watch(editor.isDirty, (isDirty) => (hasUnsavedChanges.value = isDirty), { immediate: true })
+onBeforeUnmount(() => (hasUnsavedChanges.value = false))
 const confirmingLeave = ref(false)
 let pendingDestination: RouteLocationNormalized | null = null
 let isLeaving = false
@@ -66,7 +70,7 @@ let isLeaving = false
 if (import.meta.client) {
   const removeLeaveGuard = useRouter().beforeEach((to, from) => {
     // Changing section (`?section=`) stays on the same record.
-    if (to.path === from.path || isLeaving || !editor.isDirty.value) return true
+    if (to.path === from.path || isLeaving || !hasUnsavedChanges.value) return true
     pendingDestination = to
     confirmingLeave.value = true
     return false
@@ -80,7 +84,7 @@ async function leave() {
 }
 /** Asks the browser to confirm closing the tab while input is unsaved. */
 function warnBeforeUnload(event: BeforeUnloadEvent) {
-  if (editor.isDirty.value) event.preventDefault()
+  if (hasUnsavedChanges.value) event.preventDefault()
 }
 onMounted(() => window.addEventListener('beforeunload', warnBeforeUnload))
 onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnload))
@@ -131,6 +135,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :genres="genres?.items ?? []"
       :search="search"
       :error-key="errorKey"
+      :show-errors="showErrors"
       :saving="saving"
       @submit="submit"
     />
@@ -138,6 +143,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       v-else-if="kind === 'people'"
       v-model="editor.person.value"
       :error-key="errorKey"
+      :show-errors="showErrors"
       :saving="saving"
       @submit="submit"
     />
@@ -145,6 +151,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       v-else
       v-model="editor.publisher.value"
       :error-key="errorKey"
+      :show-errors="showErrors"
       :saving="saving"
       @submit="submit"
     />
