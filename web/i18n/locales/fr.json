@@ -173,12 +173,14 @@
     "auth": "Connexion, champs et confirmations",
     "wideLink": "Lien pleine largeur",
     "openSignIn": "Fenêtre de connexion",
-    "openConfirm": "Fenêtre de confirmation"
+    "openConfirm": "Fenêtre de confirmation",
+    "showToast": "Annonce d'erreur"
   },
   "action": {
     "addToList": "Ajouter à ma liste",
     "add": "Ajouter",
     "close": "Fermer",
+    "retry": "Réessayer",
     "edit": "Modifier",
     "clearChoice": "Effacer le choix"
   },
@@ -387,7 +389,7 @@
       "private": "Profil privé · visible par toi seul",
       "makePrivate": "Passer en privé",
       "makePublic": "Passer en public",
-      "error": "Impossible d'enregistrer pour l'instant. Réessaie dans un instant."
+      "error": "Impossible d'enregistrer pour l'instant."
     },
     "private": {
       "title": "Ce profil est privé",
@@ -501,12 +503,13 @@
       "confirmCounters": "Mettre à jour",
       "keepCounters": "Garder mes compteurs",
       "keep": "Garder « {status} »"
-    },
-    "error": {
-      "generic": "Impossible d'enregistrer pour l'instant. Réessaie dans un instant.",
-      "signedOut": "Ta session a expiré. Reconnecte-toi pour continuer.",
-      "notFound": "Cette œuvre n'est plus disponible."
     }
+  },
+  "writeError": {
+    "generic": "Impossible d'enregistrer pour l'instant.",
+    "retryHint": "Réessaie dans un instant.",
+    "signedOut": "Ta session a expiré. Reconnecte-toi pour continuer.",
+    "notFound": "Cette œuvre n'est plus disponible."
   },
   "admin": {
     "catalogue": {
@@ -732,7 +735,7 @@
     }
   },
   "error": {
-    "INTERNAL_ERROR": "Une erreur est survenue. Réessaie dans un instant.",
+    "INTERNAL_ERROR": "Une erreur est survenue. @:writeError.retryHint",
     "ADMIN_REQUIRED": "Cette action est réservée aux administrateurs.",
     "PERSON_HAS_WORKS": "Cette personne est encore créditée sur une œuvre publiée : retire-la de ces œuvres d'abord.",
     "PUBLISHER_HAS_WORKS": "Cet éditeur a encore une œuvre publiée : retire-le de ces œuvres d'abord.",

@@ -1,5 +1,10 @@
 /** A reading list: paginated loading and immediate, server-reconciled edits. */
-import { LIBRARY_STATUSES, type LibraryEntry, type LibraryEntryChanges } from '~/utils/library'
+import {
+  LIBRARY_STATUSES,
+  singleCounterOf,
+  type LibraryEntry,
+  type LibraryEntryChanges,
+} from '~/utils/library'
 import {
   applyEntryChangeToCounts,
   hasMorePages,
@@ -29,6 +34,15 @@ export async function useReadingList(
 ) {
   const api = useApi()
   const { locale } = useI18n()
+  // Created before the first `await`, which loses the Nuxt context that `useToasts` needs. The
+  // reload function is filled in once the first page is loaded: after a failure the list may have
+  // drifted from the server, so that page is read again.
+  const listReloader: { reload?: () => Promise<void> } = {}
+  const { run, isBusy } = useOptimisticWrite({
+    resync: async () => {
+      await listReloader.reload?.()
+    },
+  })
 
   const items = ref<ListedEntry[]>([])
   const total = ref(0)
@@ -54,6 +68,7 @@ export async function useReadingList(
     () => fetchPage(1),
     { watch: [firstPageQuery] },
   )
+  listReloader.reload = () => refresh()
 
   watch(
     data,
@@ -87,9 +102,6 @@ export async function useReadingList(
     }
   }
 
-  // After a failure the list may have drifted from the server: read the first page again.
-  const { run, isBusy, errorKey } = useOptimisticWrite({ resync: () => refresh() })
-
   /** Replaces the entry of a work in the displayed list. */
   function replaceEntryInView(workId: number, entry: LibraryEntry) {
     items.value = items.value.map((item) => (item.work.id === workId ? { ...item, entry } : item))
@@ -117,7 +129,9 @@ export async function useReadingList(
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
     const after = { ...before, ...changes }
+    const counter = singleCounterOf(changes)
     return run({
+      overwriteKey: counter && `${workId}:${counter}`,
       apply: () => {
         updateStatusCountsAndTotals(before, after)
         replaceEntryInView(workId, after)
@@ -159,7 +173,6 @@ export async function useReadingList(
     totals,
     status,
     error,
-    errorKey,
     isBusy,
     isLoadingMore,
     hasLoadMoreFailed,

@@ -1,10 +1,14 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function failure(code: string) {
   return Object.assign(new Error(code), { code })
 }
 
 describe('useOptimisticWrite', () => {
+  beforeEach(() => {
+    clearNuxtState('toasts')
+  })
+
   it('affiche le changement avant d’envoyer la requête', async () => {
     const write = useOptimisticWrite()
     const steps: string[] = []
@@ -55,7 +59,9 @@ describe('useOptimisticWrite', () => {
 
     await write.run({ send: () => Promise.reject(failure('INTERNAL_ERROR')), reconcile: () => {} })
 
-    expect(write.errorKey.value).toBe('library.error.generic')
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'error', messageKey: 'writeError.generic' },
+    ])
     expect(resyncs).toBe(1)
   })
 
@@ -76,7 +82,7 @@ describe('useOptimisticWrite', () => {
       },
     })
 
-    expect(write.errorKey.value).toBe('library.error.signedOut')
+    expect(useToasts().toasts.value[0]?.messageKey).toBe('writeError.signedOut')
     expect(reverts).toBe(1)
     expect(resyncs).toBe(0)
   })
@@ -86,17 +92,77 @@ describe('useOptimisticWrite', () => {
 
     await write.run({ send: () => Promise.reject(failure('INTERNAL_ERROR')) })
 
-    expect(write.errorKey.value).toBe('library.error.generic')
+    expect(useToasts().toasts.value).toHaveLength(1)
     expect(write.isBusy.value).toBe(false)
   })
 
-  it('efface l’erreur précédente au départ de la requête suivante', async () => {
+  it('retire le « Réessayer » d’un échec dès qu’une écriture plus récente est lancée', async () => {
     const write = useOptimisticWrite()
     await write.run({ send: () => Promise.reject(failure('INTERNAL_ERROR')) })
-    expect(write.errorKey.value).not.toBeNull()
+    expect(useToasts().toasts.value).toHaveLength(1)
 
     await write.run({ send: () => Promise.resolve() })
 
-    expect(write.errorKey.value).toBeNull()
+    expect(useToasts().toasts.value).toEqual([])
+  })
+
+  it('ne propose pas « Réessayer » quand une écriture plus récente est déjà en file', async () => {
+    const write = useOptimisticWrite()
+
+    await Promise.all([
+      write.run({ send: () => Promise.reject(failure('INTERNAL_ERROR')) }),
+      write.run({ send: () => Promise.resolve() }),
+    ])
+
+    const [toast] = useToasts().toasts.value
+    expect(toast?.retry).toBeUndefined()
+  })
+
+  it('retire l’annonce d’un échec quand une écriture suivante du même compteur réussit', async () => {
+    const write = useOptimisticWrite()
+
+    await Promise.all([
+      write.run({ overwriteKey: '2:chaptersRead', send: () => Promise.reject(failure('X')) }),
+      write.run({ overwriteKey: '2:chaptersRead', send: () => Promise.resolve() }),
+    ])
+
+    expect(useToasts().toasts.value).toEqual([])
+  })
+
+  it('garde l’annonce quand l’écriture suivante porte sur autre chose', async () => {
+    const write = useOptimisticWrite()
+
+    await Promise.all([
+      write.run({ send: () => Promise.reject(failure('X')) }),
+      write.run({ overwriteKey: '2:chaptersRead', send: () => Promise.resolve() }),
+    ])
+    await Promise.all([
+      write.run({ overwriteKey: '2:chaptersRead', send: () => Promise.reject(failure('X')) }),
+      write.run({ overwriteKey: '2:volumesRead', send: () => Promise.resolve() }),
+    ])
+
+    expect(useToasts().toasts.value).toHaveLength(1)
+  })
+
+  it('rejoue l’étape au clic sur « Réessayer » et ferme l’annonce', async () => {
+    const write = useOptimisticWrite()
+    const { toasts, retry } = useToasts()
+    const steps: string[] = []
+    let attempts = 0
+
+    await write.run({
+      apply: () => steps.push('apply'),
+      send: () => {
+        attempts += 1
+        return attempts === 1 ? Promise.reject(failure('INTERNAL_ERROR')) : Promise.resolve('saved')
+      },
+      reconcile: (result) => steps.push(`reconcile:${result}`),
+      revert: () => steps.push('revert'),
+    })
+    retry(toasts.value[0]!.id)
+    await vi.waitFor(() => expect(steps).toContain('reconcile:saved'))
+
+    expect(steps).toEqual(['apply', 'revert', 'apply', 'reconcile:saved'])
+    expect(toasts.value).toEqual([])
   })
 })

@@ -131,6 +131,28 @@ test('garder l’œuvre quand on annule le retrait', async ({ page, context }) =
   await expect(statusButton(page)).toBeVisible()
 })
 
+test('un changement de statut perdu revient à l’état d’avant et se rejoue par « Réessayer »', async ({
+  page,
+  context,
+}) => {
+  await signUp(context)
+  await openWork(page)
+  await addToList(page)
+  await expect(statusButton(page)).toContainText('À lire')
+  await page.route('**/api/v1/works/*/entry', (route) =>
+    route.request().method() === 'PUT' ? route.abort('connectionfailed') : route.continue(),
+  )
+
+  await chooseStatus(page, 'on_hold')
+
+  await expect(page.getByTestId('toast')).toContainText("Impossible d'enregistrer")
+  await expect(statusButton(page)).toContainText('À lire')
+  await page.unroute('**/api/v1/works/*/entry')
+  await page.getByTestId('toast-retry').click()
+  await expect(statusButton(page)).toContainText('En pause')
+  await expect(page.getByTestId('toast')).toHaveCount(0)
+})
+
 test('le bouton de statut prend la couleur du statut', async ({ page, context }) => {
   await signUp(context)
   await openWork(page)

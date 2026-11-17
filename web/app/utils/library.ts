@@ -113,15 +113,11 @@ export function exceedsKnownTotal(value: number, total: number | null): boolean 
   return total !== null && value > total
 }
 
-/** Translation key of the message shown for each handled API error code. */
-const LIBRARY_ERROR_KEYS = new Map([
-  ['UNAUTHENTICATED', 'library.error.signedOut'],
-  ['HANDLE_REQUIRED', 'library.error.signedOut'],
-  ['NOT_FOUND', 'library.error.notFound'],
-  ['RATE_LIMITED', 'error.RATE_LIMITED'],
-])
-
-/** Translation key of the message to display for an API error code. */
-export function libraryErrorKey(code: string): string {
-  return LIBRARY_ERROR_KEYS.get(code) ?? 'library.error.generic'
+/** The counter that `changes` writes alone (a "+1", a typed value), if it is only that. */
+export function singleCounterOf(
+  changes: LibraryEntryChanges,
+): 'chaptersRead' | 'volumesRead' | undefined {
+  const keys = Object.keys(changes)
+  const [key] = keys
+  return keys.length === 1 && (key === 'chaptersRead' || key === 'volumesRead') ? key : undefined
 }

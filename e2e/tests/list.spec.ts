@@ -137,6 +137,28 @@ test('un chapitre de plus est enregistré aussitôt, puis retrouvé au rechargem
   ).toHaveValue('6')
 })
 
+test('un chapitre perdu par une panne réseau annule l’affichage et se rejoue par « Réessayer »', async ({
+  page,
+  context,
+}) => {
+  await signUpWithList(context)
+  await openList(page)
+  await page.route('**/api/v1/works/*/entry', (route) =>
+    route.request().method() === 'PUT' ? route.abort('connectionfailed') : route.continue(),
+  )
+
+  await rowOf(page, 'Chroniques de Basalte')
+    .getByRole('button', { name: 'Augmenter : Chapitres' })
+    .click()
+
+  await expect(page.getByTestId('toast')).toContainText("Impossible d'enregistrer")
+  await expect(page.getByTestId('list-total-chapters')).toContainText('15')
+  await page.unroute('**/api/v1/works/*/entry')
+  await page.getByTestId('toast-retry').click()
+  await expect(page.getByTestId('list-total-chapters')).toContainText('16')
+  await expect(page.getByTestId('toast')).toHaveCount(0)
+})
+
 test('commencer une œuvre « À lire » demande confirmation avant de la passer « En cours »', async ({
   page,
   context,

@@ -12,6 +12,7 @@ useHtmlLanguage()
     <LayoutHeader />
     <AuthNotice />
     <AuthSignInModal />
+    <UiToasts />
     <!-- Decoration: pink dot screentone on the right edge, under the header, behind the content. -->
     <div v-if="route.meta.trame !== 'hero'" class="layout__trame" aria-hidden="true" />
     <main id="contenu" class="layout__main" tabindex="-1">

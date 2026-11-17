@@ -11,7 +11,6 @@ defineProps<{
   /** False until the entry is read: a work already followed is not offered for adding. */
   isLoaded: boolean
   isBusy: boolean
-  errorKey: string | null
 }>()
 const emit = defineEmits<{ add: []; changeStatus: [status: LibraryStatus]; remove: [] }>()
 const { t } = useI18n()
@@ -92,8 +91,6 @@ function askRemoval(closeMenu: () => void) {
         </button>
       </template>
     </LibraryStatusList>
-
-    <UiFormError v-if="errorKey" data-testid="library-error">{{ t(errorKey) }}</UiFormError>
 
     <LibraryRemoveConfirm v-model="confirmingRemoval" @confirm="emit('remove')" />
   </div>

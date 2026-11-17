@@ -133,10 +133,10 @@ describe('HomeContinueReading', () => {
 
     await wrapper.get('[data-testid="continue-reading-add-one"]').trigger('click')
 
-    await vi.waitFor(() =>
-      expect(wrapper.find('[data-testid="continue-reading-error"]').exists()).toBe(true),
-    )
-    expect(wrapper.get('[role="alert"]').text()).toContain("Impossible d'enregistrer")
+    const { toasts } = useToasts()
+    await vi.waitFor(() => expect(toasts.value).toHaveLength(1))
+    expect(toasts.value[0]).toMatchObject({ tone: 'error', messageKey: 'writeError.generic' })
+    expect(toasts.value[0]?.retry).toBeTypeOf('function')
     expect(wrapper.get('[data-testid="continue-reading-progress"]').text()).toBe(
       'Webtoon · Chapitre 12',
     )

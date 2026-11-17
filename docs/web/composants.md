@@ -7,7 +7,8 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 - `Chip`.
 - `Counter` : − / saisie / +.
 - `Field` : préfixe, erreur annoncée, `inputAttributes`.
-- `FormError` : ligne d'erreur `role="alert"` avec l'icône d'alerte de 18 px ; seule forme d'erreur en ligne (champs, formulaires admin, fiche, liste, profil).
+- `FormError` : ligne d'erreur `role="alert"` avec l'icône d'alerte de 18 px ; erreur en ligne des champs, des formulaires d'administration et du chargement de la suite d'une liste.
+- `Toasts` : pile d'annonces fixée en bas de l'écran (monté dans le layout par défaut, alimenté par `useToasts().show`). Trois tons (jaune information, vert réussite, rouge erreur ; `role="alert"` pour l'erreur, `role="status"` sinon), croix de fermeture, bouton « Réessayer » si l'annonce porte une action. Chaque annonce est un `ToastItem` qui se ferme seul (10 s pour une erreur, 5 s sinon), sauf tant que la souris la survole ou que le focus y est ; une barre de décompte au bord bas montre le délai restant (absente avec `prefers-reduced-motion`). Un nouvel envoi d'écriture retire le « Réessayer » de l'échec précédent. La croix s'assombrit au survol par un voile de la couleur du texte. L'annonce peut porter une seconde phrase de conseil (`hintKey`), affichée dès 768 px seulement. Trois annonces au plus, une annonce identique remplace la précédente. Les échecs d'écriture à effet immédiat (`useOptimisticWrite`) passent par elle : `utils/write-errors.ts` donne le texte (`writeErrorKey` : code d'erreur → clé `writeError.*`, `writeErrorHintKey` : phrase de conseil), et `overwriteKey` (un par compteur, ex. `2:chaptersRead`, calculé par `singleCounterOf`) ferme l'annonce d'un échec quand une écriture suivante du même compteur réussit.
 - `Modal`.
 - `Panel` : bloc blanc à ombre.
 - `Rule` : frise.

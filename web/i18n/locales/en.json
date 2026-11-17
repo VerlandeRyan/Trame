@@ -169,12 +169,14 @@
     "tabAll": "All",
     "emptyTitle": "Nothing to show yet",
     "emptyText": "The catalogue will appear here.",
-    "modalText": "Window content."
+    "modalText": "Window content.",
+    "showToast": "Error toast"
   },
   "action": {
     "addToList": "Add to my list",
     "add": "Add",
     "close": "Close",
+    "retry": "Retry",
     "edit": "Edit",
     "clearChoice": "Clear the choice"
   },
@@ -383,7 +385,7 @@
       "private": "Private profile · visible to you only",
       "makePrivate": "Make private",
       "makePublic": "Make public",
-      "error": "Could not save right now. Try again in a moment."
+      "error": "Could not save right now."
     },
     "private": {
       "title": "This profile is private",
@@ -497,12 +499,13 @@
       "completeBoth": "Chapters to {chapters}, volumes to {volumes}?",
       "confirmCounters": "Update",
       "keepCounters": "Keep my counters"
-    },
-    "error": {
-      "generic": "Could not save right now. Please try again in a moment.",
-      "signedOut": "Your session has expired. Sign in again to continue.",
-      "notFound": "This work is no longer available."
     }
+  },
+  "writeError": {
+    "generic": "Could not save right now.",
+    "retryHint": "Please try again in a moment.",
+    "signedOut": "Your session has expired. Sign in again to continue.",
+    "notFound": "This work is no longer available."
   },
   "admin": {
     "catalogue": {
@@ -723,7 +726,7 @@
     }
   },
   "error": {
-    "INTERNAL_ERROR": "Something went wrong. Please try again in a moment.",
+    "INTERNAL_ERROR": "Something went wrong. @:writeError.retryHint",
     "ADMIN_REQUIRED": "This action is reserved for administrators.",
     "PERSON_HAS_WORKS": "This person is still credited on a published work: remove them from those works first.",
     "PUBLISHER_HAS_WORKS": "This publisher still has a published work: remove it from those works first.",

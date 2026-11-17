@@ -116,6 +116,27 @@ test('son propriétaire retrouve son profil par le menu et le passe en privé', 
   await expect(page.getByTestId('list-edit').first()).toBeVisible()
 })
 
+test('une visibilité qui ne s’enregistre pas est annoncée et se rejoue par « Réessayer »', async ({
+  context,
+  page,
+}) => {
+  const handle = await signUpWithList(context)
+  await page.goto(`/u/${handle}`)
+  await waitForHydration(page)
+  await page.route('**/api/v1/me/profile', (route) =>
+    route.request().method() === 'PATCH' ? route.abort('connectionfailed') : route.continue(),
+  )
+
+  await page.getByTestId('profile-visibility-toggle').click()
+
+  await expect(page.getByTestId('toast')).toContainText("Impossible d'enregistrer")
+  await expect(page.getByTestId('profile-visibility')).toContainText('Profil public')
+  await page.unroute('**/api/v1/me/profile')
+  await page.getByTestId('toast-retry').click()
+  await expect(page.getByTestId('profile-visibility')).toContainText('Profil privé')
+  await expect(page.getByTestId('toast')).toHaveCount(0)
+})
+
 test('un membre inconnu donne la page 404', async ({ page }) => {
   const response = await page.goto('/u/personne-ici')
 
