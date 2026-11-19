@@ -49,10 +49,6 @@ export function createAdminClient(request: Request) {
   /** Number of drafts of each kind. */
   const draftCounts = () => request<Record<AdminKind, number>>('/admin/draft-counts')
 
-  /** Publishes a draft (no effect on a published record). */
-  const publish = <T>(kind: AdminKind, id: number) =>
-    request<T>(`${base(kind)}/${id}/publish`, { method: 'POST' })
-
   /** Deletes a draft or an archived record for good. */
   const remove = (kind: AdminKind, id: number) =>
     request<undefined>(`${base(kind)}/${id}`, { method: 'DELETE' })
@@ -60,12 +56,16 @@ export function createAdminClient(request: Request) {
   /** First unarchived records (drafts included, flagged) whose name contains `text`, for a picker. */
   async function search(kind: AdminKind, text: string): Promise<RecordRef[]> {
     const page = await request<AdminPage<AdminListItem>>(base(kind), {
-      query: { q: text, scope: 'active', page: 1, pageSize: PICKER_RESULTS },
+      query: { q: text, lifecycle: 'active', page: 1, pageSize: PICKER_RESULTS },
     })
-    return page.items.map((item) => ({ id: item.id, label: itemLabel(item), draft: item.draft }))
+    return page.items.map((item) => ({
+      id: item.id,
+      label: itemLabel(item),
+      draft: item.lifecycle === 'draft',
+    }))
   }
 
-  return { list, get, create, replace, archive, restore, publish, remove, draftCounts, search }
+  return { list, get, create, replace, archive, restore, remove, draftCounts, search }
 }
 
 /** The administration client. */

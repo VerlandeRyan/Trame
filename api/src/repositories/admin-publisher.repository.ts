@@ -3,22 +3,23 @@ import { sql } from 'kysely';
 import type { Db, PublisherKind } from '../db/database.js';
 import {
   archiveColumns,
-  archiveCondition,
   countDraftRows,
   deleteRecordRow,
   DRAFTS_FIRST,
   FILTERED_TOTAL,
   isVersion,
+  lifecycleCondition,
+  lifecycleOf,
+  lockRow,
   nameContains,
-  publicationCondition,
-  publishRow,
+  publishedAtOnReplace,
   totalOf,
   versionOf,
-  type ArchiveScope,
-  type PublicationState,
+  type Lifecycle,
+  type LifecycleFilter,
 } from './admin-sql.js';
 
-/** Data written when creating or replacing a publisher; `published` only counts at creation. */
+/** Data written when creating or replacing a publisher; `published` publishes a draft (never the reverse). */
 export interface AdminPublisherDraft {
   name: string;
   kind: PublisherKind;
@@ -29,9 +30,8 @@ export interface AdminPublisherDraft {
 /** A publisher as shown in lists and details. */
 export interface AdminPublisherSummary extends Omit<AdminPublisherDraft, 'published'> {
   id: number;
-  archived: boolean;
-  /** Not yet published: only visible in the administration. */
-  draft: boolean;
+  /** A draft is only visible in the administration. */
+  lifecycle: Lifecycle;
   /** Unarchived works published by this publisher or platform. */
   activeWorkCount: number;
   /** Record version (ISO 8601 date, to the millisecond): send it back with the replacement. */
@@ -41,11 +41,10 @@ export interface AdminPublisherSummary extends Omit<AdminPublisherDraft, 'publis
   archivedBy: string | null;
 }
 
-/** Search, scope and page of a publisher list. */
+/** Search, lifecycle and page of a publisher list. */
 export interface AdminPublisherListCriteria {
   q?: string;
-  scope: ArchiveScope;
-  state: PublicationState;
+  lifecycle: LifecycleFilter;
   limit: number;
   offset: number;
 }
@@ -57,15 +56,13 @@ export interface AdminPublisherRepository {
   ): Promise<{ items: AdminPublisherSummary[]; total: number }>;
   find(id: number): Promise<AdminPublisherSummary | null>;
   create(draft: AdminPublisherDraft): Promise<number>;
-  /** False if the publisher does not exist, or if `version` is no longer the record's. */
+  /** False if the publisher does not exist, or if `version` is no longer the record's; publishes a draft when asked. */
   update(id: number, draft: AdminPublisherDraft, version: string): Promise<boolean>;
   /**
    * False if the publisher does not exist, or, when archiving, if an unarchived work lists it.
    * `adminId` is who archives, ignored on restore.
    */
   setArchived(id: number, archived: boolean, adminId: number): Promise<boolean>;
-  /** False if the publisher does not exist; publishing a published one changes nothing. */
-  publish(id: number): Promise<boolean>;
   /** Deletes a draft nothing cites; false if it is not a draft or a work lists it. */
   deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
@@ -103,8 +100,7 @@ function toSummary(row: SummaryRow): AdminPublisherSummary {
     name: row.name,
     kind: row.kind,
     url: row.url,
-    archived: row.deleted_at !== null,
-    draft: row.published_at === null,
+    lifecycle: lifecycleOf(row),
     activeWorkCount: row.activeWorkCount,
     updatedAt: row.version.toISOString(),
     archivedAt: row.deleted_at?.toISOString() ?? null,
@@ -114,17 +110,9 @@ function toSummary(row: SummaryRow): AdminPublisherSummary {
 
 /** Creates the publisher administration repository. */
 export function createAdminPublisherRepository(db: Db): AdminPublisherRepository {
-  /** Publishers matching the search text and archive scope. */
-  function filtered({
-    q,
-    scope,
-    state,
-  }: Pick<AdminPublisherListCriteria, 'q' | 'scope' | 'state'>) {
-    let query = db.selectFrom('publisher');
-    const archive = archiveCondition('publisher.deleted_at', scope);
-    if (archive) query = query.where(archive);
-    const publication = publicationCondition('publisher.published_at', state);
-    if (publication) query = query.where(publication);
+  /** Publishers matching the search text and lifecycle. */
+  function filtered({ q, lifecycle }: Pick<AdminPublisherListCriteria, 'q' | 'lifecycle'>) {
+    let query = db.selectFrom('publisher').where(lifecycleCondition('publisher', lifecycle));
     if (q !== undefined) query = query.where(nameContains('publisher.name', q));
     return query;
   }
@@ -160,7 +148,7 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
     },
 
     async find(id) {
-      const row = await selectSummaries(filtered({ scope: 'all', state: 'all' }))
+      const row = await selectSummaries(db.selectFrom('publisher'))
         .where('publisher.id', '=', id)
         .executeTakeFirst();
       return row ? toSummary(row) : null;
@@ -175,27 +163,33 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
       return id;
     },
 
-    async publish(id) {
-      return publishRow(db, 'publisher', id);
-    },
-
     async deleteRecord(id) {
-      return deleteRecordRow(
-        db,
-        'publisher',
-        id,
-        sql<boolean>`NOT EXISTS (SELECT 1 FROM work_publisher wp WHERE wp.publisher_id = publisher.id)`,
-      );
+      return db.transaction().execute(async (trx) => {
+        // Locked first: the guard sees a work that listed the publisher while this delete waited.
+        await lockRow(trx, 'publisher', id);
+        return deleteRecordRow(
+          trx,
+          'publisher',
+          id,
+          sql<boolean>`NOT EXISTS (SELECT 1 FROM work_publisher wp WHERE wp.publisher_id = publisher.id)`,
+        );
+      });
     },
 
     async countDrafts() {
       return countDraftRows(db, 'publisher');
     },
 
-    async update(id, { name, kind, url }, version) {
+    async update(id, { name, kind, url, published }, version) {
       const row = await db
         .updateTable('publisher')
-        .set({ name, kind, url, updated_at: sql<Date>`now()` })
+        .set({
+          name,
+          kind,
+          url,
+          published_at: publishedAtOnReplace(published),
+          updated_at: sql<Date>`now()`,
+        })
         .where('id', '=', id)
         .where(isVersion('publisher', version))
         .returning('id')
@@ -204,13 +198,17 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
     },
 
     async setArchived(id, archived, adminId) {
-      let query = db
-        .updateTable('publisher')
-        .set(archiveColumns(archived, adminId))
-        .where('id', '=', id);
-      if (archived) query = query.where(NO_ACTIVE_WORK_OF_PUBLISHER);
-      const row = await query.returning('id').executeTakeFirst();
-      return row !== undefined;
+      return db.transaction().execute(async (trx) => {
+        // Locked first: the guard sees a work that listed the publisher while this archive waited.
+        if (archived) await lockRow(trx, 'publisher', id);
+        let query = trx
+          .updateTable('publisher')
+          .set(archiveColumns(archived, adminId))
+          .where('id', '=', id);
+        if (archived) query = query.where(NO_ACTIVE_WORK_OF_PUBLISHER);
+        const row = await query.returning('id').executeTakeFirst();
+        return row !== undefined;
+      });
     },
   };
 }

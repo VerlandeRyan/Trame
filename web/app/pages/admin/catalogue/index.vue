@@ -40,7 +40,7 @@ const [
     async () => {
       const archives = {
         ...parseAdminListQuery({ kind: query.value.kind }),
-        scope: 'archived' as const,
+        lifecycle: 'archived' as const,
       }
       return (await client.list(archives, 1)).total
     },
@@ -58,7 +58,7 @@ const formatCodes = computed(
 const tabs = computed(() =>
   ADMIN_TABS.map((id) => ({
     id,
-    label: t(id === 'archives' ? 'admin.scope.archived' : `admin.kind.${id}`),
+    label: t(id === 'archives' ? 'admin.state.archived' : `admin.kind.${id}`),
     count: id === 'archives' ? (archivesCount.value ?? undefined) : undefined,
   })),
 )
@@ -72,10 +72,11 @@ const kindModel = computed({
   set: (kind) => go({ ...queryForTab(query.value, 'archives'), kind: kind as AdminKind }),
 })
 
-/** Applies a publication state and goes back to the first page. */
-const changeState = (state: AdminState) => go({ ...query.value, state, page: 1 })
-/** Clears the state and the work filters. */
-const resetFilters = () => go({ ...query.value, ...NO_FILTERS, state: 'all', page: 1 })
+/** Applies a lifecycle (drafts, published or both) and goes back to the first page. */
+const changeLifecycle = (lifecycle: AdminLifecycleFilter) =>
+  go({ ...query.value, lifecycle, page: 1 })
+/** Clears the lifecycle and the work filters. */
+const resetFilters = () => go({ ...query.value, ...NO_FILTERS, lifecycle: 'active', page: 1 })
 /** The kinds that have drafts to finish, with their number. */
 const draftKinds = computed(() =>
   ADMIN_KINDS.map((kind) => ({ kind, count: draftCounts.value?.[kind] ?? 0 })).filter(
@@ -84,7 +85,8 @@ const draftKinds = computed(() =>
 )
 const draftTotal = computed(() => draftKinds.value.reduce((sum, { count }) => sum + count, 0))
 /** Shows the drafts of one kind. */
-const showDrafts = (kind: AdminKind) => go({ ...queryForTab(query.value, kind), state: 'draft' })
+const showDrafts = (kind: AdminKind) =>
+  go({ ...queryForTab(query.value, kind), lifecycle: 'draft' })
 
 /** Navigates to a list query. */
 function go(next: AdminListQuery) {
@@ -126,7 +128,7 @@ watch(
 )
 onBeforeUnmount(() => clearTimeout(searchTimer))
 
-const isArchives = computed(() => query.value.scope === 'archived')
+const isArchives = computed(() => query.value.lifecycle === 'archived')
 const newLocation = computed(() => localePath(adminEditPath(query.value.kind, 'new')))
 
 const announceFailure = useAdminFailure()
@@ -194,7 +196,7 @@ const remove = (item: AdminListItem) =>
       </UiButton>
     </div>
     <div
-      v-if="draftTotal > 0 && query.state !== 'draft'"
+      v-if="draftTotal > 0 && query.lifecycle !== 'draft'"
       class="catalogue__drafts"
       data-testid="admin-drafts"
     >
@@ -239,12 +241,12 @@ const remove = (item: AdminListItem) =>
         class="catalogue__filters"
         :kind="query.kind"
         :filters="filters"
-        :state="query.state"
+        :lifecycle="query.lifecycle"
         :sort="query.sort"
         :formats="formatCodes"
         :total="page?.total ?? 0"
         @change="changeFilters"
-        @state="changeState"
+        @lifecycle="changeLifecycle"
         @sort="changeSort"
         @reset="resetFilters"
       />

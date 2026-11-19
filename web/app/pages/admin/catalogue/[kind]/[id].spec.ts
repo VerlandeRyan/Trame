@@ -10,7 +10,7 @@ const PERSON = {
   id: 7,
   name: 'Léa Auteure',
   kind: 'person',
-  archived: false,
+  lifecycle: 'published',
   activeWorkCount: 0,
   links: [],
   updatedAt: '2026-10-24T10:00:00.000Z',
@@ -56,7 +56,7 @@ beforeEach(() => {
     method: 'POST',
     handler: (event) => {
       sent.push({ method: 'POST', path: 'people/7/archive' })
-      return failWith ? rejection(event) : { ...PERSON, archived: true }
+      return failWith ? rejection(event) : { ...PERSON, lifecycle: 'archived' }
     },
   })
   registerEndpoint('/api/v1/admin/works', {
@@ -79,7 +79,7 @@ const WORK_9 = {
   originalLanguage: 'fr',
   type: 'series',
   status: 'ongoing',
-  archived: false,
+  lifecycle: 'published',
   chapters: null,
   volumes: null,
   startedOn: null,
@@ -298,20 +298,20 @@ describe('page d’édition du catalogue', () => {
     expect(sent[0]).toMatchObject({ path: 'people', body: { name: 'Léa', published: true } })
   })
 
-  it('annonce l’échec de la publication avec « Réessayer » : la modification reste enregistrée', async () => {
+  it('annonce l’échec de la publication avec « Réessayer » : un seul remplacement, rejoué tel quel', async () => {
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'GET',
-      handler: () => ({ ...PERSON, draft: true }),
+      handler: () => ({ ...PERSON, lifecycle: 'draft' }),
     })
-    registerEndpoint('/api/v1/admin/people/7/publish', {
-      method: 'POST',
-      handler: (event) => {
-        sent.push({ method: 'POST', path: 'people/7/publish' })
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'PUT',
+      handler: async (event) => {
+        sent.push({ method: 'PUT', path: 'people/7', body: await readBody(event) })
         if (publishFails) {
           setResponseStatus(event, 500)
           return { code: 'INTERNAL_ERROR' }
         }
-        return { ...PERSON, draft: false }
+        return PERSON
       },
     })
     const wrapper = await mountEdit('/admin/catalogue/people/7')
@@ -325,37 +325,28 @@ describe('page d’édition du catalogue', () => {
     await flushPromises()
 
     const toasts = useToasts()
-    expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7/publish'])
+    expect(sent.map((call) => call.path)).toEqual(['people/7'])
+    expect(sent[0]).toMatchObject({ method: 'PUT', body: { published: true } })
     expect(toasts.toasts.value[0]).toMatchObject({
       tone: 'error',
       messageKey: 'writeError.generic',
       hintKey: 'writeError.retryHint',
     })
     expect(useRouter().currentRoute.value.path).toBe('/admin/catalogue/people/7')
-    expect(useUnsavedChanges().value).toBe(false)
+    expect(wrapper.get('[data-testid="admin-state"]').text()).toBe('Brouillon')
 
     publishFails = false
     toasts.retry(toasts.toasts.value[0]!.id)
     await flushPromises()
 
-    expect(sent.map((call) => call.path)).toEqual([
-      'people/7',
-      'people/7/publish',
-      'people/7/publish',
-    ])
+    expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7'])
+    expect(sent[1]).toMatchObject({ method: 'PUT', body: { published: true } })
   })
 
   it('montre le bandeau et la suppression d’un brouillon, pas ses boutons de fiche publiée', async () => {
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'GET',
-      handler: () => ({ ...PERSON, draft: true }),
-    })
-    registerEndpoint('/api/v1/admin/people/7/publish', {
-      method: 'POST',
-      handler: () => {
-        sent.push({ method: 'POST', path: 'people/7/publish' })
-        return { ...PERSON, draft: false }
-      },
+      handler: () => ({ ...PERSON, lifecycle: 'draft' }),
     })
     const wrapper = await mountEdit('/admin/catalogue/people/7')
 
@@ -371,13 +362,25 @@ describe('page d’édition du catalogue', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7/publish'])
+    // Publishing is part of the single replacement: no second request.
+    expect(sent.map((call) => call.path)).toEqual(['people/7'])
+    expect(sent[0]).toMatchObject({ method: 'PUT', body: { published: true } })
+  })
+
+  it('un enregistrement sans publier n’envoie pas `published` pour une fiche publiée', async () => {
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(sent).toHaveLength(1)
+    expect(sent[0]!.body).not.toHaveProperty('published')
   })
 
   it('supprime un brouillon après confirmation', async () => {
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'GET',
-      handler: () => ({ ...PERSON, draft: true }),
+      handler: () => ({ ...PERSON, lifecycle: 'draft' }),
     })
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'DELETE',
@@ -402,7 +405,7 @@ describe('page d’édition du catalogue', () => {
   it('supprime définitivement une fiche archivée après confirmation, et explique un refus', async () => {
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'GET',
-      handler: () => ({ ...PERSON, archived: true }),
+      handler: () => ({ ...PERSON, lifecycle: 'archived' }),
     })
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'DELETE',
@@ -439,13 +442,13 @@ describe('page d’édition du catalogue', () => {
   it('restaure une fiche archivée seulement après confirmation', async () => {
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'GET',
-      handler: () => ({ ...PERSON, archived: true }),
+      handler: () => ({ ...PERSON, lifecycle: 'archived' }),
     })
     registerEndpoint('/api/v1/admin/people/7/restore', {
       method: 'POST',
       handler: () => {
         sent.push({ method: 'POST', path: 'people/7/restore' })
-        return { ...PERSON, archived: false }
+        return { ...PERSON, lifecycle: 'published' }
       },
     })
     const wrapper = await mountEdit('/admin/catalogue/people/7')
@@ -560,7 +563,7 @@ describe('page d’édition du catalogue', () => {
   it('annonce l’échec d’une suppression de brouillon avec « Réessayer »', async () => {
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'GET',
-      handler: () => ({ ...PERSON, draft: true }),
+      handler: () => ({ ...PERSON, lifecycle: 'draft' }),
     })
     registerEndpoint('/api/v1/admin/people/7', {
       method: 'DELETE',

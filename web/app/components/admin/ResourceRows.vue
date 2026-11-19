@@ -39,11 +39,11 @@ const columns = computed(() =>
 
 const ACTION_COLUMN = '7.5rem'
 const MORE_COLUMN = '2.5rem'
+/** Whether the row is an archive. */
+const isArchived = (item: AdminListItem) => item.lifecycle === 'archived'
 /** CSS grid columns of a row; an archive adds the "⋮" column. */
 const gridColumns = computed(() => {
-  const action = props.items.some((item) => item.archived)
-    ? `${ACTION_COLUMN} ${MORE_COLUMN}`
-    : ACTION_COLUMN
+  const action = props.items.some(isArchived) ? `${ACTION_COLUMN} ${MORE_COLUMN}` : ACTION_COLUMN
   return isWorks.value
     ? `minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr) ${action}`
     : `minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) ${action}`
@@ -62,7 +62,7 @@ const ageLabel = (iso: string | null | undefined) => {
 
 /** Line under the title: last update, or who archived it and when. */
 function subtitle(item: AdminListItem): string {
-  if (!item.archived)
+  if (!isArchived(item))
     return item.updatedAt ? t('admin.row.updated', { age: ageLabel(item.updatedAt) }) : ''
   return t('admin.row.archivedBy', {
     age: ageLabel(item.archivedAt),
@@ -170,14 +170,14 @@ function removeMenuItem() {
               <NuxtLink :to="localePath(adminEditPath(kind, item.id))" class="rows__name">
                 {{ itemLabel(item) }}
               </NuxtLink>
-              <UiDraftBadge v-if="item.draft" data-testid="admin-draft">{{
+              <UiDraftBadge v-if="item.lifecycle === 'draft'" data-testid="admin-draft">{{
                 t('admin.draft')
               }}</UiDraftBadge>
             </span>
             <span
               v-if="subtitle(item)"
               class="rows__sub"
-              :class="{ 'rows__sub--active': !item.archived }"
+              :class="{ 'rows__sub--active': !isArchived(item) }"
               >{{ subtitle(item) }}</span
             >
           </div>
@@ -214,7 +214,7 @@ function removeMenuItem() {
           </span>
         </template>
         <UiButton
-          v-if="item.archived"
+          v-if="isArchived(item)"
           variant="secondary"
           size="small"
           class="rows__action"
@@ -233,9 +233,9 @@ function removeMenuItem() {
         >
           <Icon name="tabler:pencil" size="16" aria-hidden="true" />{{ t('action.edit') }}
         </UiButton>
-        <div class="rows__more-cell" :class="{ 'rows__more-cell--archived': item.archived }">
+        <div class="rows__more-cell" :class="{ 'rows__more-cell--archived': isArchived(item) }">
           <AdminRowDropdown
-            v-if="item.archived && !isNarrow"
+            v-if="isArchived(item) && !isNarrow"
             :label="t('admin.row.actions', { name: itemLabel(item) })"
             @remove="askRemove(item)"
           />

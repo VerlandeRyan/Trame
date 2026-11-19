@@ -13,8 +13,7 @@ const publisher = (overrides: Partial<AdminPublisherSummary> = {}): AdminPublish
   name: 'Maison Fictive',
   kind: 'publisher',
   url: null,
-  archived: false,
-  draft: false,
+  lifecycle: 'published',
   activeWorkCount: 0,
   updatedAt: VERSION,
   archivedAt: null,
@@ -32,7 +31,6 @@ function fakeRepository(record: AdminPublisherSummary | null): AdminPublisherRep
     setArchived: vi.fn(
       async (_id, archived) => record !== null && !(archived && record.activeWorkCount > 0),
     ),
-    publish: vi.fn(async () => record !== null),
     deleteRecord: vi.fn(async () => record !== null && record.activeWorkCount === 0),
     countDrafts: vi.fn(async () => 1),
   };
@@ -43,15 +41,13 @@ describe('liste', () => {
     const repository = fakeRepository(null);
     const page = await createAdminPublisherService(repository).list({
       q: 'mai',
-      scope: 'archived',
-      state: 'all',
+      lifecycle: 'archived',
       page: 2,
       pageSize: 10,
     });
     expect(repository.list).toHaveBeenCalledWith({
       q: 'mai',
-      scope: 'archived',
-      state: 'all',
+      lifecycle: 'archived',
       limit: 10,
       offset: 10,
     });
@@ -71,7 +67,7 @@ describe('archivage', () => {
   });
 
   it('ne réécrit pas un éditeur déjà archivé', async () => {
-    const repository = fakeRepository(publisher({ archived: true }));
+    const repository = fakeRepository(publisher({ lifecycle: 'archived' }));
     await createAdminPublisherService(repository).archive(1, ADMIN_ID);
     expect(repository.setArchived).not.toHaveBeenCalled();
   });
@@ -98,7 +94,6 @@ describe('archivage', () => {
         updatedAt: VERSION,
       }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
-    await expect(service.publish(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
     await expect(service.remove(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
@@ -131,23 +126,41 @@ describe('brouillon', () => {
   });
 
   it('supprime un éditeur archivé', async () => {
-    const repository = fakeRepository(publisher({ archived: true }));
+    const repository = fakeRepository(publisher({ lifecycle: 'archived' }));
     await expect(createAdminPublisherService(repository).remove(1)).resolves.toBeUndefined();
     expect(repository.deleteRecord).toHaveBeenCalledWith(1);
   });
 
   it('refuse de supprimer un éditeur encore cité', async () => {
     const service = createAdminPublisherService(
-      fakeRepository(publisher({ draft: true, activeWorkCount: 1 })),
+      fakeRepository(publisher({ lifecycle: 'draft', activeWorkCount: 1 })),
     );
     await expect(service.remove(1)).rejects.toMatchObject({ code: 'RECORD_IN_USE' });
   });
 
-  it('supprime un brouillon libre et le publie', async () => {
-    const repository = fakeRepository(publisher({ draft: true }));
+  it('supprime un brouillon libre', async () => {
+    const repository = fakeRepository(publisher({ lifecycle: 'draft' }));
+    await expect(createAdminPublisherService(repository).remove(1)).resolves.toBeUndefined();
+    expect(repository.deleteRecord).toHaveBeenCalledWith(1);
+  });
+
+  it('publie un brouillon par le remplacement, sans jamais dépublier', async () => {
+    const repository = fakeRepository(publisher({ lifecycle: 'draft' }));
     const service = createAdminPublisherService(repository);
-    await expect(service.remove(1)).resolves.toBeUndefined();
-    await service.publish(1);
-    expect(repository.publish).toHaveBeenCalledWith(1);
+    const fields = { name: 'x', kind: 'publisher', url: null } as const;
+    await service.update(1, { ...fields, published: true, updatedAt: VERSION });
+    await service.update(1, { ...fields, updatedAt: VERSION });
+    expect(repository.update).toHaveBeenNthCalledWith(
+      1,
+      1,
+      { ...fields, published: true },
+      VERSION,
+    );
+    expect(repository.update).toHaveBeenNthCalledWith(
+      2,
+      1,
+      { ...fields, published: false },
+      VERSION,
+    );
   });
 });

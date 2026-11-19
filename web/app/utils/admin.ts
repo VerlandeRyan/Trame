@@ -1,19 +1,14 @@
 /** Catalogue administration: response types, form drafts and pure conversions (tested without Nuxt). */
-import { LINK_KINDS, WORK_STATUSES, WORK_TYPES } from '../contract/api'
-import type { AdminPerson, AdminPublisher, AdminWork } from '../contract/api'
+import { ADMIN_LIFECYCLE_FILTERS, LINK_KINDS, WORK_STATUSES, WORK_TYPES } from '../contract/api'
+import type { AdminLifecycle, AdminPerson, AdminPublisher, AdminWork } from '../contract/api'
 import type { ApiError } from './api-error'
 
 /** Kinds of administered records. */
 export type AdminKind = 'works' | 'people' | 'publishers'
 export const ADMIN_KINDS: readonly AdminKind[] = ['works', 'people', 'publishers']
 
-/** Which records a list shows: published, archived or both. */
-export type AdminScope = 'active' | 'archived' | 'all'
-export const ADMIN_SCOPES: readonly AdminScope[] = ['active', 'archived', 'all']
-
-/** Which records a list shows by publication: drafts, published ones or both. */
-export type AdminState = 'all' | 'draft' | 'published'
-export const ADMIN_STATES: readonly AdminState[] = ['all', 'draft', 'published']
+/** Which records a list shows: one lifecycle, or `active` for drafts and published ones together. */
+export type AdminLifecycleFilter = (typeof ADMIN_LIFECYCLE_FILTERS)[number]
 
 // Runtime values taken from the contract. A work is read or bought (`WORK_LINK_KINDS`); the website
 // and social networks belong to a person (`PERSON_LINK_KINDS`).
@@ -27,7 +22,8 @@ export {
   TITLE_KINDS,
   WORK_LINK_KINDS,
 } from '../contract/api'
-export { LINK_KINDS, WORK_STATUSES, WORK_TYPES }
+export { ADMIN_LIFECYCLE_FILTERS, LINK_KINDS, WORK_STATUSES, WORK_TYPES }
+export type { AdminLifecycle }
 
 /** Sections of the work form; the first one is open by default. */
 export const WORK_SECTIONS = ['info', 'texts', 'relations', 'links', 'people'] as const
@@ -56,9 +52,7 @@ export interface AdminLink {
 /** List row: a work (title, type, status…) or a person or publisher (name, kind). */
 export interface AdminListItem {
   id: number
-  archived: boolean
-  /** Not yet published: only visible in the administration. */
-  draft: boolean
+  lifecycle: AdminLifecycle
   /** Title (work) or name (person, publisher). */
   title?: string
   name?: string
@@ -80,7 +74,7 @@ export const ADMIN_TABS: readonly AdminTab[] = [...ADMIN_KINDS, 'archives']
 
 /** The tab a list query belongs to. */
 export const tabOf = (list: AdminListQuery): AdminTab =>
-  list.scope === 'archived' ? 'archives' : list.kind
+  list.lifecycle === 'archived' ? 'archives' : list.kind
 
 // The records as read for editing: types of the contract, never copied.
 export type { AdminPerson, AdminPublisher, AdminWork }
@@ -150,7 +144,7 @@ export function languageOptions(nameOf: (code: string) => string, current = '') 
 export const optionsOf = (codes: readonly string[], label: (code: string) => string) =>
   codes.map((value) => ({ value, label: label(value) }))
 
-// --- List: the address carries the tab, scope, search, filters, sort and page ---
+// --- List: the address carries the tab, lifecycle, search, filters, sort and page ---
 
 /** Sort orders of the work list. */
 export const ADMIN_WORK_SORTS = [
@@ -171,8 +165,7 @@ export interface AdminWorkFilters {
 /** Everything the address says about an administration list. */
 export interface AdminListQuery extends AdminWorkFilters {
   kind: AdminKind
-  scope: AdminScope
-  state: AdminState
+  lifecycle: AdminLifecycleFilter
   q: string
   sort: AdminWorkSort
   page: number
@@ -202,14 +195,12 @@ function filterValues(value: unknown, isValid: (code: string) => boolean): strin
 /** Reads an administration list query from the address; invalid values fall back to defaults. */
 export function parseAdminListQuery(query: Record<string, unknown>): AdminListQuery {
   const kind = firstValue(query.kind)
-  const scope = firstValue(query.scope)
-  const state = firstValue(query.state)
+  const lifecycle = firstValue(query.lifecycle)
   const sort = firstValue(query.sort)
   const page = Number.parseInt(firstValue(query.page), 10)
   return {
     kind: isOneOf(ADMIN_KINDS, kind) ? kind : 'works',
-    scope: isOneOf(ADMIN_SCOPES, scope) ? scope : 'active',
-    state: isOneOf(ADMIN_STATES, state) ? state : 'all',
+    lifecycle: isOneOf(ADMIN_LIFECYCLE_FILTERS, lifecycle) ? lifecycle : 'active',
     q: firstValue(query.q).trim(),
     type: filterValues(query.type, (code) => isOneOf(WORK_TYPES, code)),
     status: filterValues(query.status, (code) => isOneOf(WORK_STATUSES, code)),
@@ -223,8 +214,7 @@ export function parseAdminListQuery(query: Record<string, unknown>): AdminListQu
 export function toAdminRouteQuery(list: AdminListQuery): Record<string, string> {
   const query: Record<string, string> = {}
   if (list.kind !== 'works') query.kind = list.kind
-  if (list.scope !== 'active') query.scope = list.scope
-  if (list.state !== 'all') query.state = list.state
+  if (list.lifecycle !== 'active') query.lifecycle = list.lifecycle
   if (list.q) query.q = list.q
   for (const filter of FILTER_NAMES) {
     if (list[filter].length > 0) query[filter] = list[filter].join(',')
@@ -238,8 +228,7 @@ export function toAdminRouteQuery(list: AdminListQuery): Record<string, string> 
 export function toAdminApiQuery(list: AdminListQuery, pageSize: number) {
   const base = {
     q: list.q || undefined,
-    scope: list.scope,
-    state: list.state,
+    lifecycle: list.lifecycle,
     page: list.page,
     pageSize,
   }
@@ -258,14 +247,13 @@ export function queryForTab(list: AdminListQuery, tab: AdminTab): AdminListQuery
   const next = {
     ...list,
     ...NO_FILTERS,
-    state: 'all' as const,
     q: '',
     sort: 'title' as const,
     page: 1,
   }
   return tab === 'archives'
-    ? { ...next, scope: 'archived' }
-    : { ...next, kind: tab, scope: 'active' }
+    ? { ...next, lifecycle: 'archived' }
+    : { ...next, kind: tab, lifecycle: 'active' }
 }
 
 /** Records per page of an administration list. */

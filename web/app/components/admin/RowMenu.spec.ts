@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest'
 import type { AdminKind, AdminListItem } from '~/utils/admin'
 import AdminRowMenu from './RowMenu.vue'
 
-const PUBLISHED: AdminListItem = { id: 4, archived: false, draft: false, title: 'Aube Fictive' }
-const ARCHIVED: AdminListItem = { id: 5, archived: true, draft: false, title: 'Basalte' }
+const PUBLISHED: AdminListItem = { id: 4, lifecycle: 'published', title: 'Aube Fictive' }
+const ARCHIVED: AdminListItem = { id: 5, lifecycle: 'archived', title: 'Basalte' }
 
 const mountMenu = (item: AdminListItem | null, kind: AdminKind = 'works') =>
   mountSuspended(AdminRowMenu, { props: { kind, item, modelValue: true } })
@@ -24,7 +24,7 @@ describe('AdminRowMenu', () => {
 
   it('n’offre pas « Relations » pour une personne', async () => {
     const wrapper = await mountMenu(
-      { id: 7, archived: false, draft: false, name: 'Léa Auteure' },
+      { id: 7, lifecycle: 'published', name: 'Léa Auteure' },
       'people',
     )
 

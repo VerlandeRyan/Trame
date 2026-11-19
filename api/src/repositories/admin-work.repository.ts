@@ -12,7 +12,6 @@ import type {
 } from '../db/database.js';
 import {
   archiveColumns,
-  archiveCondition,
   COMPLETENESS_PERCENT,
   countDraftRows,
   deleteRecordRow,
@@ -20,15 +19,17 @@ import {
   FILTERED_TOTAL,
   FORMAT_CODES,
   isVersion,
+  lifecycleCondition,
+  lifecycleOf,
+  lockRow,
   MAIN_AUTHOR_NAME,
   nameContains,
-  publicationCondition,
-  publishRow,
+  publishedAtOnReplace,
   REMOVABLE,
   totalOf,
   versionOf,
-  type ArchiveScope,
-  type PublicationState,
+  type Lifecycle,
+  type LifecycleFilter,
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
 
@@ -79,7 +80,7 @@ export interface WorkDraft {
   genres: string[];
   relations: WorkRelationRecord[];
   links: ExternalLinkRecord[];
-  /** Only counts at creation: later, `publish` is the way to publish. */
+  /** Publishes a draft (at creation or when replacing it); never unpublishes. */
   published: boolean;
 }
 
@@ -90,9 +91,8 @@ export interface AdminWorkSummary {
   originalLanguage: string;
   type: WorkType;
   status: WorkStatus;
-  archived: boolean;
-  /** Not yet published: only visible in the administration. */
-  draft: boolean;
+  /** A draft is only visible in the administration. */
+  lifecycle: Lifecycle;
 }
 
 /** One row of the administration catalogue. */
@@ -124,8 +124,7 @@ export interface WorkReferenceLabels {
 /** A full work record for editing. */
 export interface AdminWorkRecord extends Omit<WorkDraft, 'published'> {
   id: number;
-  archived: boolean;
-  draft: boolean;
+  lifecycle: Lifecycle;
   /** Names of the cited people, publishers and related works, sorted by identifier. */
   labels: WorkReferenceLabels;
   /** Members who have the work in their reading list. */
@@ -158,8 +157,7 @@ export interface ArchivedReferences {
 /** Search, filters, sort and page of the administration work list. */
 export interface AdminWorkListCriteria {
   q?: string;
-  scope: ArchiveScope;
-  state: PublicationState;
+  lifecycle: LifecycleFilter;
   sort: 'title' | 'title_desc' | 'completeness' | 'completeness_desc';
   types?: WorkType[];
   statuses?: WorkStatus[];
@@ -174,27 +172,160 @@ export interface AdminWorkRepository {
   list(criteria: AdminWorkListCriteria): Promise<{ items: AdminWorkListItem[]; total: number }>;
   /** Archived or not. */
   find(id: number): Promise<AdminWorkRecord | null>;
+  /**
+   * Creates the work. `check` runs inside the write transaction, once the cited records are
+   * locked: what it throws rolls the creation back.
+   */
+  create(draft: WorkDraft, check: ReferenceCheck): Promise<number>;
+  /** Deletes a draft no other work relates to; false if it is not a draft or is related. */
+  deleteRecord(id: number): Promise<boolean>;
+  countDrafts(): Promise<number>;
+  /**
+   * False if the work does not exist, or if `version` is no longer the record's; publishes a draft
+   * when asked. `check` runs inside the write transaction, once the cited records are locked, so
+   * they cannot be archived or turned back into drafts between the check and the write.
+   */
+  update(id: number, draft: WorkDraft, version: string, check: ReferenceCheck): Promise<boolean>;
+  /** False if the work does not exist. `adminId` is who archives, ignored on restore. */
+  setArchived(id: number, archived: boolean, adminId: number): Promise<boolean>;
+}
+
+/** Reads what a work cites, on the connection or the transaction it was created for. */
+export interface ReferenceReader {
   /** Looks up what the draft cites: the references that do not exist, and whether it carries a format. */
   lookUpReferences(draft: WorkDraft): Promise<ReferenceLookup>;
   findArchivedReferences(draft: WorkDraft): Promise<ArchivedReferences>;
   /** References of the draft that are themselves drafts (same shape as the archived ones). */
   findDraftReferences(draft: WorkDraft): Promise<ArchivedReferences>;
-  create(draft: WorkDraft): Promise<number>;
-  /** False if the work does not exist; publishing a published work changes nothing. */
-  publish(id: number): Promise<boolean>;
-  /** Deletes a draft no other work relates to; false if it is not a draft or is related. */
-  deleteRecord(id: number): Promise<boolean>;
-  countDrafts(): Promise<number>;
-  /** False if the work does not exist, or if `version` is no longer the record's. */
-  update(id: number, draft: WorkDraft, version: string): Promise<boolean>;
-  /** False if the work does not exist. `adminId` is who archives, ignored on restore. */
-  setArchived(id: number, archived: boolean, adminId: number): Promise<boolean>;
 }
+
+/** A rule on the cited records, run by the repository inside its write transaction. */
+export type ReferenceCheck = (references: ReferenceReader) => Promise<void>;
 
 type Trx = Transaction<Database>;
 
 /** Tables a work can cite. */
 type ReferenceTable = 'person' | 'publisher' | 'work';
+
+/** Identifiers among `ids` that exist in the table. */
+async function findExistingIds(q: Db, table: ReferenceTable, ids: number[]) {
+  if (ids.length === 0) return new Set<number>();
+  const rows = await q.selectFrom(table).select('id').where('id', 'in', ids).execute();
+  return new Set(rows.map((row) => row.id));
+}
+
+/** Identifiers among `ids` that are archived, or drafts. */
+async function findFlaggedIds(
+  q: Db,
+  table: ReferenceTable,
+  ids: number[],
+  flag: 'archived' | 'draft',
+) {
+  if (ids.length === 0) return [];
+  const query = q.selectFrom(table).select('id').where('id', 'in', ids);
+  const rows = await (
+    flag === 'archived'
+      ? query.where('deleted_at', 'is not', null)
+      : query.where('published_at', 'is', null)
+  ).execute();
+  return rows.map((row) => row.id);
+}
+
+/** The identifiers of the people, publishers and related works a draft cites. */
+function citedIds(draft: WorkDraft) {
+  return {
+    personIds: [...new Set(draft.credits.map((credit) => credit.personId))],
+    publisherIds: [...new Set(draft.publisherIds)],
+    workIds: [...new Set(draft.relations.map((relation) => relation.relatedWorkId))],
+  };
+}
+
+/** The people, publishers and related works a draft cites that are archived, or drafts. */
+async function findFlaggedReferences(q: Db, draft: WorkDraft, flag: 'archived' | 'draft') {
+  const { personIds, publisherIds, workIds } = citedIds(draft);
+  const [people, publishers, works] = await Promise.all([
+    findFlaggedIds(q, 'person', personIds, flag),
+    findFlaggedIds(q, 'publisher', publisherIds, flag),
+    findFlaggedIds(q, 'work', workIds, flag),
+  ]);
+  return { personIds: people, publisherIds: publishers, workIds: works };
+}
+
+/** The reference reads on a connection (`db`) or a transaction. */
+function createReferenceReader(q: Db): ReferenceReader {
+  return {
+    async lookUpReferences(draft) {
+      const { personIds, publisherIds, workIds } = citedIds(draft);
+      const [people, publishers, works, genres] = await Promise.all([
+        findExistingIds(q, 'person', personIds),
+        findExistingIds(q, 'publisher', publisherIds),
+        findExistingIds(q, 'work', workIds),
+        draft.genres.length === 0
+          ? []
+          : q
+              .selectFrom('genre')
+              .select(['code', 'category'])
+              .where('code', 'in', draft.genres)
+              .execute(),
+      ]);
+      const knownGenres = new Set(genres.map((genre) => genre.code));
+      return {
+        missing: {
+          personIds: personIds.filter((id) => !people.has(id)),
+          publisherIds: publisherIds.filter((id) => !publishers.has(id)),
+          workIds: workIds.filter((id) => !works.has(id)),
+          genres: draft.genres.filter((code) => !knownGenres.has(code)),
+        },
+        hasFormat: genres.some((genre) => genre.category === 'format'),
+      };
+    },
+
+    findArchivedReferences: (draft) => findFlaggedReferences(q, draft, 'archived'),
+
+    findDraftReferences: (draft) => findFlaggedReferences(q, draft, 'draft'),
+  };
+}
+
+/**
+ * Locks the cited records then runs `check` on them: an archive or a publication of a cited record
+ * waits for this transaction, so what the check saw still holds when the work is written.
+ * People and publishers are locked shared, by identifier. The work rows (the cited ones and the
+ * edited one, `ownWorkId`) are locked together in one statement ordered by identifier, so two works
+ * that cite each other, saved at the same time, queue instead of deadlocking. `FOR NO KEY UPDATE`
+ * is what the later `UPDATE` takes anyway; it lets members add the work to their list meanwhile.
+ */
+async function checkReferencesLocked(
+  trx: Trx,
+  draft: WorkDraft,
+  check: ReferenceCheck,
+  ownWorkId?: number,
+): Promise<void> {
+  const { personIds, publisherIds, workIds } = citedIds(draft);
+  /** Locks the rows shared, ordered by identifier; nothing to lock for an empty list. */
+  const lockShared = async (table: 'person' | 'publisher', ids: number[]) => {
+    if (ids.length === 0) return;
+    await trx
+      .selectFrom(table)
+      .select('id')
+      .where('id', 'in', ids)
+      .orderBy('id')
+      .forShare()
+      .execute();
+  };
+  await lockShared('person', personIds);
+  await lockShared('publisher', publisherIds);
+  const lockedWorkIds = ownWorkId === undefined ? workIds : [...new Set([...workIds, ownWorkId])];
+  if (lockedWorkIds.length > 0) {
+    await trx
+      .selectFrom('work')
+      .select('id')
+      .where('id', 'in', lockedWorkIds)
+      .orderBy('id')
+      .forNoKeyUpdate()
+      .execute();
+  }
+  await check(createReferenceReader(trx));
+}
 
 /** Inserts the titles, synopses, credits, publishers and relations of a draft. */
 async function insertAll(trx: Trx, workId: number, draft: WorkDraft): Promise<void> {
@@ -314,14 +445,10 @@ function orderWorks<O>(
 
 /** Creates the work administration repository. */
 export function createAdminWorkRepository(db: Db): AdminWorkRepository {
-  /** Works matching the search, archive scope and filters. */
+  /** Works matching the search, lifecycle and filters. */
   function filtered(criteria: Omit<AdminWorkListCriteria, 'sort' | 'limit' | 'offset'>) {
-    const { q, scope, state, types, statuses, formats } = criteria;
-    let query = db.selectFrom('work');
-    const archive = archiveCondition('work.deleted_at', scope);
-    if (archive) query = query.where(archive);
-    const publication = publicationCondition('work.published_at', state);
-    if (publication) query = query.where(publication);
+    const { q, lifecycle, types, statuses, formats } = criteria;
+    let query = db.selectFrom('work').where(lifecycleCondition('work', lifecycle));
     if (q !== undefined) query = query.where(titleOrAuthorContains(q));
     if (types?.length) query = query.where('work.type', 'in', types);
     if (statuses?.length) query = query.where('work.status', 'in', statuses);
@@ -364,39 +491,6 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
     return { people, publishers, works };
   }
 
-  /** Identifiers among `ids` that exist in the table. */
-  async function findExistingIds(table: ReferenceTable, ids: number[]) {
-    if (ids.length === 0) return new Set<number>();
-    const rows = await db.selectFrom(table).select('id').where('id', 'in', ids).execute();
-    return new Set(rows.map((row) => row.id));
-  }
-
-  /** Identifiers among `ids` that are archived, or drafts. */
-  async function findFlaggedIds(table: ReferenceTable, ids: number[], flag: 'archived' | 'draft') {
-    if (ids.length === 0) return [];
-    const query = db.selectFrom(table).select('id').where('id', 'in', ids);
-    const rows = await (
-      flag === 'archived'
-        ? query.where('deleted_at', 'is not', null)
-        : query.where('published_at', 'is', null)
-    ).execute();
-    return rows.map((row) => row.id);
-  }
-
-  /** The people, publishers and related works a draft cites that are archived, or drafts. */
-  async function findFlaggedReferences(draft: WorkDraft, flag: 'archived' | 'draft') {
-    const [personIds, publisherIds, workIds] = await Promise.all([
-      findFlaggedIds('person', [...new Set(draft.credits.map((credit) => credit.personId))], flag),
-      findFlaggedIds('publisher', draft.publisherIds, flag),
-      findFlaggedIds(
-        'work',
-        draft.relations.map((relation) => relation.relatedWorkId),
-        flag,
-      ),
-    ]);
-    return { personIds, publisherIds, workIds };
-  }
-
   return {
     async list(criteria) {
       const rows = await filtered(criteria)
@@ -434,8 +528,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         originalLanguage: row.original_language,
         type: row.type,
         status: row.status,
-        archived: row.deleted_at !== null,
-        draft: row.published_at === null,
+        lifecycle: lifecycleOf(row),
         formats: row.formats,
         mainAuthor: row.mainAuthor,
         updatedAt: row.updated_at.toISOString(),
@@ -535,8 +628,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         volumes: work.volumes,
         startedOn: work.started_on,
         endedOn: work.ended_on,
-        archived: work.deleted_at !== null,
-        draft: work.published_at === null,
+        lifecycle: lifecycleOf(work),
         labels,
         titles,
         synopses,
@@ -550,39 +642,9 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
       };
     },
 
-    async lookUpReferences(draft) {
-      const personIds = [...new Set(draft.credits.map((credit) => credit.personId))];
-      const workIds = draft.relations.map((relation) => relation.relatedWorkId);
-      const [people, publishers, works, genres] = await Promise.all([
-        findExistingIds('person', personIds),
-        findExistingIds('publisher', draft.publisherIds),
-        findExistingIds('work', workIds),
-        draft.genres.length === 0
-          ? []
-          : db
-              .selectFrom('genre')
-              .select(['code', 'category'])
-              .where('code', 'in', draft.genres)
-              .execute(),
-      ]);
-      const knownGenres = new Set(genres.map((genre) => genre.code));
-      return {
-        missing: {
-          personIds: personIds.filter((id) => !people.has(id)),
-          publisherIds: draft.publisherIds.filter((id) => !publishers.has(id)),
-          workIds: workIds.filter((id) => !works.has(id)),
-          genres: draft.genres.filter((code) => !knownGenres.has(code)),
-        },
-        hasFormat: genres.some((genre) => genre.category === 'format'),
-      };
-    },
-
-    findArchivedReferences: (draft) => findFlaggedReferences(draft, 'archived'),
-
-    findDraftReferences: (draft) => findFlaggedReferences(draft, 'draft'),
-
-    async create(draft) {
+    async create(draft, check) {
       return db.transaction().execute(async (trx) => {
+        await checkReferencesLocked(trx, draft, check);
         const { id } = await trx
           .insertInto('work')
           .values({
@@ -596,11 +658,16 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
       });
     },
 
-    async update(id, draft, version) {
+    async update(id, draft, version, check) {
       return db.transaction().execute(async (trx) => {
+        await checkReferencesLocked(trx, draft, check, id);
         const row = await trx
           .updateTable('work')
-          .set({ ...workColumns(draft), updated_at: sql<Date>`now()` })
+          .set({
+            ...workColumns(draft),
+            published_at: publishedAtOnReplace(draft.published),
+            updated_at: sql<Date>`now()`,
+          })
           .where('id', '=', id)
           .where(isVersion('work', version))
           .returning('id')
@@ -612,13 +679,11 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
       });
     },
 
-    async publish(id) {
-      return publishRow(db, 'work', id);
-    },
-
     async deleteRecord(id) {
       return db.transaction().execute(async (trx) => {
-        // The row lock makes a member's concurrent "add to my list" wait for the outcome.
+        // The row lock makes a member's concurrent "add to my list" wait for the outcome; taken in a
+        // statement of its own so the guard below sees a relation committed while this delete waited.
+        await lockRow(trx, 'work', id);
         const removable = await sql`
           SELECT id FROM work
           WHERE id = ${id} AND ${REMOVABLE} AND ${NOT_RELATED}

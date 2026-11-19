@@ -32,7 +32,7 @@ describe('judgeRelayRequest', () => {
     expect(judgeRelayRequest('PUT', 'admin/people/7')).toBe('allowed')
     expect(judgeRelayRequest('POST', 'admin/publishers/7/archive')).toBe('allowed')
     expect(judgeRelayRequest('POST', 'admin/works/7/restore')).toBe('allowed')
-    expect(judgeRelayRequest('POST', 'admin/people/7/publish')).toBe('allowed')
+    expect(judgeRelayRequest('POST', 'admin/people/7/publish')).toBe('method-not-allowed')
     expect(judgeRelayRequest('DELETE', 'admin/works/7')).toBe('allowed')
     expect(judgeRelayRequest('DELETE', 'admin/works')).toBe('method-not-allowed')
     expect(judgeRelayRequest('PUT', 'admin/works')).toBe('method-not-allowed')

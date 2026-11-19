@@ -1747,32 +1747,18 @@
             }
           },
           {
-            "name": "scope",
+            "name": "lifecycle",
             "in": "query",
             "required": false,
-            "description": "Fiches publiées, archives seules, ou les deux.",
+            "description": "Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules.",
             "schema": {
               "default": "active",
               "type": "string",
               "enum": [
                 "active",
-                "archived",
-                "all"
-              ]
-            }
-          },
-          {
-            "name": "state",
-            "in": "query",
-            "required": false,
-            "description": "Brouillons seuls, fiches publiées seules, ou les deux.",
-            "schema": {
-              "default": "all",
-              "type": "string",
-              "enum": [
-                "all",
                 "draft",
-                "published"
+                "published",
+                "archived"
               ]
             }
           },
@@ -1803,7 +1789,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Une page, archives comprises selon `scope`.",
+            "description": "Une page, selon le filtre `lifecycle`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -1920,7 +1906,7 @@
                   "published": {
                     "default": true,
                     "type": "boolean",
-                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
+                    "description": "À la création : publiée (défaut) ou en brouillon."
                   }
                 },
                 "required": [
@@ -2091,7 +2077,7 @@
             "sessionCookie": []
           }
         ],
-        "summary": "Remplacer : Person",
+        "summary": "Remplacer, et publier un brouillon avec `published: true` : Person",
         "operationId": "replaceAdminPerson",
         "parameters": [
           {
@@ -2157,9 +2143,8 @@
                     }
                   },
                   "published": {
-                    "default": true,
                     "type": "boolean",
-                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
+                    "description": "Publie le brouillon dans la même écriture (mêmes contrôles qu’une publication). Absent ou `false` : le brouillon reste brouillon ; une fiche publiée le reste."
                   },
                   "updatedAt": {
                     "type": "string",
@@ -2564,103 +2549,6 @@
         }
       }
     },
-    "/api/v1/admin/people/{id}/publish": {
-      "post": {
-        "tags": [
-          "admin"
-        ],
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "summary": "Publier : Person",
-        "operationId": "publishAdminPerson",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[1-9]\\d{0,14}$"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Publiée (sans effet si elle l’est déjà).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminPerson"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Person inconnu. Code : `NOT_FOUND`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/publishers": {
       "get": {
         "summary": "Lister : Publishers",
@@ -2686,32 +2574,18 @@
             }
           },
           {
-            "name": "scope",
+            "name": "lifecycle",
             "in": "query",
             "required": false,
-            "description": "Fiches publiées, archives seules, ou les deux.",
+            "description": "Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules.",
             "schema": {
               "default": "active",
               "type": "string",
               "enum": [
                 "active",
-                "archived",
-                "all"
-              ]
-            }
-          },
-          {
-            "name": "state",
-            "in": "query",
-            "required": false,
-            "description": "Brouillons seuls, fiches publiées seules, ou les deux.",
-            "schema": {
-              "default": "all",
-              "type": "string",
-              "enum": [
-                "all",
                 "draft",
-                "published"
+                "published",
+                "archived"
               ]
             }
           },
@@ -2742,7 +2616,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Une page, archives comprises selon `scope`.",
+            "description": "Une page, selon le filtre `lifecycle`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2835,7 +2709,7 @@
                   "published": {
                     "default": true,
                     "type": "boolean",
-                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
+                    "description": "À la création : publiée (défaut) ou en brouillon."
                   }
                 },
                 "required": [
@@ -3006,7 +2880,7 @@
             "sessionCookie": []
           }
         ],
-        "summary": "Remplacer : Publisher",
+        "summary": "Remplacer, et publier un brouillon avec `published: true` : Publisher",
         "operationId": "replaceAdminPublisher",
         "parameters": [
           {
@@ -3048,9 +2922,8 @@
                     ]
                   },
                   "published": {
-                    "default": true,
                     "type": "boolean",
-                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
+                    "description": "Publie le brouillon dans la même écriture (mêmes contrôles qu’une publication). Absent ou `false` : le brouillon reste brouillon ; une fiche publiée le reste."
                   },
                   "updatedAt": {
                     "type": "string",
@@ -3455,103 +3328,6 @@
         }
       }
     },
-    "/api/v1/admin/publishers/{id}/publish": {
-      "post": {
-        "tags": [
-          "admin"
-        ],
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "summary": "Publier : Publisher",
-        "operationId": "publishAdminPublisher",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[1-9]\\d{0,14}$"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Publiée (sans effet si elle l’est déjà).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminPublisher"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Publisher inconnu. Code : `NOT_FOUND`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/works": {
       "get": {
         "summary": "Lister : Works",
@@ -3577,32 +3353,18 @@
             }
           },
           {
-            "name": "scope",
+            "name": "lifecycle",
             "in": "query",
             "required": false,
-            "description": "Fiches publiées, archives seules, ou les deux.",
+            "description": "Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules.",
             "schema": {
               "default": "active",
               "type": "string",
               "enum": [
                 "active",
-                "archived",
-                "all"
-              ]
-            }
-          },
-          {
-            "name": "state",
-            "in": "query",
-            "required": false,
-            "description": "Brouillons seuls, fiches publiées seules, ou les deux.",
-            "schema": {
-              "default": "all",
-              "type": "string",
-              "enum": [
-                "all",
                 "draft",
-                "published"
+                "published",
+                "archived"
               ]
             }
           },
@@ -3676,7 +3438,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Une page, archives comprises selon `scope`.",
+            "description": "Une page, selon le filtre `lifecycle`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3977,7 +3739,7 @@
                   "published": {
                     "default": true,
                     "type": "boolean",
-                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
+                    "description": "À la création : publiée (défaut) ou en brouillon."
                   }
                 },
                 "required": [
@@ -4007,7 +3769,7 @@
             }
           },
           "400": {
-            "description": "Corps invalide (`VALIDATION_ERROR`), enregistrement cité inexistant (`INVALID_REFERENCE`) ou archivé (`ARCHIVED_REFERENCE`). Code : `INVALID_REFERENCE`.",
+            "description": "Corps invalide (`VALIDATION_ERROR`, dont une fiche incomplète à la publication : un format est requis), enregistrement cité inexistant (`INVALID_REFERENCE`), archivé (`ARCHIVED_REFERENCE`) ou brouillon cité par une fiche publiée (`DRAFT_REFERENCE`). Code : `INVALID_REFERENCE`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4154,7 +3916,7 @@
             "sessionCookie": []
           }
         ],
-        "summary": "Remplacer : Work",
+        "summary": "Remplacer, et publier un brouillon avec `published: true` : Work",
         "operationId": "replaceAdminWork",
         "parameters": [
           {
@@ -4404,9 +4166,8 @@
                     }
                   },
                   "published": {
-                    "default": true,
                     "type": "boolean",
-                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
+                    "description": "Publie le brouillon dans la même écriture (mêmes contrôles qu’une publication). Absent ou `false` : le brouillon reste brouillon ; une fiche publiée le reste."
                   },
                   "updatedAt": {
                     "type": "string",
@@ -4443,7 +4204,7 @@
             }
           },
           "400": {
-            "description": "Corps invalide (`VALIDATION_ERROR`), enregistrement cité inexistant (`INVALID_REFERENCE`) ou archivé (`ARCHIVED_REFERENCE`). Code : `INVALID_REFERENCE`.",
+            "description": "Corps invalide (`VALIDATION_ERROR`, dont une fiche incomplète à la publication : un format est requis), enregistrement cité inexistant (`INVALID_REFERENCE`), archivé (`ARCHIVED_REFERENCE`) ou brouillon cité par une fiche publiée (`DRAFT_REFERENCE`). Code : `INVALID_REFERENCE`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4816,103 +4577,6 @@
           }
         }
       }
-    },
-    "/api/v1/admin/works/{id}/publish": {
-      "post": {
-        "tags": [
-          "admin"
-        ],
-        "security": [
-          {
-            "sessionCookie": []
-          }
-        ],
-        "summary": "Publier : Work",
-        "operationId": "publishAdminWork",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "pattern": "^[1-9]\\d{0,14}$"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Publiée (sans effet si elle l’est déjà).",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AdminWork"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Fiche incomplète (`VALIDATION_ERROR` : un format est requis) ou citant un brouillon (`DRAFT_REFERENCE`). Code : `DRAFT_REFERENCE`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Work inconnu. Code : `NOT_FOUND`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        }
-      }
     }
   },
   "components": {
@@ -5163,12 +4827,14 @@
           "kind": {
             "$ref": "#/components/schemas/PersonKind"
           },
-          "archived": {
-            "type": "boolean"
-          },
-          "draft": {
-            "type": "boolean",
-            "description": "Brouillon : visible seulement dans l’administration."
+          "lifecycle": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "description": "Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée."
           },
           "activeWorkCount": {
             "type": "integer",
@@ -5232,8 +4898,7 @@
           "id",
           "name",
           "kind",
-          "archived",
-          "draft",
+          "lifecycle",
           "activeWorkCount",
           "updatedAt",
           "archivedAt",
@@ -5261,12 +4926,14 @@
                 "kind": {
                   "$ref": "#/components/schemas/PersonKind"
                 },
-                "archived": {
-                  "type": "boolean"
-                },
-                "draft": {
-                  "type": "boolean",
-                  "description": "Brouillon : visible seulement dans l’administration."
+                "lifecycle": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "published",
+                    "archived"
+                  ],
+                  "description": "Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée."
                 },
                 "activeWorkCount": {
                   "type": "integer",
@@ -5304,8 +4971,7 @@
                 "id",
                 "name",
                 "kind",
-                "archived",
-                "draft",
+                "lifecycle",
                 "activeWorkCount",
                 "updatedAt",
                 "archivedAt",
@@ -5358,12 +5024,14 @@
               "null"
             ]
           },
-          "archived": {
-            "type": "boolean"
-          },
-          "draft": {
-            "type": "boolean",
-            "description": "Brouillon : visible seulement dans l’administration."
+          "lifecycle": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "description": "Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée."
           },
           "activeWorkCount": {
             "type": "integer",
@@ -5402,8 +5070,7 @@
           "name",
           "kind",
           "url",
-          "archived",
-          "draft",
+          "lifecycle",
           "activeWorkCount",
           "updatedAt",
           "archivedAt",
@@ -5436,12 +5103,14 @@
                     "null"
                   ]
                 },
-                "archived": {
-                  "type": "boolean"
-                },
-                "draft": {
-                  "type": "boolean",
-                  "description": "Brouillon : visible seulement dans l’administration."
+                "lifecycle": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "published",
+                    "archived"
+                  ],
+                  "description": "Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée."
                 },
                 "activeWorkCount": {
                   "type": "integer",
@@ -5480,8 +5149,7 @@
                 "name",
                 "kind",
                 "url",
-                "archived",
-                "draft",
+                "lifecycle",
                 "activeWorkCount",
                 "updatedAt",
                 "archivedAt",
@@ -5534,12 +5202,14 @@
           "status": {
             "$ref": "#/components/schemas/WorkStatus"
           },
-          "archived": {
-            "type": "boolean"
-          },
-          "draft": {
-            "type": "boolean",
-            "description": "Brouillon : visible seulement dans l’administration."
+          "lifecycle": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "description": "Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée."
           },
           "chapters": {
             "anyOf": [
@@ -5800,8 +5470,7 @@
           "originalLanguage",
           "type",
           "status",
-          "archived",
-          "draft",
+          "lifecycle",
           "chapters",
           "volumes",
           "startedOn",
@@ -5844,12 +5513,14 @@
                 "status": {
                   "$ref": "#/components/schemas/WorkStatus"
                 },
-                "archived": {
-                  "type": "boolean"
-                },
-                "draft": {
-                  "type": "boolean",
-                  "description": "Brouillon : visible seulement dans l’administration."
+                "lifecycle": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "published",
+                    "archived"
+                  ],
+                  "description": "Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée."
                 },
                 "formats": {
                   "type": "array",
@@ -5902,8 +5573,7 @@
                 "originalLanguage",
                 "type",
                 "status",
-                "archived",
-                "draft",
+                "lifecycle",
                 "formats",
                 "mainAuthor",
                 "updatedAt",

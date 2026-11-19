@@ -519,7 +519,6 @@
     },
     "filterSelectedCount": "{count} selected | {count} selected",
     "kind": { "works": "Works", "people": "People", "publishers": "Publishers and platforms" },
-    "scope": { "active": "Published", "archived": "Archives", "all": "All" },
     "heading": {
       "new": {
         "works": "New work",
@@ -582,9 +581,10 @@
     "draftBanner": "This record is a draft: it isn't visible to the public. To publish it, the minimum required fields (marked with an asterisk) must be filled in.",
     "state": {
       "label": "State",
-      "all": "All",
+      "active": "All",
       "draft": "Drafts",
-      "published": "Published"
+      "published": "Published",
+      "archived": "Archives"
     },
     "draftsToFinish": "Draft to finish: | Drafts to finish:",
     "draftCount": {

@@ -3,23 +3,24 @@ import { sql, type Selectable } from 'kysely';
 import type { Db, PersonKind, PersonRow } from '../db/database.js';
 import {
   archiveColumns,
-  archiveCondition,
   countDraftRows,
   deleteRecordRow,
   DRAFTS_FIRST,
   FILTERED_TOTAL,
   isVersion,
+  lifecycleCondition,
+  lifecycleOf,
+  lockRow,
   nameContains,
-  publicationCondition,
-  publishRow,
+  publishedAtOnReplace,
   totalOf,
   versionOf,
-  type ArchiveScope,
-  type PublicationState,
+  type Lifecycle,
+  type LifecycleFilter,
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
 
-/** Data written when creating or replacing a person; `published` only counts at creation. */
+/** Data written when creating or replacing a person; `published` publishes a draft (never the reverse). */
 export interface AdminPersonDraft {
   name: string;
   kind: PersonKind;
@@ -32,9 +33,8 @@ export interface AdminPersonSummary {
   id: number;
   name: string;
   kind: PersonKind;
-  archived: boolean;
-  /** Not yet published: only visible in the administration. */
-  draft: boolean;
+  /** A draft is only visible in the administration. */
+  lifecycle: Lifecycle;
   /** Unarchived works crediting the person. */
   activeWorkCount: number;
   /** Record version (ISO 8601 date, to the millisecond): send it back with the replacement. */
@@ -49,11 +49,10 @@ export interface AdminPersonRecord extends AdminPersonSummary {
   links: ExternalLinkRecord[];
 }
 
-/** Search, scope and page of a people list. */
+/** Search, lifecycle and page of a people list. */
 export interface AdminPersonListCriteria {
   q?: string;
-  scope: ArchiveScope;
-  state: PublicationState;
+  lifecycle: LifecycleFilter;
   limit: number;
   offset: number;
 }
@@ -63,15 +62,13 @@ export interface AdminPersonRepository {
   list(criteria: AdminPersonListCriteria): Promise<{ items: AdminPersonSummary[]; total: number }>;
   find(id: number): Promise<AdminPersonRecord | null>;
   create(draft: AdminPersonDraft): Promise<number>;
-  /** False if the person does not exist, or if `version` is no longer the record's. */
+  /** False if the person does not exist, or if `version` is no longer the record's; publishes a draft when asked. */
   update(id: number, draft: AdminPersonDraft, version: string): Promise<boolean>;
   /**
    * False if the person does not exist, or, when archiving, if an unarchived work credits them.
    * `adminId` is who archives, ignored on restore.
    */
   setArchived(id: number, archived: boolean, adminId: number): Promise<boolean>;
-  /** False if the person does not exist; publishing a published person changes nothing. */
-  publish(id: number): Promise<boolean>;
   /** Deletes a draft nothing cites; false if it is not a draft or a work credits it. */
   deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
@@ -93,8 +90,7 @@ function toSummary(row: SummaryRow): AdminPersonSummary {
     id: row.id,
     name: row.name,
     kind: row.kind,
-    archived: row.deleted_at !== null,
-    draft: row.published_at === null,
+    lifecycle: lifecycleOf(row),
     activeWorkCount: row.activeWorkCount,
     updatedAt: row.version.toISOString(),
     archivedAt: row.deleted_at?.toISOString() ?? null,
@@ -124,13 +120,9 @@ const NO_ACTIVE_WORK_OF_PERSON = sql<boolean>`NOT EXISTS (
 
 /** Creates the people administration repository. */
 export function createAdminPersonRepository(db: Db): AdminPersonRepository {
-  /** People matching the search text and archive scope. */
-  function filtered({ q, scope, state }: Pick<AdminPersonListCriteria, 'q' | 'scope' | 'state'>) {
-    let query = db.selectFrom('person');
-    const archive = archiveCondition('person.deleted_at', scope);
-    if (archive) query = query.where(archive);
-    const publication = publicationCondition('person.published_at', state);
-    if (publication) query = query.where(publication);
+  /** People matching the search text and lifecycle. */
+  function filtered({ q, lifecycle }: Pick<AdminPersonListCriteria, 'q' | 'lifecycle'>) {
+    let query = db.selectFrom('person').where(lifecycleCondition('person', lifecycle));
     if (q !== undefined) query = query.where(nameContains('person.name', q));
     return query;
   }
@@ -191,11 +183,16 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
       });
     },
 
-    async update(id, { name, kind, links }, version) {
+    async update(id, { name, kind, links, published }, version) {
       return db.transaction().execute(async (trx) => {
         const row = await trx
           .updateTable('person')
-          .set({ name, kind, updated_at: sql<Date>`now()` })
+          .set({
+            name,
+            kind,
+            published_at: publishedAtOnReplace(published),
+            updated_at: sql<Date>`now()`,
+          })
           .where('id', '=', id)
           .where(isVersion('person', version))
           .returning('id')
@@ -207,26 +204,30 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
     },
 
     async setArchived(id, archived, adminId) {
-      let query = db
-        .updateTable('person')
-        .set(archiveColumns(archived, adminId))
-        .where('id', '=', id);
-      if (archived) query = query.where(NO_ACTIVE_WORK_OF_PERSON);
-      const row = await query.returning('id').executeTakeFirst();
-      return row !== undefined;
-    },
-
-    async publish(id) {
-      return publishRow(db, 'person', id);
+      return db.transaction().execute(async (trx) => {
+        // Locked first: the guard sees a work that credited the person while this archive waited.
+        if (archived) await lockRow(trx, 'person', id);
+        let query = trx
+          .updateTable('person')
+          .set(archiveColumns(archived, adminId))
+          .where('id', '=', id);
+        if (archived) query = query.where(NO_ACTIVE_WORK_OF_PERSON);
+        const row = await query.returning('id').executeTakeFirst();
+        return row !== undefined;
+      });
     },
 
     async deleteRecord(id) {
-      return deleteRecordRow(
-        db,
-        'person',
-        id,
-        sql<boolean>`NOT EXISTS (SELECT 1 FROM work_credit wc WHERE wc.person_id = person.id)`,
-      );
+      return db.transaction().execute(async (trx) => {
+        // Locked first: the guard sees a work that credited the person while this delete waited.
+        await lockRow(trx, 'person', id);
+        return deleteRecordRow(
+          trx,
+          'person',
+          id,
+          sql<boolean>`NOT EXISTS (SELECT 1 FROM work_credit wc WHERE wc.person_id = person.id)`,
+        );
+      });
     },
 
     async countDrafts() {

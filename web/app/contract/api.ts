@@ -20,6 +20,8 @@ export {
   workLinkKindValues as WORK_LINK_KINDS,
   workStatusValues as WORK_STATUSES,
   workTypeValues as WORK_TYPES,
+  // Values of the list filter `lifecycle` (the generator's long name, aliased once).
+  pathsApiV1AdminWorksGetParametersQueryLifecycleValues as ADMIN_LIFECYCLE_FILTERS,
 } from './api-schema'
 
 // Works
@@ -42,6 +44,7 @@ export type RelationKind = WorkRelation['relation']
 export type AdminPerson = Schemas['AdminPerson']
 export type AdminPublisher = Schemas['AdminPublisher']
 export type AdminWork = Schemas['AdminWork']
+export type AdminLifecycle = AdminWork['lifecycle']
 
 // Home
 export type FeaturedWork = Schemas['FeaturedList']['items'][number]

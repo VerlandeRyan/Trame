@@ -356,7 +356,7 @@ export interface paths {
         };
         /** Lire : Person */
         get: operations["getAdminPerson"];
-        /** Remplacer : Person */
+        /** Remplacer, et publier un brouillon avec `published: true` : Person */
         put: operations["replaceAdminPerson"];
         post?: never;
         /** Supprimer un brouillon ou une fiche archivée : Person */
@@ -400,23 +400,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/people/{id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publier : Person */
-        post: operations["publishAdminPerson"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/publishers": {
         parameters: {
             query?: never;
@@ -444,7 +427,7 @@ export interface paths {
         };
         /** Lire : Publisher */
         get: operations["getAdminPublisher"];
-        /** Remplacer : Publisher */
+        /** Remplacer, et publier un brouillon avec `published: true` : Publisher */
         put: operations["replaceAdminPublisher"];
         post?: never;
         /** Supprimer un brouillon ou une fiche archivée : Publisher */
@@ -488,23 +471,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/publishers/{id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publier : Publisher */
-        post: operations["publishAdminPublisher"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/works": {
         parameters: {
             query?: never;
@@ -532,7 +498,7 @@ export interface paths {
         };
         /** Lire : Work */
         get: operations["getAdminWork"];
-        /** Remplacer : Work */
+        /** Remplacer, et publier un brouillon avec `published: true` : Work */
         put: operations["replaceAdminWork"];
         post?: never;
         /** Supprimer un brouillon ou une fiche archivée : Work */
@@ -570,23 +536,6 @@ export interface paths {
         put?: never;
         /** Restaurer : Work */
         post: operations["restoreAdminWork"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/works/{id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publier : Work */
-        post: operations["publishAdminWork"];
         delete?: never;
         options?: never;
         head?: never;
@@ -653,9 +602,11 @@ export interface components {
             id: number;
             name: string;
             kind: components["schemas"]["PersonKind"];
-            archived: boolean;
-            /** @description Brouillon : visible seulement dans l’administration. */
-            draft: boolean;
+            /**
+             * @description Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée.
+             * @enum {string}
+             */
+            lifecycle: "draft" | "published" | "archived";
             /** @description Œuvres non archivées où la personne est créditée. */
             activeWorkCount: number;
             /**
@@ -677,9 +628,11 @@ export interface components {
                 id: number;
                 name: string;
                 kind: components["schemas"]["PersonKind"];
-                archived: boolean;
-                /** @description Brouillon : visible seulement dans l’administration. */
-                draft: boolean;
+                /**
+                 * @description Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée.
+                 * @enum {string}
+                 */
+                lifecycle: "draft" | "published" | "archived";
                 /** @description Œuvres non archivées où la personne est créditée. */
                 activeWorkCount: number;
                 /**
@@ -700,9 +653,11 @@ export interface components {
             name: string;
             kind: components["schemas"]["PublisherKind"];
             url: string | null;
-            archived: boolean;
-            /** @description Brouillon : visible seulement dans l’administration. */
-            draft: boolean;
+            /**
+             * @description Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée.
+             * @enum {string}
+             */
+            lifecycle: "draft" | "published" | "archived";
             /** @description Œuvres non archivées publiées. */
             activeWorkCount: number;
             /**
@@ -720,9 +675,11 @@ export interface components {
                 name: string;
                 kind: components["schemas"]["PublisherKind"];
                 url: string | null;
-                archived: boolean;
-                /** @description Brouillon : visible seulement dans l’administration. */
-                draft: boolean;
+                /**
+                 * @description Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée.
+                 * @enum {string}
+                 */
+                lifecycle: "draft" | "published" | "archived";
                 /** @description Œuvres non archivées publiées. */
                 activeWorkCount: number;
                 /**
@@ -744,9 +701,11 @@ export interface components {
             originalLanguage: string;
             type: components["schemas"]["WorkType"];
             status: components["schemas"]["WorkStatus"];
-            archived: boolean;
-            /** @description Brouillon : visible seulement dans l’administration. */
-            draft: boolean;
+            /**
+             * @description Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée.
+             * @enum {string}
+             */
+            lifecycle: "draft" | "published" | "archived";
             chapters: number | null;
             volumes: number | null;
             startedOn: string | null;
@@ -807,9 +766,11 @@ export interface components {
                 originalLanguage: string;
                 type: components["schemas"]["WorkType"];
                 status: components["schemas"]["WorkStatus"];
-                archived: boolean;
-                /** @description Brouillon : visible seulement dans l’administration. */
-                draft: boolean;
+                /**
+                 * @description Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée.
+                 * @enum {string}
+                 */
+                lifecycle: "draft" | "published" | "archived";
                 /** @description Codes de format, triés. */
                 formats: string[];
                 mainAuthor: string | null;
@@ -2299,10 +2260,8 @@ export interface operations {
             query?: {
                 /** @description Texte cherché dans le nom ou le titre, sans tenir compte des accents. */
                 q?: string;
-                /** @description Fiches publiées, archives seules, ou les deux. */
-                scope?: "active" | "archived" | "all";
-                /** @description Brouillons seuls, fiches publiées seules, ou les deux. */
-                state?: "all" | "draft" | "published";
+                /** @description Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules. */
+                lifecycle?: "active" | "draft" | "published" | "archived";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
@@ -2314,7 +2273,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Une page, archives comprises selon `scope`. */
+            /** @description Une page, selon le filtre `lifecycle`. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -2385,7 +2344,7 @@ export interface operations {
                         label?: string | null;
                     }[];
                     /**
-                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @description À la création : publiée (défaut) ou en brouillon.
                      * @default true
                      */
                     published?: boolean;
@@ -2541,10 +2500,7 @@ export interface operations {
                         /** @default null */
                         label?: string | null;
                     }[];
-                    /**
-                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
-                     * @default true
-                     */
+                    /** @description Publie le brouillon dans la même écriture (mêmes contrôles qu’une publication). Absent ou `false` : le brouillon reste brouillon ; une fiche publiée le reste. */
                     published?: boolean;
                     /**
                      * Format: date-time
@@ -2873,91 +2829,13 @@ export interface operations {
             };
         };
     };
-    publishAdminPerson: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Publiée (sans effet si elle l’est déjà). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminPerson"];
-                };
-            };
-            /** @description Identifiant invalide. Code : `VALIDATION_ERROR`. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Person inconnu. Code : `NOT_FOUND`. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
     listAdminPublishers: {
         parameters: {
             query?: {
                 /** @description Texte cherché dans le nom ou le titre, sans tenir compte des accents. */
                 q?: string;
-                /** @description Fiches publiées, archives seules, ou les deux. */
-                scope?: "active" | "archived" | "all";
-                /** @description Brouillons seuls, fiches publiées seules, ou les deux. */
-                state?: "all" | "draft" | "published";
+                /** @description Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules. */
+                lifecycle?: "active" | "draft" | "published" | "archived";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
@@ -2969,7 +2847,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Une page, archives comprises selon `scope`. */
+            /** @description Une page, selon le filtre `lifecycle`. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3031,7 +2909,7 @@ export interface operations {
                     /** @default null */
                     url?: string | null;
                     /**
-                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @description À la création : publiée (défaut) ou en brouillon.
                      * @default true
                      */
                     published?: boolean;
@@ -3178,10 +3056,7 @@ export interface operations {
                     kind: components["schemas"]["PublisherKind"];
                     /** @default null */
                     url?: string | null;
-                    /**
-                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
-                     * @default true
-                     */
+                    /** @description Publie le brouillon dans la même écriture (mêmes contrôles qu’une publication). Absent ou `false` : le brouillon reste brouillon ; une fiche publiée le reste. */
                     published?: boolean;
                     /**
                      * Format: date-time
@@ -3510,91 +3385,13 @@ export interface operations {
             };
         };
     };
-    publishAdminPublisher: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Publiée (sans effet si elle l’est déjà). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminPublisher"];
-                };
-            };
-            /** @description Identifiant invalide. Code : `VALIDATION_ERROR`. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Publisher inconnu. Code : `NOT_FOUND`. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
     listAdminWorks: {
         parameters: {
             query?: {
                 /** @description Texte cherché dans le titre ou dans le nom des auteurs crédités, sans tenir compte des accents. */
                 q?: string;
-                /** @description Fiches publiées, archives seules, ou les deux. */
-                scope?: "active" | "archived" | "all";
-                /** @description Brouillons seuls, fiches publiées seules, ou les deux. */
-                state?: "all" | "draft" | "published";
+                /** @description Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules. */
+                lifecycle?: "active" | "draft" | "published" | "archived";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
@@ -3614,7 +3411,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Une page, archives comprises selon `scope`. */
+            /** @description Une page, selon le filtre `lifecycle`. */
             200: {
                 headers: {
                     [name: string]: unknown;
@@ -3726,7 +3523,7 @@ export interface operations {
                         label?: string | null;
                     }[];
                     /**
-                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @description À la création : publiée (défaut) ou en brouillon.
                      * @default true
                      */
                     published?: boolean;
@@ -3743,7 +3540,7 @@ export interface operations {
                     "application/json": components["schemas"]["AdminWork"];
                 };
             };
-            /** @description Corps invalide (`VALIDATION_ERROR`), enregistrement cité inexistant (`INVALID_REFERENCE`) ou archivé (`ARCHIVED_REFERENCE`). Code : `INVALID_REFERENCE`. */
+            /** @description Corps invalide (`VALIDATION_ERROR`, dont une fiche incomplète à la publication : un format est requis), enregistrement cité inexistant (`INVALID_REFERENCE`), archivé (`ARCHIVED_REFERENCE`) ou brouillon cité par une fiche publiée (`DRAFT_REFERENCE`). Code : `INVALID_REFERENCE`. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -3923,10 +3720,7 @@ export interface operations {
                         /** @default null */
                         label?: string | null;
                     }[];
-                    /**
-                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
-                     * @default true
-                     */
+                    /** @description Publie le brouillon dans la même écriture (mêmes contrôles qu’une publication). Absent ou `false` : le brouillon reste brouillon ; une fiche publiée le reste. */
                     published?: boolean;
                     /**
                      * Format: date-time
@@ -3946,7 +3740,7 @@ export interface operations {
                     "application/json": components["schemas"]["AdminWork"];
                 };
             };
-            /** @description Corps invalide (`VALIDATION_ERROR`), enregistrement cité inexistant (`INVALID_REFERENCE`) ou archivé (`ARCHIVED_REFERENCE`). Code : `INVALID_REFERENCE`. */
+            /** @description Corps invalide (`VALIDATION_ERROR`, dont une fiche incomplète à la publication : un format est requis), enregistrement cité inexistant (`INVALID_REFERENCE`), archivé (`ARCHIVED_REFERENCE`) ou brouillon cité par une fiche publiée (`DRAFT_REFERENCE`). Code : `INVALID_REFERENCE`. */
             400: {
                 headers: {
                     [name: string]: unknown;
@@ -4255,82 +4049,6 @@ export interface operations {
             };
         };
     };
-    publishAdminWork: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Publiée (sans effet si elle l’est déjà). */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminWork"];
-                };
-            };
-            /** @description Fiche incomplète (`VALIDATION_ERROR` : un format est requis) ou citant un brouillon (`DRAFT_REFERENCE`). Code : `DRAFT_REFERENCE`. */
-            400: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
-            401: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
-            403: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Work inconnu. Code : `NOT_FOUND`. */
-            404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
-            429: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
-            500: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Error"];
-                };
-            };
-        };
-    };
 }
 type FlattenedDeepRequired<T> = {
     [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
@@ -4351,12 +4069,9 @@ export const pathsApiV1MeEntriesGetParametersQuerySortValues: ReadonlyArray<Flat
 export const pathsApiV1UsersHandleGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
 export const pathsApiV1UsersHandleEntriesGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}/entries"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
 export const pathsApiV1UsersHandleEntriesGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}/entries"]["get"]["parameters"]["query"]["sort"]> = ["updated", "title", "rating"];
-export const pathsApiV1AdminPeopleGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/people"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
-export const pathsApiV1AdminPeopleGetParametersQueryStateValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/people"]["get"]["parameters"]["query"]["state"]> = ["all", "draft", "published"];
-export const pathsApiV1AdminPublishersGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/publishers"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
-export const pathsApiV1AdminPublishersGetParametersQueryStateValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/publishers"]["get"]["parameters"]["query"]["state"]> = ["all", "draft", "published"];
-export const pathsApiV1AdminWorksGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
-export const pathsApiV1AdminWorksGetParametersQueryStateValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["state"]> = ["all", "draft", "published"];
+export const pathsApiV1AdminPeopleGetParametersQueryLifecycleValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/people"]["get"]["parameters"]["query"]["lifecycle"]> = ["active", "draft", "published", "archived"];
+export const pathsApiV1AdminPublishersGetParametersQueryLifecycleValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/publishers"]["get"]["parameters"]["query"]["lifecycle"]> = ["active", "draft", "published", "archived"];
+export const pathsApiV1AdminWorksGetParametersQueryLifecycleValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["lifecycle"]> = ["active", "draft", "published", "archived"];
 export const pathsApiV1AdminWorksGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["sort"]> = ["title", "title_desc", "completeness", "completeness_desc"];
 export const workTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkType"]> = ["series", "oneshot", "anthology"];
 export const workStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkStatus"]> = ["upcoming", "ongoing", "completed", "hiatus", "abandoned"];
@@ -4374,6 +4089,12 @@ export const libraryStatusValues: ReadonlyArray<FlattenedDeepRequired<components
 export const userRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["UserRole"]> = ["user", "admin"];
 export const visibilityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Visibility"]> = ["public", "private"];
 export const errorCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Error"]["code"]> = ["NOT_FOUND", "VALIDATION_ERROR", "INVALID_JSON", "UNAUTHENTICATED", "HANDLE_REQUIRED", "SIGNUP_EXPIRED", "ADMIN_REQUIRED", "PROFILE_PRIVATE", "PERSON_HAS_WORKS", "PUBLISHER_HAS_WORKS", "INVALID_REFERENCE", "ARCHIVED_REFERENCE", "DRAFT_REFERENCE", "DRAFT_NOT_ARCHIVABLE", "NOT_REMOVABLE", "RECORD_IN_USE", "STALE_RECORD", "FORBIDDEN_ORIGIN", "HANDLE_NOT_ALLOWED", "HANDLE_TAKEN", "AUTH_STATE_INVALID", "AUTH_UNAVAILABLE", "RATE_LIMITED", "INTERNAL_ERROR"];
+export const adminPersonLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPerson"]["lifecycle"]> = ["draft", "published", "archived"];
+export const adminPersonPageItemsLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPersonPage"]["items"]["lifecycle"]> = ["draft", "published", "archived"];
+export const adminPublisherLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPublisher"]["lifecycle"]> = ["draft", "published", "archived"];
+export const adminPublisherPageItemsLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPublisherPage"]["items"]["lifecycle"]> = ["draft", "published", "archived"];
+export const adminWorkLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminWork"]["lifecycle"]> = ["draft", "published", "archived"];
+export const adminWorkPageItemsLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminWorkPage"]["items"]["lifecycle"]> = ["draft", "published", "archived"];
 export const workDetailRelationsDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkDetail"]["relations"]["direction"]> = ["outgoing", "incoming"];
 export const healthStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Health"]["status"]> = ["ok", "degraded"];
 export const healthDatabaseValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Health"]["database"]> = ["up", "down"];

@@ -184,6 +184,7 @@ Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce s
 
 ## 4. Règles transverses
 - **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/work/{id}-{slug}` et seul `{id}` est lu.
+- **Cycle de vie** : `work`, `person` et `publisher` ont trois états exclusifs, **déduits** de deux dates et jamais stockés : `draft` (`published_at IS NULL`), `published` (`published_at` renseignée, `deleted_at IS NULL`) et `archived` (`deleted_at` renseignée) ; la contrainte `*_draft_not_archived` interdit un brouillon archivé. L'API les expose sous `lifecycle`.
 - **Archivage** : toute suppression est une suppression douce, réservée à l'administrateur ; les listes publiques excluent `deleted_at IS NOT NULL` et, pour `work`, `published_at IS NULL` (brouillon). Un brouillon n'est jamais public ; une œuvre publiée ne cite jamais un brouillon (personne, éditeur, œuvre liée), donc les listes publiques n'ont pas d'autre contrôle. Un brouillon se supprime définitivement (jamais publié) ; une fiche publiée s'archive, puis peut être supprimée définitivement si rien ne la cite. Les entrées `library_entry` d'une œuvre archivée sont conservées, masquées avec l'œuvre ; la suppression définitive de l'œuvre les efface, avec ses `reading_event`, explicitement et dans la même transaction (les clés étrangères restent strictes : aucun autre `DELETE` sur `work` n'efface une liste).
 - **Pas d'ISBN, pas d'édition** dans le MVP.
 - **Statistiques** : ne jamais additionner chapitres et tomes.

@@ -13,7 +13,7 @@ import {
   WORK_STATUSES,
   WORK_TYPES,
 } from '../domain/catalogue-enums.js';
-import { ARCHIVE_SCOPES, PUBLICATION_STATES } from '../repositories/admin-sql.js';
+import { LIFECYCLE_FILTERS } from '../repositories/admin-sql.js';
 import type { AdminListInput } from '../services/admin-list.js';
 import {
   ADMIN_WORK_SORTS,
@@ -40,11 +40,19 @@ const positiveId = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 /** Chapter or volume total. */
 const counter = z.number().int().min(0).max(99_999);
 
-/** Whether a new record is published at creation (otherwise a draft); ignored when replacing. */
+/** Whether a new record is published at creation (otherwise a draft). */
 const published = z
   .boolean()
-  .describe('À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.')
+  .describe('À la création : publiée (défaut) ou en brouillon.')
   .default(true);
+
+/** Publishes a draft when replacing it; no default, so a replacement that omits it keeps the draft. */
+const publishOnReplace = z
+  .boolean()
+  .describe(
+    'Publie le brouillon dans la même écriture (mêmes contrôles qu’une publication). Absent ou `false` : le brouillon reste brouillon ; une fiche publiée le reste.',
+  )
+  .optional();
 
 /** Schema of a list of external links restricted to the given kinds. */
 const linksOf = (kinds: readonly [ExternalLinkKind, ...ExternalLinkKind[]]) =>
@@ -61,7 +69,7 @@ const linksOf = (kinds: readonly [ExternalLinkKind, ...ExternalLinkKind[]]) =>
 const workLinks = linksOf(WORK_LINK_KINDS);
 const personLinks = linksOf(PERSON_LINK_KINDS);
 
-/** Query of the administration lists: search text, archive scope and pagination. */
+/** Query of the administration lists: search text, lifecycle and pagination. */
 export const adminListQuery = z.object({
   q: z
     .string()
@@ -70,14 +78,12 @@ export const adminListQuery = z.object({
     .max(100)
     .describe('Texte cherché dans le nom ou le titre, sans tenir compte des accents.')
     .optional(),
-  scope: z
-    .enum(ARCHIVE_SCOPES)
-    .describe('Fiches publiées, archives seules, ou les deux.')
+  lifecycle: z
+    .enum(LIFECYCLE_FILTERS)
+    .describe(
+      'Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules.',
+    )
     .default('active'),
-  state: z
-    .enum(PUBLICATION_STATES)
-    .describe('Brouillons seuls, fiches publiées seules, ou les deux.')
-    .default('all'),
   ...pageQuery('Éléments'),
 }) satisfies z.ZodType<AdminListInput>;
 
@@ -120,15 +126,18 @@ const personFields = {
   name,
   kind: z.enum(PERSON_KINDS),
   links: personLinks.default([]),
-  published,
 };
 
 /** Body to create a person. */
-export const personBody = z.strictObject(personFields) satisfies z.ZodType<AdminPersonInput>;
+export const personBody = z.strictObject({
+  ...personFields,
+  published,
+}) satisfies z.ZodType<AdminPersonInput>;
 
-/** Body to replace a person: the creation body and the version that was read. */
+/** Body to replace a person: the fields, the version that was read, and whether to publish a draft. */
 export const personReplaceBody = z.strictObject({
   ...personFields,
+  published: publishOnReplace,
   updatedAt: recordVersion,
 }) satisfies z.ZodType<AdminPersonReplacement>;
 
@@ -136,19 +145,23 @@ const publisherFields = {
   name,
   kind: z.enum(PUBLISHER_KINDS),
   url: httpsUrl.nullable().default(null),
-  published,
 };
 
 /** Body to create a publisher. */
-export const publisherBody = z.strictObject(
-  publisherFields,
-) satisfies z.ZodType<AdminPublisherInput>;
+export const publisherBody = z.strictObject({
+  ...publisherFields,
+  published,
+}) satisfies z.ZodType<AdminPublisherInput>;
 
-/** Body to replace a publisher: the creation body and the version that was read. */
+/** Body to replace a publisher: the fields, the version that was read, and whether to publish a draft. */
 export const publisherReplaceBody = z.strictObject({
   ...publisherFields,
+  published: publishOnReplace,
   updatedAt: recordVersion,
 }) satisfies z.ZodType<AdminPublisherReplacement>;
+
+/** The work fields the business rules read (all but the publication flag). */
+type WorkFields = Omit<AdminWorkInput, 'published'>;
 
 /** A validation problem attached to a field of the work body. */
 type KeyedIssue = { path: string; message: string };
@@ -159,7 +172,7 @@ function hasDuplicate<T>(items: T[], key: (item: T) => string): boolean {
 }
 
 /** Reports every list of the work that contains duplicate entries. */
-function duplicateIssues(work: AdminWorkInput): KeyedIssue[] {
+function duplicateIssues(work: WorkFields): KeyedIssue[] {
   const checks: [string, boolean][] = [
     ['titles', hasDuplicate(work.titles, (t) => `${t.language}|${t.title}`)],
     ['synopses', hasDuplicate(work.synopses, (s) => s.language)],
@@ -175,7 +188,7 @@ function duplicateIssues(work: AdminWorkInput): KeyedIssue[] {
 }
 
 /** Reports the business rules a work breaks: duplicates, totals while ongoing, date order. */
-function ruleIssues(work: AdminWorkInput): KeyedIssue[] {
+function ruleIssues(work: WorkFields): KeyedIssue[] {
   const issues = duplicateIssues(work);
   // While the work is ongoing, the totals stay empty.
   if (work.status === 'ongoing' && work.chapters !== null) {
@@ -228,11 +241,10 @@ const workFields = {
     .max(50)
     .default([]),
   links: workLinks.default([]),
-  published,
 };
 
 /** Reports the business rules a work body breaks as issues on their field. */
-function checkWorkRules(work: AdminWorkInput, ctx: z.RefinementCtx): void {
+function checkWorkRules(work: WorkFields, ctx: z.RefinementCtx): void {
   for (const { path, message } of ruleIssues(work)) {
     ctx.addIssue({ code: 'custom', path: [path], message });
   }
@@ -240,10 +252,10 @@ function checkWorkRules(work: AdminWorkInput, ctx: z.RefinementCtx): void {
 
 /** Body to create a work, with its titles, credits, genres, relations and links. */
 export const workBody = z
-  .strictObject(workFields)
+  .strictObject({ ...workFields, published })
   .superRefine(checkWorkRules) satisfies z.ZodType<AdminWorkInput>;
 
-/** Body to replace a work: the creation body and the version that was read. */
+/** Body to replace a work: the fields, the version that was read, and whether to publish a draft. */
 export const workReplaceBody = z
-  .strictObject({ ...workFields, updatedAt: recordVersion })
+  .strictObject({ ...workFields, published: publishOnReplace, updatedAt: recordVersion })
   .superRefine(checkWorkRules) satisfies z.ZodType<AdminWorkReplacement>;
