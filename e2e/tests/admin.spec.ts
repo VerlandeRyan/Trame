@@ -505,6 +505,37 @@ test('un brouillon se supprime définitivement, une fiche publiée non', async (
   expect((await context.request.get(`/api/v1/admin/people/${person.id}`)).status()).toBe(404)
 })
 
+test('une fiche archivée se supprime définitivement depuis la liste des archives', async ({
+  page,
+  context,
+}) => {
+  const created = await context.request.post('/api/v1/admin/people', {
+    data: { name: `${DRAFT} archivée`, kind: 'person' },
+  })
+  const person = (await created.json()) as { id: number }
+  expect((await context.request.post(`/api/v1/admin/people/${person.id}/archive`)).status()).toBe(
+    200,
+  )
+
+  await page.goto(`/admin/catalogue?scope=archived&kind=people&q=${encodeURIComponent(DRAFT)}`)
+  await waitForHydration(page)
+  const row = page.getByTestId('admin-row').filter({ hasText: `${DRAFT} archivée` })
+  await row.getByTestId('admin-row-menu').click()
+  if (isMobile(page)) {
+    // Écran étroit : la feuille du bas, qui porte aussi « Restaurer ».
+    await page.getByTestId('admin-menu-remove').click()
+  } else {
+    await expect(row.getByTestId('admin-restore')).toBeVisible()
+    await expect(page.getByRole('menuitem')).toHaveCount(1)
+    await expect(page.getByRole('menuitem')).toBeFocused()
+    await page.getByTestId('admin-dropdown-remove').click()
+  }
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+
+  await expect(row).toHaveCount(0)
+  expect((await context.request.get(`/api/v1/admin/people/${person.id}`)).status()).toBe(404)
+})
+
 test('un membre simple voit une 404, un visiteur revient à l’accueil', async ({ browser }) => {
   const { baseURL } = test.info().project.use
   const member = await browser.newContext({ baseURL })

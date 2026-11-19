@@ -125,9 +125,11 @@ afterAll(async () => {
 });
 
 beforeEach(async () => {
-  await client.query(
-    `DELETE FROM library_entry WHERE user_id IN (SELECT id FROM app_user WHERE email LIKE '%${TEST_EMAIL_DOMAIN}')`,
-  );
+  for (const table of ['reading_event', 'library_entry']) {
+    await client.query(
+      `DELETE FROM ${table} WHERE user_id IN (SELECT id FROM app_user WHERE email LIKE '%${TEST_EMAIL_DOMAIN}')`,
+    );
+  }
   await client.query(`DELETE FROM work WHERE title LIKE '${PREFIX}%'`);
   await client.query(`DELETE FROM person WHERE name LIKE '${PREFIX}%' OR name = '${BASE_PERSON}'`);
   await client.query(
@@ -840,12 +842,79 @@ describe('brouillons', () => {
     const published = await createWork(admin);
     const refusedPublished = await admin.delete(`${ADMIN}/works/${published}`);
     expect(refusedPublished.status).toBe(409);
-    expect(refusedPublished.body.code).toBe('NOT_A_DRAFT');
+    expect(refusedPublished.body.code).toBe('NOT_REMOVABLE');
 
     const draft = await createWork(admin, DRAFT_WORK);
     expect((await admin.delete(`${ADMIN}/works/${draft}`)).status).toBe(204);
     expect((await admin.get(`${ADMIN}/works/${draft}`)).status).toBe(404);
     expect((await admin.delete(`${ADMIN}/works/${draft}`)).status).toBe(404);
+  });
+
+  it('supprime définitivement une œuvre archivée avec les listes de lecture qui la citent', async () => {
+    const admin = await newAdmin();
+    const id = await createWork(admin);
+    await client.query(
+      `INSERT INTO library_entry (user_id, work_id, status)
+       SELECT id, $1, 'reading' FROM app_user WHERE handle = 'admin-test'`,
+      [id],
+    );
+    await client.query(
+      `INSERT INTO reading_event (user_id, work_id, kind, new_status)
+       SELECT id, $1, 'status', 'reading' FROM app_user WHERE handle = 'admin-test'`,
+      [id],
+    );
+    expect((await admin.post(`${ADMIN}/works/${id}/archive`)).status).toBe(200);
+
+    expect((await admin.delete(`${ADMIN}/works/${id}`)).status).toBe(204);
+
+    expect((await admin.get(`${ADMIN}/works/${id}`)).status).toBe(404);
+    const left = await client.query(`SELECT 1 FROM library_entry WHERE work_id = $1`, [id]);
+    expect(left.rowCount).toBe(0);
+    const events = await client.query(`SELECT 1 FROM reading_event WHERE work_id = $1`, [id]);
+    expect(events.rowCount).toBe(0);
+  });
+
+  it('supprime définitivement une personne et un éditeur archivés', async () => {
+    const admin = await newAdmin();
+    const person = await createPerson(admin);
+    const publisher = await createPublisher(admin);
+    for (const path of [`people/${person}`, `publishers/${publisher}`]) {
+      expect((await admin.post(`${ADMIN}/${path}/archive`)).status).toBe(200);
+      expect((await admin.delete(`${ADMIN}/${path}`)).status).toBe(204);
+      expect((await admin.get(`${ADMIN}/${path}`)).status).toBe(404);
+    }
+  });
+
+  it('refuse de supprimer une personne ou un éditeur archivé que cite une œuvre archivée', async () => {
+    const admin = await newAdmin();
+    const person = await createPerson(admin, `${PREFIX} Créditée`);
+    const publisher = await createPublisher(admin, `${PREFIX} Listé`);
+    const work = await createWork(admin, {
+      credits: [{ personId: person, role: 'story' }],
+      publisherIds: [publisher],
+    });
+    expect((await admin.post(`${ADMIN}/works/${work}/archive`)).status).toBe(200);
+
+    for (const path of [`people/${person}`, `publishers/${publisher}`]) {
+      expect((await admin.post(`${ADMIN}/${path}/archive`)).status).toBe(200);
+      const res = await admin.delete(`${ADMIN}/${path}`);
+      expect(res.status).toBe(409);
+      expect(res.body.code).toBe('RECORD_IN_USE');
+    }
+    const credits = await client.query(`SELECT 1 FROM work_credit WHERE work_id = $1`, [work]);
+    expect(credits.rowCount).toBe(1);
+  });
+
+  it('refuse de supprimer une œuvre archivée encore liée par une autre', async () => {
+    const admin = await newAdmin();
+    const related = await createWork(admin, { title: `${PREFIX} Archivée liée` });
+    await createWork(admin, {
+      relations: [{ relatedWorkId: related, relation: 'sequel' }],
+    });
+    await admin.post(`${ADMIN}/works/${related}/archive`);
+    const res = await admin.delete(`${ADMIN}/works/${related}`);
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('RECORD_IN_USE');
   });
 
   it('ne montre pas un brouillon dans les relations d’une œuvre publiée', async () => {
@@ -898,7 +967,7 @@ describe('brouillons', () => {
     });
     const res = await admin.delete(`${ADMIN}/people/${person}`);
     expect(res.status).toBe(409);
-    expect(res.body.code).toBe('DRAFT_IN_USE');
+    expect(res.body.code).toBe('RECORD_IN_USE');
   });
 
   it('filtre les listes par état et place les brouillons en tête', async () => {

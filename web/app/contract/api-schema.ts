@@ -359,8 +359,8 @@ export interface paths {
         /** Remplacer : Person */
         put: operations["replaceAdminPerson"];
         post?: never;
-        /** Supprimer un brouillon : Person */
-        delete: operations["deleteAdminDraftPerson"];
+        /** Supprimer un brouillon ou une fiche archivée : Person */
+        delete: operations["deleteAdminRecordPerson"];
         options?: never;
         head?: never;
         patch?: never;
@@ -447,8 +447,8 @@ export interface paths {
         /** Remplacer : Publisher */
         put: operations["replaceAdminPublisher"];
         post?: never;
-        /** Supprimer un brouillon : Publisher */
-        delete: operations["deleteAdminDraftPublisher"];
+        /** Supprimer un brouillon ou une fiche archivée : Publisher */
+        delete: operations["deleteAdminRecordPublisher"];
         options?: never;
         head?: never;
         patch?: never;
@@ -535,8 +535,8 @@ export interface paths {
         /** Remplacer : Work */
         put: operations["replaceAdminWork"];
         post?: never;
-        /** Supprimer un brouillon : Work */
-        delete: operations["deleteAdminDraftWork"];
+        /** Supprimer un brouillon ou une fiche archivée : Work */
+        delete: operations["deleteAdminRecordWork"];
         options?: never;
         head?: never;
         patch?: never;
@@ -633,7 +633,7 @@ export interface components {
              * @description Code stable : le front traduit à partir de lui.
              * @enum {string}
              */
-            code: "NOT_FOUND" | "VALIDATION_ERROR" | "INVALID_JSON" | "UNAUTHENTICATED" | "HANDLE_REQUIRED" | "SIGNUP_EXPIRED" | "ADMIN_REQUIRED" | "PROFILE_PRIVATE" | "PERSON_HAS_WORKS" | "PUBLISHER_HAS_WORKS" | "INVALID_REFERENCE" | "ARCHIVED_REFERENCE" | "DRAFT_REFERENCE" | "DRAFT_NOT_ARCHIVABLE" | "NOT_A_DRAFT" | "DRAFT_IN_USE" | "STALE_RECORD" | "FORBIDDEN_ORIGIN" | "HANDLE_NOT_ALLOWED" | "HANDLE_TAKEN" | "AUTH_STATE_INVALID" | "AUTH_UNAVAILABLE" | "RATE_LIMITED" | "INTERNAL_ERROR";
+            code: "NOT_FOUND" | "VALIDATION_ERROR" | "INVALID_JSON" | "UNAUTHENTICATED" | "HANDLE_REQUIRED" | "SIGNUP_EXPIRED" | "ADMIN_REQUIRED" | "PROFILE_PRIVATE" | "PERSON_HAS_WORKS" | "PUBLISHER_HAS_WORKS" | "INVALID_REFERENCE" | "ARCHIVED_REFERENCE" | "DRAFT_REFERENCE" | "DRAFT_NOT_ARCHIVABLE" | "NOT_REMOVABLE" | "RECORD_IN_USE" | "STALE_RECORD" | "FORBIDDEN_ORIGIN" | "HANDLE_NOT_ALLOWED" | "HANDLE_TAKEN" | "AUTH_STATE_INVALID" | "AUTH_UNAVAILABLE" | "RATE_LIMITED" | "INTERNAL_ERROR";
             /** @description Texte technique en anglais, non affiché. */
             message: string;
             /** @description Erreurs de champ d’une validation : chemin, code Zod et paramètres, sans valeur saisie. */
@@ -2583,7 +2583,7 @@ export interface operations {
             };
         };
     };
-    deleteAdminDraftPerson: {
+    deleteAdminRecordPerson: {
         parameters: {
             query?: never;
             header?: never;
@@ -2594,7 +2594,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Brouillon supprimé définitivement. */
+            /** @description Fiche supprimée définitivement. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -2637,7 +2637,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`. */
+            /** @description Fiche publiée non archivée (`NOT_REMOVABLE`) ou encore citée (`RECORD_IN_USE`). Code : `NOT_REMOVABLE`. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3206,7 +3206,7 @@ export interface operations {
             };
         };
     };
-    deleteAdminDraftPublisher: {
+    deleteAdminRecordPublisher: {
         parameters: {
             query?: never;
             header?: never;
@@ -3217,7 +3217,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Brouillon supprimé définitivement. */
+            /** @description Fiche supprimée définitivement. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -3260,7 +3260,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`. */
+            /** @description Fiche publiée non archivée (`NOT_REMOVABLE`) ou encore citée (`RECORD_IN_USE`). Code : `NOT_REMOVABLE`. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3956,7 +3956,7 @@ export interface operations {
             };
         };
     };
-    deleteAdminDraftWork: {
+    deleteAdminRecordWork: {
         parameters: {
             query?: never;
             header?: never;
@@ -3967,7 +3967,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description Brouillon supprimé définitivement. */
+            /** @description Fiche supprimée définitivement. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -4010,7 +4010,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`. */
+            /** @description Fiche publiée non archivée (`NOT_REMOVABLE`) ou encore citée (`RECORD_IN_USE`). Code : `NOT_REMOVABLE`. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -4318,7 +4318,7 @@ export const genreCategoryValues: ReadonlyArray<FlattenedDeepRequired<components
 export const libraryStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LibraryStatus"]> = ["reading", "completed", "plan_to_read", "on_hold", "dropped"];
 export const userRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["UserRole"]> = ["user", "admin"];
 export const visibilityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Visibility"]> = ["public", "private"];
-export const errorCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Error"]["code"]> = ["NOT_FOUND", "VALIDATION_ERROR", "INVALID_JSON", "UNAUTHENTICATED", "HANDLE_REQUIRED", "SIGNUP_EXPIRED", "ADMIN_REQUIRED", "PROFILE_PRIVATE", "PERSON_HAS_WORKS", "PUBLISHER_HAS_WORKS", "INVALID_REFERENCE", "ARCHIVED_REFERENCE", "DRAFT_REFERENCE", "DRAFT_NOT_ARCHIVABLE", "NOT_A_DRAFT", "DRAFT_IN_USE", "STALE_RECORD", "FORBIDDEN_ORIGIN", "HANDLE_NOT_ALLOWED", "HANDLE_TAKEN", "AUTH_STATE_INVALID", "AUTH_UNAVAILABLE", "RATE_LIMITED", "INTERNAL_ERROR"];
+export const errorCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Error"]["code"]> = ["NOT_FOUND", "VALIDATION_ERROR", "INVALID_JSON", "UNAUTHENTICATED", "HANDLE_REQUIRED", "SIGNUP_EXPIRED", "ADMIN_REQUIRED", "PROFILE_PRIVATE", "PERSON_HAS_WORKS", "PUBLISHER_HAS_WORKS", "INVALID_REFERENCE", "ARCHIVED_REFERENCE", "DRAFT_REFERENCE", "DRAFT_NOT_ARCHIVABLE", "NOT_REMOVABLE", "RECORD_IN_USE", "STALE_RECORD", "FORBIDDEN_ORIGIN", "HANDLE_NOT_ALLOWED", "HANDLE_TAKEN", "AUTH_STATE_INVALID", "AUTH_UNAVAILABLE", "RATE_LIMITED", "INTERNAL_ERROR"];
 export const workDetailRelationsDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkDetail"]["relations"]["direction"]> = ["outgoing", "incoming"];
 export const healthStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Health"]["status"]> = ["ok", "degraded"];
 export const healthDatabaseValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Health"]["database"]> = ["up", "down"];

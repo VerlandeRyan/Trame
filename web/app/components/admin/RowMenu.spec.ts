@@ -52,4 +52,15 @@ describe('AdminRowMenu', () => {
     expect(wrapper.emitted('restore')?.[0]).toEqual([ARCHIVED])
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
   })
+
+  it('propose la suppression définitive d’une archive, jamais d’une fiche publiée', async () => {
+    const published = await mountMenu(PUBLISHED)
+    expect(published.find('[data-testid="admin-menu-remove"]').exists()).toBe(false)
+
+    const wrapper = await mountMenu(ARCHIVED)
+    await wrapper.get('[data-testid="admin-menu-remove"]').trigger('click')
+
+    expect(wrapper.emitted('remove')?.[0]).toEqual([ARCHIVED])
+    expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([false])
+  })
 })

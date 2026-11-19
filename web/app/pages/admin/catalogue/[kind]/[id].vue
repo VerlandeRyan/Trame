@@ -85,8 +85,10 @@ async function leaveToList() {
   await backToList()
 }
 
-/** Deletes the draft for good, then goes back to the list. */
-const deleteDraft = () => editor.deleteDraft(leaveToList)
+/** Deletes the draft or archived record for good, then goes back to the list. */
+const deleteRecord = () => editor.deleteRecord(leaveToList)
+/** What is deleted: a draft was never published, an archive was. */
+const deleteTarget = computed(() => (record.value?.archived ? 'archive' : 'draft'))
 
 const confirmingArchive = ref(false)
 /** Archives the record, then goes back to the list. */
@@ -158,15 +160,24 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
         >
           <Icon name="tabler:trash" size="16" aria-hidden="true" />{{ t('admin.deleteDraft') }}
         </UiButton>
-        <UiButton
-          v-else-if="record.archived"
-          class="edit__action"
-          variant="secondary"
-          data-testid="admin-restore"
-          @click="restore"
-        >
-          <Icon name="tabler:restore" size="16" aria-hidden="true" />{{ t('admin.restore') }}
-        </UiButton>
+        <div v-else-if="record.archived" class="edit__actions">
+          <UiButton
+            class="edit__action"
+            variant="secondary"
+            data-testid="admin-restore"
+            @click="restore"
+          >
+            <Icon name="tabler:restore" size="16" aria-hidden="true" />{{ t('admin.restore') }}
+          </UiButton>
+          <UiButton
+            class="edit__action"
+            variant="danger"
+            data-testid="admin-delete-archived"
+            @click="confirmingDelete = true"
+          >
+            <Icon name="tabler:trash" size="16" aria-hidden="true" />{{ t('admin.removeArchived') }}
+          </UiButton>
+        </div>
         <UiButton
           v-else
           class="edit__action"
@@ -231,16 +242,11 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :close-label="t('action.close')"
       @confirm="publish"
     />
-    <UiConfirm
+    <AdminDeleteConfirm
       v-model="confirmingDelete"
-      danger
-      data-testid="delete-draft-confirm"
-      :title="t('admin.deleteDraftConfirm.title')"
-      :text="t('admin.deleteDraftConfirm.text')"
-      :confirm-label="t('admin.deleteDraft')"
-      :cancel-label="t('admin.deleteDraftConfirm.cancel')"
-      :close-label="t('action.close')"
-      @confirm="deleteDraft"
+      :target="deleteTarget"
+      data-testid="delete-confirm"
+      @confirm="deleteRecord"
     />
     <UiConfirm
       v-model="confirmingLeave"
@@ -276,6 +282,12 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
   gap: var(--space-3);
   align-items: center;
   justify-content: space-between;
+}
+
+.edit__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
 }
 
 // The title and its status pill stay together; the archive action goes to the other end.

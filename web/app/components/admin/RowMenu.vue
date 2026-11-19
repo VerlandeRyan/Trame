@@ -2,12 +2,16 @@
 import { adminEditPath, itemLabel, type AdminKind, type AdminListItem } from '~/utils/admin'
 
 /**
- * Action sheet of a record, opened by "⋮" on mobile. Archiving is not done here: the parent
- * opens its confirmation (`archive`).
+ * Action sheet of a record, opened by "⋮" on narrow screens (desktop has a dropdown). Archiving
+ * and deleting are not done here: the parent opens their confirmation (`archive`, `remove`).
  */
 const props = defineProps<{ kind: AdminKind; item: AdminListItem | null }>()
 const isOpen = defineModel<boolean>({ default: false })
-const emit = defineEmits<{ restore: [item: AdminListItem]; archive: [item: AdminListItem] }>()
+const emit = defineEmits<{
+  restore: [item: AdminListItem]
+  archive: [item: AdminListItem]
+  remove: [item: AdminListItem]
+}>()
 const { t } = useI18n()
 const localePath = useLocalePath()
 
@@ -28,6 +32,12 @@ function askArchive(item: AdminListItem) {
   isOpen.value = false
   emit('archive', item)
 }
+
+/** Closes the sheet and asks the parent to confirm the permanent deletion. */
+function askRemove(item: AdminListItem) {
+  isOpen.value = false
+  emit('remove', item)
+}
 </script>
 
 <template>
@@ -38,15 +48,24 @@ function askArchive(item: AdminListItem) {
     :close-label="t('action.close')"
   >
     <div v-if="item" class="row-menu">
-      <UiButton
-        v-if="item.archived"
-        variant="secondary"
-        class="row-menu__item"
-        data-testid="admin-menu-restore"
-        @click="restore(item)"
-      >
-        <Icon name="tabler:restore" size="16" aria-hidden="true" />{{ t('admin.restore') }}
-      </UiButton>
+      <template v-if="item.archived">
+        <UiButton
+          variant="secondary"
+          class="row-menu__item"
+          data-testid="admin-menu-restore"
+          @click="restore(item)"
+        >
+          <Icon name="tabler:restore" size="16" aria-hidden="true" />{{ t('admin.restore') }}
+        </UiButton>
+        <UiButton
+          variant="danger"
+          class="row-menu__item"
+          data-testid="admin-menu-remove"
+          @click="askRemove(item)"
+        >
+          <Icon name="tabler:trash" size="16" aria-hidden="true" />{{ t('admin.removeArchived') }}
+        </UiButton>
+      </template>
       <template v-else>
         <UiButton
           variant="secondary"

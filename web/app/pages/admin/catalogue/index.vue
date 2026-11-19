@@ -130,20 +130,39 @@ const isArchives = computed(() => query.value.scope === 'archived')
 const newLocation = computed(() => localePath(adminEditPath(query.value.kind, 'new')))
 
 const announceFailure = useAdminFailure()
-// Archiving or restoring: a refusal from the API is shown above the list, a transient failure by a toast.
+// Archiving, restoring or deleting: a refusal from the API is shown above the list, a transient failure by a toast.
 const errorKey = ref<string>()
-/** Archives or restores a record, then refreshes the list and the archive count. */
-async function setArchived(item: AdminListItem, archived: boolean) {
+/**
+ * Reloads the list and the archive count after a write. When the write removed the only row of a
+ * later page, it goes straight to the previous page instead of loading an empty one.
+ */
+async function refreshAfterWrite() {
+  const current = page.value
+  const reload =
+    current?.items.length === 1 && current.page > 1
+      ? go({ ...query.value, page: current.page - 1 })
+      : refresh()
+  await Promise.all([reload, refreshArchivesCount()])
+}
+/** Runs a write then refreshes the list; a failure is announced, with a retry for a transient one. */
+async function write(action: () => Promise<unknown>, retry: () => void) {
   errorKey.value = undefined
   try {
-    await (archived
-      ? client.archive(query.value.kind, item.id)
-      : client.restore(query.value.kind, item.id))
-    await Promise.all([refresh(), refreshArchivesCount()])
+    await action()
+    await refreshAfterWrite()
   } catch (cause) {
-    errorKey.value = announceFailure(cause, () => void setArchived(item, archived))
+    errorKey.value = announceFailure(cause, retry)
   }
 }
+/** Archives or restores a record. */
+const setArchived = (item: AdminListItem, archived: boolean) =>
+  write(
+    () =>
+      archived
+        ? client.archive(query.value.kind, item.id)
+        : client.restore(query.value.kind, item.id),
+    () => void setArchived(item, archived),
+  )
 // Only works have a summary (members who follow them, related works).
 const loadImpact = computed(() =>
   query.value.kind === 'works'
@@ -154,6 +173,13 @@ const loadImpact = computed(() =>
 const restore = (item: AdminListItem) => setArchived(item, false)
 /** Archives a record. */
 const archive = (item: AdminListItem) => setArchived(item, true)
+
+/** Deletes an archived record for good, then refreshes the list and the archive count. */
+const remove = (item: AdminListItem) =>
+  write(
+    () => client.remove(query.value.kind, item.id),
+    () => void remove(item),
+  )
 </script>
 
 <template>
@@ -223,6 +249,7 @@ const archive = (item: AdminListItem) => setArchived(item, true)
         @reset="resetFilters"
       />
     </div>
+    <p v-if="isArchives" class="catalogue__note">{{ t('admin.archivesNote') }}</p>
     <UiFormError v-if="errorKey">{{ t(errorKey) }}</UiFormError>
     <AdminResourceRows
       v-if="page && page.items.length > 0"
@@ -231,6 +258,7 @@ const archive = (item: AdminListItem) => setArchived(item, true)
       :load-impact="loadImpact"
       @restore="restore"
       @archive="archive"
+      @remove="remove"
     />
     <UiStatePanel
       v-else
@@ -239,7 +267,6 @@ const archive = (item: AdminListItem) => setArchived(item, true)
         isArchives ? undefined : t('admin.emptyHint', { action: t(`admin.newKind.${query.kind}`) })
       "
     />
-    <p v-if="isArchives" class="catalogue__note">{{ t('admin.archivesNote') }}</p>
     <UiPagination v-if="page" :page="page.page" :pages="pageCount(page)" :link-for="linkFor" />
   </div>
 </template>

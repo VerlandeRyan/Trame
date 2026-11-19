@@ -4,7 +4,7 @@ import type { Db, PublisherKind } from '../db/database.js';
 import {
   archiveCondition,
   countDraftRows,
-  deleteDraftRow,
+  deleteRecordRow,
   DRAFTS_FIRST,
   FILTERED_TOTAL,
   nameContains,
@@ -56,7 +56,7 @@ export interface AdminPublisherRepository {
   /** False if the publisher does not exist; publishing a published one changes nothing. */
   publish(id: number): Promise<boolean>;
   /** Deletes a draft nothing cites; false if it is not a draft or a work lists it. */
-  deleteDraft(id: number): Promise<boolean>;
+  deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
 }
 
@@ -160,8 +160,8 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
       return publishRow(db, 'publisher', id);
     },
 
-    async deleteDraft(id) {
-      return deleteDraftRow(
+    async deleteRecord(id) {
+      return deleteRecordRow(
         db,
         'publisher',
         id,

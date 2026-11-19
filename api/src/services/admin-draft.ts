@@ -9,7 +9,7 @@ interface DraftRecord {
 /** The repository operations the draft rules need. */
 interface DraftRepository {
   publish(id: number): Promise<boolean>;
-  deleteDraft(id: number): Promise<boolean>;
+  deleteRecord(id: number): Promise<boolean>;
 }
 
 /** A draft is deleted, not archived. */
@@ -17,18 +17,26 @@ export function assertNotDraft(record: DraftRecord): void {
   if (record.draft) throw new AppError('DRAFT_NOT_ARCHIVABLE');
 }
 
-/** Deletes a draft nothing cites (`NOT_A_DRAFT` for a published record, `DRAFT_IN_USE` if cited). */
-export async function removeDraft(
-  get: (id: number) => Promise<DraftRecord>,
-  repository: { deleteDraft(id: number): Promise<boolean> },
+/** Deletes a draft or an archived record nothing cites (`NOT_REMOVABLE` if published, `RECORD_IN_USE` if cited). */
+export async function removeRecord(
+  get: (id: number) => Promise<DraftRecord & { archived: boolean }>,
+  repository: { deleteRecord(id: number): Promise<boolean> },
   id: number,
 ): Promise<void> {
-  if (!(await get(id)).draft) throw new AppError('NOT_A_DRAFT');
-  if (!(await repository.deleteDraft(id))) throw new AppError('DRAFT_IN_USE');
+  assertRemovable(await get(id));
+  if (await repository.deleteRecord(id)) return;
+  // The guarded DELETE also fails when the record was restored, published or deleted since the read.
+  assertRemovable(await get(id));
+  throw new AppError('RECORD_IN_USE');
+}
+
+/** Throws `NOT_REMOVABLE` for a published record that is not archived. */
+function assertRemovable(record: DraftRecord & { archived: boolean }): void {
+  if (!record.draft && !record.archived) throw new AppError('NOT_REMOVABLE');
 }
 
 /** `publish` (no effect on a published record) and `remove` of a resource without extra publication rules. */
-export function createDraftOperations<Record extends DraftRecord>(
+export function createDraftOperations<Record extends DraftRecord & { archived: boolean }>(
   get: (id: number) => Promise<Record>,
   repository: DraftRepository,
 ) {
@@ -39,6 +47,6 @@ export function createDraftOperations<Record extends DraftRecord>(
       return get(id);
     },
 
-    remove: (id: number) => removeDraft(get, repository, id),
+    remove: (id: number) => removeRecord(get, repository, id),
   };
 }

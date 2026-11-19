@@ -54,7 +54,7 @@ function fakeRepository(
     update: vi.fn(async () => isUpToDate),
     setArchived: vi.fn(async () => true),
     publish: vi.fn(async () => true),
-    deleteDraft: vi.fn(async () => true),
+    deleteRecord: vi.fn(async () => true),
     countDrafts: vi.fn(async () => 3),
   };
 }
@@ -201,21 +201,24 @@ describe('brouillon', () => {
     expect(repository.publish).not.toHaveBeenCalled();
   });
 
-  it('ne supprime que les brouillons', async () => {
+  it('ne supprime qu’un brouillon ou une œuvre archivée', async () => {
     const published = fakeRepository(record());
     await expect(createAdminWorkService(published).remove(1)).rejects.toMatchObject({
-      code: 'NOT_A_DRAFT',
+      code: 'NOT_REMOVABLE',
     });
-    const repository = fakeRepository(record(false, true));
-    await expect(createAdminWorkService(repository).remove(1)).resolves.toBeUndefined();
-    expect(repository.deleteDraft).toHaveBeenCalledWith(1);
+    const draftRepository = fakeRepository(record(false, true));
+    await expect(createAdminWorkService(draftRepository).remove(1)).resolves.toBeUndefined();
+    expect(draftRepository.deleteRecord).toHaveBeenCalledWith(1);
+    const archivedRepository = fakeRepository(record(true));
+    await expect(createAdminWorkService(archivedRepository).remove(1)).resolves.toBeUndefined();
+    expect(archivedRepository.deleteRecord).toHaveBeenCalledWith(1);
   });
 
-  it('refuse de supprimer un brouillon encore lié', async () => {
-    const repository = fakeRepository(record(false, true));
-    vi.mocked(repository.deleteDraft).mockResolvedValue(false);
+  it('refuse de supprimer une œuvre encore liée', async () => {
+    const repository = fakeRepository(record(true));
+    vi.mocked(repository.deleteRecord).mockResolvedValue(false);
     await expect(createAdminWorkService(repository).remove(1)).rejects.toMatchObject({
-      code: 'DRAFT_IN_USE',
+      code: 'RECORD_IN_USE',
     });
   });
 });

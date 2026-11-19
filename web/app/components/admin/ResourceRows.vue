@@ -10,15 +10,20 @@ import { updateAge } from '~/utils/profile'
 
 /**
  * Catalogue table: one row per record, "Edit" or, for an archive, "Restore". Archiving is done
- * from the record, or from the "⋮" sheet (`admin/RowMenu`) on mobile. `loadImpact` (works) reads
- * what archiving leaves in place, for the confirmation.
+ * from the record, or from the "⋮" sheet (`admin/RowMenu`) on mobile; on desktop only an archive
+ * has a "⋮", a dropdown for its permanent deletion ("Restore" is already beside it). `loadImpact` (works) reads what archiving leaves in
+ * place, for the confirmation.
  */
 const props = defineProps<{
   kind: AdminKind
   items: AdminListItem[]
   loadImpact?: (item: AdminListItem) => Promise<ArchiveImpact>
 }>()
-const emit = defineEmits<{ restore: [item: AdminListItem]; archive: [item: AdminListItem] }>()
+const emit = defineEmits<{
+  restore: [item: AdminListItem]
+  archive: [item: AdminListItem]
+  remove: [item: AdminListItem]
+}>()
 const { t } = useI18n()
 const localePath = useLocalePath()
 
@@ -31,12 +36,16 @@ const columns = computed(() =>
 )
 
 const ACTION_COLUMN = '7.5rem'
-/** CSS grid columns of a row. */
-const gridColumns = computed(() =>
-  isWorks.value
-    ? `minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr) ${ACTION_COLUMN}`
-    : `minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) ${ACTION_COLUMN}`,
-)
+const MORE_COLUMN = '2.5rem'
+/** CSS grid columns of a row; an archive adds the "⋮" column. */
+const gridColumns = computed(() => {
+  const action = props.items.some((item) => item.archived)
+    ? `${ACTION_COLUMN} ${MORE_COLUMN}`
+    : ACTION_COLUMN
+  return isWorks.value
+    ? `minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr) ${action}`
+    : `minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) ${action}`
+})
 
 /** Lowercase relative age of a date ("3 days"), empty without a date. */
 const ageLabel = (iso: string | null | undefined) => {
@@ -88,6 +97,9 @@ function openMenu(item: AdminListItem) {
   isMenuOpen.value = true
 }
 
+/** Narrow screens use the action sheet; wide ones a dropdown, for an archive only. */
+const isNarrow = useNarrowScreen(1023)
+
 // Archiving asks the same confirmation as from the record, summary included (loaded on opening;
 // without it, the confirmation stays usable).
 const isArchiveConfirmOpen = ref(false)
@@ -107,6 +119,17 @@ async function askArchive(item: AdminListItem) {
 /** Reports the confirmed archiving of the row whose sheet is open. */
 function archiveMenuItem() {
   if (menuItem.value) emit('archive', menuItem.value)
+}
+
+const isRemoveConfirmOpen = ref(false)
+/** Opens the permanent deletion confirmation for a row. */
+function askRemove(item: AdminListItem) {
+  menuItem.value = item
+  isRemoveConfirmOpen.value = true
+}
+/** Reports the confirmed permanent deletion. */
+function removeMenuItem() {
+  if (menuItem.value) emit('remove', menuItem.value)
 }
 </script>
 
@@ -194,15 +217,23 @@ function archiveMenuItem() {
         >
           <Icon name="tabler:pencil" size="16" aria-hidden="true" />{{ t('action.edit') }}
         </UiButton>
-        <button
-          type="button"
-          class="rows__more"
-          :aria-label="t('admin.row.actions', { name: itemLabel(item) })"
-          data-testid="admin-row-menu"
-          @click="openMenu(item)"
-        >
-          <Icon name="tabler:dots-vertical" size="20" aria-hidden="true" />
-        </button>
+        <div class="rows__more-cell" :class="{ 'rows__more-cell--archived': item.archived }">
+          <AdminRowDropdown
+            v-if="item.archived && !isNarrow"
+            :label="t('admin.row.actions', { name: itemLabel(item) })"
+            @remove="askRemove(item)"
+          />
+          <button
+            v-else
+            type="button"
+            class="rows__more"
+            :aria-label="t('admin.row.actions', { name: itemLabel(item) })"
+            data-testid="admin-row-menu"
+            @click="openMenu(item)"
+          >
+            <Icon name="tabler:dots-vertical" size="20" aria-hidden="true" />
+          </button>
+        </div>
       </li>
     </ul>
     <AdminRowMenu
@@ -211,12 +242,19 @@ function archiveMenuItem() {
       :item="menuItem"
       @restore="emit('restore', $event)"
       @archive="askArchive"
+      @remove="askRemove"
     />
     <AdminArchiveConfirm
       v-model="isArchiveConfirmOpen"
       :kind="kind"
       :impact="impact"
       @confirm="archiveMenuItem"
+    />
+    <AdminDeleteConfirm
+      v-model="isRemoveConfirmOpen"
+      target="archive"
+      data-testid="remove-archived-confirm"
+      @confirm="removeMenuItem"
     />
   </div>
 </template>
@@ -340,8 +378,26 @@ function archiveMenuItem() {
 
 // Mobile-only elements, hidden on desktop.
 .rows__summary,
-.rows__more {
+.rows__more-cell {
   display: none;
+}
+
+.rows__more-cell--archived {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rows__more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  cursor: pointer;
 }
 
 // Mobile: title, one information line and the completeness; "⋮" opens the actions.
@@ -384,20 +440,11 @@ function archiveMenuItem() {
     align-self: center;
   }
 
-  .rows__more {
+  .rows__more-cell {
     display: flex;
     grid-column: -2;
     grid-row: 1;
-    align-items: center;
-    justify-content: center;
-    width: var(--touch);
-    height: var(--touch);
     margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) 0 0;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: var(--color-ink);
-    cursor: pointer;
   }
 
   .rows__summary,

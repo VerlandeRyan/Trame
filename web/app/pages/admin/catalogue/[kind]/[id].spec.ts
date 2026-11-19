@@ -388,11 +388,48 @@ describe('page d’édition du catalogue', () => {
     await wrapper.get('[data-testid="admin-delete-draft"]').trigger('click')
     await flushPromises()
     await wrapper
-      .get('[data-testid="delete-draft-confirm"] [data-testid="confirm-accept"]')
+      .get('[data-testid="delete-confirm"] [data-testid="confirm-accept"]')
       .trigger('click')
     await flushPromises()
 
     expect(sent.map((call) => call.path)).toEqual(['people/7'])
+  })
+
+  it('supprime définitivement une fiche archivée après confirmation, et explique un refus', async () => {
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'GET',
+      handler: () => ({ ...PERSON, archived: true }),
+    })
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'DELETE',
+      handler: (event) => {
+        sent.push({ method: 'DELETE', path: 'people/7' })
+        if (failWith) return rejection(event)
+        setResponseStatus(event, 204)
+        return null
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+    expect(wrapper.find('[data-testid="admin-delete-draft"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="admin-restore"]').exists()).toBe(true)
+
+    failWith = 'RECORD_IN_USE'
+    await wrapper.get('[data-testid="admin-delete-archived"]').trigger('click')
+    const accept = () =>
+      wrapper.get('[data-testid="delete-confirm"] [data-testid="confirm-accept"]')
+    expect(wrapper.get('[data-testid="delete-confirm"]').text()).toContain('irréversible')
+    await accept().trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('encore citée par une autre')
+    expect(failureToast()).toBeUndefined()
+
+    failWith = null
+    await wrapper.get('[data-testid="admin-delete-archived"]').trigger('click')
+    await accept().trigger('click')
+    await flushPromises()
+
+    expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7'])
   })
 
   it('renvoie la version lue et indique dans le formulaire une fiche modifiée entre-temps', async () => {
@@ -511,7 +548,7 @@ describe('page d’édition du catalogue', () => {
 
     await wrapper.get('[data-testid="admin-delete-draft"]').trigger('click')
     await wrapper
-      .get('[data-testid="delete-draft-confirm"] [data-testid="confirm-accept"]')
+      .get('[data-testid="delete-confirm"] [data-testid="confirm-accept"]')
       .trigger('click')
     await flushPromises()
 

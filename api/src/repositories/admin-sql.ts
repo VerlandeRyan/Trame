@@ -40,8 +40,11 @@ export async function publishRow(
   return result.rows.length > 0;
 }
 
-/** Deletes a draft that `notCited` lets go; false if it is published, cited or missing. */
-export async function deleteDraftRow(
+/** A record that may be deleted for good: a draft or an archive. */
+export const REMOVABLE = sql<boolean>`(published_at IS NULL OR deleted_at IS NOT NULL)`;
+
+/** Deletes a draft or archived record that `notCited` lets go; false if it is published, cited or missing. */
+export async function deleteRecordRow(
   db: Db,
   table: CatalogueTable,
   id: number,
@@ -49,7 +52,8 @@ export async function deleteDraftRow(
 ): Promise<boolean> {
   const result = await sql`
     DELETE FROM ${sql.table(table)}
-    WHERE id = ${id} AND published_at IS NULL AND ${notCited} RETURNING id`.execute(db);
+    WHERE id = ${id} AND ${REMOVABLE} AND ${notCited}
+    RETURNING id`.execute(db);
   return result.rows.length > 0;
 }
 

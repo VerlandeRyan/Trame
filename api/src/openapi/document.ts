@@ -270,16 +270,16 @@ function adminResourcePaths(resource: AdminResource) {
       },
       delete: {
         ...writeBase,
-        summary: `Supprimer un brouillon : ${resource.singular}`,
-        operationId: `deleteAdminDraft${resource.singular}`,
+        summary: `Supprimer un brouillon ou une fiche archivée : ${resource.singular}`,
+        operationId: `deleteAdminRecord${resource.singular}`,
         parameters: idParameters,
         responses: {
-          '204': { description: 'Brouillon supprimé définitivement.' },
+          '204': { description: 'Fiche supprimée définitivement.' },
           '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
           '404': notFound,
           '409': errorResponse(
-            'NOT_A_DRAFT',
-            'Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`).',
+            'NOT_REMOVABLE',
+            'Fiche publiée non archivée (`NOT_REMOVABLE`) ou encore citée (`RECORD_IN_USE`).',
           ),
           '429': rateLimited,
           ...adminErrors,

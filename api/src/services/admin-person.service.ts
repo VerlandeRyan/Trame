@@ -22,7 +22,7 @@ export interface AdminPersonService {
   archive(id: number): Promise<AdminPersonRecord>;
   restore(id: number): Promise<AdminPersonRecord>;
   publish(id: number): Promise<AdminPersonRecord>;
-  /** Only a draft no work credits (`NOT_A_DRAFT`, `DRAFT_IN_USE`). */
+  /** Only a draft or archived person no work credits (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
   remove(id: number): Promise<void>;
   countDrafts(): Promise<number>;
 }

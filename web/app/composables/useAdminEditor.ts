@@ -160,15 +160,15 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     return true
   }
 
-  /** Deletes the draft for good; true if the API accepted (`onDone` then runs, also after a retry). */
-  async function deleteDraft(onDone?: Followup): Promise<boolean> {
+  /** Deletes the draft or archived record for good; true if the API accepted (`onDone` then runs, also after a retry). */
+  async function deleteRecord(onDone?: Followup): Promise<boolean> {
     if (id === 'new') return false
     errorKey.value = undefined
     try {
-      await client.removeDraft(kind, id)
+      await client.remove(kind, id)
       markSaved()
     } catch (cause) {
-      errorKey.value = announceFailure(cause, () => void deleteDraft(onDone))
+      errorKey.value = announceFailure(cause, () => void deleteRecord(onDone))
       return false
     }
     await onDone?.()
@@ -202,7 +202,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     load,
     save,
     checkPublishable,
-    deleteDraft,
+    deleteRecord,
     setArchived,
     client,
   }
