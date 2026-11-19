@@ -114,6 +114,21 @@ Node LTS, TypeScript stable, aucune version préliminaire, versions épinglées,
 - **PR externe** : `.claude/`, `CLAUDE.md` et `.github/` sont chargés ou exécutés par l'assistant ; leur diff se relit avant de récupérer la branche et d'y ouvrir une session. `.github/CODEOWNERS` les désigne.
 - Autorisations locales (`.claude/settings.local.json`, non versionné) : commandes nommées plutôt que génériques ; pas d'exécution de code arbitraire (`node -e`, `npx` libre) ni de requête réseau libre.
 
+### Revues complémentaires
+
+L'assistant lance ces revues **de lui-même** quand le déclencheur est rempli, corrige ce qu'elles relèvent et ne rend que le résultat : pas de question tant que la règle est écrite. La correspondance avec les outils de revue est dans `private/docs/revues.md`.
+
+| Déclencheur | Revue |
+|---|---|
+| Écran important terminé (maquette validée, capture faite) | Audit d'accessibilité WCAG 2.1 AA |
+| Nouveaux textes d'interface | Relecture des libellés `fr` (ton, clarté, cohérence) avant de figer les clés ; les clés `en` se vérifient à part |
+| Avant chaque commit | `/simplify`, puis `/code-review` |
+| Diff touchant l'API (route, authentification, SQL, migration) | Relecture sécurité et performance, en plus des deux précédentes |
+| Ticket transverse (API, web, E2E, docs) | Cycle de développement guidé, **après** la branche et le ticket « In progress » ; mêmes règles de tests et de git, aucun commit |
+| Fermeture d'un jalon du Project, ou sur demande | Contrôle d'écart entre `docs/` et le code (lecture seule) |
+
+Le compte rendu de fin de ticket est unique : ce qui est vérifié, ce qui ne l'est pas, les corrections faites et le message de commit.
+
 ### Prompt de démarrage d'une session
 
 Les règles vivent dans `CLAUDE.md` (« Démarrage de session » et « Façon de travailler ») : le prompt ne les recopie pas.
