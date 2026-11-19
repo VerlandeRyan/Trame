@@ -2,6 +2,7 @@
 import {
   adminEditPath,
   itemLabel,
+  PERSON_KINDS,
   type AdminKind,
   type AdminListItem,
   type ArchiveImpact,
@@ -77,8 +78,11 @@ function typeAndFormat(item: AdminListItem): string {
 
 /** Translated kind of a person or publisher. */
 function kindLabel(item: AdminListItem): string {
-  const group = props.kind === 'people' ? 'person' : 'publisher'
-  return item.kind ? t(`admin.option.${group}.${item.kind}`) : ''
+  if (!item.kind) return ''
+  // The group comes from the row, not from `kind`: when switching tabs, `items` still holds the
+  // previous tab's rows for a moment.
+  const group = (PERSON_KINDS as readonly string[]).includes(item.kind) ? 'person' : 'publisher'
+  return t(`admin.option.${group}.${item.kind}`)
 }
 
 /** Mobile: a single information line under the title. */
