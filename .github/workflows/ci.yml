@@ -8,6 +8,11 @@ on:
 permissions:
   contents: read
 
+# Un nouveau push sur une PR annule l'exécution précédente ; `main` n'est jamais annulée.
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   # renovate: datasource=github-releases depName=gitleaks/gitleaks extractVersion=^v(?<version>.+)$
   GITLEAKS_VERSION: 8.30.1
@@ -18,6 +23,36 @@ env:
   SEMGREP_IMAGE_DIGEST: sha256:529ee8a277ec8adc5b534d7c74eea0a47e9de21d62852b6ba7ac6ba9566845c3
 
 jobs:
+  # Une PR sans code (docs, CLAUDE.md…) saute les étapes lourdes. Les jobs exigés par le ruleset de
+  # `main` restent lancés (un job sauté au niveau du job n'enverrait pas son statut) : seules leurs
+  # étapes sont conditionnées. Sur `main`, tout tourne.
+  changes:
+    name: Fichiers modifiés
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      images: ${{ steps.filter.outputs.images }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          fetch-depth: 0
+      - id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            printf 'code=true\nimages=true\n' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(git diff --name-only "$BASE_SHA...$HEAD_SHA")
+          echo "$files"
+          code_pattern='^(api|web|e2e|db|scripts)/|^package(-lock)?\.json$|^\.nvmrc$|^docker-compose|^\.github/workflows/ci\.yml$'
+          images_pattern='^(api|web)/|^scripts/|^docker-compose|^\.nvmrc$|^\.github/workflows/ci\.yml$'
+          if grep -Eq "$code_pattern" <<< "$files"; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
+          if grep -Eq "$images_pattern" <<< "$files"; then echo "images=true" >> "$GITHUB_OUTPUT"; else echo "images=false" >> "$GITHUB_OUTPUT"; fi
+
   secrets:
     name: Secrets (gitleaks)
     runs-on: ubuntu-latest
@@ -84,6 +119,7 @@ jobs:
 
   web:
     name: Web (types, lint, tests et build)
+    needs: changes
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -101,19 +137,26 @@ jobs:
             web/package-lock.json
             e2e/package-lock.json
       - run: npm ci --ignore-scripts
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
       - run: npx --no-install nuxt prepare
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
       - name: Types de l'API à jour (échoue si api-schema.ts diffère de api/openapi.json)
+        if: needs.changes.outputs.code == 'true'
         run: npm run api:types:check
         working-directory: web
       - run: npm run typecheck
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
       - run: npm run lint
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
       - run: npm run format:check
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
       - run: npm run test:coverage
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
       - name: Secret Sonar disponible ?
         id: sonar-token
@@ -128,11 +171,13 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - run: npm run build
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
 
   # Un job par navigateur : Chromium et WebKit tournent en parallèle, chacun sur sa base de test.
   e2e:
     name: E2E (${{ matrix.name }})
+    needs: changes
     runs-on: ubuntu-latest
     # Un téléchargement ou un test bloqué doit échouer, pas occuper le runner des heures.
     timeout-minutes: 20
@@ -181,26 +226,34 @@ jobs:
             web/package-lock.json
             e2e/package-lock.json
       - run: npm ci --ignore-scripts
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
       - run: npm run build
+        if: needs.changes.outputs.code == 'true'
         working-directory: web
       - name: API compilée et base de test migrée (les E2E chargent le jeu de démo)
+        if: needs.changes.outputs.code == 'true'
         run: |
           npm ci --ignore-scripts
           npm run build:e2e
           npm run migrate:test
         working-directory: api
       - run: npm ci --ignore-scripts
+        if: needs.changes.outputs.code == 'true'
         working-directory: e2e
       - run: npm run format:check
+        if: needs.changes.outputs.code == 'true'
         working-directory: e2e
       - run: npm run lint
+        if: needs.changes.outputs.code == 'true'
         working-directory: e2e
       - run: npx --no-install playwright test --project=${{ matrix.project }}
+        if: needs.changes.outputs.code == 'true'
         working-directory: e2e
 
   api:
     name: API (migrations et tests)
+    needs: changes
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -233,15 +286,22 @@ jobs:
           cache: npm
           cache-dependency-path: api/package-lock.json
       - run: npm ci --ignore-scripts
+        if: needs.changes.outputs.code == 'true'
       - run: npm run typecheck
+        if: needs.changes.outputs.code == 'true'
       - run: npm run lint
+        if: needs.changes.outputs.code == 'true'
       - run: npm run format:check
+        if: needs.changes.outputs.code == 'true'
       - run: npm run migrate:test
+        if: needs.changes.outputs.code == 'true'
       - name: Types de la base à jour (échoue si generated.ts diffère du schéma migré)
+        if: needs.changes.outputs.code == 'true'
         run: npx --no-install kysely-codegen --verify
         env:
           DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
       - run: npm run test:coverage
+        if: needs.changes.outputs.code == 'true'
       - name: Secret Sonar disponible ?
         id: sonar-token
         env:
@@ -259,6 +319,9 @@ jobs:
   # embarqué, des migrations absentes de l'image.
   images:
     name: Images Docker (build et démarrage)
+    needs: changes
+    # Pas dans les checks exigés : le saut du job entier est sans risque.
+    if: needs.changes.outputs.images == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
