@@ -9,10 +9,12 @@ permissions:
 
 jobs:
   closes:
-    name: Renseigne « Closes #n »
+    name: Renseigne « Closes #n » et les cases déductibles
     runs-on: ubuntu-latest
     steps:
-      - name: Déduire le ticket du nom de branche (type/n-slug)
+      # Seules les cases déductibles sans erreur possible sont cochées (branche, fichiers modifiés) ;
+      # « Hotfix », « Manuellement » et les sections de texte restent à l'auteur.
+      - name: Remplir le corps de la PR d'après la branche (type/n-slug) et les fichiers modifiés
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ github.head_ref }}
@@ -20,8 +22,38 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           REPO: ${{ github.repository }}
         run: |
+          printf '%s\n' "$BODY" | tr -d '\r' > body.md
+          cp body.md body.original.md
+
+          # Coche « - [ ] <libellé> » sous le titre « ## <section> » ; ne touche pas une case déjà cochée.
+          tick() {
+            awk -v section="$1" -v label="$2" '
+              /^## / { in_section = ($0 == "## " section) }
+              in_section && $0 == "- [ ] " label { $0 = "- [x] " label }
+              { print }' body.md > body.next.md
+            mv body.next.md body.md
+          }
+
           num=$(printf '%s' "$BRANCH" | sed -nE 's#^[a-z]+/([0-9]+)-.*#\1#p')
-          [ -n "$num" ] || { echo "Pas de numéro de ticket dans '$BRANCH'."; exit 0; }
-          printf '%s\n' "$BODY" | grep -Eq '^Closes #[[:space:]]*$' || { echo "Ligne « Closes # » absente ou déjà remplie."; exit 0; }
-          printf '%s\n' "$BODY" | sed -E "s/^Closes #[[:space:]]*$/Closes #${num}/" > body.md
+          if [ -n "$num" ]; then
+            sed -i -E "s/^Closes #[[:space:]]*$/Closes #${num}/" body.md
+          fi
+
+          case "${BRANCH%%/*}" in
+            feat) tick "Type de changement" "Feature" ;;
+            fix) tick "Type de changement" "Fix" ;;
+            *) tick "Type de changement" "Autre" ;;
+          esac
+
+          files=$(gh pr diff "$PR" --repo "$REPO" --name-only)
+          grep -Eq '^api/' <<< "$files" && tick "Périmètre" "API"
+          grep -Eq '^web/' <<< "$files" && tick "Périmètre" "Web"
+          grep -Eq '^(db/|api/migrations/)' <<< "$files" && tick "Périmètre" "Base de données"
+          grep -Eqv '^(api|web|db)/' <<< "$files" && tick "Périmètre" "Autre"
+          grep -Eq '^e2e/' <<< "$files" && tick "Tests" "Tests E2E"
+
+          if cmp -s body.md body.original.md; then
+            echo "Rien à renseigner."
+            exit 0
+          fi
           gh pr edit "$PR" --repo "$REPO" --body-file body.md
