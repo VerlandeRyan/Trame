@@ -27,6 +27,13 @@ const roleOptions = optionsOf(CREDIT_ROLES, (code) => t(`admin.option.creditRole
 const relationOptions = optionsOf(RELATION_KINDS, (code) => t(`admin.option.relation.${code}`))
 /** Search function restricted to one kind of record. */
 const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
+/** Whether the work has no author (or no publisher) yet: flagged after a refused publication. */
+const isNoCredit = computed(
+  () => props.showErrors === true && missingWorkFields(draft.value, []).credits,
+)
+const isNoPublisher = computed(
+  () => props.showErrors === true && missingWorkFields(draft.value, []).publishers,
+)
 </script>
 
 <template>
@@ -60,6 +67,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
           />
         </template>
       </AdminRowList>
+      <UiFormError v-if="isNoCredit">{{ t('admin.error.creditRequired') }}</UiFormError>
     </AdminPanel>
     <AdminPanel v-if="part === 'people'" :title="t('admin.work.publishers')">
       <AdminRowList
@@ -83,6 +91,7 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
           />
         </template>
       </AdminRowList>
+      <UiFormError v-if="isNoPublisher">{{ t('admin.error.publisherRequired') }}</UiFormError>
     </AdminPanel>
     <AdminPanel v-else :title="t('admin.work.relations')" :hint="t('admin.work.relationHint')">
       <AdminRowList

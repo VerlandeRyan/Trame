@@ -4,7 +4,9 @@ import { reactive } from 'vue'
 import { emptyWorkDraft } from '~/utils/admin'
 import AdminWorkForm from './WorkForm.vue'
 
-function mountForm(props: { errorKey?: string; showErrors?: boolean; saving?: boolean } = {}) {
+function mountForm(
+  props: { errorKey?: string; errorScope?: 'none' | 'title' | 'all'; saving?: boolean } = {},
+) {
   const draft = reactive(emptyWorkDraft())
   return mountSuspended(AdminWorkForm, {
     props: {
@@ -102,19 +104,51 @@ describe('AdminWorkForm', () => {
   })
 
   describe('champs obligatoires et lignes incomplètes refusés à l’enregistrement', () => {
-    it('marque l’onglet « Informations », le titre et le format vides', async () => {
-      const { wrapper } = await mountForm({ showErrors: true })
+    /** Fills everything a published work needs. */
+    const fillRequired = (draft: ReturnType<typeof emptyWorkDraft>) => {
+      draft.title = 'Aube Fictive'
+      draft.genres = ['manga']
+      draft.synopses.push({ language: 'fr', source: 'official', text: 'Résumé.' })
+      draft.credits.push({ person: { id: 1, label: 'Léa' }, role: 'story' })
+      draft.publishers.push({ publisher: { id: 2, label: 'Maison' } })
+    }
 
-      expect(alertedTabs(wrapper)).toEqual(['Informations'])
+    it('marque l’onglet « Informations », le titre et le format vides', async () => {
+      const { wrapper } = await mountForm({ errorScope: 'all' })
+
+      expect(alertedTabs(wrapper)).toContain('Informations')
       expect(wrapper.get('#work-title').attributes('aria-invalid')).toBe('true')
       expect(wrapper.text()).toContain('Champ obligatoire')
       expect(wrapper.text()).toContain('Choisis au moins un format.')
     })
 
-    it('marque aussi « Titres et synopsis » et « Liens » quand une ligne a un champ obligatoire vide', async () => {
-      const { wrapper, draft } = await mountForm({ showErrors: true })
+    it('exige un auteur, un éditeur et un synopsis dans la langue originale pour publier', async () => {
+      const { wrapper, draft } = await mountForm({ errorScope: 'all' })
       draft.title = 'Aube Fictive'
       draft.genres = ['manga']
+      draft.synopses.push({ language: 'en', source: 'official', text: 'Summary.' })
+      await wrapper.vm.$nextTick()
+
+      expect(alertedTabs(wrapper)).toEqual(['Titres et synopsis', 'Auteurs et éditeurs'])
+      expect(wrapper.text()).toContain('Écris un synopsis dans la langue originale')
+      expect(wrapper.text()).toContain('Ajoute au moins un auteur.')
+      expect(wrapper.text()).toContain('Ajoute au moins un éditeur')
+    })
+
+    it('après un brouillon refusé, ne signale que le titre, pas le format ni les lignes', async () => {
+      const { wrapper, draft } = await mountForm({ errorScope: 'title' })
+      draft.links.push({ kind: 'read', url: '', label: '' })
+      await wrapper.vm.$nextTick()
+
+      expect(alertedTabs(wrapper)).toEqual(['Informations'])
+      expect(wrapper.get('#work-title').attributes('aria-invalid')).toBe('true')
+      expect(wrapper.text()).not.toContain('Choisis au moins un format.')
+      expect(wrapper.findAll('[aria-invalid="true"]')).toHaveLength(1)
+    })
+
+    it('marque aussi « Titres et synopsis » et « Liens » quand une ligne a un champ obligatoire vide', async () => {
+      const { wrapper, draft } = await mountForm({ errorScope: 'all' })
+      fillRequired(draft)
       draft.titles.push({ language: 'en', kind: 'international', title: '' })
       draft.synopses.push({ language: 'fr', source: 'official', text: ' ' })
       draft.links.push({ kind: 'read', url: '', label: '' })
@@ -132,9 +166,8 @@ describe('AdminWorkForm', () => {
     })
 
     it('ne marque plus les champs remplis', async () => {
-      const { wrapper, draft } = await mountForm({ showErrors: true })
-      draft.title = 'Aube Fictive'
-      draft.genres = ['manga']
+      const { wrapper, draft } = await mountForm({ errorScope: 'all' })
+      fillRequired(draft)
       await wrapper.vm.$nextTick()
 
       expect(alertedTabs(wrapper)).toEqual([])
@@ -142,9 +175,8 @@ describe('AdminWorkForm', () => {
     })
 
     it('marque l’onglet et le champ de la ligne dont la fiche n’est pas choisie', async () => {
-      const { wrapper, draft } = await mountForm({ showErrors: true })
-      draft.title = 'Aube Fictive'
-      draft.genres = ['manga']
+      const { wrapper, draft } = await mountForm({ errorScope: 'all' })
+      fillRequired(draft)
       draft.publishers.push({ publisher: null })
       await wrapper.vm.$nextTick()
 

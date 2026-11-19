@@ -127,9 +127,14 @@ function archiveMenuItem() {
         <div class="rows__main">
           <WorkCover v-if="isWorks" size="sm" class="rows__cover" />
           <div class="rows__title">
-            <NuxtLink :to="localePath(adminEditPath(kind, item.id))" class="rows__name">
-              {{ itemLabel(item) }}
-            </NuxtLink>
+            <span class="rows__line">
+              <NuxtLink :to="localePath(adminEditPath(kind, item.id))" class="rows__name">
+                {{ itemLabel(item) }}
+              </NuxtLink>
+              <UiDraftBadge v-if="item.draft" data-testid="admin-draft">{{
+                t('admin.draft')
+              }}</UiDraftBadge>
+            </span>
             <span
               v-if="subtitle(item)"
               class="rows__sub"
@@ -262,6 +267,13 @@ function archiveMenuItem() {
 .rows__title {
   display: grid;
   min-width: 0;
+}
+
+.rows__line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
 }
 
 .rows__name {

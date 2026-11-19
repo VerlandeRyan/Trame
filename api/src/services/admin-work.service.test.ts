@@ -18,12 +18,13 @@ const draft: WorkDraft = {
   startedOn: null,
   endedOn: null,
   titles: [],
-  synopses: [],
-  credits: [],
-  publisherIds: [],
+  synopses: [{ language: 'fr', text: 'Résumé', source: 'official' }],
+  credits: [{ personId: 1, role: 'story' }],
+  publisherIds: [1],
   genres: [],
   relations: [],
   links: [],
+  published: true,
 };
 
 const NOTHING_MISSING: MissingReferences = {
@@ -41,24 +42,32 @@ function fakeRepository(
   archived: ArchivedReferences = NOTHING_ARCHIVED,
   isUpToDate = true,
   hasFormat = true,
+  drafts: ArchivedReferences = NOTHING_ARCHIVED,
 ): AdminWorkRepository {
   return {
     list: vi.fn(async () => ({ items: [], total: 0 })),
     find: vi.fn(async () => record),
     lookUpReferences: vi.fn(async () => ({ missing, hasFormat })),
     findArchivedReferences: vi.fn(async () => archived),
+    findDraftReferences: vi.fn(async () => drafts),
     create: vi.fn(async () => 1),
     update: vi.fn(async () => isUpToDate),
     setArchived: vi.fn(async () => true),
+    publish: vi.fn(async () => true),
+    deleteDraft: vi.fn(async () => true),
+    countDrafts: vi.fn(async () => 3),
   };
 }
 
 const VERSION = '2026-10-24T10:00:00.000Z';
 
-const record = (archived = false): AdminWorkRecord => ({
-  ...draft,
+const { published: _published, ...WORK_FIELDS } = draft;
+
+const record = (archived = false, isDraft = false): AdminWorkRecord => ({
+  ...WORK_FIELDS,
   id: 1,
   archived,
+  draft: isDraft,
   labels: { people: [], publishers: [], works: [] },
   followerCount: 0,
   updatedAt: VERSION,
@@ -128,6 +137,86 @@ describe('références', () => {
     const repository = fakeRepository({ ...record(), ...cited }, NOTHING_MISSING, archived);
     await createAdminWorkService(repository).update(1, cited);
     expect(repository.update).toHaveBeenCalled();
+  });
+});
+
+describe('brouillon', () => {
+  const asDraft = { ...draft, published: false };
+
+  it('n’exige pas de format ni de fiche publiée pour un brouillon', async () => {
+    const draftsCited = { ...NOTHING_ARCHIVED, personIds: [3] };
+    const repository = fakeRepository(
+      record(false, true),
+      NOTHING_MISSING,
+      NOTHING_ARCHIVED,
+      true,
+      false,
+      draftsCited,
+    );
+    const service = createAdminWorkService(repository);
+    await service.create(asDraft);
+    await service.update(1, asDraft);
+    expect(repository.create).toHaveBeenCalled();
+    expect(repository.update).toHaveBeenCalled();
+    expect(repository.findDraftReferences).not.toHaveBeenCalled();
+  });
+
+  it('refuse une œuvre publiée qui cite un brouillon', async () => {
+    const draftsCited = { ...NOTHING_ARCHIVED, workIds: [8] };
+    const repository = fakeRepository(
+      record(),
+      NOTHING_MISSING,
+      NOTHING_ARCHIVED,
+      true,
+      true,
+      draftsCited,
+    );
+    await expect(createAdminWorkService(repository).create(draft)).rejects.toMatchObject({
+      code: 'DRAFT_REFERENCE',
+      details: draftsCited,
+    });
+  });
+
+  it('publie un brouillon complet, sans réécrire une œuvre déjà publiée', async () => {
+    const repository = fakeRepository(record(false, true));
+    await createAdminWorkService(repository).publish(1);
+    expect(repository.publish).toHaveBeenCalledWith(1);
+
+    const published = fakeRepository(record());
+    await createAdminWorkService(published).publish(1);
+    expect(published.publish).not.toHaveBeenCalled();
+  });
+
+  it('refuse de publier un brouillon sans format', async () => {
+    const repository = fakeRepository(
+      record(false, true),
+      NOTHING_MISSING,
+      NOTHING_ARCHIVED,
+      true,
+      false,
+    );
+    await expect(createAdminWorkService(repository).publish(1)).rejects.toMatchObject({
+      code: 'VALIDATION_ERROR',
+    });
+    expect(repository.publish).not.toHaveBeenCalled();
+  });
+
+  it('ne supprime que les brouillons', async () => {
+    const published = fakeRepository(record());
+    await expect(createAdminWorkService(published).remove(1)).rejects.toMatchObject({
+      code: 'NOT_A_DRAFT',
+    });
+    const repository = fakeRepository(record(false, true));
+    await expect(createAdminWorkService(repository).remove(1)).resolves.toBeUndefined();
+    expect(repository.deleteDraft).toHaveBeenCalledWith(1);
+  });
+
+  it('refuse de supprimer un brouillon encore lié', async () => {
+    const repository = fakeRepository(record(false, true));
+    vi.mocked(repository.deleteDraft).mockResolvedValue(false);
+    await expect(createAdminWorkService(repository).remove(1)).rejects.toMatchObject({
+      code: 'DRAFT_IN_USE',
+    });
   });
 });
 

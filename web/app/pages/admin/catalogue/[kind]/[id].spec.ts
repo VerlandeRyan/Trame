@@ -20,6 +20,7 @@ enableAutoUnmount(afterEach)
 
 const sent: { method: string; path: string; body?: unknown }[] = []
 let failWith: string | null = null
+let publishFails = false
 
 /** Réponse d'erreur de l'API : le code est dans le corps. */
 function rejection(event: H3Event) {
@@ -37,6 +38,7 @@ beforeEach(() => {
   useRuntimeConfig().apiBase = ''
   sent.length = 0
   failWith = null
+  publishFails = false
   registerEndpoint('/api/v1/genres', () => ({ items: [{ code: 'manga' }] }))
   registerEndpoint('/api/v1/admin/people/7', {
     method: 'GET',
@@ -67,6 +69,9 @@ beforeEach(() => {
 
 const mountEdit = (path: string) => mountSuspended(EditPage, { route: path })
 
+/** The last failure announced to the user (an error toast with "Retry"). */
+const failureToast = () => useToasts().toasts.value.at(-1)
+
 const WORK_9 = {
   id: 9,
   title: 'Aube Fictive',
@@ -79,9 +84,9 @@ const WORK_9 = {
   startedOn: null,
   endedOn: null,
   titles: [],
-  synopses: [],
-  credits: [],
-  publisherIds: [],
+  synopses: [{ language: 'fr', text: 'Un résumé.', source: 'official' }],
+  credits: [{ personId: 1, role: 'story' }],
+  publisherIds: [2],
   genres: [],
   relations: [
     { relatedWorkId: 11, relation: 'sequel' },
@@ -89,8 +94,8 @@ const WORK_9 = {
   ],
   links: [],
   labels: {
-    people: [],
-    publishers: [],
+    people: [{ id: 1, label: 'Léa' }],
+    publishers: [{ id: 2, label: 'Maison' }],
     works: [
       { id: 11, label: 'Suite' },
       { id: 12, label: 'Dérivé' },
@@ -158,7 +163,7 @@ describe('page d’édition du catalogue', () => {
     await vi.waitFor(() => expect(useRouter().currentRoute.value.path).toBe('/admin/catalogue'))
   })
 
-  it('reste sur la fiche et annonce l’erreur quand l’API refuse', async () => {
+  it('reste sur la fiche et montre dans le formulaire le refus de l’API', async () => {
     failWith = 'VALIDATION_ERROR'
     const wrapper = await mountEdit('/admin/catalogue/works/new')
     await wrapper.get('#work-title').setValue('Aube Fictive')
@@ -166,7 +171,8 @@ describe('page d’édition du catalogue', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('sont vides ou invalides')
+    expect(wrapper.text()).toContain('Certains champs sont vides ou invalides')
+    expect(failureToast()).toBeUndefined()
     expect(useRouter().currentRoute.value.path).not.toBe('/admin/catalogue')
   })
 
@@ -237,14 +243,159 @@ describe('page d’édition du catalogue', () => {
     useState<WorkDraft>('admin-work-works-new').value.credits.push({ person: null, role: 'art' })
     await wrapper.get('#work-title').setValue('Aube Fictive')
 
-    await wrapper.get('form').trigger('submit')
+    await wrapper.get('[data-testid="admin-publish"]').trigger('click')
     await flushPromises()
 
     expect(sent).toEqual([])
     expect(wrapper.text()).toContain('lignes incomplètes')
   })
 
-  it('renvoie la version lue et annonce une fiche modifiée entre-temps', async () => {
+  it('enregistre une nouvelle fiche en brouillon avec le seul titre', async () => {
+    const wrapper = await mountEdit('/admin/catalogue/works/new')
+    await wrapper.get('#work-title').setValue('Aube Fictive')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(sent).toHaveLength(1)
+    expect(sent[0]).toMatchObject({ method: 'POST', path: 'works', body: { published: false } })
+    expect(wrapper.get('[data-testid="admin-save"]').text()).toBe('Enregistrer en brouillon')
+  })
+
+  it('refuse le brouillon sans titre', async () => {
+    const wrapper = await mountEdit('/admin/catalogue/works/new')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(sent).toEqual([])
+  })
+
+  it('publie directement une nouvelle fiche complète', async () => {
+    const wrapper = await mountEdit('/admin/catalogue/people/new')
+    registerEndpoint('/api/v1/admin/people', {
+      method: 'POST',
+      handler: async (event) => {
+        sent.push({ method: 'POST', path: 'people', body: await readBody(event) })
+        return { id: 2 }
+      },
+    })
+    await wrapper.get('#person-name').setValue('Léa')
+
+    await wrapper.get('[data-testid="admin-publish"]').trigger('click')
+    await flushPromises()
+    // Publishing asks first: nothing is sent before the confirmation.
+    expect(sent).toEqual([])
+    await wrapper
+      .get('[data-testid="publish-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(sent[0]).toMatchObject({ path: 'people', body: { name: 'Léa', published: true } })
+  })
+
+  it('annonce l’échec de la publication avec « Réessayer » : la modification reste enregistrée', async () => {
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'GET',
+      handler: () => ({ ...PERSON, draft: true }),
+    })
+    registerEndpoint('/api/v1/admin/people/7/publish', {
+      method: 'POST',
+      handler: (event) => {
+        sent.push({ method: 'POST', path: 'people/7/publish' })
+        if (publishFails) {
+          setResponseStatus(event, 500)
+          return { code: 'INTERNAL_ERROR' }
+        }
+        return { ...PERSON, draft: false }
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+    publishFails = true
+
+    await wrapper.get('[data-testid="admin-publish"]').trigger('click')
+    await flushPromises()
+    await wrapper
+      .get('[data-testid="publish-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    const toasts = useToasts()
+    expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7/publish'])
+    expect(toasts.toasts.value[0]).toMatchObject({
+      tone: 'error',
+      messageKey: 'writeError.generic',
+      hintKey: 'writeError.retryHint',
+    })
+    expect(useRouter().currentRoute.value.path).toBe('/admin/catalogue/people/7')
+    expect(useUnsavedChanges().value).toBe(false)
+
+    publishFails = false
+    toasts.retry(toasts.toasts.value[0]!.id)
+    await flushPromises()
+
+    expect(sent.map((call) => call.path)).toEqual([
+      'people/7',
+      'people/7/publish',
+      'people/7/publish',
+    ])
+  })
+
+  it('montre le bandeau et la suppression d’un brouillon, pas ses boutons de fiche publiée', async () => {
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'GET',
+      handler: () => ({ ...PERSON, draft: true }),
+    })
+    registerEndpoint('/api/v1/admin/people/7/publish', {
+      method: 'POST',
+      handler: () => {
+        sent.push({ method: 'POST', path: 'people/7/publish' })
+        return { ...PERSON, draft: false }
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+
+    expect(wrapper.get('[data-testid="admin-state"]').text()).toBe('Brouillon')
+    expect(wrapper.find('[data-testid="draft-banner"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="admin-delete-draft"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="admin-archive"]').exists()).toBe(false)
+
+    await wrapper.get('[data-testid="admin-publish"]').trigger('click')
+    await flushPromises()
+    await wrapper
+      .get('[data-testid="publish-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7/publish'])
+  })
+
+  it('supprime un brouillon après confirmation', async () => {
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'GET',
+      handler: () => ({ ...PERSON, draft: true }),
+    })
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'DELETE',
+      handler: (event) => {
+        sent.push({ method: 'DELETE', path: 'people/7' })
+        setResponseStatus(event, 204)
+        return null
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+
+    await wrapper.get('[data-testid="admin-delete-draft"]').trigger('click')
+    await flushPromises()
+    await wrapper
+      .get('[data-testid="delete-draft-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(sent.map((call) => call.path)).toEqual(['people/7'])
+  })
+
+  it('renvoie la version lue et indique dans le formulaire une fiche modifiée entre-temps', async () => {
     registerWork9()
     registerEndpoint('/api/v1/admin/works/9', {
       method: 'PUT',
@@ -260,7 +411,8 @@ describe('page d’édition du catalogue', () => {
     await flushPromises()
 
     expect(sent[0]).toMatchObject({ body: { updatedAt: WORK_9.updatedAt } })
-    expect(wrapper.get('[role="alert"]').text()).toContain('modifiée depuis que tu')
+    expect(wrapper.text()).toContain("modifiée depuis que tu l'as ouverte")
+    expect(failureToast()).toBeUndefined()
     expect(useRouter().currentRoute.value.path).toBe('/admin/catalogue/works/9')
   })
 
@@ -305,7 +457,7 @@ describe('page d’édition du catalogue', () => {
     expect(wrapper.find('[data-testid="admin-archive-impact"]').exists()).toBe(false)
   })
 
-  it('annonce le refus d’archiver et reste sur la fiche', async () => {
+  it('indique le refus d’archiver dans le formulaire et reste sur la fiche', async () => {
     failWith = 'PERSON_HAS_WORKS'
     const wrapper = await mountEdit('/admin/catalogue/people/7')
 
@@ -315,7 +467,60 @@ describe('page d’édition du catalogue', () => {
       .trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('encore créditée')
+    expect(wrapper.text()).toContain('encore créditée sur une œuvre (publiée ou en brouillon)')
+    expect(failureToast()).toBeUndefined()
+    expect(wrapper.find('[data-testid="admin-archive"]').exists()).toBe(true)
+  })
+
+  it('annonce l’échec d’un enregistrement en brouillon avec « Réessayer », qui le rejoue', async () => {
+    const wrapper = await mountEdit('/admin/catalogue/works/new')
+    await wrapper.get('#work-title').setValue('Aube Fictive')
+    failWith = 'INTERNAL_ERROR'
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(failureToast()).toMatchObject({
+      messageKey: 'writeError.generic',
+      hintKey: 'writeError.retryHint',
+    })
+    expect(useRouter().currentRoute.value.path).toBe('/admin/catalogue/works/new')
+    failWith = null
+    useToasts().retry(failureToast()!.id)
+    await flushPromises()
+
+    expect(sent.map((call) => call.path)).toEqual(['works', 'works'])
+  })
+
+  it('annonce l’échec d’une suppression de brouillon avec « Réessayer »', async () => {
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'GET',
+      handler: () => ({ ...PERSON, draft: true }),
+    })
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'DELETE',
+      handler: (event) => {
+        sent.push({ method: 'DELETE', path: 'people/7' })
+        if (failWith) return rejection(event)
+        setResponseStatus(event, 204)
+        return null
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+    failWith = 'INTERNAL_ERROR'
+
+    await wrapper.get('[data-testid="admin-delete-draft"]').trigger('click')
+    await wrapper
+      .get('[data-testid="delete-draft-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(failureToast()).toMatchObject({ messageKey: 'writeError.generic' })
+    failWith = null
+    useToasts().retry(failureToast()!.id)
+    await flushPromises()
+
+    expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7'])
   })
 
   it('ouvre un formulaire d’éditeur', async () => {

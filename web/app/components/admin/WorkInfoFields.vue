@@ -17,6 +17,8 @@ const props = defineProps<{
   genres: { code: string; category: string }[]
   /** Flags the required fields left empty (after a refused save). */
   showErrors?: boolean
+  /** Draft: only the title is required, the formats are not flagged. */
+  titleOnly?: boolean
 }>()
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
@@ -109,7 +111,9 @@ const chosenIn = (options: { value: string }[]) =>
         multiple
         required
         :label="t('admin.work.formats')"
-        :error="showErrors && missing.formats ? t('admin.error.formatRequired') : undefined"
+        :error="
+          showErrors && !titleOnly && missing.formats ? t('admin.error.formatRequired') : undefined
+        "
         :options="formatOptions"
         :model-value="chosenIn(formatOptions)"
         @update:model-value="setCategory(formatOptions, $event as string[])"

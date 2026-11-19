@@ -1,27 +1,41 @@
 <script setup lang="ts">
 import {
+  ADMIN_STATES,
   ADMIN_WORK_SORTS,
   optionsOf,
   WORK_STATUSES,
   WORK_TYPES,
+  type AdminKind,
+  type AdminState,
   type AdminWorkFilters,
   type AdminWorkSort,
 } from '~/utils/admin'
 
 /**
- * Filters and sort of the work list: type, format and status, multiple choice; an empty list
- * means "all". Changes are emitted at once. On mobile, the three filters fit in a sheet opened
- * by "Filters", like the search page.
+ * Filters of an administration list. Every kind has the publication state (drafts or published);
+ * works also have type, format and status (multiple choice, an empty list means "all") and a sort.
+ * Changes are emitted at once. On mobile, the filters fit in a sheet opened by "Filters", like the
+ * search page.
  */
 const props = defineProps<{
+  kind: AdminKind
   filters: AdminWorkFilters
+  state: AdminState
   sort: AdminWorkSort
   /** Known format codes (manga, webtoon…). */
   formats: string[]
   /** Number of records found, shown by the sheet button. */
   total: number
 }>()
-const emit = defineEmits<{ change: [filters: AdminWorkFilters]; sort: [sort: AdminWorkSort] }>()
+const emit = defineEmits<{
+  change: [filters: AdminWorkFilters]
+  state: [state: AdminState]
+  sort: [sort: AdminWorkSort]
+  /** Clears the state and every filter at once. */
+  reset: []
+}>()
+const isWorks = computed(() => props.kind === 'works')
+const stateOptions = computed(() => optionsOf(ADMIN_STATES, (code) => t(`admin.state.${code}`)))
 const { t } = useI18n()
 const genreLabel = useGenreLabel()
 
@@ -38,12 +52,17 @@ const sortOptions = computed(() => optionsOf(ADMIN_WORK_SORTS, (code) => t(`admi
 const setFilter = (name: keyof AdminWorkFilters, values: string[]) =>
   emit('change', { ...props.filters, [name]: values })
 
-/** Total number of selected filter values. */
-const activeCount = computed(() =>
-  Object.values(props.filters).reduce((total, values) => total + values.length, 0),
+/** Total number of selected filter values, the state included. */
+const activeCount = computed(
+  () =>
+    Object.values(props.filters).reduce((total, values) => total + values.length, 0) +
+    (props.state === 'all' ? 0 : 1),
 )
-/** Clears every filter. */
-const reset = () => emit('change', { type: [], status: [], format: [] })
+/** Clears the state and every filter. */
+const reset = () => emit('reset')
+/** Chooses a state in the sheet; choosing the current one again goes back to "all". */
+const toggleState = (value: string) =>
+  emit('state', props.state === value ? 'all' : (value as AdminState))
 
 /** Adds the value to a filter, or removes it if already selected. */
 function toggleFilter(name: keyof AdminWorkFilters, value: string) {
@@ -55,20 +74,32 @@ function toggleFilter(name: keyof AdminWorkFilters, value: string) {
 }
 
 const isSheetOpen = ref(false)
-const openGroups = reactive({ type: true, format: true, status: true })
+const openGroups = reactive({ state: true, type: true, format: true, status: true })
 const areAllGroupsOpen = computed(() => Object.values(openGroups).every(Boolean))
 /** Opens or collapses every group of the sheet. */
 function setAllGroups(isOpen: boolean) {
-  openGroups.type = openGroups.format = openGroups.status = isOpen
+  openGroups.state = openGroups.type = openGroups.format = openGroups.status = isOpen
 }
-const sheetGroups = computed(
-  () =>
-    [
-      { name: 'type', label: t('admin.filter.type'), options: typeOptions.value },
-      { name: 'format', label: t('admin.filter.format'), options: formatOptions.value },
-      { name: 'status', label: t('admin.filter.status'), options: statusOptions.value },
-    ] as const,
-)
+const sheetGroups = computed(() => [
+  {
+    name: 'state' as const,
+    label: t('admin.state.label'),
+    options: stateOptions.value.filter((option) => option.value !== 'all'),
+    selected: props.state === 'all' ? [] : [props.state],
+    toggle: toggleState,
+  },
+  ...(isWorks.value
+    ? [
+        { name: 'type' as const, label: t('admin.filter.type'), options: typeOptions.value },
+        { name: 'format' as const, label: t('admin.filter.format'), options: formatOptions.value },
+        { name: 'status' as const, label: t('admin.filter.status'), options: statusOptions.value },
+      ].map((group) => ({
+        ...group,
+        selected: props.filters[group.name],
+        toggle: (value: string) => toggleFilter(group.name, value),
+      }))
+    : []),
+])
 </script>
 
 <template>
@@ -88,7 +119,16 @@ const sheetGroups = computed(
       <Icon name="tabler:adjustments-horizontal" size="16" aria-hidden="true" />
     </UiButton>
     <div class="filters__inline">
+      <UiSelect
+        boxed
+        :model-value="state"
+        :options="stateOptions"
+        :label="t('admin.state.label')"
+        trigger-test-id="admin-state-filter"
+        @update:model-value="emit('state', $event as AdminState)"
+      />
       <UiMultiSelect
+        v-if="isWorks"
         :model-value="filters.type"
         :options="typeOptions"
         :label="t('admin.filter.type')"
@@ -98,6 +138,7 @@ const sheetGroups = computed(
         @update:model-value="setFilter('type', $event)"
       />
       <UiMultiSelect
+        v-if="isWorks"
         :model-value="filters.format"
         :options="formatOptions"
         :label="t('admin.filter.format')"
@@ -107,6 +148,7 @@ const sheetGroups = computed(
         @update:model-value="setFilter('format', $event)"
       />
       <UiMultiSelect
+        v-if="isWorks"
         :model-value="filters.status"
         :options="statusOptions"
         :label="t('admin.filter.status')"
@@ -126,6 +168,7 @@ const sheetGroups = computed(
       </UiButton>
     </div>
     <UiSelect
+      v-if="isWorks"
       class="filters__sort"
       boxed
       :model-value="sort"
@@ -158,8 +201,8 @@ const sheetGroups = computed(
           :name="group.name"
           :label="group.label"
           :options="group.options"
-          :selected="filters[group.name]"
-          @toggle="toggleFilter(group.name, $event)"
+          :selected="group.selected"
+          @toggle="group.toggle"
         />
       </div>
       <template #footer>

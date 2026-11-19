@@ -20,7 +20,20 @@ test.beforeEach(async ({ context }) => {
   await signInAsAdmin(context)
 })
 
+/** Publie une nouvelle fiche, après confirmation (ou enregistre une fiche publiée, sans bouton « Publier »). */
 async function saveAndWaitForList(page: Page) {
+  const publish = page.getByTestId('admin-publish')
+  if ((await publish.count()) > 0) {
+    await publish.click()
+    await page.getByRole('dialog').getByTestId('confirm-accept').click()
+  } else {
+    await page.getByTestId('admin-save').click()
+  }
+  await expect(page).toHaveURL(LIST_URL)
+}
+
+/** Enregistre une nouvelle fiche en brouillon. */
+async function saveDraftAndWaitForList(page: Page) {
   await page.getByTestId('admin-save').click()
   await expect(page).toHaveURL(LIST_URL)
 }
@@ -70,6 +83,13 @@ test('un administrateur crée une personne, un éditeur et une œuvre qui les ci
   await page.getByTestId('pill-manga').click()
   await page.getByRole('combobox', { name: /^Langue originale/ }).click()
   await page.getByRole('option', { name: 'allemand (de)' }).click()
+  // Publishing needs a synopsis in the original language, an author and a publisher.
+  await page.getByRole('tab', { name: 'Titres et synopsis' }).click()
+  const texts = page.locator('[role="tabpanel"]:visible')
+  await texts.getByRole('button', { name: 'Ajouter une langue' }).click()
+  await texts.getByRole('combobox', { name: /^Langue/ }).click()
+  await page.getByRole('option', { name: 'allemand (de)' }).click()
+  await texts.locator('textarea').fill('Eine Zusammenfassung.')
   await page.getByRole('tab', { name: 'Auteurs et éditeurs' }).click()
   const panel = page.locator('[role="tabpanel"]:visible')
   await panel.getByRole('button', { name: 'Ajouter un auteur' }).click()
@@ -117,7 +137,7 @@ test('enregistrer une fiche d’œuvre vide met en avant les champs obligatoires
   await waitForHydration(page)
   await expect(page.getByText('Champ obligatoire', { exact: true })).toHaveCount(0)
 
-  await page.getByTestId('admin-save').click()
+  await page.getByTestId('admin-publish').click()
 
   await expect(page).toHaveURL(/works\/new/)
   await expect(page.locator('#work-title')).toHaveAttribute('aria-invalid', 'true')
@@ -159,7 +179,7 @@ test('une ligne existante sans champ obligatoire est signalée dans son onglet',
   await page.getByRole('tab', { name: 'Liens' }).click()
   await page.getByRole('button', { name: 'Ajouter un lien' }).click()
 
-  await page.getByTestId('admin-save').click()
+  await page.getByTestId('admin-publish').click()
 
   await expect(page).toHaveURL(/works\/new/)
   const alertLabel = 'Contient un champ obligatoire vide ou une ligne incomplète'
@@ -284,7 +304,7 @@ test('un texte tapé sans choisir de proposition est refusé et la ligne est mar
   await panel.getByTestId('picker-input').fill('dd')
   await expect(panel.getByTestId('picker-error')).toHaveCount(0)
 
-  await page.getByTestId('admin-save').click()
+  await page.getByTestId('admin-publish').click()
 
   await expect(page.getByRole('alert').filter({ hasText: 'lignes incomplètes' })).toBeVisible()
   await expect(panel.getByTestId('picker-error')).toHaveText(
@@ -305,12 +325,14 @@ test('enregistrer une fiche modifiée entre-temps est refusé', async ({ page, c
 
   // Une autre session enregistre la fiche pendant qu'elle est ouverte ici.
   const body = await (await context.request.get(url)).json()
-  for (const readOnly of ['id', 'archived', 'followerCount', 'labels']) delete body[readOnly]
+  for (const readOnly of ['id', 'archived', 'draft', 'followerCount', 'labels'])
+    delete body[readOnly]
   const other = await context.request.put(url, { data: body })
   expect(other.status()).toBe(200)
 
   await page.getByTestId('admin-save').click()
-  await expect(page.getByRole('alert')).toContainText('modifiée depuis')
+  await expect(page.getByRole('alert').filter({ hasText: 'modifiée depuis' })).toBeVisible()
+  await expect(page.getByTestId('toast')).toHaveCount(0)
   await expect(page).toHaveURL(/\/admin\/catalogue\/works\/\d+$/)
 })
 
@@ -347,7 +369,8 @@ test('une personne créditée sur une œuvre publiée ne s’archive pas', async
   await page.getByTestId('admin-archive').click()
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
 
-  await expect(page.getByRole('alert')).toContainText('encore créditée')
+  await expect(page.getByRole('alert').filter({ hasText: 'encore créditée' })).toBeVisible()
+  await expect(page.getByTestId('toast')).toHaveCount(0)
   await expect(page.getByTestId('admin-state')).toHaveText('Publiée')
 })
 
@@ -398,6 +421,90 @@ test('rester sur la fiche annule la déconnexion, sans seconde fenêtre', async 
   await expect(page.locator('#work-title')).toHaveValue(`${WORK} gardée`)
 })
 
+const DRAFT = `Brouillon E2E ${SUFFIX}`
+
+test('un brouillon n’exige que son titre, reste invisible du public puis se publie', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/admin/catalogue/works/new')
+  await waitForHydration(page)
+
+  // Sans titre : seul le titre est signalé, pas le format.
+  await page.getByTestId('admin-save').click()
+  await expect(page.locator('#work-title')).toHaveAttribute('aria-invalid', 'true')
+  await expect(page.getByText('Choisis au moins un format.')).toHaveCount(0)
+
+  // Avec le seul titre : enregistré en brouillon.
+  await page.locator('#work-title').fill(DRAFT)
+  await saveDraftAndWaitForList(page)
+  const found = await context.request.get(`/api/v1/admin/works?q=${encodeURIComponent(DRAFT)}`)
+  const [work] = (await found.json()).items as { id: number; draft: boolean }[]
+  expect(work!.draft).toBe(true)
+  expect((await context.request.get(`/api/v1/works/${work!.id}`)).status()).toBe(404)
+
+  // La liste le met en avant, et le filtre d'état le retrouve.
+  await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&state=draft`)
+  await waitForHydration(page)
+  await expect(page.getByTestId('admin-row').getByTestId('admin-draft')).toHaveText('Brouillon')
+
+  // Un auteur, un éditeur et un synopsis sont déjà saisis (par l'API, pour aller à l'essentiel).
+  const first = async (path: string, name: string) =>
+    (
+      (
+        await (
+          await context.request.get(`/api/v1/admin/${path}?q=${encodeURIComponent(name)}`)
+        ).json()
+      ).items as { id: number }[]
+    )[0]!.id
+  const url = `/api/v1/admin/works/${work!.id}`
+  const body = await (await context.request.get(url)).json()
+  for (const readOnly of ['id', 'archived', 'draft', 'followerCount', 'labels'])
+    delete body[readOnly]
+  const complete = await context.request.put(url, {
+    data: {
+      ...body,
+      credits: [{ personId: await first('people', PERSON), role: 'story' }],
+      publisherIds: [await first('publishers', PUBLISHER)],
+      synopses: [{ language: 'fr', text: 'Un résumé.', source: 'official' }],
+    },
+  })
+  expect(complete.status()).toBe(200)
+
+  // Publier sans format est refusé ; avec un format et après confirmation, la fiche devient publique.
+  await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&state=draft`)
+  await waitForHydration(page)
+  await clickRowAction(page, 'edit')
+  await waitForHydration(page)
+  await expect(page.getByTestId('draft-banner')).toBeVisible()
+  await page.getByTestId('admin-publish').click()
+  await expect(page.getByText('Choisis au moins un format.')).toBeVisible()
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await page.getByTestId('pill-manga').click()
+  await page.getByTestId('admin-publish').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+  await expect(page).toHaveURL(LIST_URL)
+  expect((await context.request.get(`/api/v1/works/${work!.id}`)).status()).toBe(200)
+})
+
+test('un brouillon se supprime définitivement, une fiche publiée non', async ({
+  page,
+  context,
+}) => {
+  const created = await context.request.post('/api/v1/admin/people', {
+    data: { name: `${DRAFT} personne`, kind: 'person', published: false },
+  })
+  const person = (await created.json()) as { id: number }
+
+  await page.goto(`/admin/catalogue/people/${person.id}`)
+  await waitForHydration(page)
+  await expect(page.getByTestId('admin-state')).toHaveText('Brouillon')
+  await page.getByTestId('admin-delete-draft').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+  await expect(page).toHaveURL(LIST_URL)
+  expect((await context.request.get(`/api/v1/admin/people/${person.id}`)).status()).toBe(404)
+})
+
 test('un membre simple voit une 404, un visiteur revient à l’accueil', async ({ browser }) => {
   const { baseURL } = test.info().project.use
   const member = await browser.newContext({ baseURL })
@@ -412,4 +519,80 @@ test('un membre simple voit une 404, un visiteur revient à l’accueil', async 
   await visitorPage.goto('/admin/catalogue')
   await expect(visitorPage).toHaveURL(/\/$/)
   await visitor.close()
+})
+
+test('le bandeau des brouillons mène à la liste du type choisi', async ({ page, context }) => {
+  const created = await context.request.post('/api/v1/admin/people', {
+    data: { name: `${DRAFT} bandeau`, kind: 'person', published: false },
+  })
+  expect(created.status()).toBe(201)
+
+  await page.goto('/admin/catalogue')
+  await waitForHydration(page)
+  await expect(page.getByTestId('admin-drafts')).toContainText('à terminer')
+  await page.getByTestId('admin-show-drafts-people').click()
+
+  await expect(page).toHaveURL(/kind=people&state=draft|state=draft&kind=people/)
+  await expect(page.getByTestId('admin-row').filter({ hasText: `${DRAFT} bandeau` })).toBeVisible()
+})
+
+test('une panne d’enregistrement s’annonce avec « Réessayer », qui rejoue l’envoi', async ({
+  page,
+  context,
+}) => {
+  const created = await context.request.post('/api/v1/admin/people', {
+    data: { name: `${DRAFT} panne`, kind: 'person', published: false },
+  })
+  const person = (await created.json()) as { id: number }
+  await page.goto(`/admin/catalogue/people/${person.id}`)
+  await waitForHydration(page)
+
+  let failed = false
+  await page.route(`**/api/v1/admin/people/${person.id}`, (route) => {
+    if (route.request().method() !== 'PUT' || failed) return route.continue()
+    failed = true
+    return route.fulfill({ status: 500, json: { code: 'INTERNAL_ERROR', message: 'simulated' } })
+  })
+  await page.getByTestId('admin-save').click()
+  await expect(page.getByTestId('toast')).toContainText("Impossible d'enregistrer")
+  await expect(page).toHaveURL(new RegExp(`people/${person.id}$`))
+
+  await page.getByTestId('toast-retry').click()
+  await expect(page).toHaveURL(LIST_URL)
+})
+
+test('le refus de supprimer un brouillon cité s’affiche à l’écran, sans défiler', async ({
+  page,
+  context,
+}) => {
+  const created = await context.request.post('/api/v1/admin/people', {
+    data: { name: `${DRAFT} citée`, kind: 'person', published: false },
+  })
+  const person = (await created.json()) as { id: number }
+  const work = await context.request.post('/api/v1/admin/works', {
+    data: {
+      title: `${DRAFT} citant`,
+      originalLanguage: 'fr',
+      type: 'oneshot',
+      status: 'completed',
+      chapters: null,
+      volumes: 1,
+      startedOn: null,
+      endedOn: null,
+      credits: [{ personId: person.id, role: 'story' }],
+      published: false,
+    },
+  })
+  expect(work.status()).toBe(201)
+
+  await page.setViewportSize({ width: 1280, height: 360 })
+  await page.goto(`/admin/catalogue/people/${person.id}`)
+  await waitForHydration(page)
+  await page.getByTestId('admin-delete-draft').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+
+  const refusal = page.getByRole('alert').filter({ hasText: 'encore cité' })
+  await expect(refusal).toBeVisible()
+  await expect(refusal).toBeInViewport()
+  await expect(page.getByTestId('toast')).toHaveCount(0)
 })

@@ -21,8 +21,24 @@ describe('client d’administration', () => {
       parseAdminListQuery({ kind: 'people', scope: 'archived', q: 'léa', page: '2' }),
     )
     expect(request).toHaveBeenCalledWith('/admin/people', {
-      query: { q: 'léa', scope: 'archived', page: 2, pageSize: 20 },
+      query: { q: 'léa', scope: 'archived', state: 'all', page: 2, pageSize: 20 },
     })
+  })
+
+  it('lit le nombre de brouillons de chaque type', async () => {
+    const { client, request } = setup()
+    await client.draftCounts()
+    expect(request).toHaveBeenCalledWith('/admin/draft-counts')
+  })
+
+  it('publie et supprime un brouillon', async () => {
+    const { client, request } = setup()
+    await client.publish('works', 4)
+    await client.removeDraft('people', 3)
+    expect(request.mock.calls).toEqual([
+      ['/admin/works/4/publish', { method: 'POST' }],
+      ['/admin/people/3', { method: 'DELETE' }],
+    ])
   })
 
   it('demande une page d’une seule fiche quand seul le total compte', async () => {
@@ -50,16 +66,16 @@ describe('client d’administration', () => {
     ])
   })
 
-  it('cherche parmi les fiches publiées pour un sélecteur', async () => {
+  it('cherche parmi les fiches non archivées pour un sélecteur, et signale les brouillons', async () => {
     const { client, request } = setup(() =>
       page([
-        { id: 1, archived: false, title: 'Aube' },
-        { id: 2, archived: false, name: 'Léa' },
+        { id: 1, archived: false, draft: false, title: 'Aube' },
+        { id: 2, archived: false, draft: true, name: 'Léa' },
       ]),
     )
     expect(await client.search('works', 'a')).toEqual([
-      { id: 1, label: 'Aube' },
-      { id: 2, label: 'Léa' },
+      { id: 1, label: 'Aube', draft: false },
+      { id: 2, label: 'Léa', draft: true },
     ])
     expect(request).toHaveBeenCalledWith('/admin/works', {
       query: { q: 'a', scope: 'active', page: 1, pageSize: 8 },

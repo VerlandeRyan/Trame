@@ -312,6 +312,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/draft-counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Compter les brouillons */
+        get: operations["getAdminDraftCounts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/people": {
         parameters: {
             query?: never;
@@ -342,7 +359,8 @@ export interface paths {
         /** Remplacer : Person */
         put: operations["replaceAdminPerson"];
         post?: never;
-        delete?: never;
+        /** Supprimer un brouillon : Person */
+        delete: operations["deleteAdminDraftPerson"];
         options?: never;
         head?: never;
         patch?: never;
@@ -382,6 +400,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/people/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publier : Person */
+        post: operations["publishAdminPerson"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/publishers": {
         parameters: {
             query?: never;
@@ -412,7 +447,8 @@ export interface paths {
         /** Remplacer : Publisher */
         put: operations["replaceAdminPublisher"];
         post?: never;
-        delete?: never;
+        /** Supprimer un brouillon : Publisher */
+        delete: operations["deleteAdminDraftPublisher"];
         options?: never;
         head?: never;
         patch?: never;
@@ -452,6 +488,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/publishers/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publier : Publisher */
+        post: operations["publishAdminPublisher"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/works": {
         parameters: {
             query?: never;
@@ -482,7 +535,8 @@ export interface paths {
         /** Remplacer : Work */
         put: operations["replaceAdminWork"];
         post?: never;
-        delete?: never;
+        /** Supprimer un brouillon : Work */
+        delete: operations["deleteAdminDraftWork"];
         options?: never;
         head?: never;
         patch?: never;
@@ -516,6 +570,23 @@ export interface paths {
         put?: never;
         /** Restaurer : Work */
         post: operations["restoreAdminWork"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/works/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publier : Work */
+        post: operations["publishAdminWork"];
         delete?: never;
         options?: never;
         head?: never;
@@ -562,7 +633,7 @@ export interface components {
              * @description Code stable : le front traduit à partir de lui.
              * @enum {string}
              */
-            code: "NOT_FOUND" | "VALIDATION_ERROR" | "INVALID_JSON" | "UNAUTHENTICATED" | "HANDLE_REQUIRED" | "SIGNUP_EXPIRED" | "ADMIN_REQUIRED" | "PROFILE_PRIVATE" | "PERSON_HAS_WORKS" | "PUBLISHER_HAS_WORKS" | "INVALID_REFERENCE" | "ARCHIVED_REFERENCE" | "STALE_RECORD" | "FORBIDDEN_ORIGIN" | "HANDLE_NOT_ALLOWED" | "HANDLE_TAKEN" | "AUTH_STATE_INVALID" | "AUTH_UNAVAILABLE" | "RATE_LIMITED" | "INTERNAL_ERROR";
+            code: "NOT_FOUND" | "VALIDATION_ERROR" | "INVALID_JSON" | "UNAUTHENTICATED" | "HANDLE_REQUIRED" | "SIGNUP_EXPIRED" | "ADMIN_REQUIRED" | "PROFILE_PRIVATE" | "PERSON_HAS_WORKS" | "PUBLISHER_HAS_WORKS" | "INVALID_REFERENCE" | "ARCHIVED_REFERENCE" | "DRAFT_REFERENCE" | "DRAFT_NOT_ARCHIVABLE" | "NOT_A_DRAFT" | "DRAFT_IN_USE" | "STALE_RECORD" | "FORBIDDEN_ORIGIN" | "HANDLE_NOT_ALLOWED" | "HANDLE_TAKEN" | "AUTH_STATE_INVALID" | "AUTH_UNAVAILABLE" | "RATE_LIMITED" | "INTERNAL_ERROR";
             /** @description Texte technique en anglais, non affiché. */
             message: string;
             /** @description Erreurs de champ d’une validation : chemin, code Zod et paramètres, sans valeur saisie. */
@@ -573,11 +644,18 @@ export interface components {
                 [key: string]: unknown;
             })[];
         };
+        AdminDraftCounts: {
+            works: number;
+            people: number;
+            publishers: number;
+        };
         AdminPerson: {
             id: number;
             name: string;
             kind: components["schemas"]["PersonKind"];
             archived: boolean;
+            /** @description Brouillon : visible seulement dans l’administration. */
+            draft: boolean;
             /** @description Œuvres non archivées où la personne est créditée. */
             activeWorkCount: number;
             links: {
@@ -592,6 +670,8 @@ export interface components {
                 name: string;
                 kind: components["schemas"]["PersonKind"];
                 archived: boolean;
+                /** @description Brouillon : visible seulement dans l’administration. */
+                draft: boolean;
                 /** @description Œuvres non archivées où la personne est créditée. */
                 activeWorkCount: number;
             }[];
@@ -605,6 +685,8 @@ export interface components {
             kind: components["schemas"]["PublisherKind"];
             url: string | null;
             archived: boolean;
+            /** @description Brouillon : visible seulement dans l’administration. */
+            draft: boolean;
             /** @description Œuvres non archivées publiées. */
             activeWorkCount: number;
         };
@@ -615,6 +697,8 @@ export interface components {
                 kind: components["schemas"]["PublisherKind"];
                 url: string | null;
                 archived: boolean;
+                /** @description Brouillon : visible seulement dans l’administration. */
+                draft: boolean;
                 /** @description Œuvres non archivées publiées. */
                 activeWorkCount: number;
             }[];
@@ -629,6 +713,8 @@ export interface components {
             type: components["schemas"]["WorkType"];
             status: components["schemas"]["WorkStatus"];
             archived: boolean;
+            /** @description Brouillon : visible seulement dans l’administration. */
+            draft: boolean;
             chapters: number | null;
             volumes: number | null;
             startedOn: string | null;
@@ -690,6 +776,8 @@ export interface components {
                 type: components["schemas"]["WorkType"];
                 status: components["schemas"]["WorkStatus"];
                 archived: boolean;
+                /** @description Brouillon : visible seulement dans l’administration. */
+                draft: boolean;
                 /** @description Codes de format, triés. */
                 formats: string[];
                 mainAuthor: string | null;
@@ -2127,6 +2215,53 @@ export interface operations {
             };
         };
     };
+    getAdminDraftCounts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Nombre de brouillons de chaque type de fiche. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminDraftCounts"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listAdminPeople: {
         parameters: {
             query?: {
@@ -2134,6 +2269,8 @@ export interface operations {
                 q?: string;
                 /** @description Fiches publiées, archives seules, ou les deux. */
                 scope?: "active" | "archived" | "all";
+                /** @description Brouillons seuls, fiches publiées seules, ou les deux. */
+                state?: "all" | "draft" | "published";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
@@ -2215,6 +2352,11 @@ export interface operations {
                         /** @default null */
                         label?: string | null;
                     }[];
+                    /**
+                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @default true
+                     */
+                    published?: boolean;
                 };
             };
         };
@@ -2367,6 +2509,11 @@ export interface operations {
                         /** @default null */
                         label?: string | null;
                     }[];
+                    /**
+                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @default true
+                     */
+                    published?: boolean;
                 };
             };
         };
@@ -2409,6 +2556,89 @@ export interface operations {
             };
             /** @description Person inconnu. Code : `NOT_FOUND`. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteAdminDraftPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Brouillon supprimé définitivement. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Identifiant invalide. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Person inconnu. Code : `NOT_FOUND`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2492,7 +2722,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Des œuvres non archivées y sont liées. Code : `PERSON_HAS_WORKS`. */
+            /** @description Brouillon (`DRAFT_NOT_ARCHIVABLE`) ou des œuvres non archivées y sont liées. Code : `PERSON_HAS_WORKS`. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -2597,6 +2827,82 @@ export interface operations {
             };
         };
     };
+    publishAdminPerson: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Publiée (sans effet si elle l’est déjà). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPerson"];
+                };
+            };
+            /** @description Identifiant invalide. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Person inconnu. Code : `NOT_FOUND`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listAdminPublishers: {
         parameters: {
             query?: {
@@ -2604,6 +2910,8 @@ export interface operations {
                 q?: string;
                 /** @description Fiches publiées, archives seules, ou les deux. */
                 scope?: "active" | "archived" | "all";
+                /** @description Brouillons seuls, fiches publiées seules, ou les deux. */
+                state?: "all" | "draft" | "published";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
@@ -2676,6 +2984,11 @@ export interface operations {
                     kind: components["schemas"]["PublisherKind"];
                     /** @default null */
                     url?: string | null;
+                    /**
+                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @default true
+                     */
+                    published?: boolean;
                 };
             };
         };
@@ -2819,6 +3132,11 @@ export interface operations {
                     kind: components["schemas"]["PublisherKind"];
                     /** @default null */
                     url?: string | null;
+                    /**
+                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @default true
+                     */
+                    published?: boolean;
                 };
             };
         };
@@ -2861,6 +3179,89 @@ export interface operations {
             };
             /** @description Publisher inconnu. Code : `NOT_FOUND`. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    deleteAdminDraftPublisher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Brouillon supprimé définitivement. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Identifiant invalide. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Publisher inconnu. Code : `NOT_FOUND`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -2944,7 +3345,7 @@ export interface operations {
                     "application/json": components["schemas"]["Error"];
                 };
             };
-            /** @description Des œuvres non archivées y sont liées. Code : `PUBLISHER_HAS_WORKS`. */
+            /** @description Brouillon (`DRAFT_NOT_ARCHIVABLE`) ou des œuvres non archivées y sont liées. Code : `PUBLISHER_HAS_WORKS`. */
             409: {
                 headers: {
                     [name: string]: unknown;
@@ -3049,6 +3450,82 @@ export interface operations {
             };
         };
     };
+    publishAdminPublisher: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Publiée (sans effet si elle l’est déjà). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminPublisher"];
+                };
+            };
+            /** @description Identifiant invalide. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Publisher inconnu. Code : `NOT_FOUND`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listAdminWorks: {
         parameters: {
             query?: {
@@ -3056,6 +3533,8 @@ export interface operations {
                 q?: string;
                 /** @description Fiches publiées, archives seules, ou les deux. */
                 scope?: "active" | "archived" | "all";
+                /** @description Brouillons seuls, fiches publiées seules, ou les deux. */
+                state?: "all" | "draft" | "published";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
@@ -3186,6 +3665,11 @@ export interface operations {
                         /** @default null */
                         label?: string | null;
                     }[];
+                    /**
+                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @default true
+                     */
+                    published?: boolean;
                     /**
                      * Format: date-time
                      * @description Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis. Ignoré à la création.
@@ -3385,6 +3869,11 @@ export interface operations {
                         label?: string | null;
                     }[];
                     /**
+                     * @description À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.
+                     * @default true
+                     */
+                    published?: boolean;
+                    /**
                      * Format: date-time
                      * @description Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis. Ignoré à la création.
                      */
@@ -3467,6 +3956,89 @@ export interface operations {
             };
         };
     };
+    deleteAdminDraftWork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Brouillon supprimé définitivement. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Identifiant invalide. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Work inconnu. Code : `NOT_FOUND`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     archiveAdminWork: {
         parameters: {
             query?: never;
@@ -3516,6 +4088,15 @@ export interface operations {
             };
             /** @description Work inconnu. Code : `NOT_FOUND`. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Un brouillon se supprime, il ne s’archive pas. Code : `DRAFT_NOT_ARCHIVABLE`. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3619,6 +4200,82 @@ export interface operations {
             };
         };
     };
+    publishAdminWork: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Publiée (sans effet si elle l’est déjà). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminWork"];
+                };
+            };
+            /** @description Fiche incomplète (`VALIDATION_ERROR` : un format est requis) ou citant un brouillon (`DRAFT_REFERENCE`). Code : `DRAFT_REFERENCE`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Work inconnu. Code : `NOT_FOUND`. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
 }
 type FlattenedDeepRequired<T> = {
     [K in keyof T]-?: FlattenedDeepRequired<T[K] extends unknown[] | undefined | null ? Extract<T[K], unknown[]>[number] : T[K]>;
@@ -3640,8 +4297,11 @@ export const pathsApiV1UsersHandleGetParametersQueryLangValues: ReadonlyArray<Fl
 export const pathsApiV1UsersHandleEntriesGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}/entries"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
 export const pathsApiV1UsersHandleEntriesGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}/entries"]["get"]["parameters"]["query"]["sort"]> = ["updated", "title", "rating"];
 export const pathsApiV1AdminPeopleGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/people"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
+export const pathsApiV1AdminPeopleGetParametersQueryStateValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/people"]["get"]["parameters"]["query"]["state"]> = ["all", "draft", "published"];
 export const pathsApiV1AdminPublishersGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/publishers"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
+export const pathsApiV1AdminPublishersGetParametersQueryStateValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/publishers"]["get"]["parameters"]["query"]["state"]> = ["all", "draft", "published"];
 export const pathsApiV1AdminWorksGetParametersQueryScopeValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["scope"]> = ["active", "archived", "all"];
+export const pathsApiV1AdminWorksGetParametersQueryStateValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["state"]> = ["all", "draft", "published"];
 export const pathsApiV1AdminWorksGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["sort"]> = ["title", "title_desc", "completeness", "completeness_desc"];
 export const workTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkType"]> = ["series", "oneshot", "anthology"];
 export const workStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkStatus"]> = ["upcoming", "ongoing", "completed", "hiatus", "abandoned"];
@@ -3658,7 +4318,7 @@ export const genreCategoryValues: ReadonlyArray<FlattenedDeepRequired<components
 export const libraryStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LibraryStatus"]> = ["reading", "completed", "plan_to_read", "on_hold", "dropped"];
 export const userRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["UserRole"]> = ["user", "admin"];
 export const visibilityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Visibility"]> = ["public", "private"];
-export const errorCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Error"]["code"]> = ["NOT_FOUND", "VALIDATION_ERROR", "INVALID_JSON", "UNAUTHENTICATED", "HANDLE_REQUIRED", "SIGNUP_EXPIRED", "ADMIN_REQUIRED", "PROFILE_PRIVATE", "PERSON_HAS_WORKS", "PUBLISHER_HAS_WORKS", "INVALID_REFERENCE", "ARCHIVED_REFERENCE", "STALE_RECORD", "FORBIDDEN_ORIGIN", "HANDLE_NOT_ALLOWED", "HANDLE_TAKEN", "AUTH_STATE_INVALID", "AUTH_UNAVAILABLE", "RATE_LIMITED", "INTERNAL_ERROR"];
+export const errorCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Error"]["code"]> = ["NOT_FOUND", "VALIDATION_ERROR", "INVALID_JSON", "UNAUTHENTICATED", "HANDLE_REQUIRED", "SIGNUP_EXPIRED", "ADMIN_REQUIRED", "PROFILE_PRIVATE", "PERSON_HAS_WORKS", "PUBLISHER_HAS_WORKS", "INVALID_REFERENCE", "ARCHIVED_REFERENCE", "DRAFT_REFERENCE", "DRAFT_NOT_ARCHIVABLE", "NOT_A_DRAFT", "DRAFT_IN_USE", "STALE_RECORD", "FORBIDDEN_ORIGIN", "HANDLE_NOT_ALLOWED", "HANDLE_TAKEN", "AUTH_STATE_INVALID", "AUTH_UNAVAILABLE", "RATE_LIMITED", "INTERNAL_ERROR"];
 export const workDetailRelationsDirectionValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkDetail"]["relations"]["direction"]> = ["outgoing", "incoming"];
 export const healthStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Health"]["status"]> = ["ok", "degraded"];
 export const healthDatabaseValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Health"]["database"]> = ["up", "down"];

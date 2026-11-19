@@ -1,10 +1,11 @@
 /** Types and pagination helper shared by the administration lists. */
-import type { ArchiveScope } from '../repositories/admin-sql.js';
+import type { ArchiveScope, PublicationState } from '../repositories/admin-sql.js';
 
 /** Parameters common to the administration lists. */
 export interface AdminListInput {
   q?: string;
   scope: ArchiveScope;
+  state: PublicationState;
   page: number;
   pageSize: number;
 }

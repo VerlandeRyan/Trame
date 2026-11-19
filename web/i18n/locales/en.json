@@ -559,6 +559,33 @@
     "emptyHint": "Add a record with the “{action}” button at the top of the page.",
     "archived": "Archived",
     "published": "Published",
+    "draft": "Draft",
+    "saveDraft": "Save as draft",
+    "publish": "Publish",
+    "publishConfirm": {
+      "title": "Publish this record?",
+      "text": "The record becomes visible to the public. A published record can't go back to draft: to take it down, archive it.",
+      "cancel": "Not yet"
+    },
+    "deleteDraft": "Delete draft",
+    "deleteDraftConfirm": {
+      "title": "Delete this draft?",
+      "text": "The draft is deleted for good: it was never published, so it can't be restored.",
+      "cancel": "Keep"
+    },
+    "draftBanner": "This record is a draft: it isn't visible to the public. To publish it, the minimum required fields (marked with an asterisk) must be filled in.",
+    "state": {
+      "label": "State",
+      "all": "All",
+      "draft": "Drafts",
+      "published": "Published"
+    },
+    "draftsToFinish": "Draft to finish: | Drafts to finish:",
+    "draftCount": {
+      "works": "{count} work | {count} works",
+      "people": "{count} person | {count} people",
+      "publishers": "{count} publisher | {count} publishers"
+    },
     "cancel": "Cancel",
     "archivesNote": "Archived records disappear from lists and public search. They can be restored.",
     "col": {
@@ -612,10 +639,14 @@
       "cancel": "Stay"
     },
     "error": {
+      "notFound": "This record no longer exists: go back to the catalogue.",
       "validation": "Some fields are empty or not valid. Fill in the required fields (*) and check the totals (empty while the work is ongoing), the dates, the languages and the https addresses.",
       "incompleteForm": "Some information is missing or an address is invalid: fill in the required fields (*), enter https addresses and complete or remove the incomplete rows.",
       "required": "Required field",
       "formatRequired": "Choose at least one format.",
+      "creditRequired": "Add at least one author.",
+      "publisherRequired": "Add at least one publisher or platform.",
+      "synopsisRequired": "Write a synopsis in the work's original language.",
       "invalidUrl": "Invalid address: enter a full https:// address (e.g. https://example.org)."
     },
     "links": {
@@ -735,9 +766,12 @@
   "error": {
     "INTERNAL_ERROR": "Something went wrong. @:writeError.retryHint",
     "ADMIN_REQUIRED": "This action is reserved for administrators.",
-    "PERSON_HAS_WORKS": "This person is still credited on a published work: remove them from those works first.",
-    "PUBLISHER_HAS_WORKS": "This publisher still has a published work: remove it from those works first.",
+    "PERSON_HAS_WORKS": "This person is still credited on a work (published or draft): remove them from those works first.",
+    "PUBLISHER_HAS_WORKS": "This publisher still has a work (published or draft): remove it from those works first.",
     "INVALID_REFERENCE": "A person, publisher, genre or work you cited no longer exists.",
+    "DRAFT_REFERENCE": "A person, publisher or related work is still a draft: publish it first, or remove it from the record.",
+    "NOT_A_DRAFT": "Only a draft can be deleted: a published record is archived.",
+    "DRAFT_IN_USE": "This draft is still cited by a work: remove it from the record that cites it first.",
     "ARCHIVED_REFERENCE": "A person, publisher or related work is archived: remove it from the record, or restore it first.",
     "STALE_RECORD": "This record was modified since you opened it. Reload the page to start from its latest version.",
     "HANDLE_TAKEN": "This username is already taken. Try another one.",

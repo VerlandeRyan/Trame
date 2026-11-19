@@ -91,6 +91,10 @@ export interface Person {
   id: Generated<number>;
   kind: Generated<PersonKind>;
   name: string;
+  /**
+   * Date de publication ; NULL = brouillon, invisible du public ; distinct de deleted_at.
+   */
+  published_at: Generated<Timestamp | null>;
 }
 
 export interface Publisher {
@@ -98,6 +102,10 @@ export interface Publisher {
   id: Generated<number>;
   kind: PublisherKind;
   name: string;
+  /**
+   * Date de publication ; NULL = brouillon, invisible du public ; distinct de deleted_at.
+   */
+  published_at: Generated<Timestamp | null>;
   url: string | null;
 }
 
@@ -171,6 +179,10 @@ export interface Work {
    * Langue originale de l'œuvre (code ISO 639, minuscules) ; `title` est le titre dans cette langue. Sans défaut : à renseigner explicitement.
    */
   original_language: string;
+  /**
+   * Date de publication ; NULL = brouillon, invisible du public ; distinct de deleted_at.
+   */
+  published_at: Generated<Timestamp | null>;
   started_on: string | null;
   status: WorkStatus;
   title: string;

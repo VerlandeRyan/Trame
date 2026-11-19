@@ -72,6 +72,11 @@ const expectMatches = (schema: z.ZodType, body: unknown) => {
   expect(schema.safeParse(body).error?.issues ?? []).toEqual([]);
 };
 
+/** Author and publisher every published work needs; named outside PREFIX so list tests ignore them. */
+const BASE_PERSON = 'ZZ Base auteur';
+const BASE_PUBLISHER = 'ZZ Base éditeur';
+const base = { personId: 0, publisherId: 0 };
+
 function workBody(overrides: Record<string, unknown> = {}) {
   return {
     title: `${PREFIX} Œuvre`,
@@ -82,8 +87,11 @@ function workBody(overrides: Record<string, unknown> = {}) {
     volumes: 3,
     startedOn: '2020-01-01',
     endedOn: '2021-06-30',
-    // A work needs at least one format.
+    // A published work needs a format, an author, a publisher and a synopsis in its language.
     genres: ['manga'],
+    credits: [{ personId: base.personId, role: 'story' }],
+    publisherIds: [base.publisherId],
+    synopses: [{ language: 'fr', text: 'Résumé.', source: 'official' }],
     ...overrides,
   };
 }
@@ -121,8 +129,19 @@ beforeEach(async () => {
     `DELETE FROM library_entry WHERE user_id IN (SELECT id FROM app_user WHERE email LIKE '%${TEST_EMAIL_DOMAIN}')`,
   );
   await client.query(`DELETE FROM work WHERE title LIKE '${PREFIX}%'`);
-  await client.query(`DELETE FROM person WHERE name LIKE '${PREFIX}%'`);
-  await client.query(`DELETE FROM publisher WHERE name LIKE '${PREFIX}%'`);
+  await client.query(`DELETE FROM person WHERE name LIKE '${PREFIX}%' OR name = '${BASE_PERSON}'`);
+  await client.query(
+    `DELETE FROM publisher WHERE name LIKE '${PREFIX}%' OR name = '${BASE_PUBLISHER}'`,
+  );
+  const person = await client.query(
+    `INSERT INTO person (name) VALUES ('${BASE_PERSON}') RETURNING id`,
+  );
+  const publisher = await client.query(
+    `INSERT INTO publisher (name, kind) VALUES ('${BASE_PUBLISHER}', 'publisher') RETURNING id`,
+  );
+  // `bigint` comes back as text.
+  base.personId = Number(person.rows[0].id);
+  base.publisherId = Number(publisher.rows[0].id);
   await client.query(`DELETE FROM app_user WHERE email LIKE '%${TEST_EMAIL_DOMAIN}'`);
   await client.query('TRUNCATE session');
 });
@@ -380,9 +399,9 @@ describe('œuvres', () => {
     });
   });
 
-  it('donne des libellés vides pour une fiche sans personne, éditeur ni relation', async () => {
+  it('donne des libellés vides pour un brouillon sans personne, éditeur ni relation', async () => {
     const admin = await newAdmin();
-    const id = await createWork(admin);
+    const id = await createWork(admin, { published: false, credits: [], publisherIds: [] });
 
     const res = await admin.get(`${ADMIN}/works/${id}`);
 
@@ -404,7 +423,7 @@ describe('œuvres', () => {
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       title: `${PREFIX} Neuf`,
-      credits: [],
+      credits: [{ personId: base.personId, role: 'story' }],
       genres: ['bd'],
       links: [],
     });
@@ -423,6 +442,26 @@ describe('œuvres', () => {
       code: 'VALIDATION_ERROR',
       details: [{ path: ['genres'], code: 'too_small' }],
     });
+  });
+
+  it('exige aussi un auteur, un éditeur et un synopsis dans la langue originale pour publier', async () => {
+    const admin = await newAdmin();
+
+    const res = await admin.post(`${ADMIN}/works`).send(
+      workBody({
+        credits: [],
+        publisherIds: [],
+        synopses: [{ language: 'en', text: 'Summary.', source: 'official' }],
+      }),
+    );
+
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+    expect(res.body.details.map((issue: { path: string[] }) => issue.path[0])).toEqual([
+      'credits',
+      'publisherIds',
+      'synopses',
+    ]);
   });
 
   it.each([
@@ -703,7 +742,8 @@ describe('œuvres', () => {
       id,
       formats: ['manga'],
       mainAuthor: `${PREFIX} Personne`,
-      completeness: 50,
+      // Synopsis, publisher and link; no cover.
+      completeness: 75,
       archivedAt: null,
       archivedBy: null,
     });
@@ -718,5 +758,189 @@ describe('œuvres', () => {
     const admin = await newAdmin();
     expect((await admin.get(`${ADMIN}/works/999999999`)).status).toBe(404);
     expect((await admin.get(`${ADMIN}/works/abc`)).status).toBe(400);
+  });
+});
+
+describe('brouillons', () => {
+  const DRAFT_WORK = { published: false, genres: [] };
+
+  it('crée un brouillon d’œuvre invisible du public, puis le publie', async () => {
+    const admin = await newAdmin();
+    const id = await createWork(admin, DRAFT_WORK);
+    const record = (await admin.get(`${ADMIN}/works/${id}`)).body;
+    expect(record).toMatchObject({ draft: true, archived: false });
+    expectMatches(adminWorkSchema, record);
+    expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(404);
+    const search = await request(app).get('/api/v1/works').query({ q: PREFIX });
+    expect(search.body.total).toBe(0);
+
+    // Publishing needs the complete record: a format here.
+    const refused = await admin.post(`${ADMIN}/works/${id}/publish`);
+    expect(refused.status).toBe(400);
+    expect(refused.body.code).toBe('VALIDATION_ERROR');
+    await admin.put(`${ADMIN}/works/${id}`).send(workBody({ ...DRAFT_WORK, genres: ['manga'] }));
+    const published = await admin.post(`${ADMIN}/works/${id}/publish`);
+    expect(published.status).toBe(200);
+    expect(published.body.draft).toBe(false);
+    expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(200);
+    // Publishing again changes nothing.
+    expect((await admin.post(`${ADMIN}/works/${id}/publish`)).status).toBe(200);
+  });
+
+  it('exige un format pour une œuvre publiée mais pas pour un brouillon', async () => {
+    const admin = await newAdmin();
+    const res = await admin.post(`${ADMIN}/works`).send(workBody({ genres: [] }));
+    expect(res.status).toBe(400);
+    const id = await createWork(admin, DRAFT_WORK);
+    const update = await admin.put(`${ADMIN}/works/${id}`).send(workBody({ genres: [] }));
+    expect(update.status).toBe(200);
+    expect(update.body.draft).toBe(true);
+  });
+
+  it('refuse qu’une œuvre publiée cite un brouillon', async () => {
+    const admin = await newAdmin();
+    const draftPerson = (
+      await admin
+        .post(`${ADMIN}/people`)
+        .send({ name: `${PREFIX} Brouillon`, kind: 'person', published: false })
+    ).body;
+    expect(draftPerson.draft).toBe(true);
+    const res = await admin
+      .post(`${ADMIN}/works`)
+      .send(workBody({ credits: [{ personId: draftPerson.id, role: 'story' }] }));
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('DRAFT_REFERENCE');
+
+    // A draft work may cite a draft; publishing the person first allows publishing the work.
+    const id = await createWork(admin, {
+      ...DRAFT_WORK,
+      genres: ['manga'],
+      credits: [{ personId: draftPerson.id, role: 'story' }],
+    });
+    const blocked = await admin.post(`${ADMIN}/works/${id}/publish`);
+    expect(blocked.body.code).toBe('DRAFT_REFERENCE');
+    expect((await admin.post(`${ADMIN}/people/${draftPerson.id}/publish`)).body.draft).toBe(false);
+    expect((await admin.post(`${ADMIN}/works/${id}/publish`)).status).toBe(200);
+  });
+
+  it('publie une personne et un éditeur en brouillon', async () => {
+    const admin = await newAdmin();
+    const publisher = await admin
+      .post(`${ADMIN}/publishers`)
+      .send({ name: `${PREFIX} Éditeur brouillon`, kind: 'publisher', published: false });
+    expect(publisher.body.draft).toBe(true);
+    expectMatches(adminPublisherSchema, publisher.body);
+    const published = await admin.post(`${ADMIN}/publishers/${publisher.body.id}/publish`);
+    expect(published.body.draft).toBe(false);
+    expect((await admin.post(`${ADMIN}/people/999999999/publish`)).status).toBe(404);
+  });
+
+  it('supprime définitivement un brouillon, jamais une fiche publiée', async () => {
+    const admin = await newAdmin();
+    const published = await createWork(admin);
+    const refusedPublished = await admin.delete(`${ADMIN}/works/${published}`);
+    expect(refusedPublished.status).toBe(409);
+    expect(refusedPublished.body.code).toBe('NOT_A_DRAFT');
+
+    const draft = await createWork(admin, DRAFT_WORK);
+    expect((await admin.delete(`${ADMIN}/works/${draft}`)).status).toBe(204);
+    expect((await admin.get(`${ADMIN}/works/${draft}`)).status).toBe(404);
+    expect((await admin.delete(`${ADMIN}/works/${draft}`)).status).toBe(404);
+  });
+
+  it('ne montre pas un brouillon dans les relations d’une œuvre publiée', async () => {
+    const admin = await newAdmin();
+    const published = await createWork(admin, { title: `${PREFIX} Publiée` });
+    const draft = await createWork(admin, {
+      ...DRAFT_WORK,
+      title: `${PREFIX} Brouillon lié`,
+      relations: [{ relatedWorkId: published, relation: 'sequel' }],
+    });
+
+    const res = await request(app).get(`/api/v1/works/${published}`);
+
+    expect(res.status).toBe(200);
+    expect(JSON.stringify(res.body)).not.toContain(`${PREFIX} Brouillon lié`);
+    expect(JSON.stringify(res.body)).not.toContain(`"id":${draft},`);
+  });
+
+  it('refuse d’archiver un brouillon : il se supprime', async () => {
+    const admin = await newAdmin();
+    const work = await createWork(admin, DRAFT_WORK);
+    const person = (
+      await admin
+        .post(`${ADMIN}/people`)
+        .send({ name: `${PREFIX} Archive`, kind: 'person', published: false })
+    ).body.id;
+    const publisher = (
+      await admin
+        .post(`${ADMIN}/publishers`)
+        .send({ name: `${PREFIX} Maison archive`, kind: 'publisher', published: false })
+    ).body.id;
+
+    for (const path of [`works/${work}`, `people/${person}`, `publishers/${publisher}`]) {
+      const res = await admin.post(`${ADMIN}/${path}/archive`);
+      expect(res.status).toBe(409);
+      expect(res.body.code).toBe('DRAFT_NOT_ARCHIVABLE');
+    }
+  });
+
+  it('refuse de supprimer un brouillon encore cité', async () => {
+    const admin = await newAdmin();
+    const person = (
+      await admin
+        .post(`${ADMIN}/people`)
+        .send({ name: `${PREFIX} Cité`, kind: 'person', published: false })
+    ).body.id;
+    await createWork(admin, {
+      ...DRAFT_WORK,
+      credits: [{ personId: person, role: 'story' }],
+    });
+    const res = await admin.delete(`${ADMIN}/people/${person}`);
+    expect(res.status).toBe(409);
+    expect(res.body.code).toBe('DRAFT_IN_USE');
+  });
+
+  it('filtre les listes par état et place les brouillons en tête', async () => {
+    const admin = await newAdmin();
+    await createPerson(admin, `${PREFIX} A publiée`);
+    await admin
+      .post(`${ADMIN}/people`)
+      .send({ name: `${PREFIX} Z brouillon`, kind: 'person', published: false });
+    const names = async (state?: string) =>
+      (await admin.get(`${ADMIN}/people`).query({ q: PREFIX, state })).body.items.map(
+        (item: { name: string }) => item.name,
+      );
+    expect(await names()).toEqual([`${PREFIX} Z brouillon`, `${PREFIX} A publiée`]);
+    expect(await names('draft')).toEqual([`${PREFIX} Z brouillon`]);
+    expect(await names('published')).toEqual([`${PREFIX} A publiée`]);
+  });
+
+  it('donne le nombre de brouillons de chaque type en une requête', async () => {
+    const admin = await newAdmin();
+    const before = (await admin.get(`${ADMIN}/draft-counts`)).body;
+    await createWork(admin, DRAFT_WORK);
+    await admin
+      .post(`${ADMIN}/people`)
+      .send({ name: `${PREFIX} Compte`, kind: 'person', published: false });
+
+    const res = await admin.get(`${ADMIN}/draft-counts`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({
+      works: before.works + 1,
+      people: before.people + 1,
+      publishers: before.publishers,
+    });
+    expect((await request(app).get(`${ADMIN}/draft-counts`)).status).toBe(401);
+  });
+
+  it('compte les brouillons', async () => {
+    const admin = await newAdmin();
+    const before = (await admin.get(`${ADMIN}/works`).query({ state: 'draft' })).body.total;
+    await createWork(admin, DRAFT_WORK);
+    const after = await admin.get(`${ADMIN}/works`).query({ state: 'draft' });
+    expect(after.body.total).toBe(before + 1);
+    expectMatches(adminWorkPageSchema, after.body);
   });
 });

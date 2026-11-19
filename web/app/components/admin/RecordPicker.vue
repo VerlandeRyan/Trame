@@ -86,7 +86,12 @@ onBeforeUnmount(() => clearTimeout(timer))
     <template v-if="model">
       <span class="picker__name">{{ label }}<UiRequiredMark v-if="required" /></span>
       <div class="picker__chosen" data-testid="picker-chosen">
-        <span class="picker__label">{{ model.label }}</span>
+        <span class="picker__label">
+          {{ model.label }}
+          <UiDraftBadge v-if="model.draft" class="picker__draft" data-testid="picker-draft">{{
+            t('admin.draft')
+          }}</UiDraftBadge>
+        </span>
         <button
           type="button"
           class="picker__clear"
@@ -130,6 +135,9 @@ onBeforeUnmount(() => clearTimeout(timer))
           <li v-for="record in results" :key="record.id">
             <button type="button" class="picker__option" @click="choose(record)">
               {{ record.label }}
+              <UiDraftBadge v-if="record.draft" class="picker__draft" data-testid="picker-draft">{{
+                t('admin.draft')
+              }}</UiDraftBadge>
             </button>
           </li>
         </ul>
@@ -224,6 +232,10 @@ onBeforeUnmount(() => clearTimeout(timer))
   inset: auto 0 calc(100% + var(--space-1));
 
   @include menu-open-animation($above: true);
+}
+
+.picker__draft {
+  margin-left: var(--space-2);
 }
 
 .picker__option {

@@ -164,6 +164,12 @@ Une nouveauté ne doit créer **aucune divergence** : deux éléments qui jouent
 - **Deux rouges, deux sens** : `--color-crimson` = erreur et obligation (messages et cadres d'erreur, étoile « obligatoire », point d'alerte d'un onglet, annonce d'erreur) ; `--color-danger` = action destructrice (« Archiver », confirmation de perte de données). Un nouvel élément prend l'un ou l'autre selon son sens, jamais une teinte intermédiaire.
 - **Comparer avant de rendre** : regarder le nouvel élément à côté de ses voisins (taille de texte, taille d'icône, couleur, alignement), au bureau et à 390 px, et corriger l'écart avant de le montrer. Si un composant partagé convient presque, l'étendre (en demandant à Ryan s'il change d'aspect ailleurs) plutôt que d'en dupliquer l'aspect.
 
+### Échecs d'écriture
+
+Deux cas, selon que rejouer peut aboutir (`isRetryable`, `utils/write-errors.ts`) :
+- **Panne du serveur ou du réseau** (`INTERNAL_ERROR`, `RATE_LIMITED`) : notification d'erreur avec « Réessayer », qui rejoue l'écriture, message général puis « Réessaie dans un instant. » sur la 2e ligne (`useToasts`, `useOptimisticWrite` ; administration : `useAdminFailure`).
+- **Refus qu'il faut corriger** (champ invalide, fiche modifiée entre-temps, référence en brouillon ou archivée…) : pas de notification. Le message qui dit quoi faire s'affiche dans le formulaire (`UiFormError`), comme les contrôles faits avant l'envoi : rejouer redonnerait le même refus.
+
 ### Survol et appui
 
 Système unique (#164). **Souris seulement**, via les mixins de `_mixins.scss` : `on-hover` (`@media (hover: hover) and (pointer: fine)`, jamais sur un élément désactivé), `tilt-on-hover` (inclinaison « autocollant » avec rebond), `lift-on-hover` (montée d'1 px) et `press-background` (fond d'appui). Sur écran tactile seul `:active` répond (sinon `:hover` reste collé après un toucher).

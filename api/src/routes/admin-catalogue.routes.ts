@@ -6,6 +6,7 @@ import {
   createAdminResourceController,
   type AdminResourceController,
 } from '../controllers/admin-resource.controller.js';
+import { createDraftCountsController } from '../controllers/admin-draft-counts.controller.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { rateLimitOptions, type RateLimitSettings } from '../middleware/rate-limit.js';
 import { validate } from '../middleware/validate.js';
@@ -28,7 +29,7 @@ export interface AdminCatalogueServices {
   works: AdminWorkService;
 }
 
-/** Registers list, read, create, replace, archive and restore routes for one resource. */
+/** Registers list, read, create, replace, archive, restore, publish and delete-draft routes for one resource. */
 function addResourceRoutes(
   router: Router,
   base: string,
@@ -50,6 +51,8 @@ function addResourceRoutes(
   );
   router.post(`${item}/archive`, limiter, validate('params', idParams), controller.archive);
   router.post(`${item}/restore`, limiter, validate('params', idParams), controller.restore);
+  router.post(`${item}/publish`, limiter, validate('params', idParams), controller.publish);
+  router.delete(item, limiter, validate('params', idParams), controller.remove);
 }
 
 /** Builds the administration router, mounted under the admin prefix. */
@@ -60,6 +63,7 @@ export function createAdminCatalogueRouter(
   const limiter = rateLimit(rateLimitOptions(options.rateLimit));
   const router = Router();
   router.use(requireAdmin);
+  router.get('/draft-counts', createDraftCountsController({ works, people, publishers }));
   const person = { body: personBody, listQuery: adminListQuery };
   const publisher = { body: publisherBody, listQuery: adminListQuery };
   const work = { body: workBody, listQuery: adminWorkListQuery };

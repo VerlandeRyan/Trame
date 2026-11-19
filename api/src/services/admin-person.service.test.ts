@@ -10,6 +10,7 @@ const person = (overrides: Partial<AdminPersonRecord> = {}): AdminPersonRecord =
   name: 'Léa',
   kind: 'person',
   archived: false,
+  draft: false,
   activeWorkCount: 0,
   links: [],
   ...overrides,
@@ -25,6 +26,9 @@ function fakeRepository(record: AdminPersonRecord | null): AdminPersonRepository
     setArchived: vi.fn(
       async (_id, archived) => record !== null && !(archived && record.activeWorkCount > 0),
     ),
+    publish: vi.fn(async () => record !== null),
+    deleteDraft: vi.fn(async () => record !== null && record.activeWorkCount === 0),
+    countDrafts: vi.fn(async () => 2),
   };
 }
 
@@ -32,8 +36,20 @@ describe('liste', () => {
   it('convertit page et taille en limite et décalage', async () => {
     const repository = fakeRepository(null);
     const service = createAdminPersonService(repository);
-    const page = await service.list({ q: 'le', scope: 'all', page: 3, pageSize: 20 });
-    expect(repository.list).toHaveBeenCalledWith({ q: 'le', scope: 'all', limit: 20, offset: 40 });
+    const page = await service.list({
+      q: 'le',
+      scope: 'all',
+      state: 'draft',
+      page: 3,
+      pageSize: 20,
+    });
+    expect(repository.list).toHaveBeenCalledWith({
+      q: 'le',
+      scope: 'all',
+      state: 'draft',
+      limit: 20,
+      offset: 40,
+    });
     expect(page).toEqual({ items: [], page: 3, pageSize: 20, total: 0 });
   });
 });
@@ -63,8 +79,35 @@ describe('archivage', () => {
     const service = createAdminPersonService(fakeRepository(null));
     await expect(service.archive(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
     await expect(service.restore(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
-    await expect(service.update(9, { name: 'x', kind: 'person', links: [] })).rejects.toMatchObject(
-      { code: 'NOT_FOUND' },
+    await expect(
+      service.update(9, { name: 'x', kind: 'person', links: [], published: true }),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(service.publish(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(service.remove(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
+describe('brouillon', () => {
+  it('ne supprime pas une personne publiée', async () => {
+    const repository = fakeRepository(person());
+    await expect(createAdminPersonService(repository).remove(1)).rejects.toMatchObject({
+      code: 'NOT_A_DRAFT',
+    });
+    expect(repository.deleteDraft).not.toHaveBeenCalled();
+  });
+
+  it('refuse de supprimer un brouillon encore cité', async () => {
+    const service = createAdminPersonService(
+      fakeRepository(person({ draft: true, activeWorkCount: 1 })),
     );
+    await expect(service.remove(1)).rejects.toMatchObject({ code: 'DRAFT_IN_USE' });
+  });
+
+  it('supprime un brouillon libre et le publie', async () => {
+    const repository = fakeRepository(person({ draft: true }));
+    const service = createAdminPersonService(repository);
+    await expect(service.remove(1)).resolves.toBeUndefined();
+    await service.publish(1);
+    expect(repository.publish).toHaveBeenCalledWith(1);
   });
 });

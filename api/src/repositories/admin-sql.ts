@@ -1,10 +1,67 @@
 /** SQL fragments shared by the administration repositories: search, archive scope, totals and derived columns. */
 import { sql, type RawBuilder } from 'kysely';
-import { CREDIT_ROLE_RANK } from '../db/database.js';
+import { CREDIT_ROLE_RANK, type Db } from '../db/database.js';
 
 /** `active`: published records; `archived`: archives only; `all`: both. */
 export const ARCHIVE_SCOPES = ['active', 'archived', 'all'] as const;
 export type ArchiveScope = (typeof ARCHIVE_SCOPES)[number];
+
+/** `draft`: not yet published; `published`: published (archived or not); `all`: both. */
+export const PUBLICATION_STATES = ['all', 'draft', 'published'] as const;
+export type PublicationState = (typeof PUBLICATION_STATES)[number];
+
+/** Publication condition on a column for a given state; `null` when everything is requested. */
+export function publicationCondition(
+  column: string,
+  state: PublicationState,
+): RawBuilder<boolean> | null {
+  if (state === 'all') return null;
+  const ref = sql.ref(column);
+  return state === 'draft' ? sql<boolean>`${ref} IS NULL` : sql<boolean>`${ref} IS NOT NULL`;
+}
+
+/** Tables of the administered catalogue. */
+export type CatalogueTable = 'work' | 'person' | 'publisher';
+
+/**
+ * Publishes a record (no effect on a published one); false if it does not exist. `touchVersion`
+ * also moves the version of tables that have one.
+ */
+export async function publishRow(
+  db: Db,
+  table: CatalogueTable,
+  id: number,
+  touchVersion = false,
+): Promise<boolean> {
+  const version = touchVersion ? sql`, updated_at = now()` : sql``;
+  const result = await sql`
+    UPDATE ${sql.table(table)} SET published_at = COALESCE(published_at, now())${version}
+    WHERE id = ${id} RETURNING id`.execute(db);
+  return result.rows.length > 0;
+}
+
+/** Deletes a draft that `notCited` lets go; false if it is published, cited or missing. */
+export async function deleteDraftRow(
+  db: Db,
+  table: CatalogueTable,
+  id: number,
+  notCited: RawBuilder<boolean>,
+): Promise<boolean> {
+  const result = await sql`
+    DELETE FROM ${sql.table(table)}
+    WHERE id = ${id} AND published_at IS NULL AND ${notCited} RETURNING id`.execute(db);
+  return result.rows.length > 0;
+}
+
+/** Number of drafts of a table. */
+export async function countDraftRows(db: Db, table: CatalogueTable): Promise<number> {
+  const result = await sql<{ total: number }>`
+    SELECT count(*)::int AS total FROM ${sql.table(table)} WHERE published_at IS NULL`.execute(db);
+  return result.rows[0]?.total ?? 0;
+}
+
+/** Orders drafts before published records in a list. */
+export const DRAFTS_FIRST = (column: string) => sql`${sql.ref(column)} IS NOT NULL`;
 
 /** The name contains the text, ignoring case and accents. */
 export function nameContains(column: string, text: string): RawBuilder<boolean> {
