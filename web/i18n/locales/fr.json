@@ -563,6 +563,33 @@
     "emptyHint": "Ajoute une fiche avec le bouton « {action} » en haut de la page.",
     "archived": "Archivée",
     "published": "Publiée",
+    "draft": "Brouillon",
+    "saveDraft": "Enregistrer en brouillon",
+    "publish": "Publier",
+    "publishConfirm": {
+      "title": "Publier cette fiche ?",
+      "text": "La fiche devient visible du public. Une fiche publiée ne repasse pas en brouillon : pour la retirer, il faut l'archiver.",
+      "cancel": "Pas encore"
+    },
+    "deleteDraft": "Supprimer le brouillon",
+    "deleteDraftConfirm": {
+      "title": "Supprimer ce brouillon ?",
+      "text": "Le brouillon est supprimé définitivement : il n'a jamais été publié, il ne peut pas être restauré.",
+      "cancel": "Garder"
+    },
+    "draftBanner": "Cette fiche est un brouillon : elle n'est pas visible du public. Pour la publier, les champs minimum requis (marqués d'une étoile) doivent être remplis.",
+    "state": {
+      "label": "État",
+      "all": "Tous",
+      "draft": "Brouillons",
+      "published": "Publiées"
+    },
+    "draftsToFinish": "Brouillon à terminer : | Brouillons à terminer :",
+    "draftCount": {
+      "works": "{count} œuvre | {count} œuvres",
+      "people": "{count} personne | {count} personnes",
+      "publishers": "{count} éditeur | {count} éditeurs"
+    },
     "cancel": "Annuler",
     "archivesNote": "Les fiches archivées disparaissent des listes et de la recherche publique. Elles restent restaurables.",
     "col": {
@@ -616,10 +643,14 @@
       "cancel": "Rester"
     },
     "error": {
+      "notFound": "Cette fiche n'existe plus : retourne au catalogue.",
       "validation": "Certains champs sont vides ou invalides. Remplis les champs obligatoires (*) et vérifie les totaux (vides tant que l'œuvre est en cours), les dates, les langues et les adresses en https.",
       "incompleteForm": "Il manque des informations ou une adresse est invalide : remplis les champs obligatoires (*), saisis les adresses en https et complète ou retire les lignes incomplètes.",
       "required": "Champ obligatoire",
       "formatRequired": "Choisis au moins un format.",
+      "creditRequired": "Ajoute au moins un auteur.",
+      "publisherRequired": "Ajoute au moins un éditeur ou une plateforme.",
+      "synopsisRequired": "Écris un synopsis dans la langue originale de l'œuvre.",
       "invalidUrl": "Adresse invalide : saisis une adresse complète en https:// (ex. https://exemple.org)."
     },
     "links": {
@@ -744,9 +775,12 @@
   "error": {
     "INTERNAL_ERROR": "Une erreur est survenue. @:writeError.retryHint",
     "ADMIN_REQUIRED": "Cette action est réservée aux administrateurs.",
-    "PERSON_HAS_WORKS": "Cette personne est encore créditée sur une œuvre publiée : retire-la de ces œuvres d'abord.",
-    "PUBLISHER_HAS_WORKS": "Cet éditeur a encore une œuvre publiée : retire-le de ces œuvres d'abord.",
+    "PERSON_HAS_WORKS": "Cette personne est encore créditée sur une œuvre (publiée ou en brouillon) : retire-la de ces œuvres d'abord.",
+    "PUBLISHER_HAS_WORKS": "Cet éditeur a encore une œuvre (publiée ou en brouillon) : retire-le de ces œuvres d'abord.",
     "INVALID_REFERENCE": "Une personne, un éditeur, un genre ou une œuvre cités n'existe plus.",
+    "DRAFT_REFERENCE": "Une personne, un éditeur ou une œuvre liée est encore en brouillon : publie-le d'abord, ou retire-le de la fiche.",
+    "NOT_A_DRAFT": "Seul un brouillon peut être supprimé : une fiche publiée s'archive.",
+    "DRAFT_IN_USE": "Ce brouillon est encore cité par une œuvre : retire-le de la fiche qui le cite d'abord.",
     "ARCHIVED_REFERENCE": "Une personne, un éditeur ou une œuvre liée est archivé : retire-le de la fiche, ou restaure-le d'abord.",
     "STALE_RECORD": "Cette fiche a été modifiée depuis que tu l'as ouverte. Recharge la page pour repartir de sa dernière version.",
     "HANDLE_TAKEN": "Ce pseudo est déjà pris. Essaie un autre.",

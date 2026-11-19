@@ -20,27 +20,37 @@ const query = computed(() => parseAdminListQuery(route.query))
 // A record opened from this list leads back to it, with the same tab, search and filters.
 watch(query, (value) => (lastList.value = value), { immediate: true })
 
-const { data: page, refresh } = await useAsyncData(
-  () => `admin-${JSON.stringify(query.value)}`,
-  () => client.list(query.value),
-  { watch: [query] },
-)
-// Number of archives of the current kind, shown on the "Archives" tab.
-const { data: archivesCount, refresh: refreshArchivesCount } = await useAsyncData(
-  () => `admin-archives-${query.value.kind}`,
-  async () => {
-    const archives = {
-      ...parseAdminListQuery({ kind: query.value.kind }),
-      scope: 'archived' as const,
-    }
-    return (await client.list(archives, 1)).total
-  },
-  { watch: [() => query.value.kind] },
-)
-// Formats offered to the work filter.
-const { data: genres } = await useAsyncData('admin-formats', () =>
-  api.request<{ items: { code: string; category: string }[] }>('/genres'),
-)
+// The four reads are independent: they start together and the page waits for the slowest.
+const [
+  { data: page, refresh },
+  // Number of archives of the current kind, shown on the "Archives" tab.
+  { data: archivesCount, refresh: refreshArchivesCount },
+  // Drafts to finish, per kind, announced above the list.
+  { data: draftCounts },
+  // Formats offered to the work filter.
+  { data: genres },
+] = await Promise.all([
+  useAsyncData(
+    () => `admin-${JSON.stringify(query.value)}`,
+    () => client.list(query.value),
+    { watch: [query] },
+  ),
+  useAsyncData(
+    () => `admin-archives-${query.value.kind}`,
+    async () => {
+      const archives = {
+        ...parseAdminListQuery({ kind: query.value.kind }),
+        scope: 'archived' as const,
+      }
+      return (await client.list(archives, 1)).total
+    },
+    { watch: [() => query.value.kind] },
+  ),
+  useAsyncData('admin-draft-counts', () => client.draftCounts()),
+  useAsyncData('admin-formats', () =>
+    api.request<{ items: { code: string; category: string }[] }>('/genres'),
+  ),
+])
 const formatCodes = computed(
   () => genres.value?.items.filter((genre) => genre.category === 'format').map((g) => g.code) ?? [],
 )
@@ -61,6 +71,20 @@ const kindModel = computed({
   get: () => query.value.kind,
   set: (kind) => go({ ...queryForTab(query.value, 'archives'), kind: kind as AdminKind }),
 })
+
+/** Applies a publication state and goes back to the first page. */
+const changeState = (state: AdminState) => go({ ...query.value, state, page: 1 })
+/** Clears the state and the work filters. */
+const resetFilters = () => go({ ...query.value, ...NO_FILTERS, state: 'all', page: 1 })
+/** The kinds that have drafts to finish, with their number. */
+const draftKinds = computed(() =>
+  ADMIN_KINDS.map((kind) => ({ kind, count: draftCounts.value?.[kind] ?? 0 })).filter(
+    ({ count }) => count > 0,
+  ),
+)
+const draftTotal = computed(() => draftKinds.value.reduce((sum, { count }) => sum + count, 0))
+/** Shows the drafts of one kind. */
+const showDrafts = (kind: AdminKind) => go({ ...queryForTab(query.value, kind), state: 'draft' })
 
 /** Navigates to a list query. */
 function go(next: AdminListQuery) {
@@ -105,7 +129,8 @@ onBeforeUnmount(() => clearTimeout(searchTimer))
 const isArchives = computed(() => query.value.scope === 'archived')
 const newLocation = computed(() => localePath(adminEditPath(query.value.kind, 'new')))
 
-// Archiving or restoring: a refusal from the API is announced.
+const announceFailure = useAdminFailure()
+// Archiving or restoring: a refusal from the API is shown above the list, a transient failure by a toast.
 const errorKey = ref<string>()
 /** Archives or restores a record, then refreshes the list and the archive count. */
 async function setArchived(item: AdminListItem, archived: boolean) {
@@ -116,7 +141,7 @@ async function setArchived(item: AdminListItem, archived: boolean) {
       : client.restore(query.value.kind, item.id))
     await Promise.all([refresh(), refreshArchivesCount()])
   } catch (cause) {
-    errorKey.value = adminErrorKey(cause, api.messageKeyFor)
+    errorKey.value = announceFailure(cause, () => void setArchived(item, archived))
   }
 }
 // Only works have a summary (members who follow them, related works).
@@ -142,6 +167,28 @@ const archive = (item: AdminListItem) => setArchived(item, true)
         }}
       </UiButton>
     </div>
+    <div
+      v-if="draftTotal > 0 && query.state !== 'draft'"
+      class="catalogue__drafts"
+      data-testid="admin-drafts"
+    >
+      <p class="catalogue__drafts-text">
+        <Icon name="tabler:eye-off" size="20" aria-hidden="true" />
+        {{ t('admin.draftsToFinish', { count: draftTotal }) }}
+      </p>
+      <div class="catalogue__drafts-kinds">
+        <UiButton
+          v-for="draftKind in draftKinds"
+          :key="draftKind.kind"
+          variant="secondary"
+          size="small"
+          :data-testid="`admin-show-drafts-${draftKind.kind}`"
+          @click="showDrafts(draftKind.kind)"
+        >
+          {{ t(`admin.draftCount.${draftKind.kind}`, { count: draftKind.count }) }}
+        </UiButton>
+      </div>
+    </div>
     <UiTabs v-model="tabModel" underline :tabs="tabs" :label="t('admin.catalogue.kinds')" />
     <div class="catalogue__tools">
       <form class="catalogue__search" role="search" @submit.prevent="search(true)">
@@ -162,14 +209,18 @@ const archive = (item: AdminListItem) => setArchived(item, true)
         :label="t('admin.catalogue.kinds')"
       />
       <AdminFilters
-        v-else-if="query.kind === 'works'"
+        v-else
         class="catalogue__filters"
+        :kind="query.kind"
         :filters="filters"
+        :state="query.state"
         :sort="query.sort"
         :formats="formatCodes"
         :total="page?.total ?? 0"
         @change="changeFilters"
+        @state="changeState"
         @sort="changeSort"
+        @reset="resetFilters"
       />
     </div>
     <UiFormError v-if="errorKey">{{ t(errorKey) }}</UiFormError>
@@ -215,6 +266,38 @@ const archive = (item: AdminListItem) => setArchived(item, true)
 // Stays on the right, even when it drops under the title on a narrow screen.
 .catalogue__new {
   margin-left: auto;
+}
+
+.catalogue__drafts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.catalogue__drafts-text {
+  display: flex;
+  flex: 1;
+  gap: var(--space-3);
+  align-items: center;
+  margin: 0;
+  font-size: 0.875rem;
+
+  // On a phone the message takes its own row and the buttons go together below it.
+  @media (max-width: 767px) {
+    flex-basis: 100%;
+  }
+}
+
+.catalogue__drafts-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .catalogue__tools {

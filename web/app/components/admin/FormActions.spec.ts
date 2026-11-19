@@ -11,6 +11,25 @@ describe('AdminFormActions', () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
   })
 
+  it('propose « Publier » pour une nouvelle fiche ou un brouillon, pas pour une fiche publiée', async () => {
+    const published = await mountSuspended(AdminFormActions, { props: { saving: false } })
+    expect(published.find('[data-testid="admin-publish"]').exists()).toBe(false)
+    expect(published.get('[data-testid="admin-save"]').text()).toBe('Enregistrer')
+
+    const creating = await mountSuspended(AdminFormActions, {
+      props: { saving: false, mode: 'create' },
+    })
+    expect(creating.get('[data-testid="admin-save"]').text()).toBe('Enregistrer en brouillon')
+    await creating.get('[data-testid="admin-publish"]').trigger('click')
+    expect(creating.emitted('publish')).toHaveLength(1)
+
+    const draft = await mountSuspended(AdminFormActions, {
+      props: { saving: false, mode: 'draft' },
+    })
+    expect(draft.get('[data-testid="admin-save"]').text()).toBe('Enregistrer')
+    expect(draft.find('[data-testid="admin-publish"]').exists()).toBe(true)
+  })
+
   it('annonce l’erreur et bloque l’envoi pendant l’enregistrement', async () => {
     const wrapper = await mountSuspended(AdminFormActions, {
       props: { saving: true, errorKey: 'admin.error.validation' },

@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { writeErrorHintKey, writeErrorKey } from './write-errors'
+import { isRetryable, writeErrorHintKey, writeErrorKey } from './write-errors'
+
+describe('isRetryable', () => {
+  it('ne propose de réessayer que pour une panne passagère', () => {
+    expect(isRetryable('INTERNAL_ERROR')).toBe(true)
+    expect(isRetryable('RATE_LIMITED')).toBe(true)
+  })
+
+  it('n’en propose pas pour un refus qu’il faut corriger', () => {
+    for (const code of ['VALIDATION_ERROR', 'STALE_RECORD', 'DRAFT_REFERENCE', 'NOT_FOUND']) {
+      expect(isRetryable(code)).toBe(false)
+    }
+  })
+})
 
 describe('writeErrorKey', () => {
   it('traduit les codes connus et se replie sur un message générique', () => {

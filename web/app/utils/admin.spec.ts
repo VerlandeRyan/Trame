@@ -10,6 +10,7 @@ import {
   emptyPersonDraft,
   emptyPublisherDraft,
   emptyWorkDraft,
+  hasUnsavableDraft,
   formatCodesOf,
   hasIncompleteForm,
   hasInvalidLinkUrl,
@@ -52,6 +53,7 @@ const WORK: AdminWork = {
   type: 'series',
   status: 'completed',
   archived: false,
+  draft: false,
   chapters: 86,
   volumes: null,
   startedOn: '2020-01-01',
@@ -145,6 +147,7 @@ describe('liste du catalogue dans l’adresse', () => {
       {
         q: undefined,
         scope: 'all',
+        state: 'all',
         page: 2,
         pageSize: 20,
         sort: 'title',
@@ -156,17 +159,34 @@ describe('liste du catalogue dans l’adresse', () => {
     expect(toAdminApiQuery(listOf({ kind: 'people', format: ['manga'] }), 20)).toEqual({
       q: undefined,
       scope: 'active',
+      state: 'all',
       page: 1,
       pageSize: 20,
     })
   })
 
+  it('porte l’état de publication dans l’adresse et revient à « tous » en changeant d’onglet', () => {
+    expect(parseAdminListQuery({ state: 'draft' }).state).toBe('draft')
+    expect(parseAdminListQuery({ state: 'x' }).state).toBe('all')
+    expect(toAdminRouteQuery(listOf({ state: 'draft' }))).toEqual({ state: 'draft' })
+    expect(queryForTab(listOf({ state: 'draft' }), 'people').state).toBe('all')
+  })
+
+  it('un brouillon n’exige que le titre et des adresses valides', () => {
+    const draft = { ...emptyWorkDraft(), title: 'Aube' }
+    expect(hasUnsavableDraft(draft)).toBe(false)
+    expect(hasUnsavableDraft({ ...draft, title: ' ' })).toBe(true)
+    const link = { kind: 'read', url: 'http://non-https.example', label: '' }
+    expect(hasUnsavableDraft({ ...draft, links: [link] })).toBe(true)
+    expect(hasUnsavableDraft({ ...draft, links: [{ ...link, url: '' }] })).toBe(false)
+  })
+
   it('compte les pages et nomme les lignes', () => {
     expect(pageCount({ items: [], page: 1, pageSize: 20, total: 0 })).toBe(1)
     expect(pageCount({ items: [], page: 1, pageSize: 20, total: 41 })).toBe(3)
-    expect(itemLabel({ id: 1, archived: false, title: 'Titre' })).toBe('Titre')
-    expect(itemLabel({ id: 1, archived: false, name: 'Nom' })).toBe('Nom')
-    expect(itemLabel({ id: 7, archived: false })).toBe('#7')
+    expect(itemLabel({ id: 1, archived: false, draft: false, title: 'Titre' })).toBe('Titre')
+    expect(itemLabel({ id: 1, archived: false, draft: false, name: 'Nom' })).toBe('Nom')
+    expect(itemLabel({ id: 7, archived: false, draft: false })).toBe('#7')
   })
 })
 
@@ -289,9 +309,37 @@ describe('champs obligatoires', () => {
   const FORMATS = ['manga', 'bd']
 
   it('repère le titre vide et l’absence de format', () => {
-    expect(missingWorkFields(emptyWorkDraft(), FORMATS)).toEqual({ title: true, formats: true })
-    const filled = { ...emptyWorkDraft(), title: ' Aube ', genres: ['fantasy', 'bd'] }
-    expect(missingWorkFields(filled, FORMATS)).toEqual({ title: false, formats: false })
+    expect(missingWorkFields(emptyWorkDraft(), FORMATS)).toEqual({
+      title: true,
+      formats: true,
+      credits: true,
+      publishers: true,
+      synopsis: true,
+    })
+    const filled = {
+      ...emptyWorkDraft(),
+      title: ' Aube ',
+      genres: ['fantasy', 'bd'],
+      credits: [{ person: { id: 1, label: 'Léa' }, role: 'story' }],
+      publishers: [{ publisher: { id: 2, label: 'Maison' } }],
+      synopses: [{ language: 'fr', source: 'official', text: 'Résumé.' }],
+    }
+    expect(missingWorkFields(filled, FORMATS)).toEqual({
+      title: false,
+      formats: false,
+      credits: false,
+      publishers: false,
+      synopsis: false,
+    })
+  })
+
+  it('le synopsis doit être dans la langue originale', () => {
+    const draft = {
+      ...emptyWorkDraft(),
+      originalLanguage: 'fr',
+      synopses: [{ language: 'en', source: 'official', text: 'Summary.' }],
+    }
+    expect(missingWorkFields(draft, FORMATS).synopsis).toBe(true)
   })
 
   it('un genre thématique ne tient pas lieu de format', () => {
@@ -439,6 +487,7 @@ describe('formulaires personne et éditeur', () => {
         name: 'Léa',
         kind: 'collective',
         archived: false,
+        draft: false,
         activeWorkCount: 0,
         links: [{ kind: 'social', url: 'https://r.test', label: null }],
       }),
@@ -454,6 +503,7 @@ describe('formulaires personne et éditeur', () => {
         kind: 'platform',
         url: null,
         archived: false,
+        draft: false,
         activeWorkCount: 0,
       }),
     ).toEqual({ name: 'M', kind: 'platform', url: '' })
@@ -514,6 +564,13 @@ describe('divers', () => {
     )
     expect(adminErrorKey({ status: 409, code: 'PERSON_HAS_WORKS' }, messageKeyFor)).toBe(
       'error.PERSON_HAS_WORKS',
+    )
+  })
+
+  it('nomme la fiche introuvable plutôt qu’une erreur générique', () => {
+    const messageKeyFor = () => 'error.INTERNAL_ERROR'
+    expect(adminErrorKey({ status: 404, code: 'NOT_FOUND' }, messageKeyFor)).toBe(
+      'admin.error.notFound',
     )
   })
 })

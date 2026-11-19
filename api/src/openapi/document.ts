@@ -30,6 +30,7 @@ import { profileParams, profileQuery, visibilityBody } from '../schemas/profile.
 import { facetsQuery, listWorksQuery, workQuery } from '../schemas/work.js';
 import { sessionCookieName } from '../session/middleware.js';
 import {
+  adminDraftCountsSchema,
   adminPersonPageSchema,
   adminPersonSchema,
   adminPublisherPageSchema,
@@ -198,9 +199,14 @@ function adminResourcePaths(resource: AdminResource) {
   const staleRecord = resource.versioned
     ? { '409': errorResponse('STALE_RECORD', 'La fiche a été modifiée depuis sa lecture.') }
     : {};
-  const archiveBlocked = resource.archiveBlockedBy
-    ? { '409': errorResponse(resource.archiveBlockedBy, 'Des œuvres non archivées y sont liées.') }
-    : {};
+  const archiveBlocked = {
+    '409': errorResponse(
+      resource.archiveBlockedBy ?? 'DRAFT_NOT_ARCHIVABLE',
+      resource.archiveBlockedBy
+        ? 'Brouillon (`DRAFT_NOT_ARCHIVABLE`) ou des œuvres non archivées y sont liées.'
+        : 'Un brouillon se supprime, il ne s’archive pas.',
+    ),
+  };
   const writeBase = { tags: ['admin'], security: adminSecurity };
   const writeBody = {
     required: true,
@@ -262,6 +268,23 @@ function adminResourcePaths(resource: AdminResource) {
           ...adminErrors,
         },
       },
+      delete: {
+        ...writeBase,
+        summary: `Supprimer un brouillon : ${resource.singular}`,
+        operationId: `deleteAdminDraft${resource.singular}`,
+        parameters: idParameters,
+        responses: {
+          '204': { description: 'Brouillon supprimé définitivement.' },
+          '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
+          '404': notFound,
+          '409': errorResponse(
+            'NOT_A_DRAFT',
+            'Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`).',
+          ),
+          '429': rateLimited,
+          ...adminErrors,
+        },
+      },
     },
     [`${base}/{id}/archive`]: {
       post: {
@@ -288,6 +311,26 @@ function adminResourcePaths(resource: AdminResource) {
         responses: {
           '200': jsonResponse(resource.record, 'Restaurée (sans effet si elle ne l’est pas).'),
           '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
+          '404': notFound,
+          '429': rateLimited,
+          ...adminErrors,
+        },
+      },
+    },
+    [`${base}/{id}/publish`]: {
+      post: {
+        ...writeBase,
+        summary: `Publier : ${resource.singular}`,
+        operationId: `publishAdmin${resource.singular}`,
+        parameters: idParameters,
+        responses: {
+          '200': jsonResponse(resource.record, 'Publiée (sans effet si elle l’est déjà).'),
+          '400': errorResponse(
+            resource.invalidReference ? 'DRAFT_REFERENCE' : 'VALIDATION_ERROR',
+            resource.invalidReference
+              ? 'Fiche incomplète (`VALIDATION_ERROR` : un format est requis) ou citant un brouillon (`DRAFT_REFERENCE`).'
+              : 'Identifiant invalide.',
+          ),
           '404': notFound,
           '429': rateLimited,
           ...adminErrors,
@@ -627,6 +670,21 @@ export function buildOpenApiDocument() {
           },
         },
       },
+      [`${API_PREFIX}/admin/draft-counts`]: {
+        get: {
+          summary: 'Compter les brouillons',
+          operationId: 'getAdminDraftCounts',
+          tags: ['admin'],
+          security: adminSecurity,
+          responses: {
+            '200': jsonResponse(
+              'AdminDraftCounts',
+              'Nombre de brouillons de chaque type de fiche.',
+            ),
+            ...adminErrors,
+          },
+        },
+      },
       ...adminResourcePaths({
         path: 'people',
         plural: 'People',
@@ -672,6 +730,7 @@ export function buildOpenApiDocument() {
       schemas: {
         ...enumComponents,
         Error: toJsonSchema(errorSchema, 'output'),
+        AdminDraftCounts: toJsonSchema(adminDraftCountsSchema, 'output'),
         AdminPerson: toJsonSchema(adminPersonSchema, 'output'),
         AdminPersonPage: toJsonSchema(adminPersonPageSchema, 'output'),
         AdminPublisher: toJsonSchema(adminPublisherSchema, 'output'),

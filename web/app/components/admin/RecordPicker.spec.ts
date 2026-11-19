@@ -93,6 +93,25 @@ describe('AdminRecordPicker', () => {
     expect(wrapper.emitted('update:modelValue')?.[0]).toEqual([RESULTS[0]])
   })
 
+  it('signale un brouillon dans les propositions et dans le choix fait', async () => {
+    const draft: RecordRef = { id: 3, label: 'Mélanie Roux', draft: true }
+    const search = vi.fn(async () => [RESULTS[0]!, draft])
+    const wrapper = await mountPicker(null, search).wrapper
+
+    await wrapper.get('[data-testid="picker-input"]').setValue('m')
+    await vi.advanceTimersByTimeAsync(250)
+    await flushPromises()
+
+    const options = wrapper.findAll('.picker__option')
+    expect(options[0]!.find('[data-testid="picker-draft"]').exists()).toBe(false)
+    expect(options[1]!.get('[data-testid="picker-draft"]').text()).toBe('Brouillon')
+
+    const chosen = await mountPicker(draft).wrapper
+    expect(chosen.get('[data-testid="picker-chosen"] [data-testid="picker-draft"]').text()).toBe(
+      'Brouillon',
+    )
+  })
+
   it('montre le choix fait et permet de le changer', async () => {
     const wrapper = await mountPicker(RESULTS[0]!).wrapper
 

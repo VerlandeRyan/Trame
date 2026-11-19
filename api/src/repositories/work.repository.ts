@@ -25,6 +25,7 @@ import {
   displayTitle,
   searchCondition,
   visibleWork,
+  visibleWorkSql,
   workSummaryColumns,
   type MatchMode,
 } from './work-sql.js';
@@ -441,7 +442,7 @@ export function createWorkRepository(db: Db): WorkRepository {
           .innerJoin('work as w', 'w.id', 'wr.related_work_id')
           .select(['wr.relation', 'w.id', relatedTitle, 'w.type'])
           .where('wr.work_id', '=', id)
-          .where('w.deleted_at', 'is', null)
+          .where(visibleWorkSql('w'))
           .orderBy('w.title')
           .execute(),
         db
@@ -449,7 +450,7 @@ export function createWorkRepository(db: Db): WorkRepository {
           .innerJoin('work as w', 'w.id', 'wr.work_id')
           .select(['wr.relation', 'w.id', relatedTitle, 'w.type'])
           .where('wr.related_work_id', '=', id)
-          .where('w.deleted_at', 'is', null)
+          .where(visibleWorkSql('w'))
           .orderBy('w.title')
           .execute(),
         db

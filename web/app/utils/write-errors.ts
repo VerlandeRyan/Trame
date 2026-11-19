@@ -11,6 +11,14 @@ const WRITE_ERROR_KEYS = new Map([
 /** Advice shown under a failed save that can simply be replayed. */
 export const RETRY_HINT_KEY = 'writeError.retryHint'
 
+/** Failures of the server or the network, not of the request: replaying the write may succeed. */
+const TRANSIENT_CODES = new Set(['INTERNAL_ERROR', 'RATE_LIMITED'])
+
+/** Whether "Retry" makes sense: any other refusal comes back identical until the user fixes the cause. */
+export function isRetryable(code: string): boolean {
+  return TRANSIENT_CODES.has(code)
+}
+
 /** Translation key of the message to display for an API error code. */
 export function writeErrorKey(code: string): string {
   return WRITE_ERROR_KEYS.get(code) ?? 'writeError.generic'

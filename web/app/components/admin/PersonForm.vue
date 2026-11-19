@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { isBlank, optionsOf, PERSON_KINDS, type PersonDraft } from '~/utils/admin'
+import { isBlank, optionsOf, PERSON_KINDS, type FormMode, type PersonDraft } from '~/utils/admin'
 
 /** Form of a person or a collective: name, kind, links. */
 const props = defineProps<{
@@ -7,9 +7,10 @@ const props = defineProps<{
   /** Flags the required fields left empty, after a save refused for that reason. */
   showErrors?: boolean
   saving: boolean
+  mode?: FormMode
 }>()
 const draft = defineModel<PersonDraft>({ required: true })
-const emit = defineEmits<{ submit: [] }>()
+const emit = defineEmits<{ submit: []; publish: [] }>()
 const { t } = useI18n()
 const kindOptions = optionsOf(PERSON_KINDS, (code) => t(`admin.option.person.${code}`))
 const isNameMissing = computed(() => props.showErrors === true && isBlank(draft.value.name))
@@ -38,7 +39,12 @@ const isNameMissing = computed(() => props.showErrors === true && isBlank(draft.
         :show-errors="showErrors"
       />
     </AdminPanel>
-    <AdminFormActions :error-key="errorKey" :saving="saving" />
+    <AdminFormActions
+      :error-key="errorKey"
+      :saving="saving"
+      :mode="mode"
+      @publish="emit('publish')"
+    />
   </form>
 </template>
 

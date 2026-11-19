@@ -13,7 +13,15 @@ const { t } = useI18n()
 const target = parseAdminEditRoute(route.params) ?? { kind: 'works' as const, id: 'new' as const }
 const { kind, id } = target
 const editor = useAdminEditor(kind, id)
-const { record, errorKey, showErrors, saving } = editor
+const { record, errorKey, errorScope, saving } = editor
+/** Whether a refused save asks the person and publisher forms to flag their gaps. */
+const showErrors = computed(() => errorScope.value !== 'none')
+// The message sits above "Save", far from the buttons at the top of a long form: bring it into view.
+watch(errorKey, async (key) => {
+  if (!key) return
+  await nextTick()
+  document.querySelector('.edit [role="alert"]')?.scrollIntoView({ block: 'center' })
+})
 // Arrived without going through the list (direct address): "Back" leads to this record's tab.
 const { last: lastList, location: listLocation } = useAdminListLocation()
 lastList.value ??= parseAdminListQuery({ kind })
@@ -39,21 +47,50 @@ const { data: genres } = await useAsyncData('admin-genres', async () =>
 const search = (searchKind: AdminKind, text: string): Promise<RecordRef[]> =>
   editor.client.search(searchKind, text)
 /** Goes back to the list the user came from. */
-const backToList = () => navigateTo(listLocation.value)
-
-/** Saves, then goes back to the list if the API accepted. */
-async function submit() {
-  if (await editor.save(formatCodesOf(genres.value?.items ?? []))) await backToList()
+async function backToList() {
+  await navigateTo(listLocation.value)
 }
+
+const formatCodes = computed(() => formatCodesOf(genres.value?.items ?? []))
+
+/** Saves (as a draft for a new record), then goes back to the list. */
+const submit = () => editor.save(formatCodes.value, false, backToList)
+
+const confirmingPublish = ref(false)
+/** Publishing makes the record public: it asks first, once nothing is missing. */
+function askPublish() {
+  if (editor.checkPublishable(formatCodes.value)) {
+    confirmingPublish.value = true
+  }
+}
+
+/** Saves and publishes, then goes back to the list. */
+const publish = () => editor.save(formatCodes.value, true, backToList)
+
+/** Form footer mode: a new record, a draft or a published one. */
+const formMode = computed(() => {
+  if (id === 'new') return 'create' as const
+  return record.value?.draft ? ('draft' as const) : ('published' as const)
+})
+/** Translation key of the state pill. */
+const stateKey = computed(() => {
+  if (record.value?.archived) return 'admin.archived'
+  return record.value?.draft ? 'admin.draft' : 'admin.published'
+})
+
+const confirmingDelete = ref(false)
+/** Goes back to the list without the "unsaved changes" question: the record is gone or archived. */
+async function leaveToList() {
+  isLeaving = true
+  await backToList()
+}
+
+/** Deletes the draft for good, then goes back to the list. */
+const deleteDraft = () => editor.deleteDraft(leaveToList)
 
 const confirmingArchive = ref(false)
 /** Archives the record, then goes back to the list. */
-async function archive() {
-  if (await editor.setArchived(true)) {
-    isLeaving = true
-    await backToList()
-  }
-}
+const archive = () => editor.setArchived(true, leaveToList)
 /** Restores the record. */
 const restore = () => editor.setArchived(false)
 
@@ -99,18 +136,30 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
     <header class="edit__head">
       <div class="edit__heading">
         <h1 class="edit__title">{{ record?.heading ?? t(`admin.heading.new.${kind}`) }}</h1>
+        <UiDraftBadge v-if="record?.draft && !record.archived" data-testid="admin-state">{{
+          t(stateKey)
+        }}</UiDraftBadge>
         <span
-          v-if="record"
+          v-else-if="record"
           class="edit__badge"
           :class="{ 'edit__badge--archived': record.archived }"
           data-testid="admin-state"
         >
-          {{ t(record.archived ? 'admin.archived' : 'admin.published') }}
+          {{ t(stateKey) }}
         </span>
       </div>
       <template v-if="record">
         <UiButton
-          v-if="record.archived"
+          v-if="record.draft"
+          class="edit__action"
+          variant="danger"
+          data-testid="admin-delete-draft"
+          @click="confirmingDelete = true"
+        >
+          <Icon name="tabler:trash" size="16" aria-hidden="true" />{{ t('admin.deleteDraft') }}
+        </UiButton>
+        <UiButton
+          v-else-if="record.archived"
           class="edit__action"
           variant="secondary"
           data-testid="admin-restore"
@@ -129,15 +178,21 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
         </UiButton>
       </template>
     </header>
+    <div v-if="record?.draft && !record.archived" class="edit__banner" data-testid="draft-banner">
+      <Icon name="tabler:eye-off" size="20" aria-hidden="true" />
+      <p class="edit__banner-text">{{ t('admin.draftBanner') }}</p>
+    </div>
     <AdminWorkForm
       v-if="kind === 'works'"
       v-model="editor.work.value"
       :genres="genres?.items ?? []"
       :search="search"
       :error-key="errorKey"
-      :show-errors="showErrors"
+      :error-scope="errorScope"
       :saving="saving"
+      :mode="formMode"
       @submit="submit"
+      @publish="askPublish"
     />
     <AdminPersonForm
       v-else-if="kind === 'people'"
@@ -145,7 +200,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :error-key="errorKey"
       :show-errors="showErrors"
       :saving="saving"
+      :mode="formMode"
       @submit="submit"
+      @publish="askPublish"
     />
     <AdminPublisherForm
       v-else
@@ -153,7 +210,9 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :error-key="errorKey"
       :show-errors="showErrors"
       :saving="saving"
+      :mode="formMode"
       @submit="submit"
+      @publish="askPublish"
     />
     <AdminArchiveConfirm
       v-model="confirmingArchive"
@@ -161,6 +220,27 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :kind="kind"
       :impact="record?.impact"
       @confirm="archive"
+    />
+    <UiConfirm
+      v-model="confirmingPublish"
+      data-testid="publish-confirm"
+      :title="t('admin.publishConfirm.title')"
+      :text="t('admin.publishConfirm.text')"
+      :confirm-label="t('admin.publish')"
+      :cancel-label="t('admin.publishConfirm.cancel')"
+      :close-label="t('action.close')"
+      @confirm="publish"
+    />
+    <UiConfirm
+      v-model="confirmingDelete"
+      danger
+      data-testid="delete-draft-confirm"
+      :title="t('admin.deleteDraftConfirm.title')"
+      :text="t('admin.deleteDraftConfirm.text')"
+      :confirm-label="t('admin.deleteDraft')"
+      :cancel-label="t('admin.deleteDraftConfirm.cancel')"
+      :close-label="t('action.close')"
+      @confirm="deleteDraft"
     />
     <UiConfirm
       v-model="confirmingLeave"
@@ -225,6 +305,21 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
 
 .edit__badge--archived {
   background: var(--color-chip);
+}
+
+.edit__banner {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.edit__banner-text {
+  margin: 0;
+  font-size: 0.875rem;
 }
 
 .edit__action {

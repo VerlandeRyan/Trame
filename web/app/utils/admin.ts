@@ -20,6 +20,10 @@ export const ADMIN_KINDS: readonly AdminKind[] = ['works', 'people', 'publishers
 export type AdminScope = 'active' | 'archived' | 'all'
 export const ADMIN_SCOPES: readonly AdminScope[] = ['active', 'archived', 'all']
 
+/** Which records a list shows by publication: drafts, published ones or both. */
+export type AdminState = 'all' | 'draft' | 'published'
+export const ADMIN_STATES: readonly AdminState[] = ['all', 'draft', 'published']
+
 // Runtime values taken from the contract. A work is read or bought (`WORK_LINK_KINDS`); the website
 // and social networks belong to a person (`PERSON_LINK_KINDS`).
 export { PERSON_LINK_KINDS, WORK_LINK_KINDS } from '../contract/api'
@@ -63,6 +67,8 @@ export interface AdminLink {
 export interface AdminListItem {
   id: number
   archived: boolean
+  /** Not yet published: only visible in the administration. */
+  draft: boolean
   /** Title (work) or name (person, publisher). */
   title?: string
   name?: string
@@ -92,6 +98,7 @@ export interface AdminPerson {
   name: string
   kind: (typeof PERSON_KINDS)[number]
   archived: boolean
+  draft: boolean
   activeWorkCount: number
   links: AdminLink[]
 }
@@ -103,6 +110,7 @@ export interface AdminPublisher {
   kind: (typeof PUBLISHER_KINDS)[number]
   url: string | null
   archived: boolean
+  draft: boolean
   activeWorkCount: number
 }
 
@@ -114,6 +122,7 @@ export interface AdminWork {
   type: (typeof WORK_TYPES)[number]
   status: (typeof WORK_STATUSES)[number]
   archived: boolean
+  draft: boolean
   chapters: number | null
   volumes: number | null
   startedOn: string | null
@@ -148,6 +157,8 @@ export const archiveImpact = (work: AdminWork): ArchiveImpact => ({
 export interface RecordRef {
   id: number
   label: string
+  /** Not yet published: a published work cannot cite it. */
+  draft?: boolean
 }
 
 // --- Input: each field only accepts what the API accepts ---
@@ -217,13 +228,14 @@ export interface AdminWorkFilters {
 export interface AdminListQuery extends AdminWorkFilters {
   kind: AdminKind
   scope: AdminScope
+  state: AdminState
   q: string
   sort: AdminWorkSort
   page: number
 }
 
 const FILTER_NAMES = ['type', 'status', 'format'] as const
-const NO_FILTERS: AdminWorkFilters = { type: [], status: [], format: [] }
+export const NO_FILTERS: AdminWorkFilters = { type: [], status: [], format: [] }
 const FORMAT_CODE = /^[a-z0-9]+(_[a-z0-9]+)*$/
 const MAX_FILTER_VALUES = 10
 
@@ -247,11 +259,13 @@ function filterValues(value: unknown, isValid: (code: string) => boolean): strin
 export function parseAdminListQuery(query: Record<string, unknown>): AdminListQuery {
   const kind = firstValue(query.kind)
   const scope = firstValue(query.scope)
+  const state = firstValue(query.state)
   const sort = firstValue(query.sort)
   const page = Number.parseInt(firstValue(query.page), 10)
   return {
     kind: isOneOf(ADMIN_KINDS, kind) ? kind : 'works',
     scope: isOneOf(ADMIN_SCOPES, scope) ? scope : 'active',
+    state: isOneOf(ADMIN_STATES, state) ? state : 'all',
     q: firstValue(query.q).trim(),
     type: filterValues(query.type, (code) => isOneOf(WORK_TYPES, code)),
     status: filterValues(query.status, (code) => isOneOf(WORK_STATUSES, code)),
@@ -266,6 +280,7 @@ export function toAdminRouteQuery(list: AdminListQuery): Record<string, string> 
   const query: Record<string, string> = {}
   if (list.kind !== 'works') query.kind = list.kind
   if (list.scope !== 'active') query.scope = list.scope
+  if (list.state !== 'all') query.state = list.state
   if (list.q) query.q = list.q
   for (const filter of FILTER_NAMES) {
     if (list[filter].length > 0) query[filter] = list[filter].join(',')
@@ -277,7 +292,13 @@ export function toAdminRouteQuery(list: AdminListQuery): Record<string, string> 
 
 /** API parameters of a list; filters and sort only exist for works. */
 export function toAdminApiQuery(list: AdminListQuery, pageSize: number) {
-  const base = { q: list.q || undefined, scope: list.scope, page: list.page, pageSize }
+  const base = {
+    q: list.q || undefined,
+    scope: list.scope,
+    state: list.state,
+    page: list.page,
+    pageSize,
+  }
   if (list.kind !== 'works') return base
   return {
     ...base,
@@ -290,7 +311,14 @@ export function toAdminApiQuery(list: AdminListQuery, pageSize: number) {
 
 /** Switching tabs starts from an empty search and filters: each tab searches on its own. */
 export function queryForTab(list: AdminListQuery, tab: AdminTab): AdminListQuery {
-  const next = { ...list, ...NO_FILTERS, q: '', sort: 'title' as const, page: 1 }
+  const next = {
+    ...list,
+    ...NO_FILTERS,
+    state: 'all' as const,
+    q: '',
+    sort: 'title' as const,
+    page: 1,
+  }
   return tab === 'archives'
     ? { ...next, scope: 'archived' }
     : { ...next, kind: tab, scope: 'active' }
@@ -419,22 +447,41 @@ export function urlErrorKey(value: string, isRequired: boolean): string | undefi
   return isHttpsUrl(value) ? undefined : 'admin.error.invalidUrl'
 }
 
-/** Whether a link row has no address or an invalid one (the address is required once the row exists). */
-export const hasInvalidLinkUrl = (links: readonly { url: string }[]) =>
-  links.some((link) => urlErrorKey(link.url, true) !== undefined)
+/**
+ * Whether a link row has an invalid address; an empty one counts as invalid when `isRequired`
+ * (the address is required once the row exists), otherwise it is simply dropped.
+ */
+export const hasInvalidLinkUrl = (links: readonly { url: string }[], isRequired = true) =>
+  links.some((link) => urlErrorKey(link.url, isRequired) !== undefined)
+
+/** What a draft work cannot do without: a title, and valid addresses where some were typed. */
+export const hasUnsavableDraft = (draft: WorkDraft): boolean =>
+  isBlank(draft.title) || hasInvalidLinkUrl(draft.links, false)
+
+/** What the record form offers: a new record, a draft or a published one. */
+export type FormMode = 'create' | 'draft' | 'published'
+
+/** What a refused save asks the form to flag: nothing, the title or name only (draft), or every gap. */
+export type ErrorScope = 'none' | 'title' | 'all'
 
 /** Codes of the genres that are formats (manga, webtoon…). */
 export const formatCodesOf = (genres: readonly { code: string; category: string }[]) =>
   genres.filter((genre) => genre.category === 'format').map((genre) => genre.code)
 
 /**
- * The required fields of a work left empty: the title, and the format (at least one, only checked
- * when the catalogue offers formats).
+ * The required fields of a work left empty: the title, the format (at least one, only checked
+ * when the catalogue offers formats), an author, a publisher and a synopsis in the original
+ * language. Only the title is required to save a draft.
  */
 export function missingWorkFields(draft: WorkDraft, formatCodes: readonly string[]) {
   return {
     title: isBlank(draft.title),
     formats: formatCodes.length > 0 && !draft.genres.some((code) => formatCodes.includes(code)),
+    credits: !draft.credits.some((row) => row.person !== null),
+    publishers: !draft.publishers.some((row) => row.publisher !== null),
+    synopsis: !draft.synopses.some(
+      (row) => row.language === draft.originalLanguage && !isBlank(row.text),
+    ),
   }
 }
 
@@ -456,11 +503,14 @@ export function incompleteSections(
   const isIncomplete: Record<WorkSection, boolean> = {
     info: missing.title || missing.formats,
     texts:
+      missing.synopsis ||
       draft.titles.some((row) => isBlank(row.title)) ||
       draft.synopses.some((row) => isBlank(row.text)),
     relations: draft.relations.some((row) => row.work === null),
     links: hasInvalidLinkUrl(draft.links),
     people:
+      missing.credits ||
+      missing.publishers ||
       draft.credits.some((row) => row.person === null) ||
       draft.publishers.some((row) => row.publisher === null),
   }
@@ -578,11 +628,17 @@ export const draftToPublisherBody = (draft: PublisherDraft) => ({
   url: textOrNull(draft.url),
 })
 
-/** The generic validation message talks about the handle: administration forms have their own. */
+/** Administration messages that replace the generic ones (the validation one talks about the handle). */
+const ADMIN_ERROR_KEYS = new Map([
+  ['VALIDATION_ERROR', 'admin.error.validation'],
+  ['NOT_FOUND', 'admin.error.notFound'],
+])
+
+/** Key of the message shown for a refused administration write. */
 export function adminErrorKey(error: unknown, messageKeyFor: (error: ApiError) => string): string {
   // `useApi().request` only throws `ApiError`s.
   const apiError = error as ApiError
-  return apiError.code === 'VALIDATION_ERROR' ? 'admin.error.validation' : messageKeyFor(apiError)
+  return ADMIN_ERROR_KEYS.get(apiError.code) ?? messageKeyFor(apiError)
 }
 
 // --- API validation errors: first path segment = field ---

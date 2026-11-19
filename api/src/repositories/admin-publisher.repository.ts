@@ -3,23 +3,32 @@ import { sql } from 'kysely';
 import type { Db, PublisherKind } from '../db/database.js';
 import {
   archiveCondition,
+  countDraftRows,
+  deleteDraftRow,
+  DRAFTS_FIRST,
   FILTERED_TOTAL,
   nameContains,
+  publicationCondition,
+  publishRow,
   totalOf,
   type ArchiveScope,
+  type PublicationState,
 } from './admin-sql.js';
 
-/** Data written when creating or replacing a publisher. */
+/** Data written when creating or replacing a publisher; `published` only counts at creation. */
 export interface AdminPublisherDraft {
   name: string;
   kind: PublisherKind;
   url: string | null;
+  published: boolean;
 }
 
 /** A publisher as shown in lists and details. */
-export interface AdminPublisherSummary extends AdminPublisherDraft {
+export interface AdminPublisherSummary extends Omit<AdminPublisherDraft, 'published'> {
   id: number;
   archived: boolean;
+  /** Not yet published: only visible in the administration. */
+  draft: boolean;
   /** Unarchived works published by this publisher or platform. */
   activeWorkCount: number;
 }
@@ -28,6 +37,7 @@ export interface AdminPublisherSummary extends AdminPublisherDraft {
 export interface AdminPublisherListCriteria {
   q?: string;
   scope: ArchiveScope;
+  state: PublicationState;
   limit: number;
   offset: number;
 }
@@ -43,6 +53,11 @@ export interface AdminPublisherRepository {
   update(id: number, draft: AdminPublisherDraft): Promise<boolean>;
   /** False if the publisher does not exist, or, when archiving, if an unarchived work lists it. */
   setArchived(id: number, archived: boolean): Promise<boolean>;
+  /** False if the publisher does not exist; publishing a published one changes nothing. */
+  publish(id: number): Promise<boolean>;
+  /** Deletes a draft nothing cites; false if it is not a draft or a work lists it. */
+  deleteDraft(id: number): Promise<boolean>;
+  countDrafts(): Promise<number>;
 }
 
 /** Columns read for a publisher summary. */
@@ -52,6 +67,7 @@ interface SummaryRow {
   kind: PublisherKind;
   url: string | null;
   deleted_at: Date | null;
+  published_at: Date | null;
   activeWorkCount: number;
 }
 
@@ -75,6 +91,7 @@ function toSummary(row: SummaryRow): AdminPublisherSummary {
     kind: row.kind,
     url: row.url,
     archived: row.deleted_at !== null,
+    draft: row.published_at === null,
     activeWorkCount: row.activeWorkCount,
   };
 }
@@ -82,10 +99,16 @@ function toSummary(row: SummaryRow): AdminPublisherSummary {
 /** Creates the publisher administration repository. */
 export function createAdminPublisherRepository(db: Db): AdminPublisherRepository {
   /** Publishers matching the search text and archive scope. */
-  function filtered({ q, scope }: Pick<AdminPublisherListCriteria, 'q' | 'scope'>) {
+  function filtered({
+    q,
+    scope,
+    state,
+  }: Pick<AdminPublisherListCriteria, 'q' | 'scope' | 'state'>) {
     let query = db.selectFrom('publisher');
     const archive = archiveCondition('publisher.deleted_at', scope);
     if (archive) query = query.where(archive);
+    const publication = publicationCondition('publisher.published_at', state);
+    if (publication) query = query.where(publication);
     if (q !== undefined) query = query.where(nameContains('publisher.name', q));
     return query;
   }
@@ -94,7 +117,7 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
   function selectSummaries(query: ReturnType<typeof filtered>) {
     return query
       .select(['publisher.id', 'publisher.name', 'publisher.kind', 'publisher.url'])
-      .select(['publisher.deleted_at'])
+      .select(['publisher.deleted_at', 'publisher.published_at'])
       .select(ACTIVE_WORKS_OF_PUBLISHER.as('activeWorkCount'));
   }
 
@@ -102,6 +125,7 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
     async list(criteria) {
       const rows = await selectSummaries(filtered(criteria))
         .select(FILTERED_TOTAL.as('total'))
+        .orderBy(DRAFTS_FIRST('publisher.published_at'))
         .orderBy(sql`immutable_unaccent(publisher.name)`)
         .orderBy('publisher.id')
         .limit(criteria.limit)
@@ -117,19 +141,36 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
     },
 
     async find(id) {
-      const row = await selectSummaries(filtered({ scope: 'all' }))
+      const row = await selectSummaries(filtered({ scope: 'all', state: 'all' }))
         .where('publisher.id', '=', id)
         .executeTakeFirst();
       return row ? toSummary(row) : null;
     },
 
-    async create({ name, kind, url }) {
+    async create({ name, kind, url, published }) {
       const { id } = await db
         .insertInto('publisher')
-        .values({ name, kind, url })
+        .values({ name, kind, url, published_at: published ? sql<Date>`now()` : null })
         .returning('id')
         .executeTakeFirstOrThrow();
       return id;
+    },
+
+    async publish(id) {
+      return publishRow(db, 'publisher', id);
+    },
+
+    async deleteDraft(id) {
+      return deleteDraftRow(
+        db,
+        'publisher',
+        id,
+        sql<boolean>`NOT EXISTS (SELECT 1 FROM work_publisher wp WHERE wp.publisher_id = publisher.id)`,
+      );
+    },
+
+    async countDrafts() {
+      return countDraftRows(db, 'publisher');
     },
 
     async update(id, { name, kind, url }) {

@@ -1666,6 +1666,62 @@
         }
       }
     },
+    "/api/v1/admin/draft-counts": {
+      "get": {
+        "summary": "Compter les brouillons",
+        "operationId": "getAdminDraftCounts",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Nombre de brouillons de chaque type de fiche.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDraftCounts"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/people": {
       "get": {
         "summary": "Lister : People",
@@ -1702,6 +1758,21 @@
                 "active",
                 "archived",
                 "all"
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "Brouillons seuls, fiches publiées seules, ou les deux.",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "draft",
+                "published"
               ]
             }
           },
@@ -1845,6 +1916,11 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "published": {
+                    "default": true,
+                    "type": "boolean",
+                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
                   }
                 },
                 "required": [
@@ -2079,6 +2155,11 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "published": {
+                    "default": true,
+                    "type": "boolean",
+                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
                   }
                 },
                 "required": [
@@ -2133,6 +2214,104 @@
           },
           "404": {
             "description": "Person inconnu. Code : `NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Supprimer un brouillon : Person",
+        "operationId": "deleteAdminDraftPerson",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Brouillon supprimé définitivement."
+          },
+          "400": {
+            "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Person inconnu. Code : `NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2239,7 +2418,7 @@
             }
           },
           "409": {
-            "description": "Des œuvres non archivées y sont liées. Code : `PERSON_HAS_WORKS`.",
+            "description": "Brouillon (`DRAFT_NOT_ARCHIVABLE`) ou des œuvres non archivées y sont liées. Code : `PERSON_HAS_WORKS`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2368,6 +2547,103 @@
         }
       }
     },
+    "/api/v1/admin/people/{id}/publish": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Publier : Person",
+        "operationId": "publishAdminPerson",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Publiée (sans effet si elle l’est déjà).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPerson"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Person inconnu. Code : `NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/publishers": {
       "get": {
         "summary": "Lister : Publishers",
@@ -2404,6 +2680,21 @@
                 "active",
                 "archived",
                 "all"
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "Brouillons seuls, fiches publiées seules, ou les deux.",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "draft",
+                "published"
               ]
             }
           },
@@ -2523,6 +2814,11 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "published": {
+                    "default": true,
+                    "type": "boolean",
+                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
                   }
                 },
                 "required": [
@@ -2733,6 +3029,11 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "published": {
+                    "default": true,
+                    "type": "boolean",
+                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
                   }
                 },
                 "required": [
@@ -2787,6 +3088,104 @@
           },
           "404": {
             "description": "Publisher inconnu. Code : `NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Supprimer un brouillon : Publisher",
+        "operationId": "deleteAdminDraftPublisher",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Brouillon supprimé définitivement."
+          },
+          "400": {
+            "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Publisher inconnu. Code : `NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -2893,7 +3292,7 @@
             }
           },
           "409": {
-            "description": "Des œuvres non archivées y sont liées. Code : `PUBLISHER_HAS_WORKS`.",
+            "description": "Brouillon (`DRAFT_NOT_ARCHIVABLE`) ou des œuvres non archivées y sont liées. Code : `PUBLISHER_HAS_WORKS`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3022,6 +3421,103 @@
         }
       }
     },
+    "/api/v1/admin/publishers/{id}/publish": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Publier : Publisher",
+        "operationId": "publishAdminPublisher",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Publiée (sans effet si elle l’est déjà).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPublisher"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Publisher inconnu. Code : `NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/works": {
       "get": {
         "summary": "Lister : Works",
@@ -3058,6 +3554,21 @@
                 "active",
                 "archived",
                 "all"
+              ]
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "description": "Brouillons seuls, fiches publiées seules, ou les deux.",
+            "schema": {
+              "default": "all",
+              "type": "string",
+              "enum": [
+                "all",
+                "draft",
+                "published"
               ]
             }
           },
@@ -3428,6 +3939,11 @@
                       ],
                       "additionalProperties": false
                     }
+                  },
+                  "published": {
+                    "default": true,
+                    "type": "boolean",
+                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
                   },
                   "updatedAt": {
                     "type": "string",
@@ -3859,6 +4375,11 @@
                       "additionalProperties": false
                     }
                   },
+                  "published": {
+                    "default": true,
+                    "type": "boolean",
+                    "description": "À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement."
+                  },
                   "updatedAt": {
                     "type": "string",
                     "format": "date-time",
@@ -3934,6 +4455,104 @@
           },
           "409": {
             "description": "La fiche a été modifiée depuis sa lecture. Code : `STALE_RECORD`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Supprimer un brouillon : Work",
+        "operationId": "deleteAdminDraftWork",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Brouillon supprimé définitivement."
+          },
+          "400": {
+            "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Work inconnu. Code : `NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4039,6 +4658,16 @@
               }
             }
           },
+          "409": {
+            "description": "Un brouillon se supprime, il ne s’archive pas. Code : `DRAFT_NOT_ARCHIVABLE`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
           "429": {
             "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
             "content": {
@@ -4098,6 +4727,103 @@
           },
           "400": {
             "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Work inconnu. Code : `NOT_FOUND`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/works/{id}/publish": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "summary": "Publier : Work",
+        "operationId": "publishAdminWork",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9]\\d{0,14}$"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Publiée (sans effet si elle l’est déjà).",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminWork"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Fiche incomplète (`VALIDATION_ERROR` : un format est requis) ou citant un brouillon (`DRAFT_REFERENCE`). Code : `DRAFT_REFERENCE`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4315,6 +5041,10 @@
               "PUBLISHER_HAS_WORKS",
               "INVALID_REFERENCE",
               "ARCHIVED_REFERENCE",
+              "DRAFT_REFERENCE",
+              "DRAFT_NOT_ARCHIVABLE",
+              "NOT_A_DRAFT",
+              "DRAFT_IN_USE",
               "STALE_RECORD",
               "FORBIDDEN_ORIGIN",
               "HANDLE_NOT_ALLOWED",
@@ -4364,6 +5094,32 @@
         "additionalProperties": false,
         "description": "Réponse d’erreur unique."
       },
+      "AdminDraftCounts": {
+        "type": "object",
+        "properties": {
+          "works": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "people": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "publishers": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          }
+        },
+        "required": [
+          "works",
+          "people",
+          "publishers"
+        ],
+        "additionalProperties": false
+      },
       "AdminPerson": {
         "type": "object",
         "properties": {
@@ -4380,6 +5136,10 @@
           },
           "archived": {
             "type": "boolean"
+          },
+          "draft": {
+            "type": "boolean",
+            "description": "Brouillon : visible seulement dans l’administration."
           },
           "activeWorkCount": {
             "type": "integer",
@@ -4419,6 +5179,7 @@
           "name",
           "kind",
           "archived",
+          "draft",
           "activeWorkCount",
           "links"
         ],
@@ -4446,6 +5207,10 @@
                 "archived": {
                   "type": "boolean"
                 },
+                "draft": {
+                  "type": "boolean",
+                  "description": "Brouillon : visible seulement dans l’administration."
+                },
                 "activeWorkCount": {
                   "type": "integer",
                   "minimum": -9007199254740991,
@@ -4458,6 +5223,7 @@
                 "name",
                 "kind",
                 "archived",
+                "draft",
                 "activeWorkCount"
               ],
               "additionalProperties": false
@@ -4510,6 +5276,10 @@
           "archived": {
             "type": "boolean"
           },
+          "draft": {
+            "type": "boolean",
+            "description": "Brouillon : visible seulement dans l’administration."
+          },
           "activeWorkCount": {
             "type": "integer",
             "minimum": -9007199254740991,
@@ -4523,6 +5293,7 @@
           "kind",
           "url",
           "archived",
+          "draft",
           "activeWorkCount"
         ],
         "additionalProperties": false
@@ -4555,6 +5326,10 @@
                 "archived": {
                   "type": "boolean"
                 },
+                "draft": {
+                  "type": "boolean",
+                  "description": "Brouillon : visible seulement dans l’administration."
+                },
                 "activeWorkCount": {
                   "type": "integer",
                   "minimum": -9007199254740991,
@@ -4568,6 +5343,7 @@
                 "kind",
                 "url",
                 "archived",
+                "draft",
                 "activeWorkCount"
               ],
               "additionalProperties": false
@@ -4619,6 +5395,10 @@
           },
           "archived": {
             "type": "boolean"
+          },
+          "draft": {
+            "type": "boolean",
+            "description": "Brouillon : visible seulement dans l’administration."
           },
           "chapters": {
             "anyOf": [
@@ -4880,6 +5660,7 @@
           "type",
           "status",
           "archived",
+          "draft",
           "chapters",
           "volumes",
           "startedOn",
@@ -4924,6 +5705,10 @@
                 },
                 "archived": {
                   "type": "boolean"
+                },
+                "draft": {
+                  "type": "boolean",
+                  "description": "Brouillon : visible seulement dans l’administration."
                 },
                 "formats": {
                   "type": "array",
@@ -4977,6 +5762,7 @@
                 "type",
                 "status",
                 "archived",
+                "draft",
                 "formats",
                 "mainAuthor",
                 "updatedAt",

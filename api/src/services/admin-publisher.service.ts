@@ -5,6 +5,7 @@ import type {
   AdminPublisherRepository,
   AdminPublisherSummary,
 } from '../repositories/admin-publisher.repository.js';
+import { assertNotDraft, createDraftOperations } from './admin-draft.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
 
 /** Data accepted to create or replace a publisher. */
@@ -19,6 +20,10 @@ export interface AdminPublisherService {
   /** Refused while the publisher has unarchived works. */
   archive(id: number): Promise<AdminPublisherSummary>;
   restore(id: number): Promise<AdminPublisherSummary>;
+  publish(id: number): Promise<AdminPublisherSummary>;
+  /** Only a draft no work lists (`NOT_A_DRAFT`, `DRAFT_IN_USE`). */
+  remove(id: number): Promise<void>;
+  countDrafts(): Promise<number>;
 }
 
 /** Creates the publisher administration service. */
@@ -37,6 +42,7 @@ export function createAdminPublisherService(
       const { items, total } = await repository.list({
         q: input.q,
         scope: input.scope,
+        state: input.state,
         ...pagination(input),
       });
       return { items, page: input.page, pageSize: input.pageSize, total };
@@ -56,6 +62,7 @@ export function createAdminPublisherService(
     async archive(id) {
       const publisher = await get(id);
       if (publisher.archived) return publisher;
+      assertNotDraft(publisher);
       if (!(await repository.setArchived(id, true))) {
         const { activeWorkCount } = await get(id);
         throw new AppError('PUBLISHER_HAS_WORKS', { activeWorkCount });
@@ -68,5 +75,9 @@ export function createAdminPublisherService(
       await repository.setArchived(id, false);
       return get(id);
     },
+
+    ...createDraftOperations(get, repository),
+
+    countDrafts: () => repository.countDrafts(),
   };
 }

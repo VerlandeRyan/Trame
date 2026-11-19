@@ -88,7 +88,7 @@ La déconnexion et l'abandon d'une inscription suppriment la ligne ; une session
 | cover_source_url | text | nullable — provenance de la couverture |
 | cover_consent | boolean | NOT NULL, défaut false — accord de l'auteur/éditeur |
 | created_at / updated_at | timestamptz | NOT NULL |
-| published_at | timestamptz | nullable — NULL = brouillon (créé à l'acceptation d'une soumission), invisible du public ; distinct de `deleted_at` |
+| published_at | timestamptz | nullable, défaut `now()` — NULL = brouillon (créé dans l'administration, ou à l'acceptation d'une soumission), invisible du public ; distinct de `deleted_at` |
 | deleted_at / deleted_by | timestamptz / bigint FK `app_user` | nullable — archivage |
 
 Index : GIN trigram sur `title` (`pg_trgm` + `unaccent`) ; index sur `type`, `status`, `deleted_at`.
@@ -122,13 +122,13 @@ PK (`work_id`, `language`). Lecture : langue demandée, sinon langue originale d
 PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inverse (sequel ↔ prequel, contains ↔ fait partie de, spin_off ↔ a pour spin-off) est déduit à l'affichage. **Lecture : « `work_id` — relation — `related_work_id` »**, par exemple « Marées Rouges – Avant la Digue — `spin_off` — Marées Rouges » ou « Le Cartographe de Sel, le Recueil — `contains` — Escale ». Par défaut, une seule relation principale par paire d'œuvres.
 
 ### `person`
-`id` PK, `name` text NOT NULL (pseudonyme ou nom d'usage), `kind` text `person` \| `collective` (défaut `person`), `deleted_at`. Pas d'e-mail ni de donnée privée.
+`id` PK, `name` text NOT NULL (pseudonyme ou nom d'usage), `kind` text `person` \| `collective` (défaut `person`), `deleted_at`, `published_at` (comme `work` : NULL = brouillon). Pas d'e-mail ni de donnée privée.
 
 ### `work_credit`
 `work_id`, `person_id`, `role` (`story` \| `art` \| `colors` \| `other`). PK (`work_id`, `person_id`, `role`).
 
 ### `publisher`
-`id` PK, `name` text NOT NULL, `kind` text `publisher` \| `platform` \| `self_published`, `url` nullable, `deleted_at`.
+`id` PK, `name` text NOT NULL, `kind` text `publisher` \| `platform` \| `self_published`, `url` nullable, `deleted_at`, `published_at` (comme `work` : NULL = brouillon).
 
 ### `work_publisher`
 `work_id`, `publisher_id`. PK composite. Facultatif : une œuvre peut n'avoir aucun éditeur (auto-édition sans structure).
@@ -184,7 +184,7 @@ Les valeurs d'énumération sont des codes **en anglais** (ADR 0007, #50) : ce s
 
 ## 4. Règles transverses
 - **Identité** : l'`id` de `work` est la seule clé de référence ; l'URL publique est `/work/{id}-{slug}` et seul `{id}` est lu.
-- **Archivage** : toute suppression est une suppression douce, réservée à l'administrateur ; les listes publiques excluent `deleted_at IS NOT NULL` (et, pour `work`, `published_at IS NULL`). Les entrées `library_entry` d'une œuvre archivée sont conservées, masquées avec l'œuvre.
+- **Archivage** : toute suppression est une suppression douce, réservée à l'administrateur ; les listes publiques excluent `deleted_at IS NOT NULL` et, pour `work`, `published_at IS NULL` (brouillon). Un brouillon n'est jamais public ; une œuvre publiée ne cite jamais un brouillon (personne, éditeur, œuvre liée), donc les listes publiques n'ont pas d'autre contrôle. Un brouillon se supprime définitivement (jamais publié) ; une fiche publiée s'archive. Les entrées `library_entry` d'une œuvre archivée sont conservées, masquées avec l'œuvre.
 - **Pas d'ISBN, pas d'édition** dans le MVP.
 - **Statistiques** : ne jamais additionner chapitres et tomes.
 - **Recherche** : `pg_trgm` + `unaccent` sur `work.title`, `work_title.title` (toutes langues, quelle que soit la langue demandée), `person.name`, `publisher.name`.

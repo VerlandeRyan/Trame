@@ -21,6 +21,7 @@ import type {
   AdminPersonSummary,
 } from '../repositories/admin-person.repository.js';
 import type { AdminPublisherSummary } from '../repositories/admin-publisher.repository.js';
+import type { DraftCounts } from '../controllers/admin-draft-counts.controller.js';
 import type { Page } from '../services/admin-list.js';
 
 /** An external link. */
@@ -46,6 +47,7 @@ const personSummary = z.strictObject({
   name: z.string(),
   kind: z.enum(PERSON_KINDS),
   archived: z.boolean(),
+  draft: z.boolean().describe('Brouillon : visible seulement dans l’administration.'),
   activeWorkCount: z.number().int().describe('Œuvres non archivées où la personne est créditée.'),
 }) satisfies z.ZodType<AdminPersonSummary>;
 
@@ -66,6 +68,7 @@ export const adminPublisherSchema = z.strictObject({
   kind: z.enum(PUBLISHER_KINDS),
   url: z.string().nullable(),
   archived: z.boolean(),
+  draft: z.boolean().describe('Brouillon : visible seulement dans l’administration.'),
   activeWorkCount: z.number().int().describe('Œuvres non archivées publiées.'),
 }) satisfies z.ZodType<AdminPublisherSummary>;
 
@@ -82,6 +85,7 @@ const workSummary = z.strictObject({
   type: z.enum(WORK_TYPES),
   status: z.enum(WORK_STATUSES),
   archived: z.boolean(),
+  draft: z.boolean().describe('Brouillon : visible seulement dans l’administration.'),
 }) satisfies z.ZodType<AdminWorkSummary>;
 
 /** Name of a cited record. */
@@ -131,6 +135,13 @@ const workListItem = workSummary.extend({
     .int()
     .describe('0 à 100, par quarts : synopsis, éditeur, lien, couverture.'),
 }) satisfies z.ZodType<AdminWorkListItem>;
+
+/** Number of drafts of each administered resource. */
+export const adminDraftCountsSchema = z.strictObject({
+  works: z.number().int(),
+  people: z.number().int(),
+  publishers: z.number().int(),
+}) satisfies z.ZodType<DraftCounts>;
 
 /** A page of works. */
 export const adminWorkPageSchema = pageOf(workListItem) satisfies z.ZodType<

@@ -8,6 +8,7 @@ const WORKS: AdminListItem[] = [
   {
     id: 4,
     archived: false,
+    draft: false,
     title: 'Aube Fictive',
     type: 'series',
     status: 'ongoing',
@@ -19,6 +20,7 @@ const WORKS: AdminListItem[] = [
   {
     id: 5,
     archived: true,
+    draft: false,
     title: 'Basalte',
     type: 'oneshot',
     status: 'completed',
@@ -45,6 +47,17 @@ describe('AdminResourceRows', () => {
     expect(first!.text()).toContain('Modifiée aujourd')
     expect(first!.text()).toContain('75 %')
     expect(first!.get('[data-testid="admin-row-completeness"]').text()).toBe('Complétude : 75 %')
+  })
+
+  it('marque un brouillon d’une pastille « Brouillon »', async () => {
+    const wrapper = await mountRows('people', [
+      { id: 8, archived: false, draft: true, name: 'M. Verdier', kind: 'person' },
+      { id: 9, archived: false, draft: false, name: 'Léa Auteure', kind: 'person' },
+    ])
+    const [draft, published] = wrapper.findAll('[data-testid="admin-row"]')
+
+    expect(draft!.get('[data-testid="admin-draft"]').text()).toBe('Brouillon')
+    expect(published!.find('[data-testid="admin-draft"]').exists()).toBe(false)
   })
 
   it('propose « Modifier » pour une fiche publiée et « Restaurer » pour une archive', async () => {
@@ -151,7 +164,14 @@ describe('AdminResourceRows', () => {
 
   it('décrit une personne : nature et nombre d’œuvres', async () => {
     const wrapper = await mountRows('people', [
-      { id: 7, archived: false, name: 'Léa Auteure', kind: 'collective', activeWorkCount: 2 },
+      {
+        id: 7,
+        archived: false,
+        draft: false,
+        name: 'Léa Auteure',
+        kind: 'collective',
+        activeWorkCount: 2,
+      },
     ])
 
     expect(wrapper.text()).toContain('Léa Auteure')

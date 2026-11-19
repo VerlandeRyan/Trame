@@ -5,6 +5,7 @@ import {
   PUBLISHER_KINDS,
   URL_MAX_LENGTH,
   urlErrorKey,
+  type FormMode,
   type PublisherDraft,
 } from '~/utils/admin'
 
@@ -14,9 +15,10 @@ const props = defineProps<{
   /** Flags the required fields and a malformed website, after a save refused for that reason. */
   showErrors?: boolean
   saving: boolean
+  mode?: FormMode
 }>()
 const draft = defineModel<PublisherDraft>({ required: true })
-const emit = defineEmits<{ submit: [] }>()
+const emit = defineEmits<{ submit: []; publish: [] }>()
 const { t } = useI18n()
 const kindOptions = optionsOf(PUBLISHER_KINDS, (code) => t(`admin.option.publisher.${code}`))
 const isNameMissing = computed(() => props.showErrors === true && isBlank(draft.value.name))
@@ -49,7 +51,12 @@ const urlError = computed(() => {
       :error="urlError"
       :input-attributes="{ type: 'url', autocomplete: 'off', maxlength: URL_MAX_LENGTH }"
     />
-    <AdminFormActions :error-key="errorKey" :saving="saving" />
+    <AdminFormActions
+      :error-key="errorKey"
+      :saving="saving"
+      :mode="mode"
+      @publish="emit('publish')"
+    />
   </form>
 </template>
 

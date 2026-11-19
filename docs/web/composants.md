@@ -5,6 +5,7 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 ## `ui/` — génériques
 - `Button` : avec `href`, un lien à l'aspect d'un bouton ; `block` : pleine largeur, survol au palier `wide` (−1,2°) au lieu de `medium` (−1,6°) pour ne pas déborder sur les voisins. La règle `:active` est déclarée **après** les variantes, sinon l'inclinaison du survol l'emporte et le bouton ne s'enfonce pas au clic.
 - `Chip`.
+- `DraftBadge` : pastille jaune (`--status-on_hold`) « Brouillon », seule définition de ce rôle (lignes de la liste d'administration, fiche, propositions de `admin/RecordPicker`) ; le texte est passé en contenu, les attributs (`data-testid`) passent au `span`.
 - `Counter` : − / saisie / +.
 - `Field` : préfixe, erreur annoncée, `inputAttributes` ; `inputAttributes.required` ajoute l'étoile et `aria-required`, jamais l'attribut natif `required` (les formulaires se valident eux-mêmes).
 - `RequiredMark` : étoile rouge (`--color-crimson`, comme les erreurs ; `aria-hidden`) après le libellé d'un champ obligatoire ; `Field`, `Select` (`required` : `aria-required`), `admin/SelectField`, `admin/PillGroup` (choix unique : `role="radiogroup"` + `aria-required`), `admin/RecordPicker` l'utilisent. `RequiredLegend` : ligne « * champ obligatoire » en tête de chaque formulaire (œuvre, personne, éditeur, pseudo). Les champs marqués sont ceux que le contrat exige et ne laisse pas nuls : `utils/required-fields.spec.ts` le contrôle.
@@ -32,6 +33,7 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 ## Autres dossiers
 - `library/` (`StatusMenu`, `StatusList` : menu des cinq statuts partagé par la fiche et `list/StatusButton`, déclencheur en slot `trigger`, action de pied en slot `footer`, `Progress`, `RemoveConfirm` : confirmation rouge du retrait, partagée par la fiche et « Modifier ma lecture ») : [fiche-oeuvre.md](fiche-oeuvre.md).
 - `list/` (`Summary`, `StatusButton`, `Row`, `GridItem`, `EditModal`) : [liste-et-profil.md](liste-et-profil.md).
+- `admin/RecordPicker` : recherche d'une fiche ; une proposition (et le choix fait) en brouillon (`RecordRef.draft`) porte la pastille « Brouillon », les archives n'y figurent pas.
 - `admin/` (`WorkForm`, `PersonForm`, `PublisherForm`, `RowList`, `RecordPicker`, `LinksFields`, `PillGroup`, `TagPicker`, `Nav`, `Filters`, `FilterGroup`, `ResourceRows`, `RowMenu`, `ArchiveConfirm`, `RowRemoveConfirm`) : [administration.md](administration.md).
 - `home/` (`Pitch`, `ContinueReading`, `Featured`, `Shelf`, `Explore`) et `search/` (`Filters`, `FilterGroup`, `ResultItem`) : [accueil-recherche.md](accueil-recherche.md).
 - `auth/` (`SignInModal`, `Notice`, `NoticeBar`) : [connexion-compte.md](connexion-compte.md).

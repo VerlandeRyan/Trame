@@ -6,6 +6,7 @@ import type {
   AdminPersonRepository,
   AdminPersonSummary,
 } from '../repositories/admin-person.repository.js';
+import { assertNotDraft, createDraftOperations } from './admin-draft.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
 
 /** Data accepted to create or replace a person. */
@@ -20,6 +21,10 @@ export interface AdminPersonService {
   /** Refused while the person is credited on an unarchived work. */
   archive(id: number): Promise<AdminPersonRecord>;
   restore(id: number): Promise<AdminPersonRecord>;
+  publish(id: number): Promise<AdminPersonRecord>;
+  /** Only a draft no work credits (`NOT_A_DRAFT`, `DRAFT_IN_USE`). */
+  remove(id: number): Promise<void>;
+  countDrafts(): Promise<number>;
 }
 
 /** Creates the people administration service. */
@@ -36,6 +41,7 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
       const { items, total } = await repository.list({
         q: input.q,
         scope: input.scope,
+        state: input.state,
         ...pagination(input),
       });
       return { items, page: input.page, pageSize: input.pageSize, total };
@@ -55,6 +61,7 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
     async archive(id) {
       const person = await get(id);
       if (person.archived) return person;
+      assertNotDraft(person);
       if (!(await repository.setArchived(id, true))) {
         const { activeWorkCount } = await get(id);
         throw new AppError('PERSON_HAS_WORKS', { activeWorkCount });
@@ -67,5 +74,9 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
       await repository.setArchived(id, false);
       return get(id);
     },
+
+    ...createDraftOperations(get, repository),
+
+    countDrafts: () => repository.countDrafts(),
   };
 }

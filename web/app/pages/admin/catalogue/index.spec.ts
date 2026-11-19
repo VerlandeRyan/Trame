@@ -10,8 +10,15 @@ enableAutoUnmount(afterEach)
 
 const WORKS: AdminPage<AdminListItem> = {
   items: [
-    { id: 4, archived: false, title: 'Aube Fictive', type: 'series', status: 'ongoing' },
-    { id: 5, archived: true, title: 'Basalte', type: 'oneshot', status: 'completed' },
+    {
+      id: 4,
+      archived: false,
+      draft: false,
+      title: 'Aube Fictive',
+      type: 'series',
+      status: 'ongoing',
+    },
+    { id: 5, archived: true, draft: false, title: 'Basalte', type: 'oneshot', status: 'completed' },
   ],
   page: 1,
   pageSize: 20,
@@ -21,7 +28,10 @@ const ARCHIVES_TOTAL = 12
 
 const requests: { path: string; query: Record<string, string> }[] = []
 const writes: string[] = []
-let restoreFails = false
+/** Code of the error the next restoration answers with, if any. */
+let restoreFails: string | null = null
+/** Drafts to finish, per kind. */
+let draftCounts = { works: 2, people: 1, publishers: 0 }
 
 beforeEach(() => {
   clearNuxtState()
@@ -33,7 +43,8 @@ beforeEach(() => {
   useRuntimeConfig().apiBase = ''
   requests.length = 0
   writes.length = 0
-  restoreFails = false
+  restoreFails = null
+  draftCounts = { works: 2, people: 1, publishers: 0 }
   for (const kind of ['works', 'people', 'publishers']) {
     registerEndpoint(`/api/v1/admin/${kind}`, (event) => {
       const query = Object.fromEntries(new URL(event.path, 'http://localhost').searchParams)
@@ -43,6 +54,10 @@ beforeEach(() => {
       return kind === 'works' ? WORKS : { ...WORKS, items: [], total: 0 }
     })
   }
+  registerEndpoint('/api/v1/admin/draft-counts', () => {
+    requests.push({ path: 'draft-counts', query: {} })
+    return draftCounts
+  })
   registerEndpoint('/api/v1/genres', () => ({
     items: [
       { code: 'manga', category: 'format' },
@@ -54,8 +69,8 @@ beforeEach(() => {
     handler: (event) => {
       writes.push('restore')
       if (restoreFails) {
-        setResponseStatus(event, 403)
-        return { code: 'ADMIN_REQUIRED' }
+        setResponseStatus(event, 500)
+        return { code: restoreFails }
       }
       return { id: 5, archived: false }
     },
@@ -63,6 +78,56 @@ beforeEach(() => {
 })
 
 const mountCatalogue = (path = '/admin/catalogue') => mountSuspended(CataloguePage, { route: path })
+
+describe('brouillons du catalogue', () => {
+  it('annonce les brouillons de chaque type et ouvre la liste du type choisi', async () => {
+    const wrapper = await mountCatalogue()
+
+    const banner = wrapper.get('[data-testid="admin-drafts"]')
+    expect(banner.text()).toContain('Brouillons à terminer :')
+    expect(wrapper.get('[data-testid="admin-show-drafts-works"]').text()).toBe('2 œuvres')
+    expect(wrapper.get('[data-testid="admin-show-drafts-people"]').text()).toBe('1 personne')
+    // A kind without draft has no button.
+    expect(wrapper.find('[data-testid="admin-show-drafts-publishers"]').exists()).toBe(false)
+    // One request for the three counts, not one list per kind.
+    expect(requests.filter((request) => request.path === 'draft-counts')).toHaveLength(1)
+    expect(requests.some((request) => request.query.state === 'draft')).toBe(false)
+
+    await wrapper.get('[data-testid="admin-show-drafts-people"]').trigger('click')
+    await vi.waitFor(() =>
+      expect(useRouter().currentRoute.value.query).toEqual({ kind: 'people', state: 'draft' }),
+    )
+    await vi.waitFor(() =>
+      expect(
+        requests.some(
+          (request) =>
+            request.path === 'people' &&
+            request.query.state === 'draft' &&
+            request.query.pageSize === '20',
+        ),
+      ).toBe(true),
+    )
+    await vi.waitFor(() =>
+      expect(wrapper.find('[data-testid="admin-drafts"]').exists()).toBe(false),
+    )
+  })
+
+  it('met le message et les types au singulier pour un seul brouillon', async () => {
+    draftCounts = { works: 1, people: 0, publishers: 0 }
+    const wrapper = await mountCatalogue()
+
+    expect(wrapper.get('[data-testid="admin-drafts"]').text()).toContain('Brouillon à terminer :')
+    expect(wrapper.get('[data-testid="admin-show-drafts-works"]').text()).toBe('1 œuvre')
+  })
+
+  it('propose le filtre d’état, absent des archives', async () => {
+    const wrapper = await mountCatalogue()
+    expect(wrapper.find('[data-testid="admin-state-filter"]').exists()).toBe(true)
+
+    const archives = await mountCatalogue('/admin/catalogue?scope=archived')
+    expect(archives.find('[data-testid="admin-state-filter"]').exists()).toBe(false)
+  })
+})
 
 describe('page Catalogue d’administration', () => {
   it('liste les œuvres publiées par défaut, avec le lien de création et la barre admin', async () => {
@@ -122,12 +187,13 @@ describe('page Catalogue d’administration', () => {
     expect(wrapper.find('[data-testid="filter-reset"]').exists()).toBe(false)
   })
 
-  it('n’a ni filtres ni tri pour les personnes', async () => {
+  it('n’a que le filtre d’état, ni filtres de type ni tri pour les personnes', async () => {
     const wrapper = await mountCatalogue('/admin/catalogue?kind=people&type=oneshot')
 
     expect(requests[0]!.query).not.toHaveProperty('type')
     expect(requests[0]!.query).not.toHaveProperty('sort')
-    expect(wrapper.find('[data-testid="admin-filters"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="admin-state-filter"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="filter-type"]').exists()).toBe(false)
   })
 
   it('adapte la recherche et le bouton de création à l’onglet', async () => {
@@ -236,13 +302,34 @@ describe('page Catalogue d’administration', () => {
     expect(requests.length).toBeGreaterThan(readsBefore)
   })
 
-  it('annonce le refus de l’API', async () => {
-    restoreFails = true
+  it('annonce une panne avec « Réessayer », qui rejoue la restauration', async () => {
+    restoreFails = 'INTERNAL_ERROR'
     const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
 
     await wrapper.get('[data-testid="admin-restore"]').trigger('click')
     await flushPromises()
 
-    expect(wrapper.get('[role="alert"]').text()).toContain('réservée aux administrateurs')
+    const toasts = useToasts()
+    expect(toasts.toasts.value.at(-1)).toMatchObject({
+      tone: 'error',
+      messageKey: 'writeError.generic',
+      hintKey: 'writeError.retryHint',
+    })
+    restoreFails = null
+    toasts.retry(toasts.toasts.value.at(-1)!.id)
+    await flushPromises()
+
+    expect(writes).toEqual(['restore', 'restore'])
+  })
+
+  it('montre un refus de l’API au-dessus de la liste, sans « Réessayer »', async () => {
+    restoreFails = 'ADMIN_REQUIRED'
+    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+
+    await wrapper.get('[data-testid="admin-restore"]').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('réservée aux administrateurs')
+    expect(useToasts().toasts.value).toEqual([])
   })
 })

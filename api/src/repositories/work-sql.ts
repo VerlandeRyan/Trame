@@ -12,18 +12,16 @@ import { searchTerms } from '../search-terms.js';
 /** `all`: every search word must match; `any`: one is enough. */
 export type MatchMode = 'all' | 'any';
 
-/**
- * Works the public can see. Every public query on works goes through here: it is the only place
- * to complete when a work can be hidden for another reason (such as a draft).
- */
+/** Works the public can see: neither archived nor draft. Every public query on works goes through here. */
 export function visibleWork(eb: ExpressionBuilder<Database, 'work'>): Expression<SqlBool> {
-  return eb('work.deleted_at', 'is', null);
+  return eb.and([eb('work.deleted_at', 'is', null), eb('work.published_at', 'is not', null)]);
 }
 
 /** Same condition as raw SQL, for a work table with the given alias. */
 export function visibleWorkSql(alias: string): RawBuilder<boolean> {
-  const column = sql.ref(alias + '.deleted_at');
-  return sql<boolean>`${column} IS NULL`;
+  const deletedAt = sql.ref(alias + '.deleted_at');
+  const publishedAt = sql.ref(alias + '.published_at');
+  return sql<boolean>`(${deletedAt} IS NULL AND ${publishedAt} IS NOT NULL)`;
 }
 
 /**

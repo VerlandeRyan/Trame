@@ -14,6 +14,8 @@ export interface AdminResourceService<Item, Full, Input, ListInput extends Admin
   update(id: number, input: Input): Promise<Full>;
   archive(id: number, adminId: number): Promise<Full>;
   restore(id: number, adminId: number): Promise<Full>;
+  publish(id: number): Promise<Full>;
+  remove(id: number): Promise<void>;
 }
 
 /** The request handlers exposed for one administered resource. */
@@ -24,6 +26,8 @@ export interface AdminResourceController {
   update: RequestHandler;
   archive: RequestHandler;
   restore: RequestHandler;
+  publish: RequestHandler;
+  remove: RequestHandler;
 }
 
 /** Builds the controller of a resource; the routes have already validated the request with the given schemas. */
@@ -58,6 +62,17 @@ export function createAdminResourceController<Item, Full, Input, ListInput exten
     async restore(req, res) {
       const { id } = validated(idParams, req.params);
       res.json(await service.restore(id, currentUser(req).id));
+    },
+
+    async publish(req, res) {
+      const { id } = validated(idParams, req.params);
+      res.json(await service.publish(id));
+    },
+
+    async remove(req, res) {
+      const { id } = validated(idParams, req.params);
+      await service.remove(id);
+      res.status(204).end();
     },
   };
 }

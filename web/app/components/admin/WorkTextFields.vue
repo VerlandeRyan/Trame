@@ -18,6 +18,10 @@ const props = defineProps<{ showErrors?: boolean }>()
 const isFlagged = (text: string) => props.showErrors === true && isBlank(text)
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
+/** Whether no synopsis is written in the original language: flagged after a refused publication. */
+const isNoOriginalSynopsis = computed(
+  () => props.showErrors === true && missingWorkFields(draft.value, []).synopsis,
+)
 const uid = useId()
 const languageOptionsFor = useLanguageOptions()
 const titleKindOptions = optionsOf(TITLE_KINDS, (code) => t(`admin.option.title.${code}`))
@@ -108,6 +112,7 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
           </div>
         </template>
       </AdminRowList>
+      <UiFormError v-if="isNoOriginalSynopsis">{{ t('admin.error.synopsisRequired') }}</UiFormError>
     </AdminPanel>
   </div>
 </template>

@@ -13,7 +13,7 @@ import {
   WORK_STATUSES,
   WORK_TYPES,
 } from '../domain/catalogue-enums.js';
-import { ARCHIVE_SCOPES } from '../repositories/admin-sql.js';
+import { ARCHIVE_SCOPES, PUBLICATION_STATES } from '../repositories/admin-sql.js';
 import type { AdminListInput } from '../services/admin-list.js';
 import {
   ADMIN_WORK_SORTS,
@@ -35,6 +35,12 @@ const httpsUrl = z.url({ protocol: /^https$/ }).max(2000);
 const positiveId = z.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
 /** Chapter or volume total. */
 const counter = z.number().int().min(0).max(99_999);
+
+/** Whether a new record is published at creation (otherwise a draft); ignored when replacing. */
+const published = z
+  .boolean()
+  .describe('À la création : publiée (défaut) ou en brouillon. Ignoré au remplacement.')
+  .default(true);
 
 /** Schema of a list of external links restricted to the given kinds. */
 const linksOf = (kinds: readonly [ExternalLinkKind, ...ExternalLinkKind[]]) =>
@@ -64,6 +70,10 @@ export const adminListQuery = z.object({
     .enum(ARCHIVE_SCOPES)
     .describe('Fiches publiées, archives seules, ou les deux.')
     .default('active'),
+  state: z
+    .enum(PUBLICATION_STATES)
+    .describe('Brouillons seuls, fiches publiées seules, ou les deux.')
+    .default('all'),
   ...pageQuery('Éléments'),
 }) satisfies z.ZodType<AdminListInput>;
 
@@ -100,6 +110,7 @@ export const personBody = z.strictObject({
   name,
   kind: z.enum(PERSON_KINDS),
   links: personLinks.default([]),
+  published,
 }) satisfies z.ZodType<AdminPersonInput>;
 
 /** Body to create or replace a publisher. */
@@ -107,6 +118,7 @@ export const publisherBody = z.strictObject({
   name,
   kind: z.enum(PUBLISHER_KINDS),
   url: httpsUrl.nullable().default(null),
+  published,
 }) satisfies z.ZodType<AdminPublisherInput>;
 
 /** A validation problem attached to a field of the work body. */
@@ -189,6 +201,7 @@ export const workBody = z
       .max(50)
       .default([]),
     links: workLinks.default([]),
+    published,
     updatedAt: z.iso
       .datetime()
       .describe(

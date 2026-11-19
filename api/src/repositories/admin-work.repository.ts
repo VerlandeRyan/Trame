@@ -13,12 +13,18 @@ import type {
 import {
   archiveCondition,
   COMPLETENESS_PERCENT,
+  countDraftRows,
+  deleteDraftRow,
+  DRAFTS_FIRST,
   FILTERED_TOTAL,
   FORMAT_CODES,
   MAIN_AUTHOR_NAME,
   nameContains,
+  publicationCondition,
+  publishRow,
   totalOf,
   type ArchiveScope,
+  type PublicationState,
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
 
@@ -66,6 +72,8 @@ export interface WorkDraft {
   genres: string[];
   relations: WorkRelationRecord[];
   links: ExternalLinkRecord[];
+  /** Only counts at creation: later, `publish` is the way to publish. */
+  published: boolean;
 }
 
 /** Identity and status of a work. */
@@ -76,6 +84,8 @@ export interface AdminWorkSummary {
   type: WorkType;
   status: WorkStatus;
   archived: boolean;
+  /** Not yet published: only visible in the administration. */
+  draft: boolean;
 }
 
 /** One row of the administration catalogue. */
@@ -105,9 +115,10 @@ export interface WorkReferenceLabels {
 }
 
 /** A full work record for editing. */
-export interface AdminWorkRecord extends WorkDraft {
+export interface AdminWorkRecord extends Omit<WorkDraft, 'published'> {
   id: number;
   archived: boolean;
+  draft: boolean;
   /** Names of the cited people, publishers and related works, sorted by identifier. */
   labels: WorkReferenceLabels;
   /** Members who have the work in their reading list. */
@@ -141,6 +152,7 @@ export interface ArchivedReferences {
 export interface AdminWorkListCriteria {
   q?: string;
   scope: ArchiveScope;
+  state: PublicationState;
   sort: 'title' | 'title_desc' | 'completeness' | 'completeness_desc';
   types?: WorkType[];
   statuses?: WorkStatus[];
@@ -158,7 +170,14 @@ export interface AdminWorkRepository {
   /** Looks up what the draft cites: the references that do not exist, and whether it carries a format. */
   lookUpReferences(draft: WorkDraft): Promise<ReferenceLookup>;
   findArchivedReferences(draft: WorkDraft): Promise<ArchivedReferences>;
+  /** References of the draft that are themselves drafts (same shape as the archived ones). */
+  findDraftReferences(draft: WorkDraft): Promise<ArchivedReferences>;
   create(draft: WorkDraft): Promise<number>;
+  /** False if the work does not exist; publishing a published work changes nothing. */
+  publish(id: number): Promise<boolean>;
+  /** Deletes a draft no other work relates to; false if it is not a draft or is related. */
+  deleteDraft(id: number): Promise<boolean>;
+  countDrafts(): Promise<number>;
   /** False if the work does not exist, or if `version` is no longer the record's. */
   update(id: number, draft: WorkDraft, version?: string): Promise<boolean>;
   /** False if the work does not exist. `adminId` is who archives, ignored on restore. */
@@ -166,6 +185,9 @@ export interface AdminWorkRepository {
 }
 
 type Trx = Transaction<Database>;
+
+/** Tables a work can cite. */
+type ReferenceTable = 'person' | 'publisher' | 'work';
 
 /** Inserts the titles, synopses, credits, publishers and relations of a draft. */
 async function insertAll(trx: Trx, workId: number, draft: WorkDraft): Promise<void> {
@@ -295,10 +317,12 @@ function orderWorks<O>(
 export function createAdminWorkRepository(db: Db): AdminWorkRepository {
   /** Works matching the search, archive scope and filters. */
   function filtered(criteria: Omit<AdminWorkListCriteria, 'sort' | 'limit' | 'offset'>) {
-    const { q, scope, types, statuses, formats } = criteria;
+    const { q, scope, state, types, statuses, formats } = criteria;
     let query = db.selectFrom('work');
     const archive = archiveCondition('work.deleted_at', scope);
     if (archive) query = query.where(archive);
+    const publication = publicationCondition('work.published_at', state);
+    if (publication) query = query.where(publication);
     if (q !== undefined) query = query.where(titleOrAuthorContains(q));
     if (types?.length) query = query.where('work.type', 'in', types);
     if (statuses?.length) query = query.where('work.status', 'in', statuses);
@@ -342,22 +366,36 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
   }
 
   /** Identifiers among `ids` that exist in the table. */
-  async function findExistingIds(table: 'person' | 'publisher' | 'work', ids: number[]) {
+  async function findExistingIds(table: ReferenceTable, ids: number[]) {
     if (ids.length === 0) return new Set<number>();
     const rows = await db.selectFrom(table).select('id').where('id', 'in', ids).execute();
     return new Set(rows.map((row) => row.id));
   }
 
-  /** Identifiers among `ids` that are archived. */
-  async function findArchivedIds(table: 'person' | 'publisher' | 'work', ids: number[]) {
+  /** Identifiers among `ids` that are archived, or drafts. */
+  async function findFlaggedIds(table: ReferenceTable, ids: number[], flag: 'archived' | 'draft') {
     if (ids.length === 0) return [];
-    const rows = await db
-      .selectFrom(table)
-      .select('id')
-      .where('id', 'in', ids)
-      .where('deleted_at', 'is not', null)
-      .execute();
+    const query = db.selectFrom(table).select('id').where('id', 'in', ids);
+    const rows = await (
+      flag === 'archived'
+        ? query.where('deleted_at', 'is not', null)
+        : query.where('published_at', 'is', null)
+    ).execute();
     return rows.map((row) => row.id);
+  }
+
+  /** The people, publishers and related works a draft cites that are archived, or drafts. */
+  async function findFlaggedReferences(draft: WorkDraft, flag: 'archived' | 'draft') {
+    const [personIds, publisherIds, workIds] = await Promise.all([
+      findFlaggedIds('person', [...new Set(draft.credits.map((credit) => credit.personId))], flag),
+      findFlaggedIds('publisher', draft.publisherIds, flag),
+      findFlaggedIds(
+        'work',
+        draft.relations.map((relation) => relation.relatedWorkId),
+        flag,
+      ),
+    ]);
+    return { personIds, publisherIds, workIds };
   }
 
   return {
@@ -372,12 +410,14 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
           'work.status',
           'work.updated_at',
           'work.deleted_at',
+          'work.published_at',
           'app_user.handle as archivedBy',
         ])
         .select(MAIN_AUTHOR_NAME.as('mainAuthor'))
         .select(FORMAT_CODES.as('formats'))
         .select(COMPLETENESS_PERCENT.as('completeness'))
         .select(FILTERED_TOTAL.as('total'))
+        .orderBy(DRAFTS_FIRST('work.published_at'))
         .$call((query) => orderWorks(query, criteria.sort))
         .orderBy('work.id')
         .limit(criteria.limit)
@@ -396,6 +436,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         type: row.type,
         status: row.status,
         archived: row.deleted_at !== null,
+        draft: row.published_at === null,
         formats: row.formats,
         mainAuthor: row.mainAuthor,
         updatedAt: row.updated_at.toISOString(),
@@ -420,6 +461,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
           'started_on',
           'ended_on',
           'deleted_at',
+          'published_at',
         ])
         .select(VERSION.as('version'))
         .where('id', '=', id)
@@ -495,6 +537,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         startedOn: work.started_on,
         endedOn: work.ended_on,
         archived: work.deleted_at !== null,
+        draft: work.published_at === null,
         labels,
         titles,
         synopses,
@@ -535,23 +578,18 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
       };
     },
 
-    async findArchivedReferences(draft) {
-      const [personIds, publisherIds, workIds] = await Promise.all([
-        findArchivedIds('person', [...new Set(draft.credits.map((credit) => credit.personId))]),
-        findArchivedIds('publisher', draft.publisherIds),
-        findArchivedIds(
-          'work',
-          draft.relations.map((relation) => relation.relatedWorkId),
-        ),
-      ]);
-      return { personIds, publisherIds, workIds };
-    },
+    findArchivedReferences: (draft) => findFlaggedReferences(draft, 'archived'),
+
+    findDraftReferences: (draft) => findFlaggedReferences(draft, 'draft'),
 
     async create(draft) {
       return db.transaction().execute(async (trx) => {
         const { id } = await trx
           .insertInto('work')
-          .values(workColumns(draft))
+          .values({
+            ...workColumns(draft),
+            published_at: draft.published ? sql<Date>`now()` : null,
+          })
           .returning('id')
           .executeTakeFirstOrThrow();
         await writeChildren(trx, id, draft);
@@ -572,6 +610,23 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         await writeChildren(trx, id, draft);
         return true;
       });
+    },
+
+    async publish(id) {
+      return publishRow(db, 'work', id, true);
+    },
+
+    async deleteDraft(id) {
+      return deleteDraftRow(
+        db,
+        'work',
+        id,
+        sql<boolean>`NOT EXISTS (SELECT 1 FROM work_relation wr WHERE wr.related_work_id = work.id)`,
+      );
+    },
+
+    async countDrafts() {
+      return countDraftRows(db, 'work');
     },
 
     async setArchived(id, archived, adminId) {

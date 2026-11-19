@@ -1,13 +1,24 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
-import type { AdminWorkFilters } from '~/utils/admin'
+import type { AdminKind, AdminState, AdminWorkFilters } from '~/utils/admin'
 import AdminFilters from './Filters.vue'
 
 const NO_FILTERS: AdminWorkFilters = { type: [], status: [], format: [] }
 
-const mountFilters = (filters: AdminWorkFilters = NO_FILTERS) =>
+const mountFilters = (
+  filters: AdminWorkFilters = NO_FILTERS,
+  extra: { kind?: AdminKind; state?: AdminState } = {},
+) =>
   mountSuspended(AdminFilters, {
-    props: { filters, sort: 'title', formats: ['manga', 'webtoon'], total: 12 },
+    props: {
+      kind: 'works',
+      filters,
+      state: 'all',
+      sort: 'title',
+      formats: ['manga', 'webtoon'],
+      total: 12,
+      ...extra,
+    },
   })
 
 type Wrapper = Awaited<ReturnType<typeof mountFilters>>
@@ -84,7 +95,7 @@ describe('AdminFilters', () => {
     await collapse.trigger('click')
     expect(collapse.text()).toBe('Tout déplier')
     const lists = wrapper.findAll('.filter-group__list')
-    expect(lists).toHaveLength(3)
+    expect(lists).toHaveLength(4)
     expect(lists.every((list) => list.attributes('style')?.includes('display: none'))).toBe(true)
   })
 
@@ -93,7 +104,7 @@ describe('AdminFilters', () => {
 
     await wrapper.get('[data-testid="filters-sheet-reset"]').trigger('click')
 
-    expect(wrapper.emitted('change')?.[0]).toEqual([NO_FILTERS])
+    expect(wrapper.emitted('reset')).toHaveLength(1)
   })
 
   it('réinitialise tous les filtres quand il y en a', async () => {
@@ -101,6 +112,34 @@ describe('AdminFilters', () => {
 
     await wrapper.get('[data-testid="filter-reset"]').trigger('click')
 
-    expect(wrapper.emitted('change')?.[0]).toEqual([NO_FILTERS])
+    expect(wrapper.emitted('reset')).toHaveLength(1)
+  })
+
+  it('propose « Réinitialiser » dès que seul l’état est choisi, et le compte sur « Filtres »', async () => {
+    const wrapper = await mountFilters(NO_FILTERS, { state: 'draft' })
+
+    expect(wrapper.find('[data-testid="filter-reset"]').exists()).toBe(true)
+    expect(wrapper.get('[data-testid="filters-open"]').text()).toBe('Filtres (1)')
+  })
+
+  it('choisit l’état dans la feuille mobile : un second choix identique revient à « tous »', async () => {
+    const wrapper = await mountFilters()
+
+    await wrapper.get('[data-testid="sheet-state-draft"]').setValue(true)
+    expect(wrapper.emitted('state')?.[0]).toEqual(['draft'])
+
+    const draftOnly = await mountFilters(NO_FILTERS, { state: 'draft' })
+    await draftOnly.get('[data-testid="sheet-state-draft"]').setValue(false)
+    expect(draftOnly.emitted('state')?.[0]).toEqual(['all'])
+  })
+
+  it('ne garde que l’état pour les personnes et les éditeurs', async () => {
+    const wrapper = await mountFilters(NO_FILTERS, { kind: 'people' })
+
+    expect(wrapper.find('[data-testid="admin-state-filter"]').exists()).toBe(true)
+    for (const testId of ['filter-type', 'filter-format', 'filter-status', 'filter-sort']) {
+      expect(wrapper.find(`[data-testid="${testId}"]`).exists()).toBe(false)
+    }
+    expect(wrapper.findAll('.filter-group')).toHaveLength(1)
   })
 })
