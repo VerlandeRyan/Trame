@@ -29,7 +29,7 @@ Comportement côté front (Nuxt) de l'administration (#26, US-11, maquette 22). 
 Pas de filtre « À compléter » (le tri par complétude le remplace) ni de couvertures (#27) ; les filtres et les menus de rôle ou de relation gardent le `UiSelect` du site.
 
 ## Version de la fiche
-`GET /admin/works/{id}` donne `updatedAt`, gardé dans le brouillon (`WorkDraft.updatedAt`) et renvoyé au `PUT` ; si quelqu'un a enregistré entre-temps, `STALE_RECORD` (409) s'affiche sans quitter la fiche.
+`GET /admin/{ressource}/{id}` donne `updatedAt`, gardé dans le brouillon (`WorkDraft`, `PersonDraft`, `PublisherDraft`) et renvoyé au `PUT` ; si quelqu'un a enregistré entre-temps, `STALE_RECORD` (409) s'affiche sans quitter la fiche.
 
 ## Sortie de la fiche
 `useAdminEditor` suit si la saisie a changé (`isDirty`, instantané pris au chargement et à l'enregistrement). La page pose un garde du routeur (`router.beforeEach`, retiré avec la page, pas `onBeforeRouteLeave` que les tests ne voient pas) qui ouvre `UiConfirm danger` « Quitter sans enregistrer ? » (`data-testid="leave-confirm"`), plus un `beforeunload` ; changer de section (`?section=`) ne la déclenche pas.

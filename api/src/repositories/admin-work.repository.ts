@@ -11,6 +11,7 @@ import type {
   WorkType,
 } from '../db/database.js';
 import {
+  archiveColumns,
   archiveCondition,
   COMPLETENESS_PERCENT,
   countDraftRows,
@@ -18,12 +19,14 @@ import {
   DRAFTS_FIRST,
   FILTERED_TOTAL,
   FORMAT_CODES,
+  isVersion,
   MAIN_AUTHOR_NAME,
   nameContains,
   publicationCondition,
   publishRow,
   REMOVABLE,
   totalOf,
+  versionOf,
   type ArchiveScope,
   type PublicationState,
 } from './admin-sql.js';
@@ -183,7 +186,7 @@ export interface AdminWorkRepository {
   deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
   /** False if the work does not exist, or if `version` is no longer the record's. */
-  update(id: number, draft: WorkDraft, version?: string): Promise<boolean>;
+  update(id: number, draft: WorkDraft, version: string): Promise<boolean>;
   /** False if the work does not exist. `adminId` is who archives, ignored on restore. */
   setArchived(id: number, archived: boolean, adminId: number): Promise<boolean>;
 }
@@ -274,14 +277,6 @@ function workColumns(draft: WorkDraft) {
     ended_on: draft.endedOn,
   };
 }
-
-/**
- * Version of a record: `updated_at` to the millisecond, the precision of a JavaScript date
- * (Postgres keeps microseconds, which an ISO date returned by the API would lose).
- */
-const VERSION = sql<Date>`date_trunc('milliseconds', updated_at)`;
-/** Whether the record is still at the given version. */
-const isVersion = (version: string) => sql<boolean>`${VERSION} = ${version}::timestamptz`;
 
 /** The work has at least one of the formats (manga, webtoon…). */
 function hasFormat(codes: string[]): RawBuilder<boolean> {
@@ -467,7 +462,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
           'deleted_at',
           'published_at',
         ])
-        .select(VERSION.as('version'))
+        .select(versionOf('work').as('version'))
         .where('id', '=', id)
         .executeTakeFirst();
       if (!work) return null;
@@ -603,12 +598,13 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
 
     async update(id, draft, version) {
       return db.transaction().execute(async (trx) => {
-        let query = trx
+        const row = await trx
           .updateTable('work')
           .set({ ...workColumns(draft), updated_at: sql<Date>`now()` })
-          .where('id', '=', id);
-        if (version !== undefined) query = query.where(isVersion(version));
-        const row = await query.returning('id').executeTakeFirst();
+          .where('id', '=', id)
+          .where(isVersion('work', version))
+          .returning('id')
+          .executeTakeFirst();
         if (!row) return false;
         await deleteChildren(trx, id);
         await writeChildren(trx, id, draft);
@@ -617,7 +613,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
     },
 
     async publish(id) {
-      return publishRow(db, 'work', id, true);
+      return publishRow(db, 'work', id);
     },
 
     async deleteRecord(id) {
@@ -642,11 +638,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
     async setArchived(id, archived, adminId) {
       const row = await db
         .updateTable('work')
-        .set({
-          deleted_at: archived ? sql<Date>`now()` : null,
-          deleted_by: archived ? adminId : null,
-          updated_at: sql<Date>`now()`,
-        })
+        .set(archiveColumns(archived, adminId))
         .where('id', '=', id)
         .returning('id')
         .executeTakeFirst();

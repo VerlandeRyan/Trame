@@ -11,9 +11,13 @@ import type {
 } from '../repositories/admin-work.repository.js';
 import { assertNotDraft, removeRecord } from './admin-draft.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
+import { refuseReplacement } from './admin-replace.js';
 
-/** `updatedAt` is the record version read before editing; without it nothing is checked. */
-export type AdminWorkInput = WorkDraft & { updatedAt?: string };
+/** Data accepted to create a work. */
+export type AdminWorkInput = WorkDraft;
+
+/** Data accepted to replace a work: `updatedAt` is the record version read before editing. */
+export type AdminWorkReplacement = WorkDraft & { updatedAt: string };
 
 /** Sort orders of the work list. */
 export const ADMIN_WORK_SORTS = [
@@ -38,7 +42,7 @@ export interface AdminWorkService {
   list(input: AdminWorkListInput): Promise<Page<AdminWorkListItem>>;
   get(id: number): Promise<AdminWorkRecord>;
   create(input: AdminWorkInput): Promise<AdminWorkRecord>;
-  update(id: number, input: AdminWorkInput): Promise<AdminWorkRecord>;
+  update(id: number, input: AdminWorkReplacement): Promise<AdminWorkRecord>;
   /** Readers' list entries are kept; the work only disappears from the public. */
   archive(id: number, adminId: number): Promise<AdminWorkRecord>;
   restore(id: number, adminId: number): Promise<AdminWorkRecord>;
@@ -145,7 +149,7 @@ export function createAdminWorkService(repository: AdminWorkRepository): AdminWo
       const current = await get(id);
       await checkReferences(input, !current.draft, current);
       const { updatedAt, ...draft } = input;
-      if (!(await repository.update(id, draft, updatedAt))) throw new AppError('STALE_RECORD');
+      if (!(await repository.update(id, draft, updatedAt))) await refuseReplacement(get, id);
       return get(id);
     },
 

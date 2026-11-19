@@ -2,15 +2,18 @@
 import { sql, type Selectable } from 'kysely';
 import type { Db, PersonKind, PersonRow } from '../db/database.js';
 import {
+  archiveColumns,
   archiveCondition,
   countDraftRows,
   deleteRecordRow,
   DRAFTS_FIRST,
   FILTERED_TOTAL,
+  isVersion,
   nameContains,
   publicationCondition,
   publishRow,
   totalOf,
+  versionOf,
   type ArchiveScope,
   type PublicationState,
 } from './admin-sql.js';
@@ -34,6 +37,11 @@ export interface AdminPersonSummary {
   draft: boolean;
   /** Unarchived works crediting the person. */
   activeWorkCount: number;
+  /** Record version (ISO 8601 date, to the millisecond): send it back with the replacement. */
+  updatedAt: string;
+  archivedAt: string | null;
+  /** Handle of the administrator who archived the person. */
+  archivedBy: string | null;
 }
 
 /** A person with their links. */
@@ -55,10 +63,13 @@ export interface AdminPersonRepository {
   list(criteria: AdminPersonListCriteria): Promise<{ items: AdminPersonSummary[]; total: number }>;
   find(id: number): Promise<AdminPersonRecord | null>;
   create(draft: AdminPersonDraft): Promise<number>;
-  /** False if the person does not exist. */
-  update(id: number, draft: AdminPersonDraft): Promise<boolean>;
-  /** False if the person does not exist, or, when archiving, if an unarchived work credits them. */
-  setArchived(id: number, archived: boolean): Promise<boolean>;
+  /** False if the person does not exist, or if `version` is no longer the record's. */
+  update(id: number, draft: AdminPersonDraft, version: string): Promise<boolean>;
+  /**
+   * False if the person does not exist, or, when archiving, if an unarchived work credits them.
+   * `adminId` is who archives, ignored on restore.
+   */
+  setArchived(id: number, archived: boolean, adminId: number): Promise<boolean>;
   /** False if the person does not exist; publishing a published person changes nothing. */
   publish(id: number): Promise<boolean>;
   /** Deletes a draft nothing cites; false if it is not a draft or a work credits it. */
@@ -72,6 +83,8 @@ type SummaryRow = Pick<
   'id' | 'name' | 'kind' | 'deleted_at' | 'published_at'
 > & {
   activeWorkCount: number;
+  version: Date;
+  archivedBy: string | null;
 };
 
 /** Converts a database row into a summary. */
@@ -83,6 +96,9 @@ function toSummary(row: SummaryRow): AdminPersonSummary {
     archived: row.deleted_at !== null,
     draft: row.published_at === null,
     activeWorkCount: row.activeWorkCount,
+    updatedAt: row.version.toISOString(),
+    archivedAt: row.deleted_at?.toISOString() ?? null,
+    archivedBy: row.archivedBy,
   };
 }
 
@@ -122,8 +138,11 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
   return {
     async list(criteria) {
       const rows = await filtered(criteria)
+        .leftJoin('app_user', 'app_user.id', 'person.deleted_by')
         .select(SUMMARY_COLUMNS)
+        .select('app_user.handle as archivedBy')
         .select(ACTIVE_WORKS_OF_PERSON.as('activeWorkCount'))
+        .select(versionOf('person').as('version'))
         .select(FILTERED_TOTAL.as('total'))
         .orderBy(DRAFTS_FIRST('person.published_at'))
         .orderBy(sql`immutable_unaccent(person.name)`)
@@ -143,8 +162,11 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
     async find(id) {
       const row = await db
         .selectFrom('person')
+        .leftJoin('app_user', 'app_user.id', 'person.deleted_by')
         .select(SUMMARY_COLUMNS)
+        .select('app_user.handle as archivedBy')
         .select(ACTIVE_WORKS_OF_PERSON.as('activeWorkCount'))
+        .select(versionOf('person').as('version'))
         .where('person.id', '=', id)
         .executeTakeFirst();
       if (!row) return null;
@@ -169,12 +191,13 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
       });
     },
 
-    async update(id, { name, kind, links }) {
+    async update(id, { name, kind, links }, version) {
       return db.transaction().execute(async (trx) => {
         const row = await trx
           .updateTable('person')
-          .set({ name, kind })
+          .set({ name, kind, updated_at: sql<Date>`now()` })
           .where('id', '=', id)
+          .where(isVersion('person', version))
           .returning('id')
           .executeTakeFirst();
         if (!row) return false;
@@ -183,10 +206,10 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
       });
     },
 
-    async setArchived(id, archived) {
+    async setArchived(id, archived, adminId) {
       let query = db
         .updateTable('person')
-        .set({ deleted_at: archived ? sql<Date>`now()` : null })
+        .set(archiveColumns(archived, adminId))
         .where('id', '=', id);
       if (archived) query = query.where(NO_ACTIVE_WORK_OF_PERSON);
       const row = await query.returning('id').executeTakeFirst();

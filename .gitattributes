@@ -4,3 +4,4 @@
 # Fichiers générés comparés octet pour octet à leur générateur (tests, `--check`) : LF partout.
 api/openapi.json text eol=lf
 web/app/contract/api-schema.ts text eol=lf
+api/src/db/generated.ts text eol=lf

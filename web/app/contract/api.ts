@@ -38,6 +38,11 @@ export type WorkRelation = WorkDetail['relations'][number]
 export type CreditRole = WorkCredit['roles'][number]
 export type RelationKind = WorkRelation['relation']
 
+// Catalogue administration: the fiches as read for editing
+export type AdminPerson = Schemas['AdminPerson']
+export type AdminPublisher = Schemas['AdminPublisher']
+export type AdminWork = Schemas['AdminWork']
+
 // Home
 export type FeaturedWork = Schemas['FeaturedList']['items'][number]
 export type RatedWork = Schemas['TopRatedList']['items'][number]

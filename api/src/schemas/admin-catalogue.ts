@@ -19,9 +19,13 @@ import {
   ADMIN_WORK_SORTS,
   type AdminWorkInput,
   type AdminWorkListInput,
+  type AdminWorkReplacement,
 } from '../services/admin-work.service.js';
-import type { AdminPersonInput } from '../services/admin-person.service.js';
-import type { AdminPublisherInput } from '../services/admin-publisher.service.js';
+import type { AdminPersonInput, AdminPersonReplacement } from '../services/admin-person.service.js';
+import type {
+  AdminPublisherInput,
+  AdminPublisherReplacement,
+} from '../services/admin-publisher.service.js';
 import { commaSeparatedList, genreCode, pageQuery } from './common.js';
 
 /** Name or title: trimmed, non-empty text. */
@@ -105,21 +109,46 @@ export const adminWorkListQuery = adminListQuery.extend({
     .optional(),
 }) satisfies z.ZodType<AdminWorkListInput>;
 
-/** Body to create or replace a person. */
-export const personBody = z.strictObject({
+/** Version read before editing a record, required to replace it. */
+const recordVersion = z.iso
+  .datetime()
+  .describe(
+    'Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis.',
+  );
+
+const personFields = {
   name,
   kind: z.enum(PERSON_KINDS),
   links: personLinks.default([]),
   published,
-}) satisfies z.ZodType<AdminPersonInput>;
+};
 
-/** Body to create or replace a publisher. */
-export const publisherBody = z.strictObject({
+/** Body to create a person. */
+export const personBody = z.strictObject(personFields) satisfies z.ZodType<AdminPersonInput>;
+
+/** Body to replace a person: the creation body and the version that was read. */
+export const personReplaceBody = z.strictObject({
+  ...personFields,
+  updatedAt: recordVersion,
+}) satisfies z.ZodType<AdminPersonReplacement>;
+
+const publisherFields = {
   name,
   kind: z.enum(PUBLISHER_KINDS),
   url: httpsUrl.nullable().default(null),
   published,
-}) satisfies z.ZodType<AdminPublisherInput>;
+};
+
+/** Body to create a publisher. */
+export const publisherBody = z.strictObject(
+  publisherFields,
+) satisfies z.ZodType<AdminPublisherInput>;
+
+/** Body to replace a publisher: the creation body and the version that was read. */
+export const publisherReplaceBody = z.strictObject({
+  ...publisherFields,
+  updatedAt: recordVersion,
+}) satisfies z.ZodType<AdminPublisherReplacement>;
 
 /** A validation problem attached to a field of the work body. */
 type KeyedIssue = { path: string; message: string };
@@ -161,56 +190,60 @@ function ruleIssues(work: AdminWorkInput): KeyedIssue[] {
   return issues;
 }
 
-/** Body to create or replace a work, with its titles, credits, genres, relations and links. */
+const workFields = {
+  title: name.describe('Titre dans la langue originale.'),
+  originalLanguage: language,
+  type: z.enum(WORK_TYPES),
+  status: z.enum(WORK_STATUSES),
+  chapters: counter.nullable().describe('Vide tant que l’œuvre est en cours.'),
+  volumes: counter.nullable().describe('Vide tant que l’œuvre est en cours.'),
+  startedOn: z.iso.date().nullable(),
+  endedOn: z.iso.date().nullable(),
+  titles: z
+    .array(z.strictObject({ language, kind: z.enum(TITLE_KINDS), title: name }))
+    .max(50)
+    .default([]),
+  synopses: z
+    .array(
+      z.strictObject({
+        language,
+        text: z.string().trim().min(1).max(5000),
+        source: z.enum(SYNOPSIS_SOURCES),
+      }),
+    )
+    .max(20)
+    .default([]),
+  credits: z
+    .array(z.strictObject({ personId: positiveId, role: z.enum(CREDIT_ROLES) }))
+    .max(50)
+    .default([]),
+  publisherIds: z.array(positiveId).max(20).default([]),
+  genres: z
+    .array(genreCode)
+    .max(30)
+    .default([])
+    .describe('Codes de format et de genre ; au moins un format (`VALIDATION_ERROR` sinon).'),
+  relations: z
+    .array(z.strictObject({ relatedWorkId: positiveId, relation: z.enum(RELATION_KINDS) }))
+    .max(50)
+    .default([]),
+  links: workLinks.default([]),
+  published,
+};
+
+/** Reports the business rules a work body breaks as issues on their field. */
+function checkWorkRules(work: AdminWorkInput, ctx: z.RefinementCtx): void {
+  for (const { path, message } of ruleIssues(work)) {
+    ctx.addIssue({ code: 'custom', path: [path], message });
+  }
+}
+
+/** Body to create a work, with its titles, credits, genres, relations and links. */
 export const workBody = z
-  .strictObject({
-    title: name.describe('Titre dans la langue originale.'),
-    originalLanguage: language,
-    type: z.enum(WORK_TYPES),
-    status: z.enum(WORK_STATUSES),
-    chapters: counter.nullable().describe('Vide tant que l’œuvre est en cours.'),
-    volumes: counter.nullable().describe('Vide tant que l’œuvre est en cours.'),
-    startedOn: z.iso.date().nullable(),
-    endedOn: z.iso.date().nullable(),
-    titles: z
-      .array(z.strictObject({ language, kind: z.enum(TITLE_KINDS), title: name }))
-      .max(50)
-      .default([]),
-    synopses: z
-      .array(
-        z.strictObject({
-          language,
-          text: z.string().trim().min(1).max(5000),
-          source: z.enum(SYNOPSIS_SOURCES),
-        }),
-      )
-      .max(20)
-      .default([]),
-    credits: z
-      .array(z.strictObject({ personId: positiveId, role: z.enum(CREDIT_ROLES) }))
-      .max(50)
-      .default([]),
-    publisherIds: z.array(positiveId).max(20).default([]),
-    genres: z
-      .array(genreCode)
-      .max(30)
-      .default([])
-      .describe('Codes de format et de genre ; au moins un format (`VALIDATION_ERROR` sinon).'),
-    relations: z
-      .array(z.strictObject({ relatedWorkId: positiveId, relation: z.enum(RELATION_KINDS) }))
-      .max(50)
-      .default([]),
-    links: workLinks.default([]),
-    published,
-    updatedAt: z.iso
-      .datetime()
-      .describe(
-        'Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis. Ignoré à la création.',
-      )
-      .optional(),
-  })
-  .superRefine((work, ctx) => {
-    for (const { path, message } of ruleIssues(work)) {
-      ctx.addIssue({ code: 'custom', path: [path], message });
-    }
-  }) satisfies z.ZodType<AdminWorkInput>;
+  .strictObject(workFields)
+  .superRefine(checkWorkRules) satisfies z.ZodType<AdminWorkInput>;
+
+/** Body to replace a work: the creation body and the version that was read. */
+export const workReplaceBody = z
+  .strictObject({ ...workFields, updatedAt: recordVersion })
+  .superRefine(checkWorkRules) satisfies z.ZodType<AdminWorkReplacement>;

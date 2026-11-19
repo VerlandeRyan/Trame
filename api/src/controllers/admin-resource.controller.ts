@@ -7,11 +7,17 @@ import { idParams } from '../schemas/common.js';
 import type { AdminListInput, Page } from '../services/admin-list.js';
 
 /** What the controller expects from a catalogue service. */
-export interface AdminResourceService<Item, Full, Input, ListInput extends AdminListInput> {
+export interface AdminResourceService<
+  Item,
+  Full,
+  CreateInput,
+  ReplaceInput,
+  ListInput extends AdminListInput,
+> {
   list(input: ListInput): Promise<Page<Item>>;
   get(id: number): Promise<Full>;
-  create(input: Input): Promise<Full>;
-  update(id: number, input: Input): Promise<Full>;
+  create(input: CreateInput): Promise<Full>;
+  update(id: number, input: ReplaceInput): Promise<Full>;
   archive(id: number, adminId: number): Promise<Full>;
   restore(id: number, adminId: number): Promise<Full>;
   publish(id: number): Promise<Full>;
@@ -30,15 +36,27 @@ export interface AdminResourceController {
   remove: RequestHandler;
 }
 
+/** The input schemas of a resource: the bodies to create and to replace a record, and the list query. */
+export interface AdminResourceSchemas<CreateInput, ReplaceInput, ListInput> {
+  createBody: z.ZodType<CreateInput>;
+  replaceBody: z.ZodType<ReplaceInput>;
+  listQuery: z.ZodType<ListInput>;
+}
+
 /** Builds the controller of a resource; the routes have already validated the request with the given schemas. */
-export function createAdminResourceController<Item, Full, Input, ListInput extends AdminListInput>(
-  service: AdminResourceService<Item, Full, Input, ListInput>,
-  body: z.ZodType<Input>,
-  listQuery: z.ZodType<ListInput>,
+export function createAdminResourceController<
+  Item,
+  Full,
+  CreateInput,
+  ReplaceInput,
+  ListInput extends AdminListInput,
+>(
+  service: AdminResourceService<Item, Full, CreateInput, ReplaceInput, ListInput>,
+  schemas: AdminResourceSchemas<CreateInput, ReplaceInput, ListInput>,
 ): AdminResourceController {
   return {
     async list(req, res) {
-      res.json(await service.list(validated(listQuery, req.query)));
+      res.json(await service.list(validated(schemas.listQuery, req.query)));
     },
 
     async get(req, res) {
@@ -46,12 +64,12 @@ export function createAdminResourceController<Item, Full, Input, ListInput exten
     },
 
     async create(req, res) {
-      res.status(201).json(await service.create(validated(body, req.body)));
+      res.status(201).json(await service.create(validated(schemas.createBody, req.body)));
     },
 
     async update(req, res) {
       const { id } = validated(idParams, req.params);
-      res.json(await service.update(id, validated(body, req.body)));
+      res.json(await service.update(id, validated(schemas.replaceBody, req.body)));
     },
 
     async archive(req, res) {

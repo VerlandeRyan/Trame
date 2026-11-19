@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import type {
+  AdminPersonDraft,
   AdminPersonRecord,
   AdminPersonRepository,
 } from '../repositories/admin-person.repository.js';
 import { createAdminPersonService } from './admin-person.service.js';
+
+const VERSION = '2026-10-24T10:00:00.000Z';
+const ADMIN_ID = 5;
 
 const person = (overrides: Partial<AdminPersonRecord> = {}): AdminPersonRecord => ({
   id: 1,
@@ -13,6 +17,9 @@ const person = (overrides: Partial<AdminPersonRecord> = {}): AdminPersonRecord =
   draft: false,
   activeWorkCount: 0,
   links: [],
+  updatedAt: VERSION,
+  archivedAt: null,
+  archivedBy: null,
   ...overrides,
 });
 
@@ -57,7 +64,7 @@ describe('liste', () => {
 describe('archivage', () => {
   it('refuse tant que la personne est créditée sur une œuvre non archivée', async () => {
     const repository = fakeRepository(person({ activeWorkCount: 2 }));
-    await expect(createAdminPersonService(repository).archive(1)).rejects.toMatchObject({
+    await expect(createAdminPersonService(repository).archive(1, ADMIN_ID)).rejects.toMatchObject({
       code: 'PERSON_HAS_WORKS',
       details: { activeWorkCount: 2 },
     });
@@ -65,25 +72,52 @@ describe('archivage', () => {
 
   it('ne réécrit pas une personne déjà archivée', async () => {
     const repository = fakeRepository(person({ archived: true }));
-    await createAdminPersonService(repository).archive(1);
+    await createAdminPersonService(repository).archive(1, ADMIN_ID);
     expect(repository.setArchived).not.toHaveBeenCalled();
   });
 
-  it('archive une personne sans œuvre', async () => {
+  it('archive une personne sans œuvre, au nom de l’administrateur', async () => {
     const repository = fakeRepository(person());
-    await createAdminPersonService(repository).archive(1);
-    expect(repository.setArchived).toHaveBeenCalledWith(1, true);
+    const service = createAdminPersonService(repository);
+    await service.archive(1, ADMIN_ID);
+    await service.restore(1, ADMIN_ID);
+    expect(repository.setArchived).toHaveBeenNthCalledWith(1, 1, true, ADMIN_ID);
+    expect(repository.setArchived).toHaveBeenNthCalledWith(2, 1, false, ADMIN_ID);
   });
 
   it('répond NOT_FOUND pour une personne inconnue', async () => {
     const service = createAdminPersonService(fakeRepository(null));
-    await expect(service.archive(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
-    await expect(service.restore(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(service.archive(9, ADMIN_ID)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(service.restore(9, ADMIN_ID)).rejects.toMatchObject({ code: 'NOT_FOUND' });
     await expect(
-      service.update(9, { name: 'x', kind: 'person', links: [], published: true }),
+      service.update(9, {
+        name: 'x',
+        kind: 'person',
+        links: [],
+        published: true,
+        updatedAt: VERSION,
+      }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     await expect(service.publish(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
     await expect(service.remove(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
+describe('version', () => {
+  const draft: AdminPersonDraft = { name: 'x', kind: 'person', links: [], published: true };
+
+  it('transmet la version lue au dépôt, sans la mêler aux données', async () => {
+    const repository = fakeRepository(person());
+    await createAdminPersonService(repository).update(1, { ...draft, updatedAt: VERSION });
+    expect(repository.update).toHaveBeenCalledWith(1, draft, VERSION);
+  });
+
+  it('refuse une fiche modifiée entre-temps', async () => {
+    const repository = fakeRepository(person());
+    vi.mocked(repository.update).mockResolvedValueOnce(false);
+    await expect(
+      createAdminPersonService(repository).update(1, { ...draft, updatedAt: VERSION }),
+    ).rejects.toMatchObject({ code: 'STALE_RECORD' });
   });
 });
 

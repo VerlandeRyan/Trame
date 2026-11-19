@@ -480,6 +480,16 @@ describe('formulaires personne et éditeur', () => {
     })
   })
 
+  it('renvoie la version lue, et aucune pour une nouvelle fiche', () => {
+    const version = '2026-10-24T10:00:00.000Z'
+    expect(draftToPersonBody({ ...emptyPersonDraft(), updatedAt: version }).updatedAt).toBe(version)
+    expect(draftToPublisherBody({ ...emptyPublisherDraft(), updatedAt: version }).updatedAt).toBe(
+      version,
+    )
+    expect(draftToPersonBody(emptyPersonDraft()).updatedAt).toBeUndefined()
+    expect(draftToPublisherBody(emptyPublisherDraft()).updatedAt).toBeUndefined()
+  })
+
   it('remplit le brouillon depuis la fiche', () => {
     expect(
       personToDraft({
@@ -490,11 +500,15 @@ describe('formulaires personne et éditeur', () => {
         draft: false,
         activeWorkCount: 0,
         links: [{ kind: 'social', url: 'https://r.test', label: null }],
+        updatedAt: '2026-10-24T10:00:00.000Z',
+        archivedAt: null,
+        archivedBy: null,
       }),
     ).toEqual({
       name: 'Léa',
       kind: 'collective',
       links: [{ kind: 'social', url: 'https://r.test', label: '' }],
+      updatedAt: '2026-10-24T10:00:00.000Z',
     })
     expect(
       publisherToDraft({
@@ -505,8 +519,11 @@ describe('formulaires personne et éditeur', () => {
         archived: false,
         draft: false,
         activeWorkCount: 0,
+        updatedAt: '2026-10-24T10:00:00.000Z',
+        archivedAt: null,
+        archivedBy: null,
       }),
-    ).toEqual({ name: 'M', kind: 'platform', url: '' })
+    ).toEqual({ name: 'M', kind: 'platform', url: '', updatedAt: '2026-10-24T10:00:00.000Z' })
   })
 })
 

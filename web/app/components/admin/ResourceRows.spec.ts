@@ -60,6 +60,41 @@ describe('AdminResourceRows', () => {
     expect(first!.get('[data-testid="admin-row-completeness"]').text()).toBe('Complétude : 75 %')
   })
 
+  it.each<AdminKind>(['people', 'publishers'])(
+    'indique la dernière modification d’une fiche de %s',
+    async (kind) => {
+      const wrapper = await mountRows(kind, [
+        {
+          id: 3,
+          archived: false,
+          draft: false,
+          name: 'Léa Auteure',
+          kind: 'person',
+          updatedAt: new Date().toISOString(),
+        },
+      ])
+      expect(wrapper.get('[data-testid="admin-row"]').text()).toContain('Modifiée aujourd')
+    },
+  )
+
+  it.each<AdminKind>(['people', 'publishers'])(
+    'indique qui a archivé une fiche de %s',
+    async (kind) => {
+      const wrapper = await mountRows(kind, [
+        {
+          id: 3,
+          archived: true,
+          draft: false,
+          name: 'Léa Auteure',
+          kind: 'person',
+          archivedAt: new Date().toISOString(),
+          archivedBy: 'ryan',
+        },
+      ])
+      expect(wrapper.get('[data-testid="admin-row"]').text()).toContain('par @ryan')
+    },
+  )
+
   it('marque un brouillon d’une pastille « Brouillon »', async () => {
     const wrapper = await mountRows('people', [
       { id: 8, archived: false, draft: true, name: 'M. Verdier', kind: 'person' },
