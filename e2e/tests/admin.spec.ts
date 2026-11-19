@@ -240,6 +240,36 @@ test('revenir d’une fiche garde l’onglet et la recherche de la liste', async
   await expect(page.getByTestId('admin-search')).toHaveValue(PERSON)
 })
 
+test('changer d’onglet Personnes / Éditeurs n’affiche jamais la nature d’un autre type', async ({
+  page,
+}) => {
+  await page.goto('/admin/catalogue?kind=people')
+  await waitForHydration(page)
+  await expect(page.getByTestId('admin-row').first()).toBeVisible()
+  // Records every DOM change that shows a raw translation key, however brief.
+  await page.evaluate(() => {
+    const seen: string[] = []
+    ;(window as unknown as { __rawKeys: string[] }).__rawKeys = seen
+    new MutationObserver(() => {
+      if (document.body.innerText.includes('admin.option')) seen.push(document.body.innerText)
+    }).observe(document.body, { childList: true, subtree: true, characterData: true })
+  })
+
+  await page.getByRole('tab', { name: 'Éditeurs et plateformes' }).click()
+  await expect(page).toHaveURL(/kind=publishers/)
+  await expect(page.getByTestId('admin-row').first()).toContainText(
+    /Maison d'édition|Plateforme|Auto-édition/,
+  )
+  await page.getByRole('tab', { name: 'Personnes' }).click()
+  await expect(page).toHaveURL(/kind=people/)
+  await expect(page.getByTestId('admin-row').first()).toContainText(/Personne|Collectif/)
+
+  const rawKeys = await page.evaluate(
+    () => (window as unknown as { __rawKeys: string[] }).__rawKeys,
+  )
+  expect(rawKeys).toEqual([])
+})
+
 test('quitter une fiche modifiée demande confirmation, et une fiche neuve repart vide', async ({
   page,
 }) => {

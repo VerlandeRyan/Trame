@@ -275,4 +275,25 @@ describe('AdminResourceRows', () => {
     expect(wrapper.text()).toContain('2 œuvres')
     expect(wrapper.get('a').attributes('href')).toBe('/admin/catalogue/people/7')
   })
+
+  it.each<[AdminKind, AdminListItem, string]>([
+    [
+      'people',
+      { id: 1, archived: false, draft: false, name: 'Maison Fictive', kind: 'platform' },
+      'Plateforme',
+    ],
+    [
+      'publishers',
+      { id: 2, archived: false, draft: false, name: 'Léa Auteure', kind: 'collective' },
+      'Collectif',
+    ],
+  ])(
+    'traduit la nature d’après la fiche, même si l’onglet change avant la liste (%s)',
+    async (kind, item, label) => {
+      const wrapper = await mountRows(kind, [item])
+
+      expect(wrapper.get('[data-testid="admin-row"]').text()).toContain(label)
+      expect(wrapper.get('[data-testid="admin-row"]').text()).not.toContain('admin.option')
+    },
+  )
 })
