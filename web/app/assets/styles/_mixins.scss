@@ -265,12 +265,13 @@ $tilt-tiers: (
   box-shadow: var(--shadow);
 }
 
-// Highlight of an action menu row (hover, keyboard focus, press): a background that overflows 8 px
-// on each side, so it covers the panel padding without touching the rules between rows.
+// Highlight of an action menu row (hover, keyboard focus, press): a background that overflows 16 px
+// on each side, the panel's horizontal padding, so it reaches the frame without touching the rules
+// between rows.
 @mixin action-menu-row-highlight($background) {
   $overflow:
-    -8px 0 0 $background,
-    8px 0 0 $background;
+    -16px 0 0 $background,
+    16px 0 0 $background;
 
   &:focus-visible,
   &:active:not(:disabled) {
