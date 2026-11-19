@@ -614,6 +614,11 @@
     },
     "archive": "Archive",
     "restore": "Restore",
+    "restoreConfirm": {
+      "title": "Restore this record?",
+      "text": "The record becomes visible to the public again and reappears in lists and search.",
+      "cancel": "Cancel"
+    },
     "archiveConfirm": {
       "title": "Archive this record?",
       "confirm": "Archive the record",

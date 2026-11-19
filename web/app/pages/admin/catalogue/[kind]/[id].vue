@@ -93,6 +93,7 @@ const deleteTarget = computed(() => (record.value?.archived ? 'archive' : 'draft
 const confirmingArchive = ref(false)
 /** Archives the record, then goes back to the list. */
 const archive = () => editor.setArchived(true, leaveToList)
+const confirmingRestore = ref(false)
 /** Restores the record. */
 const restore = () => editor.setArchived(false)
 
@@ -165,7 +166,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
             class="edit__action"
             variant="secondary"
             data-testid="admin-restore"
-            @click="restore"
+            @click="confirmingRestore = true"
           >
             <Icon name="tabler:restore" size="16" aria-hidden="true" />{{ t('admin.restore') }}
           </UiButton>
@@ -231,6 +232,11 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :kind="kind"
       :impact="record?.impact"
       @confirm="archive"
+    />
+    <AdminRestoreConfirm
+      v-model="confirmingRestore"
+      data-testid="restore-confirm"
+      @confirm="restore"
     />
     <UiConfirm
       v-model="confirmingPublish"

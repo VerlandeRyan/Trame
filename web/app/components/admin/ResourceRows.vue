@@ -10,9 +10,10 @@ import {
 import { updateAge } from '~/utils/profile'
 
 /**
- * Catalogue table: one row per record, "Edit" or, for an archive, "Restore". Archiving is done
- * from the record, or from the "⋮" sheet (`admin/RowMenu`) on mobile; on desktop only an archive
- * has a "⋮", a dropdown for its permanent deletion ("Restore" is already beside it). `loadImpact` (works) reads what archiving leaves in
+ * Catalogue table: one row per record, "Edit" or, for an archive, "Restore" (confirmed first, like
+ * archiving and permanent deletion). Archiving is done from the record, or from the "⋮" sheet
+ * (`admin/RowMenu`) on mobile; on desktop only an archive has a "⋮", a dropdown for its permanent
+ * deletion ("Restore" is already beside it). `loadImpact` (works) reads what archiving leaves in
  * place, for the confirmation.
  */
 const props = defineProps<{
@@ -125,6 +126,17 @@ function archiveMenuItem() {
   if (menuItem.value) emit('archive', menuItem.value)
 }
 
+const isRestoreConfirmOpen = ref(false)
+/** Opens the restoration confirmation for a row. */
+function askRestore(item: AdminListItem) {
+  menuItem.value = item
+  isRestoreConfirmOpen.value = true
+}
+/** Reports the confirmed restoration. */
+function restoreMenuItem() {
+  if (menuItem.value) emit('restore', menuItem.value)
+}
+
 const isRemoveConfirmOpen = ref(false)
 /** Opens the permanent deletion confirmation for a row. */
 function askRemove(item: AdminListItem) {
@@ -207,7 +219,7 @@ function removeMenuItem() {
           size="small"
           class="rows__action"
           data-testid="admin-restore"
-          @click="emit('restore', item)"
+          @click="askRestore(item)"
         >
           <Icon name="tabler:restore" size="16" aria-hidden="true" />{{ t('admin.restore') }}
         </UiButton>
@@ -244,12 +256,18 @@ function removeMenuItem() {
       v-model="isMenuOpen"
       :kind="kind"
       :item="menuItem"
-      @restore="emit('restore', $event)"
+      @restore="askRestore"
       @archive="askArchive"
       @remove="askRemove"
     />
+    <AdminRestoreConfirm
+      v-model="isRestoreConfirmOpen"
+      data-testid="restore-confirm"
+      @confirm="restoreMenuItem"
+    />
     <AdminArchiveConfirm
       v-model="isArchiveConfirmOpen"
+      data-testid="archive-confirm"
       :kind="kind"
       :impact="impact"
       @confirm="archiveMenuItem"
