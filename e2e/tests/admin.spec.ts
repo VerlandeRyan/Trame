@@ -336,6 +336,25 @@ test('enregistrer une fiche modifiée entre-temps est refusé', async ({ page, c
   await expect(page).toHaveURL(/\/admin\/catalogue\/works\/\d+$/)
 })
 
+test('enregistrer une personne modifiée entre-temps est refusé', async ({ page, context }) => {
+  const found = await context.request.get(`/api/v1/admin/people?q=${encodeURIComponent(PERSON)}`)
+  const [person] = (await found.json()).items as { id: number }[]
+  const url = `/api/v1/admin/people/${person!.id}`
+  await page.goto(`/admin/catalogue/people/${person!.id}`)
+  await waitForHydration(page)
+
+  // Une autre session enregistre la fiche pendant qu'elle est ouverte ici.
+  const body = await (await context.request.get(url)).json()
+  for (const readOnly of ['id', 'archived', 'draft', 'activeWorkCount', 'archivedAt', 'archivedBy'])
+    delete body[readOnly]
+  const other = await context.request.put(url, { data: body })
+  expect(other.status()).toBe(200)
+
+  await page.getByTestId('admin-save').click()
+  await expect(page.getByRole('alert').filter({ hasText: 'modifiée depuis' })).toBeVisible()
+  await expect(page).toHaveURL(/\/admin\/catalogue\/people\/\d+$/)
+})
+
 test('archiver masque l’œuvre au public, restaurer la rend', async ({ page, context }) => {
   const found = await context.request.get(`/api/v1/works?q=${encodeURIComponent(WORK)}`)
   const [work] = (await found.json()).items as { id: number }[]
@@ -520,6 +539,7 @@ test('une fiche archivée se supprime définitivement depuis la liste des archiv
   await page.goto(`/admin/catalogue?scope=archived&kind=people&q=${encodeURIComponent(DRAFT)}`)
   await waitForHydration(page)
   const row = page.getByTestId('admin-row').filter({ hasText: `${DRAFT} archivée` })
+  await expect(row).toContainText('par @')
   await row.getByTestId('admin-row-menu').click()
   if (isMobile(page)) {
     // Écran étroit : la feuille du bas, qui porte aussi « Restaurer ».

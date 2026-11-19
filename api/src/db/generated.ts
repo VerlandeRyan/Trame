@@ -88,6 +88,10 @@ export interface LibraryEntry {
 
 export interface Person {
   deleted_at: Timestamp | null;
+  /**
+   * Administrateur ayant archivé la personne (avec deleted_at).
+   */
+  deleted_by: number | null;
   id: Generated<number>;
   kind: Generated<PersonKind>;
   name: string;
@@ -95,10 +99,18 @@ export interface Person {
    * Date de publication ; NULL = brouillon, invisible du public ; distinct de deleted_at.
    */
   published_at: Generated<Timestamp | null>;
+  /**
+   * Version de la fiche : déplacée à chaque modification, publication, archivage et restauration.
+   */
+  updated_at: Generated<Timestamp>;
 }
 
 export interface Publisher {
   deleted_at: Timestamp | null;
+  /**
+   * Administrateur ayant archivé l'éditeur (avec deleted_at).
+   */
+  deleted_by: number | null;
   id: Generated<number>;
   kind: PublisherKind;
   name: string;
@@ -106,6 +118,10 @@ export interface Publisher {
    * Date de publication ; NULL = brouillon, invisible du public ; distinct de deleted_at.
    */
   published_at: Generated<Timestamp | null>;
+  /**
+   * Version de la fiche : déplacée à chaque modification, publication, archivage et restauration.
+   */
+  updated_at: Generated<Timestamp>;
   url: string | null;
 }
 

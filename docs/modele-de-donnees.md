@@ -122,13 +122,13 @@ PK (`work_id`, `language`). Lecture : langue demandée, sinon langue originale d
 PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inverse (sequel ↔ prequel, contains ↔ fait partie de, spin_off ↔ a pour spin-off) est déduit à l'affichage. **Lecture : « `work_id` — relation — `related_work_id` »**, par exemple « Marées Rouges – Avant la Digue — `spin_off` — Marées Rouges » ou « Le Cartographe de Sel, le Recueil — `contains` — Escale ». Par défaut, une seule relation principale par paire d'œuvres.
 
 ### `person`
-`id` PK, `name` text NOT NULL (pseudonyme ou nom d'usage), `kind` text `person` \| `collective` (défaut `person`), `deleted_at`, `published_at` (comme `work` : NULL = brouillon). Pas d'e-mail ni de donnée privée.
+`id` PK, `name` text NOT NULL (pseudonyme ou nom d'usage), `kind` text `person` \| `collective` (défaut `person`), `deleted_at` / `deleted_by` (FK `app_user`, comme `work`), `published_at` (comme `work` : NULL = brouillon), `updated_at` (version de la fiche, comme `work`). Pas d'e-mail ni de donnée privée.
 
 ### `work_credit`
 `work_id`, `person_id`, `role` (`story` \| `art` \| `colors` \| `other`). PK (`work_id`, `person_id`, `role`).
 
 ### `publisher`
-`id` PK, `name` text NOT NULL, `kind` text `publisher` \| `platform` \| `self_published`, `url` nullable, `deleted_at`, `published_at` (comme `work` : NULL = brouillon).
+`id` PK, `name` text NOT NULL, `kind` text `publisher` \| `platform` \| `self_published`, `url` nullable, `deleted_at` / `deleted_by` (FK `app_user`, comme `work`), `published_at` (comme `work` : NULL = brouillon), `updated_at` (version de la fiche, comme `work`).
 
 ### `work_publisher`
 `work_id`, `publisher_id`. PK composite. Facultatif : une œuvre peut n'avoir aucun éditeur (auto-édition sans structure).

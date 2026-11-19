@@ -49,7 +49,7 @@ trame/
 
 ## 5. Tickets
 
-GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`, `refactor`, `debt`) et `area:*` (`api`, `web`, `db`, `infra`, `ci`, `docs`, `e2e`, `design`, `mobile`). `type:debt` marque un raccourci assumé : le ticket est ouvert dans la PR qui le laisse. Le backlog vit dans GitHub Issues. **Ordre entre tickets** : une dépendance (« à faire avant / après #n ») s'écrit dans une section « Coordination » des **deux** tickets, jamais d'un seul côté ; un ticket fermé n'impose plus d'ordre et sa mention est retirée ou corrigée.
+GitHub Issues + Projects. Labels `type:*` (`feat`, `chore`, `docs`, `ci`, `test`, `refactor`, `debt`) et `area:*` (`api`, `web`, `db`, `infra`, `ci`, `docs`, `e2e`, `design`, `mobile`). `type:debt` marque un raccourci assumé : le ticket est ouvert dans la PR qui le laisse. Le backlog vit dans GitHub Issues. **Avant de commencer un sujet**, chercher dans les tickets ouverts (`gh issue list --state open --search "<mots-clés>"`) s'il est déjà prévu, en tout ou partie : ne pas refaire ce qu'un autre ticket décrit (le #232 recoupait le #146). Si un ticket recoupe, le dire à Ryan, travailler dans ce ticket plutôt que d'en ouvrir un second, et fermer (`Closes #n`) ou réduire celui qui est couvert. **Ordre entre tickets** : une dépendance (« à faire avant / après #n ») s'écrit dans une section « Coordination » des **deux** tickets, jamais d'un seul côté ; un ticket fermé n'impose plus d'ordre et sa mention est retirée ou corrigée.
 
 ## 6. Qualité et tests
 

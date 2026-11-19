@@ -658,6 +658,14 @@ export interface components {
             draft: boolean;
             /** @description Œuvres non archivées où la personne est créditée. */
             activeWorkCount: number;
+            /**
+             * Format: date-time
+             * @description Version de la fiche, à renvoyer avec le remplacement (`PUT`).
+             */
+            updatedAt: string;
+            archivedAt: string | null;
+            /** @description Pseudo de l’administrateur qui a archivé. */
+            archivedBy: string | null;
             links: {
                 kind: components["schemas"]["ExternalLinkKind"];
                 url: string;
@@ -674,6 +682,14 @@ export interface components {
                 draft: boolean;
                 /** @description Œuvres non archivées où la personne est créditée. */
                 activeWorkCount: number;
+                /**
+                 * Format: date-time
+                 * @description Version de la fiche, à renvoyer avec le remplacement (`PUT`).
+                 */
+                updatedAt: string;
+                archivedAt: string | null;
+                /** @description Pseudo de l’administrateur qui a archivé. */
+                archivedBy: string | null;
             }[];
             page: number;
             pageSize: number;
@@ -689,6 +705,14 @@ export interface components {
             draft: boolean;
             /** @description Œuvres non archivées publiées. */
             activeWorkCount: number;
+            /**
+             * Format: date-time
+             * @description Version de la fiche, à renvoyer avec le remplacement (`PUT`).
+             */
+            updatedAt: string;
+            archivedAt: string | null;
+            /** @description Pseudo de l’administrateur qui a archivé. */
+            archivedBy: string | null;
         };
         AdminPublisherPage: {
             items: {
@@ -701,6 +725,14 @@ export interface components {
                 draft: boolean;
                 /** @description Œuvres non archivées publiées. */
                 activeWorkCount: number;
+                /**
+                 * Format: date-time
+                 * @description Version de la fiche, à renvoyer avec le remplacement (`PUT`).
+                 */
+                updatedAt: string;
+                archivedAt: string | null;
+                /** @description Pseudo de l’administrateur qui a archivé. */
+                archivedBy: string | null;
             }[];
             page: number;
             pageSize: number;
@@ -2514,6 +2546,11 @@ export interface operations {
                      * @default true
                      */
                     published?: boolean;
+                    /**
+                     * Format: date-time
+                     * @description Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis.
+                     */
+                    updatedAt: string;
                 };
             };
         };
@@ -2556,6 +2593,15 @@ export interface operations {
             };
             /** @description Person inconnu. Code : `NOT_FOUND`. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description La fiche a été modifiée depuis sa lecture. Code : `STALE_RECORD`. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3137,6 +3183,11 @@ export interface operations {
                      * @default true
                      */
                     published?: boolean;
+                    /**
+                     * Format: date-time
+                     * @description Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis.
+                     */
+                    updatedAt: string;
                 };
             };
         };
@@ -3179,6 +3230,15 @@ export interface operations {
             };
             /** @description Publisher inconnu. Code : `NOT_FOUND`. */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description La fiche a été modifiée depuis sa lecture. Code : `STALE_RECORD`. */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -3670,11 +3730,6 @@ export interface operations {
                      * @default true
                      */
                     published?: boolean;
-                    /**
-                     * Format: date-time
-                     * @description Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis. Ignoré à la création.
-                     */
-                    updatedAt?: string;
                 };
             };
         };
@@ -3875,9 +3930,9 @@ export interface operations {
                     published?: boolean;
                     /**
                      * Format: date-time
-                     * @description Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis. Ignoré à la création.
+                     * @description Version de la fiche (`updatedAt` lu avant modification) : refusé en 409 si la fiche a changé depuis.
                      */
-                    updatedAt?: string;
+                    updatedAt: string;
                 };
             };
         };

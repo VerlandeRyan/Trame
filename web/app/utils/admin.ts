@@ -1,15 +1,6 @@
 /** Catalogue administration: response types, form drafts and pure conversions (tested without Nuxt). */
-import {
-  CREDIT_ROLES,
-  LINK_KINDS,
-  PERSON_KINDS,
-  PUBLISHER_KINDS,
-  RELATION_KINDS,
-  SYNOPSIS_SOURCES,
-  TITLE_KINDS,
-  WORK_STATUSES,
-  WORK_TYPES,
-} from '../contract/api'
+import { LINK_KINDS, WORK_STATUSES, WORK_TYPES } from '../contract/api'
+import type { AdminPerson, AdminPublisher, AdminWork } from '../contract/api'
 import type { ApiError } from './api-error'
 
 /** Kinds of administered records. */
@@ -26,18 +17,17 @@ export const ADMIN_STATES: readonly AdminState[] = ['all', 'draft', 'published']
 
 // Runtime values taken from the contract. A work is read or bought (`WORK_LINK_KINDS`); the website
 // and social networks belong to a person (`PERSON_LINK_KINDS`).
-export { PERSON_LINK_KINDS, WORK_LINK_KINDS } from '../contract/api'
 export {
   CREDIT_ROLES,
-  LINK_KINDS,
   PERSON_KINDS,
+  PERSON_LINK_KINDS,
   PUBLISHER_KINDS,
   RELATION_KINDS,
   SYNOPSIS_SOURCES,
   TITLE_KINDS,
-  WORK_STATUSES,
-  WORK_TYPES,
-}
+  WORK_LINK_KINDS,
+} from '../contract/api'
+export { LINK_KINDS, WORK_STATUSES, WORK_TYPES }
 
 /** Sections of the work form; the first one is open by default. */
 export const WORK_SECTIONS = ['info', 'texts', 'relations', 'links', 'people'] as const
@@ -92,54 +82,8 @@ export const ADMIN_TABS: readonly AdminTab[] = [...ADMIN_KINDS, 'archives']
 export const tabOf = (list: AdminListQuery): AdminTab =>
   list.scope === 'archived' ? 'archives' : list.kind
 
-/** A person (creator) with their links. */
-export interface AdminPerson {
-  id: number
-  name: string
-  kind: (typeof PERSON_KINDS)[number]
-  archived: boolean
-  draft: boolean
-  activeWorkCount: number
-  links: AdminLink[]
-}
-
-/** A publisher or platform. */
-export interface AdminPublisher {
-  id: number
-  name: string
-  kind: (typeof PUBLISHER_KINDS)[number]
-  url: string | null
-  archived: boolean
-  draft: boolean
-  activeWorkCount: number
-}
-
-/** A full work record as read for editing. */
-export interface AdminWork {
-  id: number
-  title: string
-  originalLanguage: string
-  type: (typeof WORK_TYPES)[number]
-  status: (typeof WORK_STATUSES)[number]
-  archived: boolean
-  draft: boolean
-  chapters: number | null
-  volumes: number | null
-  startedOn: string | null
-  endedOn: string | null
-  titles: { language: string; kind: (typeof TITLE_KINDS)[number]; title: string }[]
-  synopses: { language: string; text: string; source: (typeof SYNOPSIS_SOURCES)[number] }[]
-  credits: { personId: number; role: (typeof CREDIT_ROLES)[number] }[]
-  publisherIds: number[]
-  genres: string[]
-  relations: { relatedWorkId: number; relation: (typeof RELATION_KINDS)[number] }[]
-  links: AdminLink[]
-  /** Names of the cited people, publishers and related works (archived ones included). */
-  labels: { people: RecordRef[]; publishers: RecordRef[]; works: RecordRef[] }
-  followerCount: number
-  /** Record version: sent back with the replacement to detect a modification in the meantime. */
-  updatedAt: string
-}
+// The records as read for editing: types of the contract, never copied.
+export type { AdminPerson, AdminPublisher, AdminWork }
 
 /** What archiving a work leaves in place, recalled in the confirmation. */
 export interface ArchiveImpact {
@@ -576,6 +520,8 @@ export interface PersonDraft {
   name: string
   kind: string
   links: { kind: string; url: string; label: string }[]
+  /** Version of the open record; empty for a new one. */
+  updatedAt: string
 }
 
 /** The publisher form content. */
@@ -583,15 +529,23 @@ export interface PublisherDraft {
   name: string
   kind: string
   url: string
+  /** Version of the open record; empty for a new one. */
+  updatedAt: string
 }
 
 /** The draft of a new person. */
-export const emptyPersonDraft = (): PersonDraft => ({ name: '', kind: 'person', links: [] })
+export const emptyPersonDraft = (): PersonDraft => ({
+  name: '',
+  kind: 'person',
+  links: [],
+  updatedAt: '',
+})
 /** The draft of a new publisher. */
 export const emptyPublisherDraft = (): PublisherDraft => ({
   name: '',
   kind: 'publisher',
   url: '',
+  updatedAt: '',
 })
 
 /** Converts a person record into a form draft. */
@@ -599,6 +553,7 @@ export const personToDraft = (person: AdminPerson): PersonDraft => ({
   name: person.name,
   kind: person.kind,
   links: person.links.map((link) => ({ ...link, label: link.label ?? '' })),
+  updatedAt: person.updatedAt,
 })
 
 /** Converts a publisher record into a form draft. */
@@ -606,6 +561,7 @@ export const publisherToDraft = (publisher: AdminPublisher): PublisherDraft => (
   name: publisher.name,
   kind: publisher.kind,
   url: publisher.url ?? '',
+  updatedAt: publisher.updatedAt,
 })
 
 /** Links of a draft as API body items; rows without an address are dropped. */
@@ -616,6 +572,7 @@ const linksBody = (links: PersonDraft['links']) =>
 
 /** Body to create or replace a person. */
 export const draftToPersonBody = (draft: PersonDraft) => ({
+  updatedAt: textOrUndefined(draft.updatedAt),
   name: draft.name.trim(),
   kind: draft.kind,
   links: linksBody(draft.links),
@@ -623,6 +580,7 @@ export const draftToPersonBody = (draft: PersonDraft) => ({
 
 /** Body to create or replace a publisher. */
 export const draftToPublisherBody = (draft: PublisherDraft) => ({
+  updatedAt: textOrUndefined(draft.updatedAt),
   name: draft.name.trim(),
   kind: draft.kind,
   url: textOrNull(draft.url),

@@ -41,6 +41,17 @@ function pageOf<T extends z.ZodType>(item: T) {
   });
 }
 
+/** Version of a record, to send back with its replacement (`PUT`). */
+const recordVersion = z.iso
+  .datetime()
+  .describe('Version de la fiche, à renvoyer avec le remplacement (`PUT`).');
+
+/** Handle of the administrator who archived a record. */
+const archivedByHandle = z
+  .string()
+  .nullable()
+  .describe('Pseudo de l’administrateur qui a archivé.');
+
 /** A person as listed. */
 const personSummary = z.strictObject({
   id: z.number().int(),
@@ -49,6 +60,9 @@ const personSummary = z.strictObject({
   archived: z.boolean(),
   draft: z.boolean().describe('Brouillon : visible seulement dans l’administration.'),
   activeWorkCount: z.number().int().describe('Œuvres non archivées où la personne est créditée.'),
+  updatedAt: recordVersion,
+  archivedAt: z.iso.datetime().nullable(),
+  archivedBy: archivedByHandle,
 }) satisfies z.ZodType<AdminPersonSummary>;
 
 /** A person with their links. */
@@ -70,6 +84,9 @@ export const adminPublisherSchema = z.strictObject({
   archived: z.boolean(),
   draft: z.boolean().describe('Brouillon : visible seulement dans l’administration.'),
   activeWorkCount: z.number().int().describe('Œuvres non archivées publiées.'),
+  updatedAt: recordVersion,
+  archivedAt: z.iso.datetime().nullable(),
+  archivedBy: archivedByHandle,
 }) satisfies z.ZodType<AdminPublisherSummary>;
 
 /** A page of publishers. */
@@ -118,9 +135,7 @@ export const adminWorkSchema = workSummary.extend({
     })
     .describe('Noms des personnes, éditeurs et œuvres liées cités, triés par identifiant.'),
   followerCount: z.number().int().describe('Membres qui ont l’œuvre dans leur liste de lecture.'),
-  updatedAt: z.iso
-    .datetime()
-    .describe('Version de la fiche, à renvoyer avec le remplacement (`PUT`).'),
+  updatedAt: recordVersion,
 }) satisfies z.ZodType<AdminWorkRecord>;
 
 /** A work as listed. */
@@ -129,7 +144,7 @@ const workListItem = workSummary.extend({
   mainAuthor: z.string().nullable(),
   updatedAt: z.iso.datetime().describe('Dernière modification.'),
   archivedAt: z.iso.datetime().nullable(),
-  archivedBy: z.string().nullable().describe('Pseudo de l’administrateur qui a archivé.'),
+  archivedBy: archivedByHandle,
   completeness: z
     .number()
     .int()

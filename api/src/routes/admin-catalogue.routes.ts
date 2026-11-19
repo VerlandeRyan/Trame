@@ -14,8 +14,11 @@ import {
   adminListQuery,
   adminWorkListQuery,
   personBody,
+  personReplaceBody,
   publisherBody,
+  publisherReplaceBody,
   workBody,
+  workReplaceBody,
 } from '../schemas/admin-catalogue.js';
 import { idParams } from '../schemas/common.js';
 import type { AdminWorkService } from '../services/admin-work.service.js';
@@ -34,19 +37,19 @@ function addResourceRoutes(
   router: Router,
   base: string,
   controller: AdminResourceController,
-  schemas: { body: z.ZodType; listQuery: z.ZodType },
+  schemas: { createBody: z.ZodType; replaceBody: z.ZodType; listQuery: z.ZodType },
   limiter: RequestHandler,
 ): void {
-  const { body, listQuery } = schemas;
+  const { createBody, replaceBody, listQuery } = schemas;
   const item = `${base}/:id`;
   router.get(base, validate('query', listQuery), controller.list);
   router.get(item, validate('params', idParams), controller.get);
-  router.post(base, limiter, validate('body', body), controller.create);
+  router.post(base, limiter, validate('body', createBody), controller.create);
   router.put(
     item,
     limiter,
     validate('params', idParams),
-    validate('body', body),
+    validate('body', replaceBody),
     controller.update,
   );
   router.post(`${item}/archive`, limiter, validate('params', idParams), controller.archive);
@@ -64,29 +67,35 @@ export function createAdminCatalogueRouter(
   const router = Router();
   router.use(requireAdmin);
   router.get('/draft-counts', createDraftCountsController({ works, people, publishers }));
-  const person = { body: personBody, listQuery: adminListQuery };
-  const publisher = { body: publisherBody, listQuery: adminListQuery };
-  const work = { body: workBody, listQuery: adminWorkListQuery };
+  const person = {
+    createBody: personBody,
+    replaceBody: personReplaceBody,
+    listQuery: adminListQuery,
+  };
+  const publisher = {
+    createBody: publisherBody,
+    replaceBody: publisherReplaceBody,
+    listQuery: adminListQuery,
+  };
+  const work = {
+    createBody: workBody,
+    replaceBody: workReplaceBody,
+    listQuery: adminWorkListQuery,
+  };
   addResourceRoutes(
     router,
     '/people',
-    createAdminResourceController(people, person.body, person.listQuery),
+    createAdminResourceController(people, person),
     person,
     limiter,
   );
   addResourceRoutes(
     router,
     '/publishers',
-    createAdminResourceController(publishers, publisher.body, publisher.listQuery),
+    createAdminResourceController(publishers, publisher),
     publisher,
     limiter,
   );
-  addResourceRoutes(
-    router,
-    '/works',
-    createAdminResourceController(works, work.body, work.listQuery),
-    work,
-    limiter,
-  );
+  addResourceRoutes(router, '/works', createAdminResourceController(works, work), work, limiter);
   return router;
 }

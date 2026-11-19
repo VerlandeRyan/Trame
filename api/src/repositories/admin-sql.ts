@@ -24,18 +24,36 @@ export function publicationCondition(
 export type CatalogueTable = 'work' | 'person' | 'publisher';
 
 /**
- * Publishes a record (no effect on a published one); false if it does not exist. `touchVersion`
- * also moves the version of tables that have one.
+ * Version of a record: `updated_at` to the millisecond, the precision of a JavaScript date
+ * (Postgres keeps microseconds, which an ISO date returned by the API would lose).
  */
-export async function publishRow(
-  db: Db,
-  table: CatalogueTable,
-  id: number,
-  touchVersion = false,
-): Promise<boolean> {
-  const version = touchVersion ? sql`, updated_at = now()` : sql``;
+export const versionOf = (table: CatalogueTable) =>
+  sql<Date>`date_trunc('milliseconds', ${sql.ref(table)}.updated_at)`;
+
+/** Whether the record is still at the given version. */
+export const isVersion = (table: CatalogueTable, version: string) =>
+  sql<boolean>`${versionOf(table)} = ${version}::timestamptz`;
+
+/**
+ * Columns written when archiving (`true`) or restoring (`false`) a record: archive date and
+ * author, and a new version only if the record was not already in that state, so repeating the
+ * action does not make other editors' version stale.
+ */
+export const archiveColumns = (archived: boolean, adminId: number) => ({
+  deleted_at: archived ? sql<Date>`now()` : null,
+  deleted_by: archived ? adminId : null,
+  updated_at: sql<Date>`CASE WHEN (deleted_at IS NULL) = ${archived} THEN now() ELSE updated_at END`,
+});
+
+/**
+ * Publishes a record and moves its version; no effect on a published one (version included).
+ * False if the record does not exist.
+ */
+export async function publishRow(db: Db, table: CatalogueTable, id: number): Promise<boolean> {
   const result = await sql`
-    UPDATE ${sql.table(table)} SET published_at = COALESCE(published_at, now())${version}
+    UPDATE ${sql.table(table)}
+    SET updated_at = CASE WHEN published_at IS NULL THEN now() ELSE updated_at END,
+        published_at = COALESCE(published_at, now())
     WHERE id = ${id} RETURNING id`.execute(db);
   return result.rows.length > 0;
 }

@@ -114,6 +114,12 @@ async function createWork(admin: Agent, overrides: Record<string, unknown> = {})
   return res.body.id;
 }
 
+/** Replaces a record with the version it has now, as an editor opened on it would. */
+async function replace(admin: Agent, path: string, id: number, body: object) {
+  const { updatedAt } = (await admin.get(`${ADMIN}/${path}/${id}`)).body;
+  return admin.put(`${ADMIN}/${path}/${id}`).send({ ...body, updatedAt });
+}
+
 beforeAll(async () => {
   await client.connect();
   await client.query(seed);
@@ -231,9 +237,10 @@ describe('personnes', () => {
     });
 
     const id = created.body.id;
-    const replaced = await admin
-      .put(`${ADMIN}/people/${id}`)
-      .send({ name: `${PREFIX} Léa M.`, kind: 'collective' });
+    const replaced = await replace(admin, 'people', id, {
+      name: `${PREFIX} Léa M.`,
+      kind: 'collective',
+    });
     expect(replaced.status).toBe(200);
     expect(replaced.body).toMatchObject({
       name: `${PREFIX} Léa M.`,
@@ -272,7 +279,9 @@ describe('personnes', () => {
   it('répond 404 pour une personne inconnue', async () => {
     const admin = await newAdmin();
     expect((await admin.get(`${ADMIN}/people/999999999`)).body.code).toBe('NOT_FOUND');
-    const put = await admin.put(`${ADMIN}/people/999999999`).send({ name: 'x', kind: 'person' });
+    const put = await admin
+      .put(`${ADMIN}/people/999999999`)
+      .send({ name: 'x', kind: 'person', updatedAt: '2026-10-24T10:00:00.000Z' });
     expect(put.status).toBe(404);
   });
 
@@ -312,9 +321,10 @@ describe('éditeurs', () => {
     expectMatches(adminPublisherSchema, created.body);
 
     const id = created.body.id;
-    const replaced = await admin
-      .put(`${ADMIN}/publishers/${id}`)
-      .send({ name: `${PREFIX} Maison 2`, kind: 'self_published' });
+    const replaced = await replace(admin, 'publishers', id, {
+      name: `${PREFIX} Maison 2`,
+      kind: 'self_published',
+    });
     expect(replaced.body).toMatchObject({ kind: 'self_published', url: null });
 
     const archived = await admin.post(`${ADMIN}/publishers/${id}/archive`);
@@ -333,6 +343,120 @@ describe('éditeurs', () => {
     await admin.post(`${ADMIN}/works/${workId}/archive`);
     expect((await admin.post(`${ADMIN}/publishers/${publisherId}/archive`)).status).toBe(200);
   });
+});
+
+/** The three administered resources: URL segment, database table and a way to create one. */
+const VERSIONED_RESOURCES: [string, string, (admin: Agent) => Promise<number>][] = [
+  ['people', 'person', (admin) => createPerson(admin, `${PREFIX} Version`)],
+  ['publishers', 'publisher', (admin) => createPublisher(admin, `${PREFIX} Version`)],
+  ['works', 'work', (admin) => createWork(admin)],
+];
+
+describe('version et archivage des fiches', () => {
+  it('exige la version lue pour remplacer une fiche, mais pas pour la créer', async () => {
+    const admin = await newAdmin();
+    const personId = await createPerson(admin);
+    const publisherId = await createPublisher(admin);
+    const workId = await createWork(admin);
+    const replacements: [string, number, object][] = [
+      ['people', personId, { name: `${PREFIX} Sans version`, kind: 'person' }],
+      ['publishers', publisherId, { name: `${PREFIX} Sans version`, kind: 'publisher' }],
+      ['works', workId, workBody()],
+    ];
+    for (const [path, id, body] of replacements) {
+      const res = await admin.put(`${ADMIN}/${path}/${id}`).send(body);
+      expect(res.status, path).toBe(400);
+      expect(res.body.code, path).toBe('VALIDATION_ERROR');
+    }
+    const withVersion = await admin.post(`${ADMIN}/people`).send({
+      name: `${PREFIX} Création`,
+      kind: 'person',
+      updatedAt: '2026-10-24T10:00:00.000Z',
+    });
+    expect(withVersion.status).toBe(400);
+  });
+
+  it.each([
+    ['people', { name: `${PREFIX} Version`, kind: 'person' }],
+    ['publishers', { name: `${PREFIX} Version`, kind: 'publisher' }],
+  ])('refuse d’écraser une fiche de %s modifiée entre-temps', async (path, body) => {
+    const admin = await newAdmin();
+    const created = await admin.post(`${ADMIN}/${path}`).send({ ...body, published: false });
+    const { id, updatedAt } = created.body;
+    expect(updatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T[\d:.]+Z$/);
+    const listed = await admin.get(`${ADMIN}/${path}`).query({ q: `${PREFIX} Version` });
+    expect(listed.body.items.find((item: { id: number }) => item.id === id).updatedAt).toBe(
+      updatedAt,
+    );
+
+    const first = await admin
+      .put(`${ADMIN}/${path}/${id}`)
+      .send({ ...body, name: `${PREFIX} Première`, updatedAt });
+    expect(first.status).toBe(200);
+    expect(first.body.updatedAt).not.toBe(updatedAt);
+
+    const second = await admin
+      .put(`${ADMIN}/${path}/${id}`)
+      .send({ ...body, name: `${PREFIX} Seconde`, updatedAt });
+    expect(second.status).toBe(409);
+    expect(second.body.code).toBe('STALE_RECORD');
+    expect((await admin.get(`${ADMIN}/${path}/${id}`)).body.name).toBe(`${PREFIX} Première`);
+
+    // Publishing a draft changes the record, so a version read before it is stale.
+    const published = await admin.post(`${ADMIN}/${path}/${id}/publish`);
+    expect(published.body.updatedAt).not.toBe(first.body.updatedAt);
+    const afterPublish = await admin
+      .put(`${ADMIN}/${path}/${id}`)
+      .send({ ...body, updatedAt: first.body.updatedAt });
+    expect(afterPublish.status).toBe(409);
+  });
+
+  it.each(VERSIONED_RESOURCES)(
+    'ne déplace la version de %s que si l’état de la fiche change',
+    async (path, _table, create) => {
+      const admin = await newAdmin();
+      const id = await create(admin);
+      const version = async () => (await admin.get(`${ADMIN}/${path}/${id}`)).body.updatedAt;
+      const initial = await version();
+
+      // Publishing a published record and restoring one that is not archived change nothing.
+      expect((await admin.post(`${ADMIN}/${path}/${id}/publish`)).status).toBe(200);
+      expect((await admin.post(`${ADMIN}/${path}/${id}/restore`)).status).toBe(200);
+      expect(await version()).toBe(initial);
+
+      await admin.post(`${ADMIN}/${path}/${id}/archive`);
+      const archived = await version();
+      expect(archived).not.toBe(initial);
+      await admin.post(`${ADMIN}/${path}/${id}/restore`);
+      expect(await version()).not.toBe(archived);
+    },
+  );
+
+  it.each(VERSIONED_RESOURCES.slice(0, 2))(
+    'garde qui a archivé une fiche de %s, et l’efface à la restauration',
+    async (path, table, create) => {
+      const admin = await newAdmin();
+      const id = await create(admin);
+      const listArchives = async () =>
+        (
+          await admin.get(`${ADMIN}/${path}`).query({ q: PREFIX, scope: 'archived' })
+        ).body.items.find((item: { id: number }) => item.id === id);
+      expect((await admin.get(`${ADMIN}/${path}/${id}`)).body).toMatchObject({
+        archivedAt: null,
+        archivedBy: null,
+      });
+
+      const archived = await admin.post(`${ADMIN}/${path}/${id}/archive`);
+      expect(archived.body.archivedBy).toBe('admin-test');
+      expect(archived.body.archivedAt).not.toBeNull();
+      expect(await listArchives()).toMatchObject({ archivedBy: 'admin-test' });
+
+      const restored = await admin.post(`${ADMIN}/${path}/${id}/restore`);
+      expect(restored.body).toMatchObject({ archivedAt: null, archivedBy: null });
+      const cleared = await client.query(`SELECT deleted_by FROM ${table} WHERE id = $1`, [id]);
+      expect(cleared.rows[0].deleted_by).toBeNull();
+    },
+  );
 });
 
 describe('œuvres', () => {
@@ -419,9 +543,12 @@ describe('œuvres', () => {
       links: [{ kind: 'read', url: 'https://exemple.test/a' }],
     });
 
-    const res = await admin
-      .put(`${ADMIN}/works/${id}`)
-      .send(workBody({ title: `${PREFIX} Neuf`, genres: ['bd'] }));
+    const res = await replace(
+      admin,
+      'works',
+      id,
+      workBody({ title: `${PREFIX} Neuf`, genres: ['bd'] }),
+    );
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       title: `${PREFIX} Neuf`,
@@ -549,9 +676,12 @@ describe('œuvres', () => {
     });
 
     const id = await createWork(admin);
-    const self = await admin
-      .put(`${ADMIN}/works/${id}`)
-      .send(workBody({ relations: [{ relatedWorkId: id, relation: 'other' }] }));
+    const self = await replace(
+      admin,
+      'works',
+      id,
+      workBody({ relations: [{ relatedWorkId: id, relation: 'other' }] }),
+    );
     expect(self.body.code).toBe('INVALID_REFERENCE');
   });
 
@@ -579,7 +709,10 @@ describe('œuvres', () => {
     const related = await admin.post(`${ADMIN}/works`).send(workBody(relation));
     expect(related.body.code).toBe('ARCHIVED_REFERENCE');
 
-    const kept = await admin.put(`${ADMIN}/works/${citingId}`).send(
+    const kept = await replace(
+      admin,
+      'works',
+      citingId,
       workBody({
         title: `${PREFIX} Cite`,
         credits: [{ personId, role: 'story' }],
@@ -780,7 +913,7 @@ describe('brouillons', () => {
     const refused = await admin.post(`${ADMIN}/works/${id}/publish`);
     expect(refused.status).toBe(400);
     expect(refused.body.code).toBe('VALIDATION_ERROR');
-    await admin.put(`${ADMIN}/works/${id}`).send(workBody({ ...DRAFT_WORK, genres: ['manga'] }));
+    await replace(admin, 'works', id, workBody({ ...DRAFT_WORK, genres: ['manga'] }));
     const published = await admin.post(`${ADMIN}/works/${id}/publish`);
     expect(published.status).toBe(200);
     expect(published.body.draft).toBe(false);
@@ -789,12 +922,25 @@ describe('brouillons', () => {
     expect((await admin.post(`${ADMIN}/works/${id}/publish`)).status).toBe(200);
   });
 
+  it('refuse une écriture faite avec la version d’avant la publication', async () => {
+    const admin = await newAdmin();
+    const id = await createWork(admin, { ...DRAFT_WORK, genres: ['manga'] });
+    const { updatedAt } = (await admin.get(`${ADMIN}/works/${id}`)).body;
+
+    const published = await admin.post(`${ADMIN}/works/${id}/publish`);
+    expect(published.body.updatedAt).not.toBe(updatedAt);
+
+    const stale = await admin.put(`${ADMIN}/works/${id}`).send(workBody({ updatedAt }));
+    expect(stale.status).toBe(409);
+    expect(stale.body.code).toBe('STALE_RECORD');
+  });
+
   it('exige un format pour une œuvre publiée mais pas pour un brouillon', async () => {
     const admin = await newAdmin();
     const res = await admin.post(`${ADMIN}/works`).send(workBody({ genres: [] }));
     expect(res.status).toBe(400);
     const id = await createWork(admin, DRAFT_WORK);
-    const update = await admin.put(`${ADMIN}/works/${id}`).send(workBody({ genres: [] }));
+    const update = await replace(admin, 'works', id, workBody({ genres: [] }));
     expect(update.status).toBe(200);
     expect(update.body.draft).toBe(true);
   });

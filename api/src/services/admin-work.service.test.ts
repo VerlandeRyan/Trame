@@ -61,6 +61,9 @@ function fakeRepository(
 
 const VERSION = '2026-10-24T10:00:00.000Z';
 
+/** The data of a replacement: the draft and the version that was read. */
+const replacing = (input: WorkDraft) => ({ ...input, updatedAt: VERSION });
+
 const { published: _published, ...WORK_FIELDS } = draft;
 
 const record = (archived = false, isDraft = false): AdminWorkRecord => ({
@@ -93,7 +96,7 @@ describe('références', () => {
     };
 
     await expect(service.create(draft)).rejects.toMatchObject(expected);
-    await expect(service.update(1, draft)).rejects.toMatchObject(expected);
+    await expect(service.update(1, replacing(draft))).rejects.toMatchObject(expected);
     expect(repository.create).not.toHaveBeenCalled();
     expect(repository.update).not.toHaveBeenCalled();
   });
@@ -101,17 +104,17 @@ describe('références', () => {
   it('refuse une relation de l’œuvre avec elle-même', async () => {
     const repository = fakeRepository(record());
     const selfRelated = { ...draft, relations: [{ relatedWorkId: 1, relation: 'other' as const }] };
-    await expect(createAdminWorkService(repository).update(1, selfRelated)).rejects.toMatchObject({
-      code: 'INVALID_REFERENCE',
-    });
+    await expect(
+      createAdminWorkService(repository).update(1, replacing(selfRelated)),
+    ).rejects.toMatchObject({ code: 'INVALID_REFERENCE' });
     expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('refuse de modifier une œuvre inconnue avant toute écriture', async () => {
     const repository = fakeRepository(null);
-    await expect(createAdminWorkService(repository).update(1, draft)).rejects.toMatchObject({
-      code: 'NOT_FOUND',
-    });
+    await expect(
+      createAdminWorkService(repository).update(1, replacing(draft)),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(repository.update).not.toHaveBeenCalled();
   });
 
@@ -135,7 +138,7 @@ describe('références', () => {
       relations: [{ relatedWorkId: 5, relation: 'other' as const }],
     };
     const repository = fakeRepository({ ...record(), ...cited }, NOTHING_MISSING, archived);
-    await createAdminWorkService(repository).update(1, cited);
+    await createAdminWorkService(repository).update(1, replacing(cited));
     expect(repository.update).toHaveBeenCalled();
   });
 });
@@ -155,7 +158,7 @@ describe('brouillon', () => {
     );
     const service = createAdminWorkService(repository);
     await service.create(asDraft);
-    await service.update(1, asDraft);
+    await service.update(1, replacing(asDraft));
     expect(repository.create).toHaveBeenCalled();
     expect(repository.update).toHaveBeenCalled();
     expect(repository.findDraftReferences).not.toHaveBeenCalled();

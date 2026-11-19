@@ -20,8 +20,11 @@ import {
   adminListQuery,
   adminWorkListQuery,
   personBody,
+  personReplaceBody,
   publisherBody,
+  publisherReplaceBody,
   workBody,
+  workReplaceBody,
 } from '../schemas/admin-catalogue.js';
 import { handleBody, loginQuery } from '../schemas/auth.js';
 import { idParams } from '../schemas/common.js';
@@ -162,15 +165,15 @@ interface AdminResource {
   /** Response components: one record and one page. */
   record: string;
   page: string;
-  body: z.ZodType;
+  /** Body to create a record, and body to replace one (the same plus the version that was read, `updatedAt`). */
+  createBody: z.ZodType;
+  replaceBody: z.ZodType;
   /** List parameters (search, scope, page, and filters specific to the resource). */
   listQuery: z.ZodObject;
   /** Code returned (409) when archiving is refused, if applicable. */
   archiveBlockedBy?: ErrorCode;
   /** Whether the body can cite a missing record (400). */
   invalidReference?: boolean;
-  /** The replacement carries the version that was read (`updatedAt`) and answers 409 `STALE_RECORD` if it changed. */
-  versioned?: boolean;
 }
 
 /** Error responses common to every administration operation. */
@@ -196,9 +199,9 @@ function adminResourcePaths(resource: AdminResource) {
       ? 'Corps invalide (`VALIDATION_ERROR`), enregistrement cité inexistant (`INVALID_REFERENCE`) ou archivé (`ARCHIVED_REFERENCE`).'
       : 'Corps invalide.',
   );
-  const staleRecord = resource.versioned
-    ? { '409': errorResponse('STALE_RECORD', 'La fiche a été modifiée depuis sa lecture.') }
-    : {};
+  const staleRecord = {
+    '409': errorResponse('STALE_RECORD', 'La fiche a été modifiée depuis sa lecture.'),
+  };
   const archiveBlocked = {
     '409': errorResponse(
       resource.archiveBlockedBy ?? 'DRAFT_NOT_ARCHIVABLE',
@@ -208,10 +211,11 @@ function adminResourcePaths(resource: AdminResource) {
     ),
   };
   const writeBase = { tags: ['admin'], security: adminSecurity };
-  const writeBody = {
+  /** The JSON request body described by a schema. */
+  const requestBodyOf = (schema: z.ZodType) => ({
     required: true,
-    content: { 'application/json': { schema: toJsonSchema(resource.body, 'input') } },
-  };
+    content: { 'application/json': { schema: toJsonSchema(schema, 'input') } },
+  });
   return {
     [base]: {
       get: {
@@ -230,7 +234,7 @@ function adminResourcePaths(resource: AdminResource) {
         ...writeBase,
         summary: `Créer : ${resource.singular}`,
         operationId: `createAdmin${resource.singular}`,
-        requestBody: writeBody,
+        requestBody: requestBodyOf(resource.createBody),
         responses: {
           '201': jsonResponse(resource.record, 'Créé.'),
           '400': invalidBody,
@@ -258,7 +262,7 @@ function adminResourcePaths(resource: AdminResource) {
         summary: `Remplacer : ${resource.singular}`,
         operationId: `replaceAdmin${resource.singular}`,
         parameters: idParameters,
-        requestBody: writeBody,
+        requestBody: requestBodyOf(resource.replaceBody),
         responses: {
           '200': jsonResponse(resource.record, 'Enregistrée.'),
           '400': invalidBody,
@@ -691,7 +695,8 @@ export function buildOpenApiDocument() {
         singular: 'Person',
         record: 'AdminPerson',
         page: 'AdminPersonPage',
-        body: personBody,
+        createBody: personBody,
+        replaceBody: personReplaceBody,
         listQuery: adminListQuery,
         archiveBlockedBy: 'PERSON_HAS_WORKS',
       }),
@@ -701,7 +706,8 @@ export function buildOpenApiDocument() {
         singular: 'Publisher',
         record: 'AdminPublisher',
         page: 'AdminPublisherPage',
-        body: publisherBody,
+        createBody: publisherBody,
+        replaceBody: publisherReplaceBody,
         listQuery: adminListQuery,
         archiveBlockedBy: 'PUBLISHER_HAS_WORKS',
       }),
@@ -711,10 +717,10 @@ export function buildOpenApiDocument() {
         singular: 'Work',
         record: 'AdminWork',
         page: 'AdminWorkPage',
-        body: workBody,
+        createBody: workBody,
+        replaceBody: workReplaceBody,
         listQuery: adminWorkListQuery,
         invalidReference: true,
-        versioned: true,
       }),
     },
     components: {

@@ -13,6 +13,7 @@ const PERSON = {
   archived: false,
   activeWorkCount: 0,
   links: [],
+  updatedAt: '2026-10-24T10:00:00.000Z',
 }
 
 // Sans cela, une page restée montée relit son état quand le test suivant le vide.
@@ -186,7 +187,10 @@ describe('page d’édition du catalogue', () => {
     await wrapper.get('form').trigger('submit')
     await flushPromises()
 
-    expect(sent[0]).toMatchObject({ method: 'PUT', body: { name: 'Léa M.', kind: 'person' } })
+    expect(sent[0]).toMatchObject({
+      method: 'PUT',
+      body: { name: 'Léa M.', kind: 'person', updatedAt: PERSON.updatedAt },
+    })
   })
 
   it('archive après confirmation', async () => {

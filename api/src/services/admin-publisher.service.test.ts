@@ -5,6 +5,9 @@ import type {
 } from '../repositories/admin-publisher.repository.js';
 import { createAdminPublisherService } from './admin-publisher.service.js';
 
+const VERSION = '2026-10-24T10:00:00.000Z';
+const ADMIN_ID = 5;
+
 const publisher = (overrides: Partial<AdminPublisherSummary> = {}): AdminPublisherSummary => ({
   id: 1,
   name: 'Maison Fictive',
@@ -13,6 +16,9 @@ const publisher = (overrides: Partial<AdminPublisherSummary> = {}): AdminPublish
   archived: false,
   draft: false,
   activeWorkCount: 0,
+  updatedAt: VERSION,
+  archivedAt: null,
+  archivedBy: null,
   ...overrides,
 });
 
@@ -56,7 +62,9 @@ describe('liste', () => {
 describe('archivage', () => {
   it('refuse tant qu’une œuvre non archivée cite l’éditeur', async () => {
     const repository = fakeRepository(publisher({ activeWorkCount: 3 }));
-    await expect(createAdminPublisherService(repository).archive(1)).rejects.toMatchObject({
+    await expect(
+      createAdminPublisherService(repository).archive(1, ADMIN_ID),
+    ).rejects.toMatchObject({
       code: 'PUBLISHER_HAS_WORKS',
       details: { activeWorkCount: 3 },
     });
@@ -64,28 +72,52 @@ describe('archivage', () => {
 
   it('ne réécrit pas un éditeur déjà archivé', async () => {
     const repository = fakeRepository(publisher({ archived: true }));
-    await createAdminPublisherService(repository).archive(1);
+    await createAdminPublisherService(repository).archive(1, ADMIN_ID);
     expect(repository.setArchived).not.toHaveBeenCalled();
   });
 
-  it('archive un éditeur sans œuvre, et le restaure', async () => {
+  it('archive un éditeur sans œuvre, et le restaure, au nom de l’administrateur', async () => {
     const repository = fakeRepository(publisher());
     const service = createAdminPublisherService(repository);
-    await service.archive(1);
-    await service.restore(1);
-    expect(repository.setArchived).toHaveBeenNthCalledWith(1, 1, true);
-    expect(repository.setArchived).toHaveBeenNthCalledWith(2, 1, false);
+    await service.archive(1, ADMIN_ID);
+    await service.restore(1, ADMIN_ID);
+    expect(repository.setArchived).toHaveBeenNthCalledWith(1, 1, true, ADMIN_ID);
+    expect(repository.setArchived).toHaveBeenNthCalledWith(2, 1, false, ADMIN_ID);
   });
 
   it('répond NOT_FOUND pour un éditeur inconnu', async () => {
     const service = createAdminPublisherService(fakeRepository(null));
-    await expect(service.archive(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
-    await expect(service.restore(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(service.archive(9, ADMIN_ID)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(service.restore(9, ADMIN_ID)).rejects.toMatchObject({ code: 'NOT_FOUND' });
     await expect(
-      service.update(9, { name: 'x', kind: 'publisher', url: null, published: true }),
+      service.update(9, {
+        name: 'x',
+        kind: 'publisher',
+        url: null,
+        published: true,
+        updatedAt: VERSION,
+      }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     await expect(service.publish(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
     await expect(service.remove(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+  });
+});
+
+describe('version', () => {
+  const draft = { name: 'x', kind: 'publisher', url: null, published: true } as const;
+
+  it('transmet la version lue au dépôt, sans la mêler aux données', async () => {
+    const repository = fakeRepository(publisher());
+    await createAdminPublisherService(repository).update(1, { ...draft, updatedAt: VERSION });
+    expect(repository.update).toHaveBeenCalledWith(1, draft, VERSION);
+  });
+
+  it('refuse une fiche modifiée entre-temps', async () => {
+    const repository = fakeRepository(publisher());
+    vi.mocked(repository.update).mockResolvedValueOnce(false);
+    await expect(
+      createAdminPublisherService(repository).update(1, { ...draft, updatedAt: VERSION }),
+    ).rejects.toMatchObject({ code: 'STALE_RECORD' });
   });
 });
 
