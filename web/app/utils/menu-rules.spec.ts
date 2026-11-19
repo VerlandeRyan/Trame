@@ -55,6 +55,7 @@ describe("animation d'ouverture des menus", () => {
     { file: 'components/layout/LanguageSwitcher.vue', menu: 'language-switcher__menu' },
     { file: 'components/layout/ExploreMenu.vue', menu: 'explore-menu__panel' },
     { file: 'components/layout/AccountMenu.vue', menu: 'account-menu__panel' },
+    { file: 'components/admin/RowDropdown.vue', menu: 'row-dropdown__panel' },
     { file: 'components/layout/SearchBox.vue', menu: 'search-box__menu' },
   ]
 

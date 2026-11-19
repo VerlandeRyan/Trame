@@ -30,6 +30,8 @@ const requests: { path: string; query: Record<string, string> }[] = []
 const writes: string[] = []
 /** Code of the error the next restoration answers with, if any. */
 let restoreFails: string | null = null
+/** Code of the error the next deletion answers with, if any. */
+let removeFails: string | null = null
 /** Drafts to finish, per kind. */
 let draftCounts = { works: 2, people: 1, publishers: 0 }
 
@@ -44,11 +46,15 @@ beforeEach(() => {
   requests.length = 0
   writes.length = 0
   restoreFails = null
+  removeFails = null
   draftCounts = { works: 2, people: 1, publishers: 0 }
   for (const kind of ['works', 'people', 'publishers']) {
     registerEndpoint(`/api/v1/admin/${kind}`, (event) => {
       const query = Object.fromEntries(new URL(event.path, 'http://localhost').searchParams)
       requests.push({ path: kind, query })
+      // A later archive page that holds a single row.
+      if (query.scope === 'archived' && Number(query.page) > 1)
+        return { items: [WORKS.items[1]], page: Number(query.page), pageSize: 20, total: 21 }
       if (query.scope === 'archived' && kind !== 'publishers')
         return { ...WORKS, total: ARCHIVES_TOTAL }
       return kind === 'works' ? WORKS : { ...WORKS, items: [], total: 0 }
@@ -64,6 +70,18 @@ beforeEach(() => {
       { code: 'fantasy', category: 'theme' },
     ],
   }))
+  registerEndpoint('/api/v1/admin/works/5', {
+    method: 'DELETE',
+    handler: (event) => {
+      writes.push('remove')
+      if (removeFails) {
+        setResponseStatus(event, 409)
+        return { code: removeFails }
+      }
+      setResponseStatus(event, 204)
+      return null
+    },
+  })
   registerEndpoint('/api/v1/admin/works/5/restore', {
     method: 'POST',
     handler: (event) => {
@@ -300,6 +318,52 @@ describe('page Catalogue d’administration', () => {
 
     expect(writes).toEqual(['archive'])
     expect(requests.length).toBeGreaterThan(readsBefore)
+  })
+
+  it('supprime définitivement une archive après confirmation, puis relit la liste', async () => {
+    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+    const readsBefore = requests.length
+
+    await wrapper.findAll('[data-testid="admin-row-menu"]')[1]!.trigger('click')
+    await wrapper.get('[data-testid="admin-dropdown-remove"]').trigger('click')
+    await wrapper
+      .get('[data-testid="remove-archived-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(writes).toEqual(['remove'])
+    expect(requests.length).toBeGreaterThan(readsBefore)
+  })
+
+  it('revient à la dernière page quand on supprime la dernière ligne de la page 2', async () => {
+    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived&page=2')
+    const readsBefore = requests.length
+
+    await wrapper.get('[data-testid="admin-row-menu"]').trigger('click')
+    await wrapper.get('[data-testid="admin-dropdown-remove"]').trigger('click')
+    await wrapper
+      .get('[data-testid="remove-archived-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    await vi.waitFor(() => expect(useRouter().currentRoute.value.query.page ?? '1').toBe('1'))
+    // The empty page 2 is never loaded.
+    expect(requests.slice(readsBefore).some((request) => request.query.page === '2')).toBe(false)
+  })
+
+  it('explique le refus quand l’archive est encore citée, sans « Réessayer »', async () => {
+    removeFails = 'RECORD_IN_USE'
+    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+
+    await wrapper.findAll('[data-testid="admin-row-menu"]')[1]!.trigger('click')
+    await wrapper.get('[data-testid="admin-dropdown-remove"]').trigger('click')
+    await wrapper
+      .get('[data-testid="remove-archived-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('encore citée par une autre')
+    expect(useToasts().toasts.value).toEqual([])
   })
 
   it('annonce une panne avec « Réessayer », qui rejoue la restauration', async () => {

@@ -27,7 +27,7 @@ function fakeRepository(record: AdminPublisherSummary | null): AdminPublisherRep
       async (_id, archived) => record !== null && !(archived && record.activeWorkCount > 0),
     ),
     publish: vi.fn(async () => record !== null),
-    deleteDraft: vi.fn(async () => record !== null && record.activeWorkCount === 0),
+    deleteRecord: vi.fn(async () => record !== null && record.activeWorkCount === 0),
     countDrafts: vi.fn(async () => 1),
   };
 }
@@ -93,16 +93,22 @@ describe('brouillon', () => {
   it('ne supprime pas un éditeur publié', async () => {
     const repository = fakeRepository(publisher());
     await expect(createAdminPublisherService(repository).remove(1)).rejects.toMatchObject({
-      code: 'NOT_A_DRAFT',
+      code: 'NOT_REMOVABLE',
     });
-    expect(repository.deleteDraft).not.toHaveBeenCalled();
+    expect(repository.deleteRecord).not.toHaveBeenCalled();
   });
 
-  it('refuse de supprimer un brouillon encore cité', async () => {
+  it('supprime un éditeur archivé', async () => {
+    const repository = fakeRepository(publisher({ archived: true }));
+    await expect(createAdminPublisherService(repository).remove(1)).resolves.toBeUndefined();
+    expect(repository.deleteRecord).toHaveBeenCalledWith(1);
+  });
+
+  it('refuse de supprimer un éditeur encore cité', async () => {
     const service = createAdminPublisherService(
       fakeRepository(publisher({ draft: true, activeWorkCount: 1 })),
     );
-    await expect(service.remove(1)).rejects.toMatchObject({ code: 'DRAFT_IN_USE' });
+    await expect(service.remove(1)).rejects.toMatchObject({ code: 'RECORD_IN_USE' });
   });
 
   it('supprime un brouillon libre et le publie', async () => {

@@ -189,20 +189,14 @@ async function confirmSignOut() {
 }
 
 .account-menu__panel {
-  position: absolute;
-  top: calc(100% + var(--space-2));
-  right: 0;
-  z-index: 40;
+  @include action-menu-panel;
+
   width: 280px;
   max-width: calc(100vw - 32px);
   // The full menu is taller than a small screen.
   max-height: calc(100dvh - 5rem);
   overflow-y: auto;
   padding: 4px 16px 8px;
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--color-paper);
-  box-shadow: var(--shadow);
 
   @include menu-open-animation;
 }
@@ -263,27 +257,8 @@ async function confirmSignOut() {
     cursor: not-allowed;
   }
 
-  // Same background as the language menu, overflowing 8 px on each side without touching the rules.
-  &:focus-visible {
-    background: var(--color-cover-empty);
-    box-shadow:
-      -8px 0 0 var(--color-cover-empty),
-      8px 0 0 var(--color-cover-empty);
-  }
-
-  @include on-hover {
-    background: var(--color-cover-empty);
-    box-shadow:
-      -8px 0 0 var(--color-cover-empty),
-      8px 0 0 var(--color-cover-empty);
-  }
-
-  &:active:not(:disabled) {
-    background: var(--color-cover-empty);
-    box-shadow:
-      -8px 0 0 var(--color-cover-empty),
-      8px 0 0 var(--color-cover-empty);
-  }
+  // Same background as the language menu.
+  @include action-menu-row-highlight(var(--color-cover-empty));
 }
 
 // The last row's rule would double up with the group title.

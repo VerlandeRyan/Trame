@@ -2253,8 +2253,8 @@
             "sessionCookie": []
           }
         ],
-        "summary": "Supprimer un brouillon : Person",
-        "operationId": "deleteAdminDraftPerson",
+        "summary": "Supprimer un brouillon ou une fiche archivée : Person",
+        "operationId": "deleteAdminRecordPerson",
         "parameters": [
           {
             "name": "id",
@@ -2268,7 +2268,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Brouillon supprimé définitivement."
+            "description": "Fiche supprimée définitivement."
           },
           "400": {
             "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
@@ -2311,7 +2311,7 @@
             }
           },
           "409": {
-            "description": "Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`.",
+            "description": "Fiche publiée non archivée (`NOT_REMOVABLE`) ou encore citée (`RECORD_IN_USE`). Code : `NOT_REMOVABLE`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -3127,8 +3127,8 @@
             "sessionCookie": []
           }
         ],
-        "summary": "Supprimer un brouillon : Publisher",
-        "operationId": "deleteAdminDraftPublisher",
+        "summary": "Supprimer un brouillon ou une fiche archivée : Publisher",
+        "operationId": "deleteAdminRecordPublisher",
         "parameters": [
           {
             "name": "id",
@@ -3142,7 +3142,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Brouillon supprimé définitivement."
+            "description": "Fiche supprimée définitivement."
           },
           "400": {
             "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
@@ -3185,7 +3185,7 @@
             }
           },
           "409": {
-            "description": "Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`.",
+            "description": "Fiche publiée non archivée (`NOT_REMOVABLE`) ou encore citée (`RECORD_IN_USE`). Code : `NOT_REMOVABLE`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4494,8 +4494,8 @@
             "sessionCookie": []
           }
         ],
-        "summary": "Supprimer un brouillon : Work",
-        "operationId": "deleteAdminDraftWork",
+        "summary": "Supprimer un brouillon ou une fiche archivée : Work",
+        "operationId": "deleteAdminRecordWork",
         "parameters": [
           {
             "name": "id",
@@ -4509,7 +4509,7 @@
         ],
         "responses": {
           "204": {
-            "description": "Brouillon supprimé définitivement."
+            "description": "Fiche supprimée définitivement."
           },
           "400": {
             "description": "Identifiant invalide. Code : `VALIDATION_ERROR`.",
@@ -4552,7 +4552,7 @@
             }
           },
           "409": {
-            "description": "Fiche publiée (`NOT_A_DRAFT`) ou brouillon encore cité (`DRAFT_IN_USE`). Code : `NOT_A_DRAFT`.",
+            "description": "Fiche publiée non archivée (`NOT_REMOVABLE`) ou encore citée (`RECORD_IN_USE`). Code : `NOT_REMOVABLE`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -5043,8 +5043,8 @@
               "ARCHIVED_REFERENCE",
               "DRAFT_REFERENCE",
               "DRAFT_NOT_ARCHIVABLE",
-              "NOT_A_DRAFT",
-              "DRAFT_IN_USE",
+              "NOT_REMOVABLE",
+              "RECORD_IN_USE",
               "STALE_RECORD",
               "FORBIDDEN_ORIGIN",
               "HANDLE_NOT_ALLOWED",

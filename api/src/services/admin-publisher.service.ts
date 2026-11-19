@@ -21,7 +21,7 @@ export interface AdminPublisherService {
   archive(id: number): Promise<AdminPublisherSummary>;
   restore(id: number): Promise<AdminPublisherSummary>;
   publish(id: number): Promise<AdminPublisherSummary>;
-  /** Only a draft no work lists (`NOT_A_DRAFT`, `DRAFT_IN_USE`). */
+  /** Only a draft or archived publisher no work lists (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
   remove(id: number): Promise<void>;
   countDrafts(): Promise<number>;
 }

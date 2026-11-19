@@ -251,3 +251,35 @@ $tilt-tiers: (
   -webkit-mask-image: linear-gradient($angle, #000000, transparent $fade-end);
   mask-image: linear-gradient($angle, #000000, transparent $fade-end);
 }
+
+// Floating panel of an action menu: paper, framed, shadowed, opening under the right edge of its
+// button (the caller adds `menu-open-animation`, size and padding).
+@mixin action-menu-panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 40;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--color-paper);
+  box-shadow: var(--shadow);
+}
+
+// Highlight of an action menu row (hover, keyboard focus, press): a background that overflows 8 px
+// on each side, so it covers the panel padding without touching the rules between rows.
+@mixin action-menu-row-highlight($background) {
+  $overflow:
+    -8px 0 0 $background,
+    8px 0 0 $background;
+
+  &:focus-visible,
+  &:active:not(:disabled) {
+    background: $background;
+    box-shadow: $overflow;
+  }
+
+  @include on-hover {
+    background: $background;
+    box-shadow: $overflow;
+  }
+}

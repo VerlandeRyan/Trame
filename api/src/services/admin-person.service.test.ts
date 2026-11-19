@@ -27,7 +27,7 @@ function fakeRepository(record: AdminPersonRecord | null): AdminPersonRepository
       async (_id, archived) => record !== null && !(archived && record.activeWorkCount > 0),
     ),
     publish: vi.fn(async () => record !== null),
-    deleteDraft: vi.fn(async () => record !== null && record.activeWorkCount === 0),
+    deleteRecord: vi.fn(async () => record !== null && record.activeWorkCount === 0),
     countDrafts: vi.fn(async () => 2),
   };
 }
@@ -91,16 +91,44 @@ describe('brouillon', () => {
   it('ne supprime pas une personne publiée', async () => {
     const repository = fakeRepository(person());
     await expect(createAdminPersonService(repository).remove(1)).rejects.toMatchObject({
-      code: 'NOT_A_DRAFT',
+      code: 'NOT_REMOVABLE',
     });
-    expect(repository.deleteDraft).not.toHaveBeenCalled();
+    expect(repository.deleteRecord).not.toHaveBeenCalled();
   });
 
-  it('refuse de supprimer un brouillon encore cité', async () => {
+  it('supprime une personne archivée', async () => {
+    const repository = fakeRepository(person({ archived: true }));
+    await expect(createAdminPersonService(repository).remove(1)).resolves.toBeUndefined();
+    expect(repository.deleteRecord).toHaveBeenCalledWith(1);
+  });
+
+  it('répond NOT_REMOVABLE, pas « citée », si la fiche a été restaurée entre-temps', async () => {
+    const repository = fakeRepository(person({ archived: true }));
+    vi.mocked(repository.find)
+      .mockResolvedValueOnce(person({ archived: true }))
+      .mockResolvedValueOnce(person());
+    vi.mocked(repository.deleteRecord).mockResolvedValue(false);
+    await expect(createAdminPersonService(repository).remove(1)).rejects.toMatchObject({
+      code: 'NOT_REMOVABLE',
+    });
+  });
+
+  it('répond NOT_FOUND si la fiche a disparu entre-temps', async () => {
+    const repository = fakeRepository(person({ archived: true }));
+    vi.mocked(repository.find)
+      .mockResolvedValueOnce(person({ archived: true }))
+      .mockResolvedValueOnce(null);
+    vi.mocked(repository.deleteRecord).mockResolvedValue(false);
+    await expect(createAdminPersonService(repository).remove(1)).rejects.toMatchObject({
+      code: 'NOT_FOUND',
+    });
+  });
+
+  it('refuse de supprimer une personne encore citée', async () => {
     const service = createAdminPersonService(
       fakeRepository(person({ draft: true, activeWorkCount: 1 })),
     );
-    await expect(service.remove(1)).rejects.toMatchObject({ code: 'DRAFT_IN_USE' });
+    await expect(service.remove(1)).rejects.toMatchObject({ code: 'RECORD_IN_USE' });
   });
 
   it('supprime un brouillon libre et le publie', async () => {

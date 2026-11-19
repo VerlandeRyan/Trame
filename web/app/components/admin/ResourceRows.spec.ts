@@ -1,6 +1,6 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { flushPromises } from '@vue/test-utils'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AdminKind, AdminListItem } from '~/utils/admin'
 import AdminResourceRows from './ResourceRows.vue'
 
@@ -31,6 +31,17 @@ const WORKS: AdminListItem[] = [
     completeness: 0,
   },
 ]
+
+/** Makes the screen narrow (≤ 1023 px: sheet) or wide (dropdown for an archive). */
+function setScreen(isNarrow: boolean) {
+  vi.stubGlobal('matchMedia', () => ({
+    matches: isNarrow,
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }))
+}
+beforeEach(() => setScreen(false))
+afterEach(() => vi.unstubAllGlobals())
 
 const mountRows = (kind: AdminKind = 'works', items = WORKS) =>
   mountSuspended(AdminResourceRows, { props: { kind, items } })
@@ -151,7 +162,8 @@ describe('AdminResourceRows', () => {
     expect(wrapper.emitted('archive')?.[0]).toEqual([WORKS[0]])
   })
 
-  it('propose « Restaurer » dans les actions d’une archive', async () => {
+  it('propose « Restaurer » dans la feuille d’une archive sur un écran étroit', async () => {
+    setScreen(true)
     const wrapper = await mountRows()
     const [, archived] = wrapper.findAll('[data-testid="admin-row"]')
 
@@ -160,6 +172,55 @@ describe('AdminResourceRows', () => {
 
     expect(wrapper.find('[data-testid="admin-menu-edit"]').exists()).toBe(false)
     expect(wrapper.emitted('restore')?.[0]).toEqual([WORKS[1]])
+  })
+
+  it('ouvre sous le « ⋮ » d’une archive un menu déroulant sans « Restaurer »', async () => {
+    const wrapper = await mountRows()
+    const [published, archived] = wrapper.findAll('[data-testid="admin-row"]')
+    expect(published!.find('.rows__more-cell--archived').exists()).toBe(false)
+    const trigger = archived!.get('[data-testid="admin-row-menu"]')
+    expect(trigger.attributes('aria-expanded')).toBe('false')
+
+    await trigger.trigger('click')
+
+    expect(trigger.attributes('aria-expanded')).toBe('true')
+    const dropdown = archived!.get('[role="menu"]')
+    expect(dropdown.findAll('[role="menuitem"]')).toHaveLength(1)
+    expect(dropdown.text()).toBe('Supprimer définitivement')
+    expect(wrapper.find('[data-testid="admin-menu-remove"]').exists()).toBe(false)
+
+    await trigger.trigger('click')
+    expect(archived!.find('[role="menu"]').exists()).toBe(false)
+  })
+
+  it('supprime définitivement une archive depuis le menu déroulant, après confirmation', async () => {
+    const wrapper = await mountRows()
+    const [, archived] = wrapper.findAll('[data-testid="admin-row"]')
+
+    await archived!.get('[data-testid="admin-row-menu"]').trigger('click')
+    await wrapper.get('[data-testid="admin-dropdown-remove"]').trigger('click')
+    expect(wrapper.emitted('remove')).toBeUndefined()
+    expect(archived!.find('[role="menu"]').exists()).toBe(false)
+
+    await wrapper
+      .get('[data-testid="remove-archived-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+
+    expect(wrapper.emitted('remove')?.[0]).toEqual([WORKS[1]])
+  })
+
+  it('supprime définitivement une archive depuis la feuille d’un écran étroit', async () => {
+    setScreen(true)
+    const wrapper = await mountRows()
+    const [, archived] = wrapper.findAll('[data-testid="admin-row"]')
+
+    await archived!.get('[data-testid="admin-row-menu"]').trigger('click')
+    await wrapper.get('[data-testid="admin-menu-remove"]').trigger('click')
+    await wrapper
+      .get('[data-testid="remove-archived-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+
+    expect(wrapper.emitted('remove')?.[0]).toEqual([WORKS[1]])
   })
 
   it('décrit une personne : nature et nombre d’œuvres', async () => {

@@ -573,6 +573,12 @@
       "text": "The draft is deleted for good: it was never published, so it can't be restored.",
       "cancel": "Keep"
     },
+    "removeArchived": "Delete permanently",
+    "removeArchivedConfirm": {
+      "title": "Delete this record permanently?",
+      "text": "This can't be undone: the record is erased and, for a work, so are the reading-list entries of the members who follow it. To only hide it, leave it archived.",
+      "cancel": "Keep"
+    },
     "draftBanner": "This record is a draft: it isn't visible to the public. To publish it, the minimum required fields (marked with an asterisk) must be filled in.",
     "state": {
       "label": "State",
@@ -770,8 +776,8 @@
     "PUBLISHER_HAS_WORKS": "This publisher still has a work (published or draft): remove it from those works first.",
     "INVALID_REFERENCE": "A person, publisher, genre or work you cited no longer exists.",
     "DRAFT_REFERENCE": "A person, publisher or related work is still a draft: publish it first, or remove it from the record.",
-    "NOT_A_DRAFT": "Only a draft can be deleted: a published record is archived.",
-    "DRAFT_IN_USE": "This draft is still cited by a work: remove it from the record that cites it first.",
+    "NOT_REMOVABLE": "Only a draft or an archived record can be deleted: archive a published record first.",
+    "RECORD_IN_USE": "This record is still cited by another: remove it from the record that cites it first.",
     "ARCHIVED_REFERENCE": "A person, publisher or related work is archived: remove it from the record, or restore it first.",
     "STALE_RECORD": "This record was modified since you opened it. Reload the page to start from its latest version.",
     "HANDLE_TAKEN": "This username is already taken. Try another one.",

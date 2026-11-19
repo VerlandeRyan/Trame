@@ -577,6 +577,12 @@
       "text": "Le brouillon est supprimé définitivement : il n'a jamais été publié, il ne peut pas être restauré.",
       "cancel": "Garder"
     },
+    "removeArchived": "Supprimer définitivement",
+    "removeArchivedConfirm": {
+      "title": "Supprimer définitivement cette fiche ?",
+      "text": "Cette action est irréversible : la fiche est effacée, ainsi que, pour une œuvre, les entrées de liste de lecture des membres qui la suivent. Pour seulement la cacher, laisse-la archivée.",
+      "cancel": "Garder"
+    },
     "draftBanner": "Cette fiche est un brouillon : elle n'est pas visible du public. Pour la publier, les champs minimum requis (marqués d'une étoile) doivent être remplis.",
     "state": {
       "label": "État",
@@ -779,8 +785,8 @@
     "PUBLISHER_HAS_WORKS": "Cet éditeur a encore une œuvre (publiée ou en brouillon) : retire-le de ces œuvres d'abord.",
     "INVALID_REFERENCE": "Une personne, un éditeur, un genre ou une œuvre cités n'existe plus.",
     "DRAFT_REFERENCE": "Une personne, un éditeur ou une œuvre liée est encore en brouillon : publie-le d'abord, ou retire-le de la fiche.",
-    "NOT_A_DRAFT": "Seul un brouillon peut être supprimé : une fiche publiée s'archive.",
-    "DRAFT_IN_USE": "Ce brouillon est encore cité par une œuvre : retire-le de la fiche qui le cite d'abord.",
+    "NOT_REMOVABLE": "Seuls un brouillon ou une fiche archivée peuvent être supprimés : archive d'abord une fiche publiée.",
+    "RECORD_IN_USE": "Cette fiche est encore citée par une autre : retire-la de la fiche qui la cite d'abord.",
     "ARCHIVED_REFERENCE": "Une personne, un éditeur ou une œuvre liée est archivé : retire-le de la fiche, ou restaure-le d'abord.",
     "STALE_RECORD": "Cette fiche a été modifiée depuis que tu l'as ouverte. Recharge la page pour repartir de sa dernière version.",
     "HANDLE_TAKEN": "Ce pseudo est déjà pris. Essaie un autre.",

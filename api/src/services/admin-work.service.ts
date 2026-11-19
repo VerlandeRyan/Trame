@@ -9,7 +9,7 @@ import type {
   MissingReferences,
   WorkDraft,
 } from '../repositories/admin-work.repository.js';
-import { assertNotDraft, removeDraft } from './admin-draft.js';
+import { assertNotDraft, removeRecord } from './admin-draft.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
 
 /** `updatedAt` is the record version read before editing; without it nothing is checked. */
@@ -44,7 +44,7 @@ export interface AdminWorkService {
   restore(id: number, adminId: number): Promise<AdminWorkRecord>;
   /** Needs the complete record and published references (`VALIDATION_ERROR`, `DRAFT_REFERENCE`). */
   publish(id: number): Promise<AdminWorkRecord>;
-  /** Only a draft that no other work relates to (`NOT_A_DRAFT`, `DRAFT_IN_USE`). */
+  /** Only a draft or archived work that no other work relates to (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
   remove(id: number): Promise<void>;
   countDrafts(): Promise<number>;
 }
@@ -171,7 +171,7 @@ export function createAdminWorkService(repository: AdminWorkRepository): AdminWo
       return get(id);
     },
 
-    remove: (id) => removeDraft(get, repository, id),
+    remove: (id) => removeRecord(get, repository, id),
 
     countDrafts: () => repository.countDrafts(),
   };

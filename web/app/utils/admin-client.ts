@@ -53,8 +53,8 @@ export function createAdminClient(request: Request) {
   const publish = <T>(kind: AdminKind, id: number) =>
     request<T>(`${base(kind)}/${id}/publish`, { method: 'POST' })
 
-  /** Deletes a draft for good. */
-  const removeDraft = (kind: AdminKind, id: number) =>
+  /** Deletes a draft or an archived record for good. */
+  const remove = (kind: AdminKind, id: number) =>
     request<undefined>(`${base(kind)}/${id}`, { method: 'DELETE' })
 
   /** First unarchived records (drafts included, flagged) whose name contains `text`, for a picker. */
@@ -65,7 +65,7 @@ export function createAdminClient(request: Request) {
     return page.items.map((item) => ({ id: item.id, label: itemLabel(item), draft: item.draft }))
   }
 
-  return { list, get, create, replace, archive, restore, publish, removeDraft, draftCounts, search }
+  return { list, get, create, replace, archive, restore, publish, remove, draftCounts, search }
 }
 
 /** The administration client. */

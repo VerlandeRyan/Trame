@@ -34,7 +34,7 @@ describe('client d’administration', () => {
   it('publie et supprime un brouillon', async () => {
     const { client, request } = setup()
     await client.publish('works', 4)
-    await client.removeDraft('people', 3)
+    await client.remove('people', 3)
     expect(request.mock.calls).toEqual([
       ['/admin/works/4/publish', { method: 'POST' }],
       ['/admin/people/3', { method: 'DELETE' }],

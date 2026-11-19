@@ -14,7 +14,7 @@ import {
   archiveCondition,
   COMPLETENESS_PERCENT,
   countDraftRows,
-  deleteDraftRow,
+  deleteRecordRow,
   DRAFTS_FIRST,
   FILTERED_TOTAL,
   FORMAT_CODES,
@@ -22,11 +22,15 @@ import {
   nameContains,
   publicationCondition,
   publishRow,
+  REMOVABLE,
   totalOf,
   type ArchiveScope,
   type PublicationState,
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
+
+/** No other work lists this one as related. */
+const NOT_RELATED = sql<boolean>`NOT EXISTS (SELECT 1 FROM work_relation wr WHERE wr.related_work_id = work.id)`;
 
 /** An alternative title of a work. */
 export interface WorkTitleRecord {
@@ -176,7 +180,7 @@ export interface AdminWorkRepository {
   /** False if the work does not exist; publishing a published work changes nothing. */
   publish(id: number): Promise<boolean>;
   /** Deletes a draft no other work relates to; false if it is not a draft or is related. */
-  deleteDraft(id: number): Promise<boolean>;
+  deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
   /** False if the work does not exist, or if `version` is no longer the record's. */
   update(id: number, draft: WorkDraft, version?: string): Promise<boolean>;
@@ -616,13 +620,19 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
       return publishRow(db, 'work', id, true);
     },
 
-    async deleteDraft(id) {
-      return deleteDraftRow(
-        db,
-        'work',
-        id,
-        sql<boolean>`NOT EXISTS (SELECT 1 FROM work_relation wr WHERE wr.related_work_id = work.id)`,
-      );
+    async deleteRecord(id) {
+      return db.transaction().execute(async (trx) => {
+        // The row lock makes a member's concurrent "add to my list" wait for the outcome.
+        const removable = await sql`
+          SELECT id FROM work
+          WHERE id = ${id} AND ${REMOVABLE} AND ${NOT_RELATED}
+          FOR UPDATE`.execute(trx);
+        if (removable.rows.length === 0) return false;
+        // Members' lists are erased explicitly: the foreign keys stay strict for any other delete.
+        await trx.deleteFrom('reading_event').where('work_id', '=', id).execute();
+        await trx.deleteFrom('library_entry').where('work_id', '=', id).execute();
+        return deleteRecordRow(trx, 'work', id, NOT_RELATED);
+      });
     },
 
     async countDrafts() {
