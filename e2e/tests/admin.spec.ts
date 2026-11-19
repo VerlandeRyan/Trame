@@ -405,8 +405,28 @@ test('archiver masque l’œuvre au public, restaurer la rend', async ({ page, c
   await waitForHydration(page)
   await expect(page.getByTestId('admin-row')).toContainText('par @')
   await clickRowAction(page, 'restore')
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
   await expect(page.getByTestId('admin-row')).toHaveCount(0)
   expect(await publicStatus()).toBe(200)
+})
+
+test('restaurer depuis la fiche archivée demande confirmation', async ({ page, context }) => {
+  const created = await context.request.post('/api/v1/admin/people', {
+    data: { name: `${DRAFT} à restaurer`, kind: 'person' },
+  })
+  const person = (await created.json()) as { id: number }
+  await context.request.post(`/api/v1/admin/people/${person.id}/archive`)
+
+  await page.goto(`/admin/catalogue/people/${person.id}`)
+  await waitForHydration(page)
+  await expect(page.getByTestId('admin-state')).toHaveText('Archivée')
+  await page.getByTestId('admin-restore').click()
+  await page.getByRole('dialog').getByRole('button', { name: 'Annuler' }).click()
+  await expect(page.getByTestId('admin-state')).toHaveText('Archivée')
+
+  await page.getByTestId('admin-restore').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+  await expect(page.getByTestId('admin-state')).not.toHaveText('Archivée')
 })
 
 test('une personne créditée sur une œuvre publiée ne s’archive pas', async ({ page, context }) => {

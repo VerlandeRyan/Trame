@@ -119,12 +119,26 @@ describe('AdminResourceRows', () => {
     expect(archived!.text()).toContain('—')
   })
 
-  it('émet la fiche à restaurer', async () => {
+  it('émet la fiche à restaurer, après confirmation', async () => {
     const wrapper = await mountRows()
 
     await wrapper.get('[data-testid="admin-restore"]').trigger('click')
+    expect(wrapper.emitted('restore')).toBeUndefined()
+
+    await wrapper
+      .get('[data-testid="restore-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
 
     expect(wrapper.emitted('restore')?.[0]).toEqual([WORKS[1]])
+  })
+
+  it('n’émet rien quand on annule la restauration', async () => {
+    const wrapper = await mountRows()
+
+    await wrapper.get('[data-testid="admin-restore"]').trigger('click')
+    await wrapper.get('[data-testid="confirm-cancel"]').trigger('click')
+
+    expect(wrapper.emitted('restore')).toBeUndefined()
   })
 
   it('résume la fiche en une ligne pour le mobile', async () => {
@@ -157,7 +171,9 @@ describe('AdminResourceRows', () => {
     await wrapper.get('[data-testid="admin-menu-archive"]').trigger('click')
     expect(wrapper.emitted('archive')).toBeUndefined()
 
-    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+    await wrapper
+      .get('[data-testid="archive-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
 
     expect(wrapper.emitted('archive')?.[0]).toEqual([WORKS[0]])
   })
@@ -191,7 +207,9 @@ describe('AdminResourceRows', () => {
     await published!.get('[data-testid="admin-row-menu"]').trigger('click')
     await wrapper.get('[data-testid="admin-menu-archive"]').trigger('click')
     await flushPromises()
-    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+    await wrapper
+      .get('[data-testid="archive-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
 
     expect(wrapper.find('[data-testid="admin-archive-impact"]').exists()).toBe(false)
     expect(wrapper.emitted('archive')?.[0]).toEqual([WORKS[0]])
@@ -204,6 +222,10 @@ describe('AdminResourceRows', () => {
 
     await archived!.get('[data-testid="admin-row-menu"]').trigger('click')
     await wrapper.get('[data-testid="admin-menu-restore"]').trigger('click')
+    expect(wrapper.emitted('restore')).toBeUndefined()
+    await wrapper
+      .get('[data-testid="restore-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
 
     expect(wrapper.find('[data-testid="admin-menu-edit"]').exists()).toBe(false)
     expect(wrapper.emitted('restore')?.[0]).toEqual([WORKS[1]])

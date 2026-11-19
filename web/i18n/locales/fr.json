@@ -618,6 +618,11 @@
     },
     "archive": "Archiver",
     "restore": "Restaurer",
+    "restoreConfirm": {
+      "title": "Restaurer cette fiche ?",
+      "text": "La fiche redevient visible du public et réapparaît dans les listes et la recherche.",
+      "cancel": "Annuler"
+    },
     "archiveConfirm": {
       "title": "Archiver cette fiche ?",
       "confirm": "Archiver la fiche",

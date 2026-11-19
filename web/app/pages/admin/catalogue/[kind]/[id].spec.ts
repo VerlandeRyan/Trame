@@ -436,6 +436,30 @@ describe('page d’édition du catalogue', () => {
     expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7'])
   })
 
+  it('restaure une fiche archivée seulement après confirmation', async () => {
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'GET',
+      handler: () => ({ ...PERSON, archived: true }),
+    })
+    registerEndpoint('/api/v1/admin/people/7/restore', {
+      method: 'POST',
+      handler: () => {
+        sent.push({ method: 'POST', path: 'people/7/restore' })
+        return { ...PERSON, archived: false }
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+
+    await wrapper.get('[data-testid="admin-restore"]').trigger('click')
+    expect(sent).toEqual([])
+    await wrapper
+      .get('[data-testid="restore-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+
+    expect(sent.map((call) => call.path)).toEqual(['people/7/restore'])
+  })
+
   it('renvoie la version lue et indique dans le formulaire une fiche modifiée entre-temps', async () => {
     registerWork9()
     registerEndpoint('/api/v1/admin/works/9', {

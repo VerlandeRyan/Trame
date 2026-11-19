@@ -289,11 +289,15 @@ describe('page Catalogue d’administration', () => {
     expect(wrapper.text()).not.toContain('Nouvel éditeur')
   })
 
-  it('restaure une archive, puis relit la liste', async () => {
+  it('restaure une archive après confirmation, puis relit la liste', async () => {
     const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
     const readsBefore = requests.length
 
     await wrapper.get('[data-testid="admin-restore"]').trigger('click')
+    expect(writes).toEqual([])
+    await wrapper
+      .get('[data-testid="restore-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
     await flushPromises()
 
     expect(writes).toEqual(['restore'])
@@ -313,7 +317,9 @@ describe('page Catalogue d’administration', () => {
 
     await wrapper.get('[data-testid="admin-row-menu"]').trigger('click')
     await wrapper.get('[data-testid="admin-menu-archive"]').trigger('click')
-    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+    await wrapper
+      .get('[data-testid="archive-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
     await flushPromises()
 
     expect(writes).toEqual(['archive'])
@@ -371,6 +377,9 @@ describe('page Catalogue d’administration', () => {
     const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
 
     await wrapper.get('[data-testid="admin-restore"]').trigger('click')
+    await wrapper
+      .get('[data-testid="restore-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
     await flushPromises()
 
     const toasts = useToasts()
@@ -391,6 +400,9 @@ describe('page Catalogue d’administration', () => {
     const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
 
     await wrapper.get('[data-testid="admin-restore"]').trigger('click')
+    await wrapper
+      .get('[data-testid="restore-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
     await flushPromises()
 
     expect(wrapper.text()).toContain('réservée aux administrateurs')
