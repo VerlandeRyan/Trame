@@ -82,6 +82,25 @@ describe("animation d'ouverture des menus", () => {
   })
 })
 
+// Garde-fou de #239 : le fond d'une ligne de menu d'actions couvre le panneau de cadre à cadre, donc
+// son débord égale le remplissage horizontal des panneaux.
+describe("survol des lignes des menus d'actions", () => {
+  const panels = [
+    { file: 'components/layout/AccountMenu.vue', panel: 'account-menu__panel' },
+    { file: 'components/admin/RowDropdown.vue', panel: 'row-dropdown__panel' },
+  ]
+  const mixins = readSource('assets/styles/_mixins.scss')
+  const overflow = /\$overflow:\s*-(\d+)px 0 0 \$background,\s*(\d+)px 0 0 \$background/.exec(
+    mixins,
+  )
+
+  it.each(panels)('$file : le débord égale le remplissage de $panel', ({ file, panel }) => {
+    const padding = /padding:\s*\d+px (\d+)px/.exec(ruleBody(readSource(file), panel) ?? '')?.[1]
+    expect(overflow?.[1]).toBe(padding)
+    expect(overflow?.[2]).toBe(padding)
+  })
+})
+
 // Garde-fou de #200 : le tri encadré a une seule forme au mobile, portée par `UiSelect` ; aucune page
 // ne masque ou ne réaffiche sa valeur de son côté.
 describe('tri encadré au mobile', () => {
