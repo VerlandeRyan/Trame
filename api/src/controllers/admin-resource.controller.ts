@@ -20,7 +20,6 @@ export interface AdminResourceService<
   update(id: number, input: ReplaceInput): Promise<Full>;
   archive(id: number, adminId: number): Promise<Full>;
   restore(id: number, adminId: number): Promise<Full>;
-  publish(id: number): Promise<Full>;
   remove(id: number): Promise<void>;
 }
 
@@ -32,7 +31,6 @@ export interface AdminResourceController {
   update: RequestHandler;
   archive: RequestHandler;
   restore: RequestHandler;
-  publish: RequestHandler;
   remove: RequestHandler;
 }
 
@@ -80,11 +78,6 @@ export function createAdminResourceController<
     async restore(req, res) {
       const { id } = validated(idParams, req.params);
       res.json(await service.restore(id, currentUser(req).id));
-    },
-
-    async publish(req, res) {
-      const { id } = validated(idParams, req.params);
-      res.json(await service.publish(id));
     },
 
     async remove(req, res) {

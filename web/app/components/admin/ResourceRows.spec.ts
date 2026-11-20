@@ -7,8 +7,7 @@ import AdminResourceRows from './ResourceRows.vue'
 const WORKS: AdminListItem[] = [
   {
     id: 4,
-    archived: false,
-    draft: false,
+    lifecycle: 'published',
     title: 'Aube Fictive',
     type: 'series',
     status: 'ongoing',
@@ -19,8 +18,7 @@ const WORKS: AdminListItem[] = [
   },
   {
     id: 5,
-    archived: true,
-    draft: false,
+    lifecycle: 'archived',
     title: 'Basalte',
     type: 'oneshot',
     status: 'completed',
@@ -66,8 +64,7 @@ describe('AdminResourceRows', () => {
       const wrapper = await mountRows(kind, [
         {
           id: 3,
-          archived: false,
-          draft: false,
+          lifecycle: 'published',
           name: 'Léa Auteure',
           kind: 'person',
           updatedAt: new Date().toISOString(),
@@ -83,8 +80,7 @@ describe('AdminResourceRows', () => {
       const wrapper = await mountRows(kind, [
         {
           id: 3,
-          archived: true,
-          draft: false,
+          lifecycle: 'archived',
           name: 'Léa Auteure',
           kind: 'person',
           archivedAt: new Date().toISOString(),
@@ -97,8 +93,8 @@ describe('AdminResourceRows', () => {
 
   it('marque un brouillon d’une pastille « Brouillon »', async () => {
     const wrapper = await mountRows('people', [
-      { id: 8, archived: false, draft: true, name: 'M. Verdier', kind: 'person' },
-      { id: 9, archived: false, draft: false, name: 'Léa Auteure', kind: 'person' },
+      { id: 8, lifecycle: 'draft', name: 'M. Verdier', kind: 'person' },
+      { id: 9, lifecycle: 'published', name: 'Léa Auteure', kind: 'person' },
     ])
     const [draft, published] = wrapper.findAll('[data-testid="admin-row"]')
 
@@ -284,8 +280,7 @@ describe('AdminResourceRows', () => {
     const wrapper = await mountRows('people', [
       {
         id: 7,
-        archived: false,
-        draft: false,
+        lifecycle: 'published',
         name: 'Léa Auteure',
         kind: 'collective',
         activeWorkCount: 2,
@@ -301,12 +296,12 @@ describe('AdminResourceRows', () => {
   it.each<[AdminKind, AdminListItem, string]>([
     [
       'people',
-      { id: 1, archived: false, draft: false, name: 'Maison Fictive', kind: 'platform' },
+      { id: 1, lifecycle: 'published', name: 'Maison Fictive', kind: 'platform' },
       'Plateforme',
     ],
     [
       'publishers',
-      { id: 2, archived: false, draft: false, name: 'Léa Auteure', kind: 'collective' },
+      { id: 2, lifecycle: 'published', name: 'Léa Auteure', kind: 'collective' },
       'Collectif',
     ],
   ])(

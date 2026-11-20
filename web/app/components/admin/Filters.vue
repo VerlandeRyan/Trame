@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import {
-  ADMIN_STATES,
+  ADMIN_LIFECYCLE_FILTERS,
   ADMIN_WORK_SORTS,
   optionsOf,
   WORK_STATUSES,
   WORK_TYPES,
   type AdminKind,
-  type AdminState,
+  type AdminLifecycleFilter,
   type AdminWorkFilters,
   type AdminWorkSort,
 } from '~/utils/admin'
 
 /**
- * Filters of an administration list. Every kind has the publication state (drafts or published);
+ * Filters of an administration list. Every kind has the lifecycle (drafts or published);
  * works also have type, format and status (multiple choice, an empty list means "all") and a sort.
  * Changes are emitted at once. On mobile, the filters fit in a sheet opened by "Filters", like the
  * search page.
@@ -20,7 +20,7 @@ import {
 const props = defineProps<{
   kind: AdminKind
   filters: AdminWorkFilters
-  state: AdminState
+  lifecycle: AdminLifecycleFilter
   sort: AdminWorkSort
   /** Known format codes (manga, webtoon…). */
   formats: string[]
@@ -29,13 +29,19 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{
   change: [filters: AdminWorkFilters]
-  state: [state: AdminState]
+  lifecycle: [lifecycle: AdminLifecycleFilter]
   sort: [sort: AdminWorkSort]
-  /** Clears the state and every filter at once. */
+  /** Clears the lifecycle and every filter at once. */
   reset: []
 }>()
 const isWorks = computed(() => props.kind === 'works')
-const stateOptions = computed(() => optionsOf(ADMIN_STATES, (code) => t(`admin.state.${code}`)))
+// Archives have their own tab: the filter only tells drafts from published records.
+const lifecycleOptions = computed(() =>
+  optionsOf(
+    ADMIN_LIFECYCLE_FILTERS.filter((code) => code !== 'archived'),
+    (code) => t(`admin.state.${code}`),
+  ),
+)
 const { t } = useI18n()
 const genreLabel = useGenreLabel()
 
@@ -52,17 +58,17 @@ const sortOptions = computed(() => optionsOf(ADMIN_WORK_SORTS, (code) => t(`admi
 const setFilter = (name: keyof AdminWorkFilters, values: string[]) =>
   emit('change', { ...props.filters, [name]: values })
 
-/** Total number of selected filter values, the state included. */
+/** Total number of selected filter values, the lifecycle included. */
 const activeCount = computed(
   () =>
     Object.values(props.filters).reduce((total, values) => total + values.length, 0) +
-    (props.state === 'all' ? 0 : 1),
+    (props.lifecycle === 'active' ? 0 : 1),
 )
-/** Clears the state and every filter. */
+/** Clears the lifecycle and every filter. */
 const reset = () => emit('reset')
-/** Chooses a state in the sheet; choosing the current one again goes back to "all". */
-const toggleState = (value: string) =>
-  emit('state', props.state === value ? 'all' : (value as AdminState))
+/** Chooses a lifecycle in the sheet; choosing the current one again goes back to "all". */
+const toggleLifecycle = (value: string) =>
+  emit('lifecycle', props.lifecycle === value ? 'active' : (value as AdminLifecycleFilter))
 
 /** Adds the value to a filter, or removes it if already selected. */
 function toggleFilter(name: keyof AdminWorkFilters, value: string) {
@@ -84,9 +90,9 @@ const sheetGroups = computed(() => [
   {
     name: 'state' as const,
     label: t('admin.state.label'),
-    options: stateOptions.value.filter((option) => option.value !== 'all'),
-    selected: props.state === 'all' ? [] : [props.state],
-    toggle: toggleState,
+    options: lifecycleOptions.value.filter((option) => option.value !== 'active'),
+    selected: props.lifecycle === 'active' ? [] : [props.lifecycle],
+    toggle: toggleLifecycle,
   },
   ...(isWorks.value
     ? [
@@ -121,11 +127,11 @@ const sheetGroups = computed(() => [
     <div class="filters__inline">
       <UiSelect
         boxed
-        :model-value="state"
-        :options="stateOptions"
+        :model-value="lifecycle"
+        :options="lifecycleOptions"
         :label="t('admin.state.label')"
         trigger-test-id="admin-state-filter"
-        @update:model-value="emit('state', $event as AdminState)"
+        @update:model-value="emit('lifecycle', $event as AdminLifecycleFilter)"
       />
       <UiMultiSelect
         v-if="isWorks"

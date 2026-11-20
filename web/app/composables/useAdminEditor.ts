@@ -1,14 +1,13 @@
 /** Editing state of a catalogue record (work, person or publisher), new or existing. */
-import type { ArchiveImpact, ErrorScope } from '~/utils/admin'
+import type { AdminLifecycle, ArchiveImpact, ErrorScope } from '~/utils/admin'
 
 /** What runs once a write went through (leaving the form, for instance). */
 type Followup = () => void | Promise<void>
 
 /** What is shown at the top of the record being edited. */
 export interface EditedRecord {
-  archived: boolean
-  /** Not yet published: only the title or name is required to save it. */
-  draft: boolean
+  /** A draft only needs its title or name to be saved. */
+  lifecycle: AdminLifecycle
   heading: string
   /** Works only: what archiving leaves in place, recalled in the confirmation. */
   impact?: ArchiveImpact
@@ -56,19 +55,18 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
       const loaded = await client.get<AdminWork>(kind, id)
       work.value = workToDraft(loaded)
       record.value = {
-        archived: loaded.archived,
-        draft: loaded.draft,
+        lifecycle: loaded.lifecycle,
         heading: loaded.title,
         impact: archiveImpact(loaded),
       }
     } else if (kind === 'people') {
       const loaded = await client.get<AdminPerson>(kind, id)
       person.value = personToDraft(loaded)
-      record.value = { archived: loaded.archived, draft: loaded.draft, heading: loaded.name }
+      record.value = { lifecycle: loaded.lifecycle, heading: loaded.name }
     } else {
       const loaded = await client.get<AdminPublisher>(kind, id)
       publisher.value = publisherToDraft(loaded)
-      record.value = { archived: loaded.archived, draft: loaded.draft, heading: loaded.name }
+      record.value = { lifecycle: loaded.lifecycle, heading: loaded.name }
     }
     markSaved()
   }
@@ -111,30 +109,12 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
 
   /** Whether the record stays a draft after this save (`publish` asks for the full checks). */
   const staysDraft = (publish: boolean) =>
-    !publish && (id === 'new' || record.value?.draft === true)
-
-  /**
-   * Publishes the saved draft. The edit is already saved, so a transient failure offers a "Retry"
-   * that only replays the publication, then runs `onDone`.
-   */
-  async function publishSaved(onDone?: Followup): Promise<boolean> {
-    if (id === 'new') return false
-    errorKey.value = undefined
-    try {
-      await client.publish(kind, id)
-      if (record.value) record.value = { ...record.value, draft: false }
-    } catch (cause) {
-      errorKey.value = announceFailure(cause, () => void publishSaved(onDone))
-      return false
-    }
-    await onDone?.()
-    return true
-  }
+    !publish && (id === 'new' || record.value?.lifecycle === 'draft')
 
   /**
    * Saves; true if the API accepted. A new record is created as a draft unless `publish`; a draft
    * only needs its title or name; publishing (or saving a published record) needs every required
-   * field. Publishing an existing draft saves, then publishes. `onDone` runs once everything went
+   * field. Publishing an existing draft is part of the same write. `onDone` runs once it went
    * through, also after a retry. A transient failure is announced with "Retry"; a refusal shows its
    * message in the form (`errorKey`, see `announceFailure`).
    */
@@ -147,7 +127,8 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     saving.value = true
     try {
       if (id === 'new') await client.create(kind, { ...body(), published: publish })
-      else await client.replace(kind, id, body())
+      else await client.replace(kind, id, publish ? { ...body(), published: true } : body())
+      if (publish && record.value) record.value = { ...record.value, lifecycle: 'published' }
       markSaved()
     } catch (cause) {
       errorKey.value = announceFailure(cause, () => void save(formatCodes, publish, onDone))
@@ -155,7 +136,6 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     } finally {
       saving.value = false
     }
-    if (publish && id !== 'new' && record.value?.draft) return publishSaved(onDone)
     await onDone?.()
     return true
   }
@@ -181,7 +161,9 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     errorKey.value = undefined
     try {
       await (archived ? client.archive(kind, id) : client.restore(kind, id))
-      if (record.value) record.value = { ...record.value, archived }
+      if (record.value) {
+        record.value = { ...record.value, lifecycle: archived ? 'archived' : 'published' }
+      }
     } catch (cause) {
       errorKey.value = announceFailure(cause, () => void setArchived(archived, onDone))
       return false

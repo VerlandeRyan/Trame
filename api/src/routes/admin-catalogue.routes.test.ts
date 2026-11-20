@@ -231,7 +231,7 @@ describe('personnes', () => {
     expect(created.status).toBe(201);
     expectMatches(adminPersonSchema, created.body);
     expect(created.body).toMatchObject({
-      archived: false,
+      lifecycle: 'published',
       activeWorkCount: 0,
       links: [{ kind: 'website', url: 'https://exemple.test/lea', label: null }],
     });
@@ -297,15 +297,50 @@ describe('personnes', () => {
     await admin.post(`${ADMIN}/works/${workId}/archive`);
     const archived = await admin.post(`${ADMIN}/people/${personId}/archive`);
     expect(archived.status).toBe(200);
-    expect(archived.body.archived).toBe(true);
+    expect(archived.body.lifecycle).toBe('archived');
 
     const active = await admin.get(`${ADMIN}/people`).query({ q: PREFIX });
     expect(active.body.items).toEqual([]);
-    const onlyArchived = await admin.get(`${ADMIN}/people`).query({ q: PREFIX, scope: 'archived' });
+    const onlyArchived = await admin
+      .get(`${ADMIN}/people`)
+      .query({ q: PREFIX, lifecycle: 'archived' });
     expect(onlyArchived.body.items.map((p: { id: number }) => p.id)).toEqual([personId]);
 
     const restored = await admin.post(`${ADMIN}/people/${personId}/restore`);
-    expect(restored.body.archived).toBe(false);
+    expect(restored.body.lifecycle).toBe('published');
+  });
+
+  it('refuse d’archiver une personne créditée par une œuvre enregistrée pendant l’archivage', async () => {
+    const admin = await newAdmin();
+    const personId = await createPerson(admin, `${PREFIX} Créditée en cours`);
+    const workId = await createWork(admin);
+
+    // A work save holds the person (shared lock) and has credited them, not committed yet.
+    await client.query('BEGIN');
+    try {
+      await client.query('SELECT id FROM person WHERE id = $1 FOR SHARE', [personId]);
+      await client.query(
+        `INSERT INTO work_credit (work_id, person_id, role) VALUES ($1, $2, 'art')`,
+        [workId, personId],
+      );
+      const archiving = admin
+        .post(`${ADMIN}/people/${personId}/archive`)
+        .then((response) => response);
+      const outcome = await Promise.race([
+        archiving,
+        new Promise<'waiting'>((resolve) => setTimeout(() => resolve('waiting'), 300)),
+      ]);
+      expect(outcome).toBe('waiting');
+      await client.query('COMMIT');
+
+      // The guard reads what the save committed while the archive waited.
+      const refused = await archiving;
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe('PERSON_HAS_WORKS');
+    } finally {
+      await client.query('ROLLBACK');
+    }
+    expect((await admin.get(`${ADMIN}/people/${personId}`)).body.lifecycle).toBe('published');
   });
 });
 
@@ -328,7 +363,7 @@ describe('éditeurs', () => {
     expect(replaced.body).toMatchObject({ kind: 'self_published', url: null });
 
     const archived = await admin.post(`${ADMIN}/publishers/${id}/archive`);
-    expect(archived.body.archived).toBe(true);
+    expect(archived.body.lifecycle).toBe('archived');
   });
 
   it('refuse d’archiver un éditeur qui a des œuvres non archivées', async () => {
@@ -342,6 +377,73 @@ describe('éditeurs', () => {
 
     await admin.post(`${ADMIN}/works/${workId}/archive`);
     expect((await admin.post(`${ADMIN}/publishers/${publisherId}/archive`)).status).toBe(200);
+  });
+});
+
+/**
+ * Runs `request` while another transaction holds the publisher and has listed it on a work, not
+ * committed yet: the request must wait, then see the committed link.
+ */
+async function requestDuringWorkSave(
+  publisherId: number,
+  workId: number,
+  request: () => Promise<{ status: number; body: { code?: string } }>,
+) {
+  await client.query('BEGIN');
+  try {
+    await client.query('SELECT id FROM publisher WHERE id = $1 FOR SHARE', [publisherId]);
+    await client.query('INSERT INTO work_publisher (work_id, publisher_id) VALUES ($1, $2)', [
+      workId,
+      publisherId,
+    ]);
+    const pending = request().then((response) => response);
+    const outcome = await Promise.race([
+      pending,
+      new Promise<'waiting'>((resolve) => setTimeout(() => resolve('waiting'), 300)),
+    ]);
+    expect(outcome).toBe('waiting');
+    await client.query('COMMIT');
+    return await pending;
+  } finally {
+    await client.query('ROLLBACK');
+  }
+}
+
+describe('éditeurs : archivage et suppression pendant l’enregistrement d’une œuvre', () => {
+  it('refuse d’archiver un éditeur listé par une œuvre enregistrée pendant l’archivage', async () => {
+    const admin = await newAdmin();
+    const publisherId = await createPublisher(admin, `${PREFIX} Listé en cours`);
+    const workId = await createWork(admin);
+
+    const refused = await requestDuringWorkSave(publisherId, workId, () =>
+      admin.post(`${ADMIN}/publishers/${publisherId}/archive`),
+    );
+
+    expect(refused.status).toBe(409);
+    expect(refused.body.code).toBe('PUBLISHER_HAS_WORKS');
+    expect((await admin.get(`${ADMIN}/publishers/${publisherId}`)).body.lifecycle).toBe(
+      'published',
+    );
+  });
+
+  it('refuse de supprimer un éditeur listé par une œuvre enregistrée pendant la suppression', async () => {
+    const admin = await newAdmin();
+    const publisher = await admin
+      .post(`${ADMIN}/publishers`)
+      .send({ name: `${PREFIX} Supprimé en cours`, kind: 'publisher', published: false });
+    const workId = await createWork(admin, { published: false, genres: [] });
+
+    const refused = await requestDuringWorkSave(publisher.body.id, workId, () =>
+      admin.delete(`${ADMIN}/publishers/${publisher.body.id}`),
+    );
+
+    expect(refused.status).toBe(409);
+    expect(refused.body.code).toBe('RECORD_IN_USE');
+    expect((await admin.get(`${ADMIN}/publishers/${publisher.body.id}`)).status).toBe(200);
+    const kept = await client.query('SELECT 1 FROM work_publisher WHERE publisher_id = $1', [
+      publisher.body.id,
+    ]);
+    expect(kept.rowCount).toBe(1);
   });
 });
 
@@ -403,7 +505,13 @@ describe('version et archivage des fiches', () => {
     expect((await admin.get(`${ADMIN}/${path}/${id}`)).body.name).toBe(`${PREFIX} Première`);
 
     // Publishing a draft changes the record, so a version read before it is stale.
-    const published = await admin.post(`${ADMIN}/${path}/${id}/publish`);
+    const published = await admin.put(`${ADMIN}/${path}/${id}`).send({
+      ...body,
+      name: `${PREFIX} Première`,
+      published: true,
+      updatedAt: first.body.updatedAt,
+    });
+    expect(published.status).toBe(200);
     expect(published.body.updatedAt).not.toBe(first.body.updatedAt);
     const afterPublish = await admin
       .put(`${ADMIN}/${path}/${id}`)
@@ -419,8 +527,7 @@ describe('version et archivage des fiches', () => {
       const version = async () => (await admin.get(`${ADMIN}/${path}/${id}`)).body.updatedAt;
       const initial = await version();
 
-      // Publishing a published record and restoring one that is not archived change nothing.
-      expect((await admin.post(`${ADMIN}/${path}/${id}/publish`)).status).toBe(200);
+      // Restoring a record that is not archived changes nothing.
       expect((await admin.post(`${ADMIN}/${path}/${id}/restore`)).status).toBe(200);
       expect(await version()).toBe(initial);
 
@@ -439,7 +546,7 @@ describe('version et archivage des fiches', () => {
       const id = await create(admin);
       const listArchives = async () =>
         (
-          await admin.get(`${ADMIN}/${path}`).query({ q: PREFIX, scope: 'archived' })
+          await admin.get(`${ADMIN}/${path}`).query({ q: PREFIX, lifecycle: 'archived' })
         ).body.items.find((item: { id: number }) => item.id === id);
       expect((await admin.get(`${ADMIN}/${path}/${id}`)).body).toMatchObject({
         archivedAt: null,
@@ -478,7 +585,11 @@ describe('œuvres', () => {
     const created = await admin.post(`${ADMIN}/works`).send(body);
     expect(created.status).toBe(201);
     expectMatches(adminWorkSchema, created.body);
-    expect(created.body).toMatchObject({ ...body, genres: ['fantasy', 'manga'], archived: false });
+    expect(created.body).toMatchObject({
+      ...body,
+      genres: ['fantasy', 'manga'],
+      lifecycle: 'published',
+    });
 
     const read = await admin.get(`${ADMIN}/works/${created.body.id}`);
     expect(read.body).toEqual(created.body);
@@ -753,7 +864,7 @@ describe('œuvres', () => {
     expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(200);
 
     const archived = await admin.post(`${ADMIN}/works/${id}/archive`);
-    expect(archived.body.archived).toBe(true);
+    expect(archived.body.lifecycle).toBe('archived');
     const row = await client.query(
       `SELECT w.deleted_at, u.handle FROM work w JOIN app_user u ON u.id = w.deleted_by WHERE w.id = $1`,
       [id],
@@ -763,29 +874,37 @@ describe('œuvres', () => {
     expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(404);
 
     const again = await admin.post(`${ADMIN}/works/${id}/archive`);
-    expect(again.body.archived).toBe(true);
+    expect(again.body.lifecycle).toBe('archived');
 
     const restored = await admin.post(`${ADMIN}/works/${id}/restore`);
-    expect(restored.body.archived).toBe(false);
+    expect(restored.body.lifecycle).toBe('published');
     expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(200);
     const cleared = await client.query('SELECT deleted_by FROM work WHERE id = $1', [id]);
     expect(cleared.rows[0].deleted_by).toBeNull();
   });
 
-  it('liste selon la portée et la recherche', async () => {
+  it('liste selon le cycle de vie et la recherche', async () => {
     const admin = await newAdmin();
     const kept = await createWork(admin, { title: `${PREFIX} Gardée` });
     const gone = await createWork(admin, { title: `${PREFIX} Archivée` });
     await admin.post(`${ADMIN}/works/${gone}/archive`);
 
-    const ids = async (scope: string) => {
-      const res = await admin.get(`${ADMIN}/works`).query({ q: PREFIX, scope });
+    const ids = async (lifecycle?: string) => {
+      const res = await admin.get(`${ADMIN}/works`).query({ q: PREFIX, lifecycle });
       expectMatches(adminWorkPageSchema, res.body);
       return res.body.items.map((w: { id: number }) => w.id);
     };
+    expect(await ids()).toEqual([kept]);
     expect(await ids('active')).toEqual([kept]);
+    expect(await ids('published')).toEqual([kept]);
     expect(await ids('archived')).toEqual([gone]);
-    expect(await ids('all')).toEqual([gone, kept]);
+    expect(await ids('draft')).toEqual([]);
+  });
+
+  it('refuse une valeur de cycle de vie inconnue', async () => {
+    const admin = await newAdmin();
+    const res = await admin.get(`${ADMIN}/works`).query({ lifecycle: 'all' });
+    expect(res.status).toBe(400);
   });
 
   describe('tri et filtres de la liste', () => {
@@ -871,8 +990,8 @@ describe('œuvres', () => {
       links: [{ kind: 'read', url: 'https://exemple.test/lire' }],
     });
 
-    const read = async (scope: string) =>
-      (await admin.get(`${ADMIN}/works`).query({ q: PREFIX, scope })).body.items[0];
+    const read = async (lifecycle: string) =>
+      (await admin.get(`${ADMIN}/works`).query({ q: PREFIX, lifecycle })).body.items[0];
     expect(await read('active')).toMatchObject({
       id,
       formats: ['manga'],
@@ -885,6 +1004,7 @@ describe('œuvres', () => {
 
     await admin.post(`${ADMIN}/works/${id}/archive`);
     const archived = await read('archived');
+    expect(archived).toMatchObject({ lifecycle: 'archived' });
     expect(archived.archivedBy).toBe('admin-test');
     expect(archived.archivedAt).not.toBeNull();
   });
@@ -903,23 +1023,54 @@ describe('brouillons', () => {
     const admin = await newAdmin();
     const id = await createWork(admin, DRAFT_WORK);
     const record = (await admin.get(`${ADMIN}/works/${id}`)).body;
-    expect(record).toMatchObject({ draft: true, archived: false });
+    expect(record).toMatchObject({ lifecycle: 'draft' });
+    expect(record).not.toHaveProperty('draft');
+    expect(record).not.toHaveProperty('archived');
     expectMatches(adminWorkSchema, record);
     expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(404);
     const search = await request(app).get('/api/v1/works').query({ q: PREFIX });
     expect(search.body.total).toBe(0);
 
-    // Publishing needs the complete record: a format here.
-    const refused = await admin.post(`${ADMIN}/works/${id}/publish`);
+    // Publishing needs the complete record: a format here. The refusal leaves the draft untouched.
+    const refused = await replace(admin, 'works', id, workBody({ ...DRAFT_WORK, published: true }));
     expect(refused.status).toBe(400);
     expect(refused.body.code).toBe('VALIDATION_ERROR');
-    await replace(admin, 'works', id, workBody({ ...DRAFT_WORK, genres: ['manga'] }));
-    const published = await admin.post(`${ADMIN}/works/${id}/publish`);
+    expect((await admin.get(`${ADMIN}/works/${id}`)).body.lifecycle).toBe('draft');
+
+    const published = await replace(
+      admin,
+      'works',
+      id,
+      workBody({ ...DRAFT_WORK, genres: ['manga'], published: true }),
+    );
     expect(published.status).toBe(200);
-    expect(published.body.draft).toBe(false);
+    expect(published.body.lifecycle).toBe('published');
     expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(200);
-    // Publishing again changes nothing.
-    expect((await admin.post(`${ADMIN}/works/${id}/publish`)).status).toBe(200);
+    // Publication is one way: a replacement that says `published: false` keeps it published.
+    const again = await replace(
+      admin,
+      'works',
+      id,
+      workBody({ ...DRAFT_WORK, genres: ['manga'], published: false }),
+    );
+    expect(again.body.lifecycle).toBe('published');
+  });
+
+  it('garde un brouillon brouillon quand le remplacement ne parle pas de publication', async () => {
+    const admin = await newAdmin();
+    const id = await createWork(admin, DRAFT_WORK);
+
+    expect((await replace(admin, 'works', id, workBody(DRAFT_WORK))).body.lifecycle).toBe('draft');
+    const draftPerson = (
+      await admin
+        .post(`${ADMIN}/people`)
+        .send({ name: `${PREFIX} Brouillon P`, kind: 'person', published: false })
+    ).body.id;
+    const replaced = await replace(admin, 'people', draftPerson, {
+      name: `${PREFIX} Brouillon P2`,
+      kind: 'person',
+    });
+    expect(replaced.body.lifecycle).toBe('draft');
   });
 
   it('refuse une écriture faite avec la version d’avant la publication', async () => {
@@ -927,7 +1078,7 @@ describe('brouillons', () => {
     const id = await createWork(admin, { ...DRAFT_WORK, genres: ['manga'] });
     const { updatedAt } = (await admin.get(`${ADMIN}/works/${id}`)).body;
 
-    const published = await admin.post(`${ADMIN}/works/${id}/publish`);
+    const published = await replace(admin, 'works', id, workBody({ published: true }));
     expect(published.body.updatedAt).not.toBe(updatedAt);
 
     const stale = await admin.put(`${ADMIN}/works/${id}`).send(workBody({ updatedAt }));
@@ -942,7 +1093,7 @@ describe('brouillons', () => {
     const id = await createWork(admin, DRAFT_WORK);
     const update = await replace(admin, 'works', id, workBody({ genres: [] }));
     expect(update.status).toBe(200);
-    expect(update.body.draft).toBe(true);
+    expect(update.body.lifecycle).toBe('draft');
   });
 
   it('refuse qu’une œuvre publiée cite un brouillon', async () => {
@@ -952,7 +1103,7 @@ describe('brouillons', () => {
         .post(`${ADMIN}/people`)
         .send({ name: `${PREFIX} Brouillon`, kind: 'person', published: false })
     ).body;
-    expect(draftPerson.draft).toBe(true);
+    expect(draftPerson.lifecycle).toBe('draft');
     const res = await admin
       .post(`${ADMIN}/works`)
       .send(workBody({ credits: [{ personId: draftPerson.id, role: 'story' }] }));
@@ -965,22 +1116,49 @@ describe('brouillons', () => {
       genres: ['manga'],
       credits: [{ personId: draftPerson.id, role: 'story' }],
     });
-    const blocked = await admin.post(`${ADMIN}/works/${id}/publish`);
+    const publishWork = () =>
+      replace(
+        admin,
+        'works',
+        id,
+        workBody({
+          ...DRAFT_WORK,
+          genres: ['manga'],
+          published: true,
+          credits: [{ personId: draftPerson.id, role: 'story' }],
+        }),
+      );
+    const blocked = await publishWork();
     expect(blocked.body.code).toBe('DRAFT_REFERENCE');
-    expect((await admin.post(`${ADMIN}/people/${draftPerson.id}/publish`)).body.draft).toBe(false);
-    expect((await admin.post(`${ADMIN}/works/${id}/publish`)).status).toBe(200);
+    const publishedPerson = await replace(admin, 'people', draftPerson.id, {
+      name: draftPerson.name,
+      kind: 'person',
+      published: true,
+    });
+    expect(publishedPerson.body.lifecycle).toBe('published');
+    expect((await publishWork()).status).toBe(200);
   });
 
-  it('publie une personne et un éditeur en brouillon', async () => {
+  it('publie une personne et un éditeur en brouillon par un remplacement', async () => {
     const admin = await newAdmin();
     const publisher = await admin
       .post(`${ADMIN}/publishers`)
       .send({ name: `${PREFIX} Éditeur brouillon`, kind: 'publisher', published: false });
-    expect(publisher.body.draft).toBe(true);
+    expect(publisher.body.lifecycle).toBe('draft');
     expectMatches(adminPublisherSchema, publisher.body);
-    const published = await admin.post(`${ADMIN}/publishers/${publisher.body.id}/publish`);
-    expect(published.body.draft).toBe(false);
-    expect((await admin.post(`${ADMIN}/people/999999999/publish`)).status).toBe(404);
+    const published = await replace(admin, 'publishers', publisher.body.id, {
+      name: publisher.body.name,
+      kind: 'publisher',
+      published: true,
+    });
+    expect(published.body.lifecycle).toBe('published');
+    expect(published.body.updatedAt).not.toBe(publisher.body.updatedAt);
+  });
+
+  it('ne publie plus par une route dédiée', async () => {
+    const admin = await newAdmin();
+    const id = await createWork(admin, DRAFT_WORK);
+    expect((await admin.post(`${ADMIN}/works/${id}/publish`)).status).toBe(404);
   });
 
   it('supprime définitivement un brouillon, jamais une fiche publiée', async () => {
@@ -1100,6 +1278,79 @@ describe('brouillons', () => {
     }
   });
 
+  it('refuse de supprimer une personne créditée par une œuvre enregistrée pendant la suppression', async () => {
+    const admin = await newAdmin();
+    const person = (
+      await admin
+        .post(`${ADMIN}/people`)
+        .send({ name: `${PREFIX} Supprimée en cours`, kind: 'person', published: false })
+    ).body.id;
+    const workId = await createWork(admin, DRAFT_WORK);
+
+    // A work save holds the person (shared lock) and has credited them, not committed yet.
+    await client.query('BEGIN');
+    try {
+      await client.query('SELECT id FROM person WHERE id = $1 FOR SHARE', [person]);
+      await client.query(
+        `INSERT INTO work_credit (work_id, person_id, role) VALUES ($1, $2, 'art')`,
+        [workId, person],
+      );
+      const deleting = admin.delete(`${ADMIN}/people/${person}`).then((response) => response);
+      const outcome = await Promise.race([
+        deleting,
+        new Promise<'waiting'>((resolve) => setTimeout(() => resolve('waiting'), 300)),
+      ]);
+      expect(outcome).toBe('waiting');
+      await client.query('COMMIT');
+
+      // The guard reads what the save committed while the delete waited: a refusal, not a 500.
+      const refused = await deleting;
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe('RECORD_IN_USE');
+    } finally {
+      await client.query('ROLLBACK');
+    }
+    expect((await admin.get(`${ADMIN}/people/${person}`)).status).toBe(200);
+  });
+
+  it('refuse de supprimer une œuvre liée par une autre enregistrée pendant la suppression', async () => {
+    const admin = await newAdmin();
+    const target = await createWork(admin, DRAFT_WORK);
+    const other = await createWork(admin, DRAFT_WORK);
+    await client.query(
+      `INSERT INTO library_entry (user_id, work_id, status)
+       SELECT id, $1, 'reading' FROM app_user WHERE handle = 'admin-test'`,
+      [target],
+    );
+
+    // A work save holds the target (shared lock) and has related to it, not committed yet.
+    await client.query('BEGIN');
+    try {
+      await client.query('SELECT id FROM work WHERE id = $1 FOR SHARE', [target]);
+      await client.query(
+        `INSERT INTO work_relation (work_id, related_work_id, relation) VALUES ($1, $2, 'other')`,
+        [other, target],
+      );
+      const deleting = admin.delete(`${ADMIN}/works/${target}`).then((response) => response);
+      const outcome = await Promise.race([
+        deleting,
+        new Promise<'waiting'>((resolve) => setTimeout(() => resolve('waiting'), 300)),
+      ]);
+      expect(outcome).toBe('waiting');
+      await client.query('COMMIT');
+
+      const refused = await deleting;
+      expect(refused.status).toBe(409);
+      expect(refused.body.code).toBe('RECORD_IN_USE');
+    } finally {
+      await client.query('ROLLBACK');
+    }
+    expect((await admin.get(`${ADMIN}/works/${target}`)).status).toBe(200);
+    // The refusal left the members' reading lists alone.
+    const kept = await client.query(`SELECT 1 FROM library_entry WHERE work_id = $1`, [target]);
+    expect(kept.rowCount).toBe(1);
+  });
+
   it('refuse de supprimer un brouillon encore cité', async () => {
     const admin = await newAdmin();
     const person = (
@@ -1122,8 +1373,8 @@ describe('brouillons', () => {
     await admin
       .post(`${ADMIN}/people`)
       .send({ name: `${PREFIX} Z brouillon`, kind: 'person', published: false });
-    const names = async (state?: string) =>
-      (await admin.get(`${ADMIN}/people`).query({ q: PREFIX, state })).body.items.map(
+    const names = async (lifecycle?: string) =>
+      (await admin.get(`${ADMIN}/people`).query({ q: PREFIX, lifecycle })).body.items.map(
         (item: { name: string }) => item.name,
       );
     expect(await names()).toEqual([`${PREFIX} Z brouillon`, `${PREFIX} A publiée`]);
@@ -1150,11 +1401,62 @@ describe('brouillons', () => {
     expect((await request(app).get(`${ADMIN}/draft-counts`)).status).toBe(401);
   });
 
+  it('publie contre l’état des fiches citées une fois verrouillées : une archive en cours passe avant', async () => {
+    const admin = await newAdmin();
+    const person = await createPerson(admin, `${PREFIX} Archivée en cours`);
+    const id = await createWork(admin, { ...DRAFT_WORK, genres: ['manga'] });
+    const { updatedAt } = (await admin.get(`${ADMIN}/works/${id}`)).body;
+    const credits = [
+      { personId: base.personId, role: 'story' },
+      { personId: person, role: 'art' },
+    ];
+
+    // Another administrator archives the person; their transaction is not committed yet.
+    await client.query('BEGIN');
+    try {
+      await client.query('UPDATE person SET deleted_at = now() WHERE id = $1', [person]);
+      const publishing = admin
+        .put(`${ADMIN}/works/${id}`)
+        .send(workBody({ ...DRAFT_WORK, genres: ['manga'], credits, published: true, updatedAt }))
+        .then((response) => response);
+      // The publication waits on the lock of the cited person instead of reading its old state.
+      const outcome = await Promise.race([
+        publishing,
+        new Promise<'waiting'>((resolve) => setTimeout(() => resolve('waiting'), 300)),
+      ]);
+      expect(outcome).toBe('waiting');
+      await client.query('COMMIT');
+
+      const refused = await publishing;
+      expect(refused.status).toBe(400);
+      expect(refused.body.code).toBe('ARCHIVED_REFERENCE');
+    } finally {
+      await client.query('ROLLBACK');
+    }
+    expect((await admin.get(`${ADMIN}/works/${id}`)).body.lifecycle).toBe('draft');
+  });
+
+  it('enregistre en même temps deux œuvres qui se citent, sans interblocage', async () => {
+    const admin = await newAdmin();
+    const first = await createWork(admin, { title: `${PREFIX} Jumelle A` });
+    const second = await createWork(admin, { title: `${PREFIX} Jumelle B` });
+    const citing = (title: string, relatedWorkId: number) =>
+      workBody({ title, relations: [{ relatedWorkId, relation: 'other' }] });
+
+    for (let round = 0; round < 5; round++) {
+      const [a, b] = await Promise.all([
+        replace(admin, 'works', first, citing(`${PREFIX} Jumelle A`, second)),
+        replace(admin, 'works', second, citing(`${PREFIX} Jumelle B`, first)),
+      ]);
+      expect([a.status, b.status]).toEqual([200, 200]);
+    }
+  });
+
   it('compte les brouillons', async () => {
     const admin = await newAdmin();
-    const before = (await admin.get(`${ADMIN}/works`).query({ state: 'draft' })).body.total;
+    const before = (await admin.get(`${ADMIN}/works`).query({ lifecycle: 'draft' })).body.total;
     await createWork(admin, DRAFT_WORK);
-    const after = await admin.get(`${ADMIN}/works`).query({ state: 'draft' });
+    const after = await admin.get(`${ADMIN}/works`).query({ lifecycle: 'draft' });
     expect(after.body.total).toBe(before + 1);
     expectMatches(adminWorkPageSchema, after.body);
   });

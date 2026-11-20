@@ -70,13 +70,10 @@ const publish = () => editor.save(formatCodes.value, true, backToList)
 /** Form footer mode: a new record, a draft or a published one. */
 const formMode = computed(() => {
   if (id === 'new') return 'create' as const
-  return record.value?.draft ? ('draft' as const) : ('published' as const)
+  return record.value?.lifecycle === 'draft' ? ('draft' as const) : ('published' as const)
 })
 /** Translation key of the state pill. */
-const stateKey = computed(() => {
-  if (record.value?.archived) return 'admin.archived'
-  return record.value?.draft ? 'admin.draft' : 'admin.published'
-})
+const stateKey = computed(() => `admin.${record.value?.lifecycle ?? 'published'}`)
 
 const confirmingDelete = ref(false)
 /** Goes back to the list without the "unsaved changes" question: the record is gone or archived. */
@@ -88,7 +85,7 @@ async function leaveToList() {
 /** Deletes the draft or archived record for good, then goes back to the list. */
 const deleteRecord = () => editor.deleteRecord(leaveToList)
 /** What is deleted: a draft was never published, an archive was. */
-const deleteTarget = computed(() => (record.value?.archived ? 'archive' : 'draft'))
+const deleteTarget = computed(() => (record.value?.lifecycle === 'archived' ? 'archive' : 'draft'))
 
 const confirmingArchive = ref(false)
 /** Archives the record, then goes back to the list. */
@@ -139,13 +136,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
     <header class="edit__head">
       <div class="edit__heading">
         <h1 class="edit__title">{{ record?.heading ?? t(`admin.heading.new.${kind}`) }}</h1>
-        <UiDraftBadge v-if="record?.draft && !record.archived" data-testid="admin-state">{{
+        <UiDraftBadge v-if="record?.lifecycle === 'draft'" data-testid="admin-state">{{
           t(stateKey)
         }}</UiDraftBadge>
         <span
           v-else-if="record"
           class="edit__badge"
-          :class="{ 'edit__badge--archived': record.archived }"
+          :class="{ 'edit__badge--archived': record.lifecycle === 'archived' }"
           data-testid="admin-state"
         >
           {{ t(stateKey) }}
@@ -153,7 +150,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       </div>
       <template v-if="record">
         <UiButton
-          v-if="record.draft"
+          v-if="record.lifecycle === 'draft'"
           class="edit__action"
           variant="danger"
           data-testid="admin-delete-draft"
@@ -161,7 +158,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
         >
           <Icon name="tabler:trash" size="16" aria-hidden="true" />{{ t('admin.deleteDraft') }}
         </UiButton>
-        <div v-else-if="record.archived" class="edit__actions">
+        <div v-else-if="record.lifecycle === 'archived'" class="edit__actions">
           <UiButton
             class="edit__action"
             variant="secondary"
@@ -190,7 +187,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
         </UiButton>
       </template>
     </header>
-    <div v-if="record?.draft && !record.archived" class="edit__banner" data-testid="draft-banner">
+    <div v-if="record?.lifecycle === 'draft'" class="edit__banner" data-testid="draft-banner">
       <Icon name="tabler:eye-off" size="20" aria-hidden="true" />
       <p class="edit__banner-text">{{ t('admin.draftBanner') }}</p>
     </div>

@@ -6,15 +6,15 @@ import type {
   AdminPersonRepository,
   AdminPersonSummary,
 } from '../repositories/admin-person.repository.js';
-import { assertNotDraft, createDraftOperations } from './admin-draft.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
-import { refuseReplacement } from './admin-replace.js';
+import { assertNotDraft, removeRecord } from './admin-lifecycle.js';
+import { refuseReplacement, type Replacement } from './admin-replace.js';
 
 /** Data accepted to create a person. */
 export type AdminPersonInput = AdminPersonDraft;
 
-/** Data accepted to replace a person: `updatedAt` is the record version read before editing. */
-export type AdminPersonReplacement = AdminPersonDraft & { updatedAt: string };
+/** Data accepted to replace a person. */
+export type AdminPersonReplacement = Replacement<AdminPersonDraft>;
 
 /** People administration operations. */
 export interface AdminPersonService {
@@ -25,7 +25,6 @@ export interface AdminPersonService {
   /** Refused while the person is credited on an unarchived work. */
   archive(id: number, adminId: number): Promise<AdminPersonRecord>;
   restore(id: number, adminId: number): Promise<AdminPersonRecord>;
-  publish(id: number): Promise<AdminPersonRecord>;
   /** Only a draft or archived person no work credits (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
   remove(id: number): Promise<void>;
   countDrafts(): Promise<number>;
@@ -44,8 +43,7 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
     async list(input) {
       const { items, total } = await repository.list({
         q: input.q,
-        scope: input.scope,
-        state: input.state,
+        lifecycle: input.lifecycle,
         ...pagination(input),
       });
       return { items, page: input.page, pageSize: input.pageSize, total };
@@ -58,14 +56,15 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
     },
 
     async update(id, input) {
-      const { updatedAt, ...draft } = input;
+      const { updatedAt, published, ...rest } = input;
+      const draft = { ...rest, published: published === true };
       if (!(await repository.update(id, draft, updatedAt))) await refuseReplacement(get, id);
       return get(id);
     },
 
     async archive(id, adminId) {
       const person = await get(id);
-      if (person.archived) return person;
+      if (person.lifecycle === 'archived') return person;
       assertNotDraft(person);
       if (!(await repository.setArchived(id, true, adminId))) {
         const { activeWorkCount } = await get(id);
@@ -80,7 +79,7 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
       return get(id);
     },
 
-    ...createDraftOperations(get, repository),
+    remove: (id) => removeRecord(get, repository, id),
 
     countDrafts: () => repository.countDrafts(),
   };

@@ -355,8 +355,7 @@ test('enregistrer une fiche modifiée entre-temps est refusé', async ({ page, c
 
   // Une autre session enregistre la fiche pendant qu'elle est ouverte ici.
   const body = await (await context.request.get(url)).json()
-  for (const readOnly of ['id', 'archived', 'draft', 'followerCount', 'labels'])
-    delete body[readOnly]
+  for (const readOnly of ['id', 'lifecycle', 'followerCount', 'labels']) delete body[readOnly]
   const other = await context.request.put(url, { data: body })
   expect(other.status()).toBe(200)
 
@@ -375,7 +374,7 @@ test('enregistrer une personne modifiée entre-temps est refusé', async ({ page
 
   // Une autre session enregistre la fiche pendant qu'elle est ouverte ici.
   const body = await (await context.request.get(url)).json()
-  for (const readOnly of ['id', 'archived', 'draft', 'activeWorkCount', 'archivedAt', 'archivedBy'])
+  for (const readOnly of ['id', 'lifecycle', 'activeWorkCount', 'archivedAt', 'archivedBy'])
     delete body[readOnly]
   const other = await context.request.put(url, { data: body })
   expect(other.status()).toBe(200)
@@ -401,7 +400,7 @@ test('archiver masque l’œuvre au public, restaurer la rend', async ({ page, c
 
   await page.goto(`/admin/catalogue?q=${encodeURIComponent(WORK)}`)
   await expect(page.getByTestId('admin-row')).toHaveCount(0)
-  await page.goto(`/admin/catalogue?q=${encodeURIComponent(WORK)}&scope=archived`)
+  await page.goto(`/admin/catalogue?q=${encodeURIComponent(WORK)}&lifecycle=archived`)
   await waitForHydration(page)
   await expect(page.getByTestId('admin-row')).toContainText('par @')
   await clickRowAction(page, 'restore')
@@ -508,12 +507,12 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
   await page.locator('#work-title').fill(DRAFT)
   await saveDraftAndWaitForList(page)
   const found = await context.request.get(`/api/v1/admin/works?q=${encodeURIComponent(DRAFT)}`)
-  const [work] = (await found.json()).items as { id: number; draft: boolean }[]
-  expect(work!.draft).toBe(true)
+  const [work] = (await found.json()).items as { id: number; lifecycle: string }[]
+  expect(work!.lifecycle).toBe('draft')
   expect((await context.request.get(`/api/v1/works/${work!.id}`)).status()).toBe(404)
 
   // La liste le met en avant, et le filtre d'état le retrouve.
-  await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&state=draft`)
+  await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&lifecycle=draft`)
   await waitForHydration(page)
   await expect(page.getByTestId('admin-row').getByTestId('admin-draft')).toHaveText('Brouillon')
 
@@ -528,8 +527,7 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
     )[0]!.id
   const url = `/api/v1/admin/works/${work!.id}`
   const body = await (await context.request.get(url)).json()
-  for (const readOnly of ['id', 'archived', 'draft', 'followerCount', 'labels'])
-    delete body[readOnly]
+  for (const readOnly of ['id', 'lifecycle', 'followerCount', 'labels']) delete body[readOnly]
   const complete = await context.request.put(url, {
     data: {
       ...body,
@@ -541,7 +539,7 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
   expect(complete.status()).toBe(200)
 
   // Publier sans format est refusé ; avec un format et après confirmation, la fiche devient publique.
-  await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&state=draft`)
+  await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&lifecycle=draft`)
   await waitForHydration(page)
   await clickRowAction(page, 'edit')
   await waitForHydration(page)
@@ -550,9 +548,17 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
   await expect(page.getByText('Choisis au moins un format.')).toBeVisible()
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.getByTestId('pill-manga').click()
+  const writes: string[] = []
+  page.on('request', (request) => {
+    if (request.url().includes('/api/v1/admin/') && request.method() !== 'GET') {
+      writes.push(`${request.method()} ${new URL(request.url()).pathname}`)
+    }
+  })
   await page.getByTestId('admin-publish').click()
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
   await expect(page).toHaveURL(LIST_URL)
+  // Publishing is part of the single replacement: one write, no separate publish request.
+  expect(writes).toEqual([`PUT /api/v1/admin/works/${work!.id}`])
   expect((await context.request.get(`/api/v1/works/${work!.id}`)).status()).toBe(200)
 })
 
@@ -586,7 +592,7 @@ test('une fiche archivée se supprime définitivement depuis la liste des archiv
     200,
   )
 
-  await page.goto(`/admin/catalogue?scope=archived&kind=people&q=${encodeURIComponent(DRAFT)}`)
+  await page.goto(`/admin/catalogue?lifecycle=archived&kind=people&q=${encodeURIComponent(DRAFT)}`)
   await waitForHydration(page)
   const row = page.getByTestId('admin-row').filter({ hasText: `${DRAFT} archivée` })
   await expect(row).toContainText('par @')
@@ -633,7 +639,7 @@ test('le bandeau des brouillons mène à la liste du type choisi', async ({ page
   await expect(page.getByTestId('admin-drafts')).toContainText('à terminer')
   await page.getByTestId('admin-show-drafts-people').click()
 
-  await expect(page).toHaveURL(/kind=people&state=draft|state=draft&kind=people/)
+  await expect(page).toHaveURL(/kind=people&lifecycle=draft|lifecycle=draft&kind=people/)
   await expect(page.getByTestId('admin-row').filter({ hasText: `${DRAFT} bandeau` })).toBeVisible()
 })
 

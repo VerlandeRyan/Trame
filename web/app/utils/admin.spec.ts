@@ -52,8 +52,7 @@ const WORK: AdminWork = {
   originalLanguage: 'fr',
   type: 'series',
   status: 'completed',
-  archived: false,
-  draft: false,
+  lifecycle: 'published',
   chapters: 86,
   volumes: null,
   startedOn: '2020-01-01',
@@ -83,12 +82,12 @@ const listOf = (overrides: Partial<AdminListQuery> = {}): AdminListQuery => ({
 describe('liste du catalogue dans l’adresse', () => {
   it('lit les valeurs valides et ignore les autres', () => {
     expect(
-      parseAdminListQuery({ kind: 'people', scope: 'archived', q: ' léa ', page: '3' }),
-    ).toEqual(listOf({ kind: 'people', scope: 'archived', q: 'léa', page: 3 }))
+      parseAdminListQuery({ kind: 'people', lifecycle: 'archived', q: ' léa ', page: '3' }),
+    ).toEqual(listOf({ kind: 'people', lifecycle: 'archived', q: 'léa', page: 3 }))
     expect(
       parseAdminListQuery({
         kind: 'x',
-        scope: 'y',
+        lifecycle: 'y',
         page: '-2',
         type: 'novel',
         status: 'x',
@@ -130,9 +129,11 @@ describe('liste du catalogue dans l’adresse', () => {
 
   it('n’écrit pas les valeurs par défaut', () => {
     expect(toAdminRouteQuery(listOf())).toEqual({})
-    expect(toAdminRouteQuery(listOf({ kind: 'people', scope: 'all', q: 'a', page: 2 }))).toEqual({
+    expect(
+      toAdminRouteQuery(listOf({ kind: 'people', lifecycle: 'published', q: 'a', page: 2 })),
+    ).toEqual({
       kind: 'people',
-      scope: 'all',
+      lifecycle: 'published',
       q: 'a',
       page: '2',
     })
@@ -143,33 +144,31 @@ describe('liste du catalogue dans l’adresse', () => {
   })
 
   it('prépare la requête de l’API, filtres et tri pour les œuvres seulement', () => {
-    expect(toAdminApiQuery(listOf({ scope: 'all', page: 2, format: ['manga', 'bd'] }), 20)).toEqual(
-      {
-        q: undefined,
-        scope: 'all',
-        state: 'all',
-        page: 2,
-        pageSize: 20,
-        sort: 'title',
-        type: undefined,
-        status: undefined,
-        format: 'manga,bd',
-      },
-    )
+    expect(
+      toAdminApiQuery(listOf({ lifecycle: 'draft', page: 2, format: ['manga', 'bd'] }), 20),
+    ).toEqual({
+      q: undefined,
+      lifecycle: 'draft',
+      page: 2,
+      pageSize: 20,
+      sort: 'title',
+      type: undefined,
+      status: undefined,
+      format: 'manga,bd',
+    })
     expect(toAdminApiQuery(listOf({ kind: 'people', format: ['manga'] }), 20)).toEqual({
       q: undefined,
-      scope: 'active',
-      state: 'all',
+      lifecycle: 'active',
       page: 1,
       pageSize: 20,
     })
   })
 
-  it('porte l’état de publication dans l’adresse et revient à « tous » en changeant d’onglet', () => {
-    expect(parseAdminListQuery({ state: 'draft' }).state).toBe('draft')
-    expect(parseAdminListQuery({ state: 'x' }).state).toBe('all')
-    expect(toAdminRouteQuery(listOf({ state: 'draft' }))).toEqual({ state: 'draft' })
-    expect(queryForTab(listOf({ state: 'draft' }), 'people').state).toBe('all')
+  it('porte le cycle de vie dans l’adresse et revient à « tous » en changeant d’onglet', () => {
+    expect(parseAdminListQuery({ lifecycle: 'draft' }).lifecycle).toBe('draft')
+    expect(parseAdminListQuery({ lifecycle: 'x' }).lifecycle).toBe('active')
+    expect(toAdminRouteQuery(listOf({ lifecycle: 'draft' }))).toEqual({ lifecycle: 'draft' })
+    expect(queryForTab(listOf({ lifecycle: 'draft' }), 'people').lifecycle).toBe('active')
   })
 
   it('un brouillon n’exige que le titre et des adresses valides', () => {
@@ -184,9 +183,9 @@ describe('liste du catalogue dans l’adresse', () => {
   it('compte les pages et nomme les lignes', () => {
     expect(pageCount({ items: [], page: 1, pageSize: 20, total: 0 })).toBe(1)
     expect(pageCount({ items: [], page: 1, pageSize: 20, total: 41 })).toBe(3)
-    expect(itemLabel({ id: 1, archived: false, draft: false, title: 'Titre' })).toBe('Titre')
-    expect(itemLabel({ id: 1, archived: false, draft: false, name: 'Nom' })).toBe('Nom')
-    expect(itemLabel({ id: 7, archived: false, draft: false })).toBe('#7')
+    expect(itemLabel({ id: 1, lifecycle: 'published', title: 'Titre' })).toBe('Titre')
+    expect(itemLabel({ id: 1, lifecycle: 'published', name: 'Nom' })).toBe('Nom')
+    expect(itemLabel({ id: 7, lifecycle: 'published' })).toBe('#7')
   })
 })
 
@@ -195,13 +194,15 @@ describe('onglets du catalogue', () => {
 
   it('reconnaît l’onglet affiché', () => {
     expect(tabOf(list)).toBe('people')
-    expect(tabOf({ ...list, scope: 'archived' })).toBe('archives')
-    expect(tabOf({ ...list, scope: 'all' })).toBe('people')
+    expect(tabOf({ ...list, lifecycle: 'archived' })).toBe('archives')
+    expect(tabOf({ ...list, lifecycle: 'draft' })).toBe('people')
   })
 
   it('un onglet de type montre les fiches publiées, Archives garde le type', () => {
-    expect(queryForTab({ ...list, scope: 'archived' }, 'works')).toEqual(listOf({ kind: 'works' }))
-    expect(queryForTab(list, 'archives')).toEqual(listOf({ kind: 'people', scope: 'archived' }))
+    expect(queryForTab({ ...list, lifecycle: 'archived' }, 'works')).toEqual(
+      listOf({ kind: 'works' }),
+    )
+    expect(queryForTab(list, 'archives')).toEqual(listOf({ kind: 'people', lifecycle: 'archived' }))
   })
 
   it('chaque onglet repart d’une recherche, de filtres et d’un tri vides', () => {
@@ -496,8 +497,7 @@ describe('formulaires personne et éditeur', () => {
         id: 1,
         name: 'Léa',
         kind: 'collective',
-        archived: false,
-        draft: false,
+        lifecycle: 'published',
         activeWorkCount: 0,
         links: [{ kind: 'social', url: 'https://r.test', label: null }],
         updatedAt: '2026-10-24T10:00:00.000Z',
@@ -516,8 +516,7 @@ describe('formulaires personne et éditeur', () => {
         name: 'M',
         kind: 'platform',
         url: null,
-        archived: false,
-        draft: false,
+        lifecycle: 'published',
         activeWorkCount: 0,
         updatedAt: '2026-10-24T10:00:00.000Z',
         archivedAt: null,

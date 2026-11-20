@@ -15,13 +15,13 @@ const page = (items: AdminListItem[]): AdminPage<AdminListItem> => ({
 })
 
 describe('client d’administration', () => {
-  it('liste avec la recherche, la portée et la page', async () => {
+  it('liste avec la recherche, le cycle de vie et la page', async () => {
     const { client, request } = setup()
     await client.list(
-      parseAdminListQuery({ kind: 'people', scope: 'archived', q: 'léa', page: '2' }),
+      parseAdminListQuery({ kind: 'people', lifecycle: 'archived', q: 'léa', page: '2' }),
     )
     expect(request).toHaveBeenCalledWith('/admin/people', {
-      query: { q: 'léa', scope: 'archived', state: 'all', page: 2, pageSize: 20 },
+      query: { q: 'léa', lifecycle: 'archived', page: 2, pageSize: 20 },
     })
   })
 
@@ -31,23 +31,19 @@ describe('client d’administration', () => {
     expect(request).toHaveBeenCalledWith('/admin/draft-counts')
   })
 
-  it('publie et supprime un brouillon', async () => {
+  it('supprime un brouillon ou une fiche archivée', async () => {
     const { client, request } = setup()
-    await client.publish('works', 4)
     await client.remove('people', 3)
-    expect(request.mock.calls).toEqual([
-      ['/admin/works/4/publish', { method: 'POST' }],
-      ['/admin/people/3', { method: 'DELETE' }],
-    ])
+    expect(request.mock.calls).toEqual([['/admin/people/3', { method: 'DELETE' }]])
   })
 
   it('demande une page d’une seule fiche quand seul le total compte', async () => {
     const { client, request } = setup()
-    await client.list(parseAdminListQuery({ scope: 'archived' }), 1)
+    await client.list(parseAdminListQuery({ lifecycle: 'archived' }), 1)
     expect(request).toHaveBeenCalledWith(
       '/admin/works',
       expect.objectContaining({
-        query: expect.objectContaining({ scope: 'archived', pageSize: 1 }),
+        query: expect.objectContaining({ lifecycle: 'archived', pageSize: 1 }),
       }),
     )
   })
@@ -69,8 +65,8 @@ describe('client d’administration', () => {
   it('cherche parmi les fiches non archivées pour un sélecteur, et signale les brouillons', async () => {
     const { client, request } = setup(() =>
       page([
-        { id: 1, archived: false, draft: false, title: 'Aube' },
-        { id: 2, archived: false, draft: true, name: 'Léa' },
+        { id: 1, lifecycle: 'published', title: 'Aube' },
+        { id: 2, lifecycle: 'draft', name: 'Léa' },
       ]),
     )
     expect(await client.search('works', 'a')).toEqual([
@@ -78,7 +74,7 @@ describe('client d’administration', () => {
       { id: 2, label: 'Léa', draft: true },
     ])
     expect(request).toHaveBeenCalledWith('/admin/works', {
-      query: { q: 'a', scope: 'active', page: 1, pageSize: 8 },
+      query: { q: 'a', lifecycle: 'active', page: 1, pageSize: 8 },
     })
   })
 })

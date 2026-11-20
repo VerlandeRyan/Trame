@@ -12,13 +12,12 @@ const WORKS: AdminPage<AdminListItem> = {
   items: [
     {
       id: 4,
-      archived: false,
-      draft: false,
+      lifecycle: 'published',
       title: 'Aube Fictive',
       type: 'series',
       status: 'ongoing',
     },
-    { id: 5, archived: true, draft: false, title: 'Basalte', type: 'oneshot', status: 'completed' },
+    { id: 5, lifecycle: 'archived', title: 'Basalte', type: 'oneshot', status: 'completed' },
   ],
   page: 1,
   pageSize: 20,
@@ -53,9 +52,9 @@ beforeEach(() => {
       const query = Object.fromEntries(new URL(event.path, 'http://localhost').searchParams)
       requests.push({ path: kind, query })
       // A later archive page that holds a single row.
-      if (query.scope === 'archived' && Number(query.page) > 1)
+      if (query.lifecycle === 'archived' && Number(query.page) > 1)
         return { items: [WORKS.items[1]], page: Number(query.page), pageSize: 20, total: 21 }
-      if (query.scope === 'archived' && kind !== 'publishers')
+      if (query.lifecycle === 'archived' && kind !== 'publishers')
         return { ...WORKS, total: ARCHIVES_TOTAL }
       return kind === 'works' ? WORKS : { ...WORKS, items: [], total: 0 }
     })
@@ -90,7 +89,7 @@ beforeEach(() => {
         setResponseStatus(event, 500)
         return { code: restoreFails }
       }
-      return { id: 5, archived: false }
+      return { id: 5, lifecycle: 'published' }
     },
   })
 })
@@ -109,18 +108,18 @@ describe('brouillons du catalogue', () => {
     expect(wrapper.find('[data-testid="admin-show-drafts-publishers"]').exists()).toBe(false)
     // One request for the three counts, not one list per kind.
     expect(requests.filter((request) => request.path === 'draft-counts')).toHaveLength(1)
-    expect(requests.some((request) => request.query.state === 'draft')).toBe(false)
+    expect(requests.some((request) => request.query.lifecycle === 'draft')).toBe(false)
 
     await wrapper.get('[data-testid="admin-show-drafts-people"]').trigger('click')
     await vi.waitFor(() =>
-      expect(useRouter().currentRoute.value.query).toEqual({ kind: 'people', state: 'draft' }),
+      expect(useRouter().currentRoute.value.query).toEqual({ kind: 'people', lifecycle: 'draft' }),
     )
     await vi.waitFor(() =>
       expect(
         requests.some(
           (request) =>
             request.path === 'people' &&
-            request.query.state === 'draft' &&
+            request.query.lifecycle === 'draft' &&
             request.query.pageSize === '20',
         ),
       ).toBe(true),
@@ -142,7 +141,7 @@ describe('brouillons du catalogue', () => {
     const wrapper = await mountCatalogue()
     expect(wrapper.find('[data-testid="admin-state-filter"]').exists()).toBe(true)
 
-    const archives = await mountCatalogue('/admin/catalogue?scope=archived')
+    const archives = await mountCatalogue('/admin/catalogue?lifecycle=archived')
     expect(archives.find('[data-testid="admin-state-filter"]').exists()).toBe(false)
   })
 })
@@ -159,7 +158,7 @@ describe('page Catalogue d’administration', () => {
     )
     expect(requests[0]).toMatchObject({
       path: 'works',
-      query: { scope: 'active', page: '1', pageSize: '20' },
+      query: { lifecycle: 'active', page: '1', pageSize: '20' },
     })
   })
 
@@ -176,7 +175,7 @@ describe('page Catalogue d’administration', () => {
   it('ne demande qu’une fiche pour compter les archives', async () => {
     await mountCatalogue()
 
-    const counting = requests.filter((request) => request.query.scope === 'archived')
+    const counting = requests.filter((request) => request.query.lifecycle === 'archived')
     expect(counting).toHaveLength(1)
     expect(counting[0]?.query.pageSize).toBe('1')
   })
@@ -242,17 +241,19 @@ describe('page Catalogue d’administration', () => {
   })
 
   it('masque le bouton de création dans les archives', async () => {
-    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=archived')
 
     expect(wrapper.find('[data-testid="admin-new"]').exists()).toBe(false)
   })
 
   it('lit l’onglet, la recherche et la page dans l’adresse', async () => {
-    const wrapper = await mountCatalogue('/admin/catalogue?kind=people&scope=archived&q=lea&page=2')
+    const wrapper = await mountCatalogue(
+      '/admin/catalogue?kind=people&lifecycle=archived&q=lea&page=2',
+    )
 
     expect(requests[0]).toMatchObject({
       path: 'people',
-      query: { q: 'lea', scope: 'archived', page: '2' },
+      query: { q: 'lea', lifecycle: 'archived', page: '2' },
     })
     expect(wrapper.get('[aria-selected="true"]').text()).toContain('Archives')
   })
@@ -283,14 +284,14 @@ describe('page Catalogue d’administration', () => {
   })
 
   it("ne renvoie pas vers le bouton d'ajout dans les archives vides", async () => {
-    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived&kind=publishers')
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=archived&kind=publishers')
 
     expect(wrapper.text()).toContain('Aucune fiche')
     expect(wrapper.text()).not.toContain('Nouvel éditeur')
   })
 
   it('restaure une archive après confirmation, puis relit la liste', async () => {
-    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=archived')
     const readsBefore = requests.length
 
     await wrapper.get('[data-testid="admin-restore"]').trigger('click')
@@ -309,7 +310,7 @@ describe('page Catalogue d’administration', () => {
       method: 'POST',
       handler: () => {
         writes.push('archive')
-        return { id: 4, archived: true }
+        return { id: 4, lifecycle: 'archived' }
       },
     })
     const wrapper = await mountCatalogue()
@@ -327,7 +328,7 @@ describe('page Catalogue d’administration', () => {
   })
 
   it('supprime définitivement une archive après confirmation, puis relit la liste', async () => {
-    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=archived')
     const readsBefore = requests.length
 
     await wrapper.findAll('[data-testid="admin-row-menu"]')[1]!.trigger('click')
@@ -342,7 +343,7 @@ describe('page Catalogue d’administration', () => {
   })
 
   it('revient à la dernière page quand on supprime la dernière ligne de la page 2', async () => {
-    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived&page=2')
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=archived&page=2')
     const readsBefore = requests.length
 
     await wrapper.get('[data-testid="admin-row-menu"]').trigger('click')
@@ -359,7 +360,7 @@ describe('page Catalogue d’administration', () => {
 
   it('explique le refus quand l’archive est encore citée, sans « Réessayer »', async () => {
     removeFails = 'RECORD_IN_USE'
-    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=archived')
 
     await wrapper.findAll('[data-testid="admin-row-menu"]')[1]!.trigger('click')
     await wrapper.get('[data-testid="admin-dropdown-remove"]').trigger('click')
@@ -374,7 +375,7 @@ describe('page Catalogue d’administration', () => {
 
   it('annonce une panne avec « Réessayer », qui rejoue la restauration', async () => {
     restoreFails = 'INTERNAL_ERROR'
-    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=archived')
 
     await wrapper.get('[data-testid="admin-restore"]').trigger('click')
     await wrapper
@@ -397,7 +398,7 @@ describe('page Catalogue d’administration', () => {
 
   it('montre un refus de l’API au-dessus de la liste, sans « Réessayer »', async () => {
     restoreFails = 'ADMIN_REQUIRED'
-    const wrapper = await mountCatalogue('/admin/catalogue?scope=archived')
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=archived')
 
     await wrapper.get('[data-testid="admin-restore"]').trigger('click')
     await wrapper

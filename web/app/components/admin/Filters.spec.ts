@@ -1,19 +1,19 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
-import type { AdminKind, AdminState, AdminWorkFilters } from '~/utils/admin'
+import type { AdminKind, AdminLifecycleFilter, AdminWorkFilters } from '~/utils/admin'
 import AdminFilters from './Filters.vue'
 
 const NO_FILTERS: AdminWorkFilters = { type: [], status: [], format: [] }
 
 const mountFilters = (
   filters: AdminWorkFilters = NO_FILTERS,
-  extra: { kind?: AdminKind; state?: AdminState } = {},
+  extra: { kind?: AdminKind; lifecycle?: AdminLifecycleFilter } = {},
 ) =>
   mountSuspended(AdminFilters, {
     props: {
       kind: 'works',
       filters,
-      state: 'all',
+      lifecycle: 'active',
       sort: 'title',
       formats: ['manga', 'webtoon'],
       total: 12,
@@ -116,7 +116,7 @@ describe('AdminFilters', () => {
   })
 
   it('propose « Réinitialiser » dès que seul l’état est choisi, et le compte sur « Filtres »', async () => {
-    const wrapper = await mountFilters(NO_FILTERS, { state: 'draft' })
+    const wrapper = await mountFilters(NO_FILTERS, { lifecycle: 'draft' })
 
     expect(wrapper.find('[data-testid="filter-reset"]').exists()).toBe(true)
     expect(wrapper.get('[data-testid="filters-open"]').text()).toBe('Filtres (1)')
@@ -126,11 +126,11 @@ describe('AdminFilters', () => {
     const wrapper = await mountFilters()
 
     await wrapper.get('[data-testid="sheet-state-draft"]').setValue(true)
-    expect(wrapper.emitted('state')?.[0]).toEqual(['draft'])
+    expect(wrapper.emitted('lifecycle')?.[0]).toEqual(['draft'])
 
-    const draftOnly = await mountFilters(NO_FILTERS, { state: 'draft' })
+    const draftOnly = await mountFilters(NO_FILTERS, { lifecycle: 'draft' })
     await draftOnly.get('[data-testid="sheet-state-draft"]').setValue(false)
-    expect(draftOnly.emitted('state')?.[0]).toEqual(['all'])
+    expect(draftOnly.emitted('lifecycle')?.[0]).toEqual(['active'])
   })
 
   it('ne garde que l’état pour les personnes et les éditeurs', async () => {

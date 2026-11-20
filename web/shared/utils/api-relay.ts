@@ -8,12 +8,12 @@ const WRITABLE_ROUTES = [
   { methods: new Set(['POST']), path: /^auth\// },
   { methods: new Set(['PUT', 'DELETE']), path: /^works\/\d+\/entry$/ },
   { methods: new Set(['PATCH']), path: /^me\/profile$/ },
-  // Catalogue administration (reads such as `admin/draft-counts` pass as reads): create, replace, delete a draft, archive, restore and publish.
+  // Catalogue administration (reads such as `admin/draft-counts` pass as reads): create, replace, delete a draft, archive and restore (replacing also publishes a draft).
   { methods: new Set(['POST']), path: /^admin\/(people|publishers|works)$/ },
   { methods: new Set(['PUT', 'DELETE']), path: /^admin\/(people|publishers|works)\/\d+$/ },
   {
     methods: new Set(['POST']),
-    path: /^admin\/(people|publishers|works)\/\d+\/(archive|restore|publish)$/,
+    path: /^admin\/(people|publishers|works)\/\d+\/(archive|restore)$/,
   },
 ]
 

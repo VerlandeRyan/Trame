@@ -1,23 +1,41 @@
-/** SQL fragments shared by the administration repositories: search, archive scope, totals and derived columns. */
+/** SQL fragments shared by the administration repositories: search, lifecycle, totals and derived columns. */
 import { sql, type RawBuilder } from 'kysely';
 import { CREDIT_ROLE_RANK, type Db } from '../db/database.js';
 
-/** `active`: published records; `archived`: archives only; `all`: both. */
-export const ARCHIVE_SCOPES = ['active', 'archived', 'all'] as const;
-export type ArchiveScope = (typeof ARCHIVE_SCOPES)[number];
+/** The three exclusive states of a record, derived from `published_at` and `deleted_at`. */
+export const LIFECYCLES = ['draft', 'published', 'archived'] as const;
+export type Lifecycle = (typeof LIFECYCLES)[number];
 
-/** `draft`: not yet published; `published`: published (archived or not); `all`: both. */
-export const PUBLICATION_STATES = ['all', 'draft', 'published'] as const;
-export type PublicationState = (typeof PUBLICATION_STATES)[number];
+/** List filter: one lifecycle, or `active` for the drafts and published records (not the archives). */
+export const LIFECYCLE_FILTERS = ['active', ...LIFECYCLES] as const;
+export type LifecycleFilter = (typeof LIFECYCLE_FILTERS)[number];
 
-/** Publication condition on a column for a given state; `null` when everything is requested. */
-export function publicationCondition(
-  column: string,
-  state: PublicationState,
-): RawBuilder<boolean> | null {
-  if (state === 'all') return null;
-  const ref = sql.ref(column);
-  return state === 'draft' ? sql<boolean>`${ref} IS NULL` : sql<boolean>`${ref} IS NOT NULL`;
+/** Lifecycle of a record read from its two dates (an archived record is always a published one). */
+export function lifecycleOf(row: {
+  deleted_at: Date | null;
+  published_at: Date | null;
+}): Lifecycle {
+  if (row.deleted_at !== null) return 'archived';
+  return row.published_at === null ? 'draft' : 'published';
+}
+
+/** Condition on the lifecycle columns of a table for a list filter. */
+export function lifecycleCondition(
+  table: CatalogueTable,
+  filter: LifecycleFilter,
+): RawBuilder<boolean> {
+  const deletedAt = sql.ref(`${table}.deleted_at`);
+  const publishedAt = sql.ref(`${table}.published_at`);
+  switch (filter) {
+    case 'active':
+      return sql<boolean>`${deletedAt} IS NULL`;
+    case 'draft':
+      return sql<boolean>`${publishedAt} IS NULL`;
+    case 'published':
+      return sql<boolean>`${publishedAt} IS NOT NULL AND ${deletedAt} IS NULL`;
+    case 'archived':
+      return sql<boolean>`${deletedAt} IS NOT NULL`;
+  }
 }
 
 /** Tables of the administered catalogue. */
@@ -45,17 +63,17 @@ export const archiveColumns = (archived: boolean, adminId: number) => ({
   updated_at: sql<Date>`CASE WHEN (deleted_at IS NULL) = ${archived} THEN now() ELSE updated_at END`,
 });
 
+/** Publication date written when replacing a record: set if asked and still a draft, otherwise unchanged. */
+export const publishedAtOnReplace = (published: boolean) =>
+  published ? sql<Date>`COALESCE(published_at, now())` : sql<Date | null>`published_at`;
+
 /**
- * Publishes a record and moves its version; no effect on a published one (version included).
- * False if the record does not exist.
+ * Locks a record for update, in a statement of its own. A guarded `UPDATE` or `DELETE` run after it
+ * (same transaction) takes a fresh snapshot, so its guard sees what a concurrent transaction that
+ * held the record committed meanwhile; the guard alone, in one statement, would not.
  */
-export async function publishRow(db: Db, table: CatalogueTable, id: number): Promise<boolean> {
-  const result = await sql`
-    UPDATE ${sql.table(table)}
-    SET updated_at = CASE WHEN published_at IS NULL THEN now() ELSE updated_at END,
-        published_at = COALESCE(published_at, now())
-    WHERE id = ${id} RETURNING id`.execute(db);
-  return result.rows.length > 0;
+export async function lockRow(trx: Db, table: CatalogueTable, id: number): Promise<void> {
+  await trx.selectFrom(table).select('id').where('id', '=', id).forUpdate().execute();
 }
 
 /** A record that may be deleted for good: a draft or an archive. */
@@ -131,11 +149,4 @@ export function totalOf(
 ): Promise<number> {
   const [first] = rows;
   return first ? Promise.resolve(first.total) : countFiltered();
-}
-
-/** Archive condition on a column for a given scope; `null` when everything is requested. */
-export function archiveCondition(column: string, scope: ArchiveScope): RawBuilder<boolean> | null {
-  if (scope === 'all') return null;
-  const ref = sql.ref(column);
-  return scope === 'active' ? sql<boolean>`${ref} IS NULL` : sql<boolean>`${ref} IS NOT NULL`;
 }

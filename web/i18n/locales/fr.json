@@ -523,7 +523,6 @@
     },
     "filterSelectedCount": "{count} choix | {count} choix",
     "kind": { "works": "Œuvres", "people": "Personnes", "publishers": "Éditeurs et plateformes" },
-    "scope": { "active": "Publiées", "archived": "Archives", "all": "Toutes" },
     "heading": {
       "new": {
         "works": "Nouvelle œuvre",
@@ -586,9 +585,10 @@
     "draftBanner": "Cette fiche est un brouillon : elle n'est pas visible du public. Pour la publier, les champs minimum requis (marqués d'une étoile) doivent être remplis.",
     "state": {
       "label": "État",
-      "all": "Tous",
+      "active": "Tous",
       "draft": "Brouillons",
-      "published": "Publiées"
+      "published": "Publiées",
+      "archived": "Archives"
     },
     "draftsToFinish": "Brouillon à terminer : | Brouillons à terminer :",
     "draftCount": {

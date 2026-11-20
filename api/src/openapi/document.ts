@@ -168,7 +168,7 @@ interface AdminResource {
   /** Body to create a record, and body to replace one (the same plus the version that was read, `updatedAt`). */
   createBody: z.ZodType;
   replaceBody: z.ZodType;
-  /** List parameters (search, scope, page, and filters specific to the resource). */
+  /** List parameters (search, lifecycle, page, and filters specific to the resource). */
   listQuery: z.ZodObject;
   /** Code returned (409) when archiving is refused, if applicable. */
   archiveBlockedBy?: ErrorCode;
@@ -188,7 +188,7 @@ const adminErrors = {
 
 const adminSecurity = [{ sessionCookie: [] }];
 
-/** The six operations of a catalogue resource: list, read, create, replace, archive, restore. */
+/** The operations of a catalogue resource: list, read, create, replace (publishes a draft), delete, archive, restore. */
 function adminResourcePaths(resource: AdminResource) {
   const base = `${API_PREFIX}/admin/${resource.path}`;
   const idParameters = toParameters(idParams, 'path');
@@ -196,7 +196,7 @@ function adminResourcePaths(resource: AdminResource) {
   const invalidBody = errorResponse(
     resource.invalidReference ? 'INVALID_REFERENCE' : 'VALIDATION_ERROR',
     resource.invalidReference
-      ? 'Corps invalide (`VALIDATION_ERROR`), enregistrement cité inexistant (`INVALID_REFERENCE`) ou archivé (`ARCHIVED_REFERENCE`).'
+      ? 'Corps invalide (`VALIDATION_ERROR`, dont une fiche incomplète à la publication : un format est requis), enregistrement cité inexistant (`INVALID_REFERENCE`), archivé (`ARCHIVED_REFERENCE`) ou brouillon cité par une fiche publiée (`DRAFT_REFERENCE`).'
       : 'Corps invalide.',
   );
   const staleRecord = {
@@ -225,7 +225,7 @@ function adminResourcePaths(resource: AdminResource) {
         security: adminSecurity,
         parameters: toParameters(resource.listQuery, 'query'),
         responses: {
-          '200': jsonResponse(resource.page, 'Une page, archives comprises selon `scope`.'),
+          '200': jsonResponse(resource.page, 'Une page, selon le filtre `lifecycle`.'),
           '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
           ...adminErrors,
         },
@@ -259,7 +259,7 @@ function adminResourcePaths(resource: AdminResource) {
       },
       put: {
         ...writeBase,
-        summary: `Remplacer : ${resource.singular}`,
+        summary: `Remplacer, et publier un brouillon avec \`published: true\` : ${resource.singular}`,
         operationId: `replaceAdmin${resource.singular}`,
         parameters: idParameters,
         requestBody: requestBodyOf(resource.replaceBody),
@@ -315,26 +315,6 @@ function adminResourcePaths(resource: AdminResource) {
         responses: {
           '200': jsonResponse(resource.record, 'Restaurée (sans effet si elle ne l’est pas).'),
           '400': errorResponse('VALIDATION_ERROR', 'Identifiant invalide.'),
-          '404': notFound,
-          '429': rateLimited,
-          ...adminErrors,
-        },
-      },
-    },
-    [`${base}/{id}/publish`]: {
-      post: {
-        ...writeBase,
-        summary: `Publier : ${resource.singular}`,
-        operationId: `publishAdmin${resource.singular}`,
-        parameters: idParameters,
-        responses: {
-          '200': jsonResponse(resource.record, 'Publiée (sans effet si elle l’est déjà).'),
-          '400': errorResponse(
-            resource.invalidReference ? 'DRAFT_REFERENCE' : 'VALIDATION_ERROR',
-            resource.invalidReference
-              ? 'Fiche incomplète (`VALIDATION_ERROR` : un format est requis) ou citant un brouillon (`DRAFT_REFERENCE`).'
-              : 'Identifiant invalide.',
-          ),
           '404': notFound,
           '429': rateLimited,
           ...adminErrors,

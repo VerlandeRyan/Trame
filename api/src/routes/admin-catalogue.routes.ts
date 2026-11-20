@@ -32,7 +32,7 @@ export interface AdminCatalogueServices {
   works: AdminWorkService;
 }
 
-/** Registers list, read, create, replace, archive, restore, publish and delete-draft routes for one resource. */
+/** Registers list, read, create, replace (which also publishes a draft), archive, restore and delete routes for one resource. */
 function addResourceRoutes(
   router: Router,
   base: string,
@@ -54,7 +54,6 @@ function addResourceRoutes(
   );
   router.post(`${item}/archive`, limiter, validate('params', idParams), controller.archive);
   router.post(`${item}/restore`, limiter, validate('params', idParams), controller.restore);
-  router.post(`${item}/publish`, limiter, validate('params', idParams), controller.publish);
   router.delete(item, limiter, validate('params', idParams), controller.remove);
 }
 

@@ -21,8 +21,16 @@ import type {
   AdminPersonSummary,
 } from '../repositories/admin-person.repository.js';
 import type { AdminPublisherSummary } from '../repositories/admin-publisher.repository.js';
+import { LIFECYCLES } from '../repositories/admin-sql.js';
 import type { DraftCounts } from '../controllers/admin-draft-counts.controller.js';
 import type { Page } from '../services/admin-list.js';
+
+/** Lifecycle of a record: a draft is only visible in the administration. */
+const lifecycle = z
+  .enum(LIFECYCLES)
+  .describe(
+    'Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée.',
+  );
 
 /** An external link. */
 const link = z.strictObject({
@@ -57,8 +65,7 @@ const personSummary = z.strictObject({
   id: z.number().int(),
   name: z.string(),
   kind: z.enum(PERSON_KINDS),
-  archived: z.boolean(),
-  draft: z.boolean().describe('Brouillon : visible seulement dans l’administration.'),
+  lifecycle,
   activeWorkCount: z.number().int().describe('Œuvres non archivées où la personne est créditée.'),
   updatedAt: recordVersion,
   archivedAt: z.iso.datetime().nullable(),
@@ -81,8 +88,7 @@ export const adminPublisherSchema = z.strictObject({
   name: z.string(),
   kind: z.enum(PUBLISHER_KINDS),
   url: z.string().nullable(),
-  archived: z.boolean(),
-  draft: z.boolean().describe('Brouillon : visible seulement dans l’administration.'),
+  lifecycle,
   activeWorkCount: z.number().int().describe('Œuvres non archivées publiées.'),
   updatedAt: recordVersion,
   archivedAt: z.iso.datetime().nullable(),
@@ -101,8 +107,7 @@ const workSummary = z.strictObject({
   originalLanguage: z.string(),
   type: z.enum(WORK_TYPES),
   status: z.enum(WORK_STATUSES),
-  archived: z.boolean(),
-  draft: z.boolean().describe('Brouillon : visible seulement dans l’administration.'),
+  lifecycle,
 }) satisfies z.ZodType<AdminWorkSummary>;
 
 /** Name of a cited record. */

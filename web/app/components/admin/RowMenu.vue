@@ -48,7 +48,7 @@ function askRemove(item: AdminListItem) {
     :close-label="t('action.close')"
   >
     <div v-if="item" class="row-menu">
-      <template v-if="item.archived">
+      <template v-if="item.lifecycle === 'archived'">
         <UiButton
           variant="secondary"
           class="row-menu__item"
