@@ -1,7 +1,4 @@
 /** Writes whose effect shows immediately, sent in order and reconciled with the server. */
-import type { ApiError } from '~/utils/api-error'
-import { writeErrorHintKey, writeErrorKey } from '~/utils/write-errors'
-
 /** One optimistic write: what to show, what to send and how to recover. */
 interface OptimisticStep<Result> {
   /** Changes the display at once, before the server answers. */
@@ -21,12 +18,13 @@ interface OptimisticStep<Result> {
 
 /**
  * Write with immediate effect: the change shows at once, requests go out one after another and
- * only the last response replaces the display. A failure is announced by an error toast with a
- * "Retry" button that replays the step, then the screen is put right (the step's `revert`,
- * otherwise `resync`).
+ * only the last response replaces the display. A failure is announced by an error toast (with a
+ * "Retry" button that replays the step when the failure may be transient, see
+ * `showWriteFailure`), then the screen is put right (the step's `revert`, otherwise `resync`).
  */
 export function useOptimisticWrite(options: { resync?: () => Promise<void> } = {}) {
-  const { show, dismiss } = useToasts()
+  const { dismiss } = useToasts()
+  const showWriteFailure = useWriteFailure()
   /** The last failure announced, with the value its step overwrote, if any. */
   let lastFailure: { toastId: number; overwriteKey?: string } | null = null
 
@@ -37,14 +35,11 @@ export function useOptimisticWrite(options: { resync?: () => Promise<void> } = {
 
   /** Announces the failure with a way to replay the step, then restores the screen. */
   async function recoverFrom<Result>(cause: unknown, step: OptimisticStep<Result>) {
-    const { code } = cause as ApiError
-    const toastId = show({
-      tone: 'error',
-      messageKey: writeErrorKey(code),
-      hintKey: writeErrorHintKey(code),
+    const toastId = showWriteFailure(
+      cause,
       // With a newer write already queued, replaying this one would overwrite it.
-      retry: isLatest() ? () => void run(step) : undefined,
-    })
+      isLatest() ? () => void run(step) : undefined,
+    )
     lastFailure = { toastId, overwriteKey: step.overwriteKey }
     const { revert } = step
     if (revert) return revert()

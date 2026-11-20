@@ -137,6 +137,30 @@ test('une visibilité qui ne s’enregistre pas est annoncée et se rejoue par �
   await expect(page.getByTestId('toast')).toHaveCount(0)
 })
 
+test('une session expirée pendant le changement de visibilité s’annonce sans « Réessayer »', async ({
+  context,
+  page,
+}) => {
+  const handle = await signUpWithList(context)
+  await page.goto(`/u/${handle}`)
+  await waitForHydration(page)
+  await page.route('**/api/v1/me/profile', (route) =>
+    route.request().method() === 'PATCH'
+      ? route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 'UNAUTHENTICATED', message: 'Not signed in' }),
+        })
+      : route.continue(),
+  )
+
+  await page.getByTestId('profile-visibility-toggle').click()
+
+  await expect(page.getByTestId('toast')).toContainText("Impossible d'enregistrer")
+  await expect(page.getByTestId('toast-retry')).toHaveCount(0)
+  await expect(page.getByTestId('profile-visibility')).toContainText('Profil public')
+})
+
 test('un membre inconnu donne la page 404', async ({ page }) => {
   const response = await page.goto('/u/personne-ici')
 

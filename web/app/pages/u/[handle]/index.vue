@@ -11,7 +11,6 @@ import {
   type ProfileVisibility,
 } from '~/utils/profile'
 import { coverUrl, workSlug } from '~/utils/work'
-import { RETRY_HINT_KEY } from '~/utils/write-errors'
 
 /** Public profile of a member: `/u/{handle}`. */
 const route = useRoute()
@@ -98,7 +97,7 @@ function ageLabel(update: ProfileUpdate): string {
 
 // Visibility setting (owner): the display follows the save.
 const isSavingVisibility = ref(false)
-const { show: showToast } = useToasts()
+const showWriteFailure = useWriteFailure()
 /** Saves the new visibility, then reloads the profile; a failure shows a toast to retry. */
 async function changeVisibility(visibility: ProfileVisibility) {
   if (!profile.value || isSavingVisibility.value) return
@@ -106,13 +105,8 @@ async function changeVisibility(visibility: ProfileVisibility) {
   try {
     await api.request('/me/profile', { method: 'PATCH', body: { visibility } })
     await refreshNuxtData(profileKey)
-  } catch {
-    showToast({
-      tone: 'error',
-      messageKey: 'profile.visibility.error',
-      hintKey: RETRY_HINT_KEY,
-      retry: () => void changeVisibility(visibility),
-    })
+  } catch (cause) {
+    showWriteFailure(cause, () => void changeVisibility(visibility), 'profile.visibility.error')
   } finally {
     isSavingVisibility.value = false
   }

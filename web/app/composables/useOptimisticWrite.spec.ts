@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 function failure(code: string) {
-  return Object.assign(new Error(code), { code })
+  return Object.assign(new Error(code), { status: 500, code })
 }
 
 describe('useOptimisticWrite', () => {
@@ -85,6 +85,19 @@ describe('useOptimisticWrite', () => {
     expect(useToasts().toasts.value[0]?.messageKey).toBe('writeError.signedOut')
     expect(reverts).toBe(1)
     expect(resyncs).toBe(0)
+  })
+
+  it('ne propose pas « Réessayer » pour un refus : rejouer redonnerait le même refus', async () => {
+    const write = useOptimisticWrite()
+
+    await write.run({ send: () => Promise.reject(failure('UNAUTHENTICATED')) })
+    await write.run({ send: () => Promise.reject(failure('VALIDATION_ERROR')) })
+
+    const { toasts } = useToasts()
+    expect(toasts.value).toHaveLength(1)
+    expect(toasts.value[0]).toMatchObject({ messageKey: 'writeError.generic' })
+    expect(toasts.value[0]?.retry).toBeUndefined()
+    expect(toasts.value[0]?.hintKey).toBeUndefined()
   })
 
   it('reste utilisable si la resynchronisation échoue elle aussi', async () => {
