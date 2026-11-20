@@ -64,9 +64,54 @@ describe('UiToastItem', () => {
     expect(wrapper.emitted('dismiss')).toHaveLength(1)
   })
 
+  it('émet action au clic sur « Annuler » et ne l’affiche que si une action est fournie', async () => {
+    const plain = await mountSuspended(UiToastItem, { props: { toast: SUCCESS } })
+    const withUndo = await mountSuspended(UiToastItem, {
+      props: { toast: { ...SUCCESS, action: { kind: 'undo' as const, run: () => undefined } } },
+    })
+
+    expect(plain.find('[data-testid="toast-undo"]').exists()).toBe(false)
+    await withUndo.get('[data-testid="toast-undo"]').trigger('click')
+
+    expect(withUndo.emitted('action')).toHaveLength(1)
+    expect(withUndo.get('[data-testid="toast-undo"]').text()).toBe('Annuler')
+  })
+
+  it('ferme seule une réussite à « Annuler » au bout de 5 s, avec sa barre de décompte', async () => {
+    const wrapper = await mountSuspended(UiToastItem, {
+      props: { toast: { ...SUCCESS, action: { kind: 'undo' as const, run: () => undefined } } },
+    })
+
+    expect(wrapper.classes()).not.toContain('toast--lasting')
+    vi.advanceTimersByTime(5000)
+
+    expect(wrapper.emitted('dismiss')).toHaveLength(1)
+  })
+
+  it('ne ferme jamais seule une annonce durable, et n’a pas de barre de décompte', async () => {
+    const wrapper = await mountSuspended(UiToastItem, {
+      props: {
+        toast: { id: 3, tone: 'info' as const, messageKey: 'toast.offline', isSticky: true },
+      },
+    })
+
+    vi.advanceTimersByTime(600000)
+
+    expect(wrapper.emitted('dismiss')).toBeUndefined()
+    expect(wrapper.classes()).toContain('toast--lasting')
+  })
+
+  it('ne donne un rôle d’alerte qu’à une erreur : le reste est lu par la zone vive de la pile', async () => {
+    const success = await mountSuspended(UiToastItem, { props: { toast: SUCCESS } })
+    const error = await mountSuspended(UiToastItem, { props: { toast: ERROR } })
+
+    expect(success.attributes('role')).toBeUndefined()
+    expect(error.attributes('role')).toBe('alert')
+  })
+
   it('met le décompte en pause tant que le focus est dans l’annonce', async () => {
     const wrapper = await mountSuspended(UiToastItem, {
-      props: { toast: { ...ERROR, retry: () => undefined } },
+      props: { toast: { ...ERROR, action: { kind: 'retry' as const, run: () => undefined } } },
     })
 
     await wrapper.get('[data-testid="toast-retry"]').trigger('focusin')

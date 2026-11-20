@@ -1,4 +1,5 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
+import { flushPromises } from '@vue/test-utils'
 import { readBody, setResponseStatus } from 'h3'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UnwrapNestedRefs } from 'vue'
@@ -61,11 +62,17 @@ describe('useLibraryEntry', () => {
           setResponseStatus(event, 500)
           return { code: 'INTERNAL_ERROR' }
         }
-        const body = (await readBody(event)) as Partial<LibraryEntry>
+        const sent = (await readBody(event)) as Partial<LibraryEntry> & { restored?: boolean }
         const delay = sentBodies.length === 0 ? firstSaveDelayMs : 0
-        sentBodies.push(body)
+        sentBodies.push(sent)
         if (delay > 0) await new Promise((resolve) => setTimeout(resolve, delay))
-        stored = { ...(stored ?? { ...READING, status: 'plan_to_read' }), ...body } as LibraryEntry
+        // Like the API, the `restored` flag is not part of the stored entry.
+        const fields: Partial<LibraryEntry> = { ...sent }
+        delete (fields as { restored?: boolean }).restored
+        stored = {
+          ...(stored ?? { ...READING, status: 'plan_to_read' }),
+          ...fields,
+        } as LibraryEntry
         return { entry: stored }
       },
     })
@@ -154,16 +161,50 @@ describe('useLibraryEntry', () => {
     expect(library.entry).toBeNull()
   })
 
+  it('annonce le retrait et, au clic sur « Annuler », remet l’entrée telle qu’elle était', async () => {
+    stored = READING
+    const library = await mountProbe()
+    await library.load()
+    const { toasts, runAction } = useToasts()
+
+    await library.remove()
+
+    expect(toasts.value).toMatchObject([{ tone: 'success', messageKey: 'toast.entryRemoved' }])
+    runAction(toasts.value[0]!.id)
+    await flushPromises()
+
+    expect(sentBodies).toEqual([{ ...READING, restored: true }])
+    expect(library.entry).toEqual(READING)
+    expect(toasts.value).toMatchObject([{ tone: 'success', messageKey: 'toast.entryRestored' }])
+  })
+
+  it('n’annonce pas de retrait quand la suppression échoue', async () => {
+    stored = READING
+    const library = await mountProbe()
+    await library.load()
+    registerEndpoint('/api/v1/works/7/entry', {
+      method: 'DELETE',
+      handler: (event) => {
+        setResponseStatus(event, 500)
+        return { code: 'INTERNAL_ERROR' }
+      },
+    })
+
+    await library.remove()
+
+    expect(useToasts().toasts.value).toMatchObject([{ tone: 'error' }])
+  })
+
   it('propose « Réessayer » après une panne de lecture, qui relit l’entrée', async () => {
     stored = READING
     isLoadFailing = true
     const library = await mountProbe()
     await library.load()
-    const { toasts, retry } = useToasts()
-    expect(toasts.value[0]?.retry).toBeTypeOf('function')
+    const { toasts, runAction } = useToasts()
+    expect(toasts.value[0]?.action?.kind).toBe('retry')
     isLoadFailing = false
 
-    retry(toasts.value[0]!.id)
+    runAction(toasts.value[0]!.id)
 
     await vi.waitFor(() => expect(library.entry).toEqual(READING))
     expect(toasts.value).toEqual([])

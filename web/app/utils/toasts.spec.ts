@@ -3,8 +3,9 @@ import {
   addToast,
   autoDismissDelay,
   MAX_TOASTS,
-  removeRetryToasts,
+  removeActionToasts,
   removeToast,
+  toastDismissDelay,
   type Toast,
 } from './toasts'
 
@@ -52,17 +53,30 @@ describe('removeToast', () => {
   })
 })
 
-describe('removeRetryToasts', () => {
+describe('removeActionToasts', () => {
   it('retire les annonces à « Réessayer » et garde les autres', () => {
-    const toasts = [toast(1, { retry: () => undefined }), toast(2), toast(3, { tone: 'success' })]
+    const toasts = [
+      toast(1, { action: { kind: 'retry', run: () => undefined } }),
+      toast(2),
+      toast(3, { tone: 'success' }),
+    ]
 
-    expect(removeRetryToasts(toasts).map((each) => each.id)).toEqual([2, 3])
+    expect(removeActionToasts(toasts).map((each) => each.id)).toEqual([2, 3])
+  })
+
+  it('retire aussi les annonces à « Annuler » : annuler appartient à l’écran qui l’a proposé', () => {
+    const toasts = [
+      toast(1, { tone: 'success', action: { kind: 'undo', run: () => undefined } }),
+      toast(2, { tone: 'success' }),
+    ]
+
+    expect(removeActionToasts(toasts).map((each) => each.id)).toEqual([2])
   })
 
   it('rend la même liste quand aucune annonce n’est à retirer', () => {
     const toasts = [toast(1), toast(2)]
 
-    expect(removeRetryToasts(toasts)).toBe(toasts)
+    expect(removeActionToasts(toasts)).toBe(toasts)
   })
 })
 
@@ -74,5 +88,28 @@ describe('autoDismissDelay', () => {
   it('efface une information ou une réussite au bout de quelques secondes', () => {
     expect(autoDismissDelay('info')).toBe(5000)
     expect(autoDismissDelay('success')).toBe(5000)
+  })
+})
+
+describe('toastDismissDelay', () => {
+  it('suit le ton d’une annonce ordinaire', () => {
+    expect(toastDismissDelay(toast(1, { tone: 'error' }))).toBe(10000)
+    expect(toastDismissDelay(toast(2, { tone: 'success' }))).toBe(5000)
+  })
+
+  it('ferme seule une annonce « Annuler » comme une réussite ordinaire', () => {
+    const undo = toast(1, { tone: 'success', action: { kind: 'undo', run: () => undefined } })
+
+    expect(toastDismissDelay(undo)).toBe(5000)
+  })
+
+  it('ne ferme jamais seule une annonce marquée durable', () => {
+    expect(toastDismissDelay(toast(1, { tone: 'info', isSticky: true }))).toBeNull()
+  })
+
+  it('garde le délai d’une erreur « Réessayer »', () => {
+    const retry = toast(1, { action: { kind: 'retry', run: () => undefined } })
+
+    expect(toastDismissDelay(retry)).toBe(10000)
   })
 })

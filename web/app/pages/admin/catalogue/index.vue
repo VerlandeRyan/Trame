@@ -31,12 +31,14 @@ const [
   { data: genres },
 ] = await Promise.all([
   useAsyncData(
-    () => `admin-${JSON.stringify(query.value)}`,
+    () => adminListKey(query.value),
     () => client.list(query.value),
-    { watch: [query] },
+    {
+      watch: [query],
+    },
   ),
   useAsyncData(
-    () => `admin-archives-${query.value.kind}`,
+    () => adminArchivesKey(query.value.kind),
     async () => {
       const archives = {
         ...parseAdminListQuery({ kind: query.value.kind }),
@@ -46,7 +48,7 @@ const [
     },
     { watch: [() => query.value.kind] },
   ),
-  useAsyncData('admin-draft-counts', () => client.draftCounts()),
+  useAsyncData(ADMIN_DRAFT_COUNTS_KEY, () => client.draftCounts()),
   useAsyncData('admin-formats', () =>
     api.request<{ items: { code: string; category: string }[] }>('/genres'),
   ),
@@ -156,15 +158,19 @@ async function write(action: () => Promise<unknown>, retry: () => void) {
     errorKey.value = announceFailure(cause, retry)
   }
 }
-/** Archives or restores a record. */
-const setArchived = (item: AdminListItem, archived: boolean) =>
-  write(
-    () =>
-      archived
-        ? client.archive(query.value.kind, item.id)
-        : client.restore(query.value.kind, item.id),
+const announceArchiveChange = useArchiveUndo()
+const { show } = useToasts()
+/** Archives or restores a record, and announces it (an archiving can be undone from the toast). */
+const setArchived = (item: AdminListItem, archived: boolean) => {
+  const { kind } = query.value
+  return write(
+    async () => {
+      await (archived ? client.archive(kind, item.id) : client.restore(kind, item.id))
+      announceArchiveChange(kind, item.id, archived)
+    },
     () => void setArchived(item, archived),
   )
+}
 // Only works have a summary (members who follow them, related works).
 const loadImpact = computed(() =>
   query.value.kind === 'works'
@@ -179,7 +185,10 @@ const archive = (item: AdminListItem) => setArchived(item, true)
 /** Deletes an archived record for good, then refreshes the list and the archive count. */
 const remove = (item: AdminListItem) =>
   write(
-    () => client.remove(query.value.kind, item.id),
+    async () => {
+      await client.remove(query.value.kind, item.id)
+      show({ tone: 'success', messageKey: 'toast.recordDeleted' })
+    },
     () => void remove(item),
   )
 </script>

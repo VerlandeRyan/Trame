@@ -227,6 +227,8 @@ describe('page Ma liste de lecture', () => {
     )
     expect(wrapper.get('[data-testid="list-total-chapters"]').text()).toContain('25')
     expect(wrapper.get('[data-testid="list-total-volumes"]').text()).toContain('4')
+    // Le résultat se voit déjà à l'écran : pas d'annonce.
+    expect(useToasts().toasts.value).toEqual([])
   })
 
   it('demande de commencer une œuvre « À lire » et n’enregistre que sur confirmation', async () => {
@@ -298,6 +300,26 @@ describe('page Ma liste de lecture', () => {
     expect(wrapper.findAll('[data-testid="list-row"]')).toHaveLength(1)
   })
 
+  it('annonce le retrait et remet l’œuvre telle qu’elle était au clic sur « Annuler »', async () => {
+    const wrapper = await mountList()
+    const { toasts, runAction } = useToasts()
+
+    await wrapper.findAll('[data-testid="list-edit"]')[0]!.trigger('click')
+    await wrapper.get('[data-testid="list-edit-remove"]').trigger('click')
+    await wrapper.findAll('[data-testid="confirm-accept"]')[0]!.trigger('click')
+    await vi.waitFor(() => expect(toasts.value).toHaveLength(1))
+
+    expect(toasts.value[0]).toMatchObject({ tone: 'success', messageKey: 'toast.entryRemoved' })
+    runAction(toasts.value[0]!.id)
+
+    await vi.waitFor(() =>
+      expect(savedBodies[1]).toEqual([{ ...listed(1, 'Aube Fictive').entry, restored: true }]),
+    )
+    await vi.waitFor(() =>
+      expect(toasts.value).toMatchObject([{ tone: 'success', messageKey: 'toast.entryRestored' }]),
+    )
+  })
+
   it('enregistre la modification groupée de la fenêtre', async () => {
     const wrapper = await mountList()
 
@@ -307,6 +329,11 @@ describe('page Ma liste de lecture', () => {
     await wrapper.get('[data-testid="list-edit-save"]').trigger('click')
 
     await vi.waitFor(() => expect(savedBodies[1]).toEqual([{ status: 'reading', rating: 9 }]))
+    await vi.waitFor(() =>
+      expect(useToasts().toasts.value).toMatchObject([
+        { tone: 'success', messageKey: 'toast.entrySaved' },
+      ]),
+    )
   })
 
   it('bascule en grille', async () => {

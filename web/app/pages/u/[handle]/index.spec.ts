@@ -163,6 +163,25 @@ describe('page Profil', () => {
 
     await wrapper.get('[data-testid="profile-visibility-toggle"]').trigger('click')
     await vi.waitFor(() => expect(visibilityBodies).toEqual([{ visibility: 'private' }]))
+    await vi.waitFor(() =>
+      expect(useToasts().toasts.value).toMatchObject([
+        { tone: 'success', messageKey: 'toast.profilePrivate' },
+      ]),
+    )
+  })
+
+  it('annonce aussi que le profil est redevenu public', async () => {
+    profile = publicProfile({ isOwner: true, visibility: 'private' })
+    const wrapper = await mountProfile()
+
+    await wrapper.get('[data-testid="profile-visibility-toggle"]').trigger('click')
+    await vi.waitFor(() => expect(visibilityBodies).toEqual([{ visibility: 'public' }]))
+
+    await vi.waitFor(() =>
+      expect(useToasts().toasts.value).toMatchObject([
+        { tone: 'success', messageKey: 'toast.profilePublic' },
+      ]),
+    )
   })
 
   it('annonce par un toast, avec « Réessayer », quand la visibilité ne s’enregistre pas', async () => {
@@ -184,7 +203,7 @@ describe('page Profil', () => {
       messageKey: 'profile.visibility.error',
       hintKey: 'writeError.retryHint',
     })
-    expect(toasts.value[0]?.retry).toBeTypeOf('function')
+    expect(toasts.value[0]?.action?.kind).toBe('retry')
     expect(wrapper.find('[data-testid="profile-visibility"] [role="alert"]').exists()).toBe(false)
     expect(wrapper.get('[data-testid="profile-visibility"]').text()).toContain('Profil public')
   })

@@ -13,6 +13,7 @@ Ce fichier ne garde que les **règles et les pièges** (≤ 10 Ko, `docs/convent
 | Administration du catalogue | `docs/web/administration.md` |
 | Accueil, recherche, Explorer, 404, trame du bord droit | `docs/web/accueil-recherche.md` |
 | Connexion Google, choix du pseudo, avis, menu de compte | `docs/web/connexion-compte.md` |
+| Annonces (toasts) : échecs d'écriture, réussites, « Annuler », « Hors connexion » | `docs/web/annonces.md` |
 | Jetons, survol, zones de clic, animations, contraste, appareils, icônes | `docs/conventions-projet.md` §12 |
 
 ## Règles

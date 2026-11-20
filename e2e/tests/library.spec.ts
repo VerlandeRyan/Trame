@@ -72,6 +72,7 @@ test('ajouter une œuvre, la faire avancer, la noter, la dater, puis la retirer'
   await expect(statusButton(page)).toContainText('À lire')
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
   await expect(statusButton(page)).toContainText('En cours')
+  await expect(page.getByTestId('toast')).toContainText('Bonne lecture !')
   await expect(chaptersField(page)).toHaveValue('1')
   // Le premier tome atteint le total connu (1) : on propose « Terminé », on garde « En cours ».
   await page.getByRole('button', { name: 'Augmenter : Tomes lus' }).click()
@@ -117,6 +118,30 @@ test('ajouter une œuvre, la faire avancer, la noter, la dater, puis la retirer'
   await statusMenu(page).getByTestId('confirm-accept').click()
   await expect(page.getByTestId('library-add')).toBeVisible()
   await expect(page.getByTestId('library-progress')).toBeHidden()
+})
+
+test('retirer l’œuvre l’annonce, et « Annuler » la remet telle qu’elle était', async ({
+  page,
+  context,
+}) => {
+  await signUp(context)
+  await openWork(page)
+  await addToList(page)
+  await page.getByRole('button', { name: 'Augmenter : Chapitres lus' }).click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+  await expect(chaptersField(page)).toHaveValue('1')
+
+  await statusButton(page).click()
+  await page.getByTestId('library-remove').click()
+  await statusMenu(page).getByTestId('confirm-accept').click()
+  await expect(page.getByTestId('library-add')).toBeVisible()
+  await expect(
+    page.getByTestId('toast').filter({ hasText: 'Œuvre retirée de ta liste' }),
+  ).toBeVisible()
+
+  await page.getByTestId('toast-undo').click()
+  await expect(statusButton(page)).toContainText('En cours')
+  await expect(chaptersField(page)).toHaveValue('1')
 })
 
 test('garder l’œuvre quand on annule le retrait', async ({ page, context }) => {

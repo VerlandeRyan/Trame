@@ -303,6 +303,9 @@ describe('page Catalogue d’administration', () => {
 
     expect(writes).toEqual(['restore'])
     expect(requests.length).toBeGreaterThan(readsBefore)
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'success', messageKey: 'toast.recordRestored' },
+    ])
   })
 
   it('archive une œuvre depuis ses actions, après confirmation, puis relit la liste', async () => {
@@ -325,6 +328,23 @@ describe('page Catalogue d’administration', () => {
 
     expect(writes).toEqual(['archive'])
     expect(requests.length).toBeGreaterThan(readsBefore)
+    const [announced] = useToasts().toasts.value
+    expect(announced).toMatchObject({ tone: 'success', messageKey: 'toast.recordArchived' })
+
+    // « Annuler » restaure la fiche puis relit la liste.
+    registerEndpoint('/api/v1/admin/works/4/restore', {
+      method: 'POST',
+      handler: () => {
+        writes.push('restore')
+        return { id: 4, lifecycle: 'published' }
+      },
+    })
+    const readsBeforeUndo = requests.length
+    useToasts().runAction(announced!.id)
+    await flushPromises()
+
+    expect(writes).toEqual(['archive', 'restore'])
+    expect(requests.length).toBeGreaterThan(readsBeforeUndo)
   })
 
   it('supprime définitivement une archive après confirmation, puis relit la liste', async () => {
@@ -340,6 +360,9 @@ describe('page Catalogue d’administration', () => {
 
     expect(writes).toEqual(['remove'])
     expect(requests.length).toBeGreaterThan(readsBefore)
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'success', messageKey: 'toast.recordDeleted' },
+    ])
   })
 
   it('revient à la dernière page quand on supprime la dernière ligne de la page 2', async () => {
@@ -390,7 +413,7 @@ describe('page Catalogue d’administration', () => {
       hintKey: 'writeError.retryHint',
     })
     restoreFails = null
-    toasts.retry(toasts.toasts.value.at(-1)!.id)
+    toasts.runAction(toasts.toasts.value.at(-1)!.id)
     await flushPromises()
 
     expect(writes).toEqual(['restore', 'restore'])

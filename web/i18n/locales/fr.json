@@ -175,6 +175,8 @@
     "openSignIn": "Fenêtre de connexion",
     "openConfirm": "Fenêtre de confirmation",
     "showToast": "Annonce d'erreur",
+    "showSuccessToast": "Annonce de réussite",
+    "showInfoToast": "Annonce d'information",
     "showNotice": "Bandeau de connexion"
   },
   "form": {
@@ -185,6 +187,7 @@
     "add": "Ajouter",
     "close": "Fermer",
     "retry": "Réessayer",
+    "undo": "Annuler",
     "edit": "Modifier",
     "clearChoice": "Effacer le choix"
   },
@@ -514,6 +517,24 @@
     "retryHint": "Réessaie dans un instant.",
     "signedOut": "Ta session a expiré. Reconnecte-toi pour continuer.",
     "notFound": "Cette œuvre n'est plus disponible."
+  },
+  "toast": {
+    "recordSaved": "Fiche enregistrée.",
+    "draftSaved": "Brouillon enregistré. Il n'est pas encore public.",
+    "recordPublished": "Fiche publiée.",
+    "recordArchived": "Fiche archivée.",
+    "recordRestored": "Fiche restaurée.",
+    "recordDeleted": "Fiche supprimée définitivement.",
+    "entryRemoved": "Œuvre retirée de ta liste.",
+    "entryRestored": "Œuvre remise dans ta liste.",
+    "entrySaved": "Modifications enregistrées.",
+    "readingStarted": "Bonne lecture !",
+    "readingFinished": "Tu as terminé cette œuvre.",
+    "countersCompleted": "Tu as terminé cette œuvre, compteurs mis au total.",
+    "profilePrivate": "Ton profil est maintenant privé.",
+    "profilePublic": "Ton profil est maintenant public.",
+    "offline": "Tu es hors connexion. Tes changements ne seront pas enregistrés.",
+    "backOnline": "De nouveau en ligne."
   },
   "admin": {
     "catalogue": {

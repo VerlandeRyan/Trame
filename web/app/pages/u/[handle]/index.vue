@@ -98,6 +98,7 @@ function ageLabel(update: ProfileUpdate): string {
 // Visibility setting (owner): the display follows the save.
 const isSavingVisibility = ref(false)
 const showWriteFailure = useWriteFailure()
+const { show } = useToasts()
 /** Saves the new visibility, then reloads the profile; a failure shows a toast to retry. */
 async function changeVisibility(visibility: ProfileVisibility) {
   if (!profile.value || isSavingVisibility.value) return
@@ -105,8 +106,15 @@ async function changeVisibility(visibility: ProfileVisibility) {
   try {
     await api.request('/me/profile', { method: 'PATCH', body: { visibility } })
     await refreshNuxtData(profileKey)
+    show({
+      tone: 'success',
+      messageKey: visibility === 'private' ? 'toast.profilePrivate' : 'toast.profilePublic',
+    })
   } catch (cause) {
-    showWriteFailure(cause, () => void changeVisibility(visibility), 'profile.visibility.error')
+    showWriteFailure(cause, {
+      retry: () => void changeVisibility(visibility),
+      messageKey: 'profile.visibility.error',
+    })
   } finally {
     isSavingVisibility.value = false
   }

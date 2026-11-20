@@ -10,9 +10,12 @@ import {
   type ReadingPrompt,
 } from '~/utils/library'
 
-/** What the caller does depending on the answer: save the changes or drop them. */
+/**
+ * What the caller does depending on the answer: save the changes or drop them. `announceKey` is
+ * the success toast to show once a confirmed change is saved.
+ */
 interface PromptHandlers {
-  apply: (changes: LibraryEntryChanges) => void
+  apply: (changes: LibraryEntryChanges, announceKey?: string) => void
   discard: () => void
 }
 
@@ -22,6 +25,15 @@ interface AskedPrompt extends PromptHandlers {
   entry: LibraryEntry
   totals: KnownTotals
   changes: LibraryEntryChanges
+}
+
+/** Success toast announcing what a confirmed question changed. */
+const CONFIRMED_MESSAGE_KEYS: Record<ReadingPrompt, string> = {
+  start: 'toast.readingStarted',
+  resume: 'toast.readingStarted',
+  finishChapters: 'toast.readingFinished',
+  finishVolumes: 'toast.readingFinished',
+  completeCounters: 'toast.countersCompleted',
 }
 
 /** Whether the question proposes finishing the work. */
@@ -138,6 +150,7 @@ export function useReadingPrompt() {
       if (answer === 'confirmed') {
         current.apply(
           withPromptStatus(current.prompt, current.changes, current.entry, current.totals),
+          CONFIRMED_MESSAGE_KEYS[current.prompt],
         )
       } else if (answer === 'declined' && keepsChangesOnDecline(current.prompt)) {
         current.apply(current.changes)

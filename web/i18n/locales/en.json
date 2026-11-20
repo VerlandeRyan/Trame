@@ -171,6 +171,8 @@
     "emptyText": "The catalogue will appear here.",
     "modalText": "Window content.",
     "showToast": "Error toast",
+    "showSuccessToast": "Success toast",
+    "showInfoToast": "Information toast",
     "showNotice": "Sign-in banner"
   },
   "form": {
@@ -181,6 +183,7 @@
     "add": "Add",
     "close": "Close",
     "retry": "Retry",
+    "undo": "Undo",
     "edit": "Edit",
     "clearChoice": "Clear the choice"
   },
@@ -510,6 +513,24 @@
     "retryHint": "Please try again in a moment.",
     "signedOut": "Your session has expired. Sign in again to continue.",
     "notFound": "This work is no longer available."
+  },
+  "toast": {
+    "recordSaved": "Record saved.",
+    "draftSaved": "Draft saved. It is not public yet.",
+    "recordPublished": "Record published.",
+    "recordArchived": "Record archived.",
+    "recordRestored": "Record restored.",
+    "recordDeleted": "Record permanently deleted.",
+    "entryRemoved": "Removed from your list.",
+    "entryRestored": "Back in your list.",
+    "entrySaved": "Changes saved.",
+    "readingStarted": "Happy reading!",
+    "readingFinished": "You finished this work.",
+    "countersCompleted": "You finished this work, counters set to the total.",
+    "profilePrivate": "Your profile is now private.",
+    "profilePublic": "Your profile is now public.",
+    "offline": "You are offline. Your changes will not be saved.",
+    "backOnline": "Back online."
   },
   "admin": {
     "catalogue": {

@@ -124,14 +124,19 @@ export async function useReadingList(
     totals.value = next.totals
   }
 
-  /** Applies `changes` to the entry (the status is always sent, the rest only when it changes). */
-  function changeEntry(item: ListedEntry, changes: LibraryEntryChanges) {
+  /**
+   * Applies `changes` to the entry (the status is always sent, the rest only when it changes).
+   * `announceKey` is a success toast shown once saved: for a grouped edit or a confirmed question,
+   * not for a "+1" whose result is already on screen.
+   */
+  function changeEntry(item: ListedEntry, changes: LibraryEntryChanges, announceKey?: string) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
     const after = { ...before, ...changes }
     const counter = singleCounterOf(changes)
     return run({
       overwriteKey: counter && `${workId}:${counter}`,
+      announce: announceKey,
       apply: () => {
         updateStatusCountsAndTotals(before, after)
         replaceEntryInView(workId, after)
@@ -153,11 +158,29 @@ export async function useReadingList(
     })
   }
 
-  /** Removes a work from the list. */
+  /** Puts back a removed entry exactly as it was, then reads the list again to show it. */
+  function restoreEntry(workId: number, removed: LibraryEntry) {
+    return run({
+      announce: 'toast.entryRestored',
+      // `restored`: the removal kept the journal, so the API must not log this progress again.
+      send: () =>
+        api.request(`/works/${workId}/entry`, {
+          method: 'PUT',
+          body: { ...removed, restored: true },
+        }),
+      reconcile: () => void refresh(),
+    })
+  }
+
+  /** Removes a work from the list, then announces it with an "Undo". */
   function removeEntry(item: ListedEntry) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
     return run({
+      announce: {
+        messageKey: 'toast.entryRemoved',
+        undo: () => void restoreEntry(workId, before),
+      },
       apply: () => {
         updateStatusCountsAndTotals(before, null)
         removeFromView(workId)

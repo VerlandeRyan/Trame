@@ -1,20 +1,27 @@
 <script setup lang="ts">
-/** Stack of announcements fixed at the bottom of the screen (see `useToasts`). */
-const { toasts, dismiss, dismissRetryable, retry } = useToasts()
-const route = useRoute()
+/**
+ * Stack of announcements fixed at the bottom of the screen (see `useToasts`). Its live region is
+ * always in the page, so a toast added to it is read out (an inserted live region may not be).
+ */
+const { toasts, dismiss, dismissActionable, runAction } = useToasts()
 
-// A "Retry" replays a write of the page that failed: it must not outlive that page.
-watch(() => route.path, dismissRetryable)
+// A "Retry" or "Undo" acts on the page that showed it: it must not outlive that page. A router
+// hook, not a watch on the reactive route: that one updates after `navigateTo` resolves, which
+// would close a toast shown right after leaving the page (an archiving made on the form).
+const removeGuard = useRouter().afterEach((to, from) => {
+  if (to.path !== from.path) dismissActionable()
+})
+onBeforeUnmount(removeGuard)
 </script>
 
 <template>
-  <div class="toasts" data-testid="toasts">
+  <div class="toasts" aria-live="polite" data-testid="toasts">
     <UiToastItem
       v-for="toast in toasts"
       :key="toast.id"
       :toast="toast"
       @dismiss="dismiss(toast.id)"
-      @retry="retry(toast.id)"
+      @action="runAction(toast.id)"
     />
   </div>
 </template>

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ADMIN_DRAFT_COUNTS_KEY,
+  adminArchivesKey,
   adminEditPath,
+  adminListKey,
   archiveImpact,
   adminErrorKey,
   digitsOnly,
@@ -240,6 +243,23 @@ describe('adresse d’édition', () => {
   it('compose l’adresse', () => {
     expect(adminEditPath('works', 5)).toBe('/admin/catalogue/works/5')
     expect(adminEditPath('people', 'new')).toBe('/admin/catalogue/people/new')
+  })
+})
+
+describe('clés des lectures de la liste du catalogue', () => {
+  it('nomme les trois lectures de la liste sans toucher à celles d’une fiche', () => {
+    const query = parseAdminListQuery({ kind: 'people', q: 'lea' })
+    const keys = [adminListKey(query), adminArchivesKey('people'), ADMIN_DRAFT_COUNTS_KEY]
+
+    expect(new Set(keys).size).toBe(3)
+    for (const key of keys) expect(key).not.toMatch(/^admin-(edit|formats)/)
+  })
+
+  it('donne une clé différente selon la recherche et le type', () => {
+    expect(adminListKey(parseAdminListQuery({ kind: 'people' }))).not.toBe(
+      adminListKey(parseAdminListQuery({ kind: 'works' })),
+    )
+    expect(adminArchivesKey('people')).not.toBe(adminArchivesKey('works'))
   })
 })
 

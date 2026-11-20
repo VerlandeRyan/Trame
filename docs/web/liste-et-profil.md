@@ -22,6 +22,10 @@ Comportement côté front (Nuxt) des écrans `/list` et `/u/{handle}`. Le « quo
 - `EditModal` (« Modifier ma lecture ») : le formulaire repart de l'entrée à chaque ouverture, seuls les champs modifiés sont envoyés, une date vide l'efface ; émettre **avant** de fermer, la fermeture fait oublier l'œuvre à la page.
 - `ui/Segmented` (options de `useListControls`) : la grille compte au choix les chapitres ou les tomes (état local) par « Compter [Chapitres | Tomes] » (avec icônes au bureau, « Ch. | Tomes » au mobile) posé sur la ligne « N œuvres » au-dessus de la grille. L'aide (sous « N œuvres », **au-dessus** des couvertures) suit l'unité et l'appareil : le glisser n'existe qu'au doigt, à la souris elle parle des boutons −1 / +1.
 
+### Annonces
+- « Modifications enregistrées. » après « Enregistrer » dans la fenêtre de modification (`changeEntry(…, announceKey)`, une fois la réponse du serveur reçue). Pas de toast pour un −1 / +1, un compteur saisi ou un changement de statut simple : le résultat se voit déjà.
+- Retirer une œuvre : « Œuvre retirée de ta liste. » avec « Annuler » (`announce` de `useOptimisticWrite`), qui remet l'entrée telle qu'elle était (statut, compteurs, note, dates) par un `PUT` `restored: true` (sans nouveau journal), puis « Œuvre remise dans ta liste. ». Même comportement depuis la fiche œuvre. Le toast se ferme au changement de page ([annonces](annonces.md)).
+
 ### Apparence
 - Ombre de la couverture = couleur du statut (`--grid-status`) cernée d'un filet d'encre.
 - **Survol des pastilles de la page** (statuts, Liste/Grille, unité) : `--color-cover-empty` comme les boutons secondaires, sans animation.
@@ -39,4 +43,5 @@ Comportement côté front (Nuxt) des écrans `/list` et `/u/{handle}`. Le « quo
 - `pages/u/[handle]/list.vue` : la liste d'un membre **en lecture seule** (`useReadingList(state, '/users/{handle}/entries')`, `ListRow` / `ListGridItem` avec `is-read-only`) ; profil privé ⇒ panneau, pas de défilement continu (bouton « Charger la suite »).
 - « Mon profil » du menu de compte est un lien. Logique pure dans `utils/profile.ts`.
 - Les messages i18n qui contiennent un `@` l'écrivent `{'@'}` (sinon vue-i18n y voit un lien de message).
+- Changer la visibilité s'annonce par un toast vert : « Ton profil est maintenant privé. » ou « …public. ».
 - Les Réglages (suppression du compte, #34) et « Historique » ne sont pas faits.

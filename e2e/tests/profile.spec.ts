@@ -93,6 +93,7 @@ test('son propriétaire retrouve son profil par le menu et le passe en privé', 
   await expect(page.getByTestId('profile-visibility')).toContainText('Profil public')
   await page.getByTestId('profile-visibility-toggle').click()
   await expect(page.getByTestId('profile-visibility')).toContainText('Profil privé')
+  await expect(page.getByTestId('toast')).toContainText('Ton profil est maintenant privé')
 
   const visitor = await browser.newContext({ baseURL })
   const visitorPage = await visitor.newPage()
@@ -106,6 +107,14 @@ test('son propriétaire retrouve son profil par le menu et le passe en privé', 
   // Le propriétaire, lui, garde accès à tout.
   await page.reload()
   await expect(page.getByTestId('profile-recent')).toBeVisible()
+  await waitForHydration(page)
+
+  // Repasser en public s'annonce aussi.
+  await page.getByTestId('profile-visibility-toggle').click()
+  await expect(page.getByTestId('profile-visibility')).toContainText('Profil public')
+  await expect(page.getByTestId('toast')).toContainText('Ton profil est maintenant public')
+  await page.getByTestId('profile-visibility-toggle').click()
+  await expect(page.getByTestId('profile-visibility')).toContainText('Profil privé')
 
   // Sa liste est « Ma liste de lecture » : modifiable, même en passant par l'adresse du profil.
   await page.getByTestId('profile-list-link').click()
@@ -134,7 +143,9 @@ test('une visibilité qui ne s’enregistre pas est annoncée et se rejoue par �
   await page.unroute('**/api/v1/me/profile')
   await page.getByTestId('toast-retry').click()
   await expect(page.getByTestId('profile-visibility')).toContainText('Profil privé')
-  await expect(page.getByTestId('toast')).toHaveCount(0)
+  // L'erreur a disparu ; la réussite de la reprise est annoncée à sa place.
+  await expect(page.getByTestId('toast')).toHaveCount(1)
+  await expect(page.getByTestId('toast')).toContainText('Ton profil est maintenant privé')
 })
 
 test('une session expirée pendant le changement de visibilité s’annonce sans « Réessayer »', async ({

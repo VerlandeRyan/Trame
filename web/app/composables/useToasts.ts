@@ -1,12 +1,12 @@
 /** Shared toast stack: announcements shown at the bottom of the screen. */
-import { addToast, removeRetryToasts, removeToast, type Toast } from '~/utils/toasts'
+import { addToast, removeActionToasts, removeToast, type Toast } from '~/utils/toasts'
 
 /** What a caller gives to show a toast; the id is assigned here. */
 type ToastInput = Omit<Toast, 'id'>
 
 /**
- * Announcements (information, success, error with an optional "Retry"), displayed by `UiToasts`,
- * whose items hide themselves after their delay.
+ * Announcements (information, success, error; with an optional "Retry" or "Undo" button),
+ * displayed by `UiToasts`, whose items hide themselves after their delay.
  */
 export function useToasts() {
   const toasts = useState<Toast[]>('toasts', () => [])
@@ -24,17 +24,17 @@ export function useToasts() {
     return id
   }
 
-  /** Hides every toast that offers "Retry" (called when the page changes). */
-  function dismissRetryable() {
-    toasts.value = removeRetryToasts(toasts.value)
+  /** Hides every toast that offers a "Retry" or "Undo" button (called when the page changes). */
+  function dismissActionable() {
+    toasts.value = removeActionToasts(toasts.value)
   }
 
-  /** Closes the toast, then replays its action. */
-  function retry(id: number) {
-    const action = toasts.value.find((each) => each.id === id)?.retry
+  /** Closes the toast, then runs its button's action. */
+  function runAction(id: number) {
+    const action = toasts.value.find((each) => each.id === id)?.action
     dismiss(id)
-    action?.()
+    action?.run()
   }
 
-  return { toasts, show, dismiss, dismissRetryable, retry }
+  return { toasts, show, dismiss, dismissActionable, runAction }
 }

@@ -16,6 +16,12 @@ export interface EditedRecord {
   publicationGaps?: PublicationGap[]
 }
 
+/** Translation key of the toast announcing a save: published, kept as a draft, or plainly saved. */
+function savedMessageKey(publish: boolean, keepsDraft: boolean): string {
+  if (publish) return 'toast.recordPublished'
+  return keepsDraft ? 'toast.draftSaved' : 'toast.recordSaved'
+}
+
 /** Loads, edits, saves and archives one record; the form values live in shared state. */
 export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   const client = useAdminClient()
@@ -34,6 +40,8 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   const refusal = ref<{ gaps: PublicationGap[]; formValues: string }>({ gaps: [], formValues: '' })
   const saving = ref(false)
   const announceFailure = useAdminFailure()
+  const { show } = useToasts()
+  const announceArchiveChange = useArchiveUndo()
 
   // A new record always starts empty: the state survives navigation within the site.
   if (id === 'new') {
@@ -140,7 +148,8 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     publish = false,
     onDone?: Followup,
   ): Promise<boolean> {
-    if (!validate(staysDraft(publish) ? 'title' : 'all', formatCodes)) return false
+    const keepsDraft = staysDraft(publish)
+    if (!validate(keepsDraft ? 'title' : 'all', formatCodes)) return false
     saving.value = true
     try {
       if (id === 'new') await client.create(kind, { ...body(), published: publish })
@@ -168,6 +177,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     } finally {
       saving.value = false
     }
+    show({ tone: 'success', messageKey: savedMessageKey(publish, keepsDraft) })
     await onDone?.()
     return true
   }
@@ -183,6 +193,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
       errorKey.value = announceFailure(cause, () => void deleteRecord(onDone))
       return false
     }
+    show({ tone: 'success', messageKey: 'toast.recordDeleted' })
     await onDone?.()
     return true
   }
@@ -200,7 +211,9 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
       errorKey.value = announceFailure(cause, () => void setArchived(archived, onDone))
       return false
     }
+    // After `onDone` (which may leave the page): a toast with "Undo" closes when the page changes.
     await onDone?.()
+    announceArchiveChange(kind, id, archived)
     return true
   }
 

@@ -63,8 +63,20 @@ function showErrorToast() {
     tone: 'error',
     messageKey: 'writeError.generic',
     hintKey: RETRY_HINT_KEY,
-    retry: () => undefined,
+    action: { kind: 'retry', run: () => undefined },
   })
+}
+/** Shows a success toast with its "Undo" button, as an archiving would. */
+function showSuccessToast() {
+  showToast({
+    tone: 'success',
+    messageKey: 'toast.recordArchived',
+    action: { kind: 'undo', run: () => undefined },
+  })
+}
+/** Shows an information toast, as losing the connection would. */
+function showInfoToast() {
+  showToast({ tone: 'info', messageKey: 'toast.offline' })
 }
 const authNotice = useAuthNotice()
 /** Shows the sign-in banner, as a sign-out would. */
@@ -222,6 +234,12 @@ const tabs = computed(() => [
         </UiButton>
         <UiButton variant="secondary" @click="showErrorToast">
           {{ t('gallery.showToast') }}
+        </UiButton>
+        <UiButton variant="secondary" @click="showSuccessToast">
+          {{ t('gallery.showSuccessToast') }}
+        </UiButton>
+        <UiButton variant="secondary" @click="showInfoToast">
+          {{ t('gallery.showInfoToast') }}
         </UiButton>
         <UiButton variant="secondary" @click="showNotice">
           {{ t('gallery.showNotice') }}

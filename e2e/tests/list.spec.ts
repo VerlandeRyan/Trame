@@ -178,6 +178,7 @@ test('commencer une œuvre « À lire » demande confirmation avant de la passer
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
   await expect(row.getByTestId('list-status')).toContainText('En cours')
   await expect(row.getByRole('textbox', { name: 'Chapitres', exact: true })).toHaveValue('1')
+  await expect(page.getByTestId('toast')).toContainText('Bonne lecture !')
 })
 
 test('le statut se change depuis la ligne et l’œuvre quitte l’onglet affiché', async ({
@@ -217,6 +218,7 @@ test('« Modifier ma lecture » enregistre note et dates, puis retire l’œuvre
   await page.getByTestId('list-edit-save').click()
   await expect(row.getByTestId('list-rating')).toHaveText('9 / 10')
   await saved
+  await expect(page.getByTestId('toast')).toContainText('Modifications enregistrées')
 
   await page.reload()
   await waitForHydration(page)

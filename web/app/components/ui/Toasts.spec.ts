@@ -17,9 +17,10 @@ describe('UiToasts', () => {
     expect(wrapper.find('[data-testid="toast"]').exists()).toBe(false)
   })
 
-  it('annonce une erreur comme une alerte et une réussite comme un statut', async () => {
+  it('annonce une erreur comme une alerte et une réussite par la zone vive de la pile', async () => {
     const wrapper = await mountSuspended(UiToasts)
     const { show } = useToasts()
+    expect(wrapper.get('[data-testid="toasts"]').attributes('aria-live')).toBe('polite')
 
     show({ tone: 'error', messageKey: 'writeError.generic' })
     show({ tone: 'success', messageKey: 'auth.signedOut' })
@@ -29,7 +30,7 @@ describe('UiToasts', () => {
     expect(error?.attributes('role')).toBe('alert')
     expect(error?.classes()).toContain('toast--error')
     expect(error?.text()).toContain("Impossible d'enregistrer pour l'instant.")
-    expect(success?.attributes('role')).toBe('status')
+    expect(success?.attributes('role')).toBeUndefined()
     expect(success?.classes()).toContain('toast--success')
   })
 
@@ -37,7 +38,11 @@ describe('UiToasts', () => {
     const wrapper = await mountSuspended(UiToasts)
     const { show } = useToasts()
     const action = vi.fn()
-    show({ tone: 'error', messageKey: 'writeError.generic', retry: action })
+    show({
+      tone: 'error',
+      messageKey: 'writeError.generic',
+      action: { kind: 'retry', run: action },
+    })
     show({ tone: 'info', messageKey: 'auth.signedOut' })
     await nextTick()
 
@@ -62,6 +67,22 @@ describe('UiToasts', () => {
     expect(success?.attributes('style')).toContain('--dismiss-duration: 5000ms')
   })
 
+  it('propose « Annuler » sur une réussite et rejoue l’action au clic', async () => {
+    const wrapper = await mountSuspended(UiToasts)
+    const action = vi.fn()
+    useToasts().show({
+      tone: 'success',
+      messageKey: 'auth.signedOut',
+      action: { kind: 'undo', run: action },
+    })
+    await nextTick()
+
+    await wrapper.get('[data-testid="toast-undo"]').trigger('click')
+
+    expect(action).toHaveBeenCalledOnce()
+    expect(wrapper.find('[data-testid="toast"]').exists()).toBe(false)
+  })
+
   it('ferme « Réessayer » quand on change de page, mais pas quand seuls les filtres changent', async () => {
     const wrapper = await mountSuspended(UiToasts)
     const router = useRouter()
@@ -69,7 +90,11 @@ describe('UiToasts', () => {
     router.addRoute({ path: '/toasts-page-a', component: blank })
     router.addRoute({ path: '/toasts-page-b', component: blank })
     await router.push('/toasts-page-a')
-    useToasts().show({ tone: 'error', messageKey: 'writeError.generic', retry: vi.fn() })
+    useToasts().show({
+      tone: 'error',
+      messageKey: 'writeError.generic',
+      action: { kind: 'retry', run: vi.fn() },
+    })
     await nextTick()
 
     await router.push({ path: '/toasts-page-a', query: { q: 'basalte' } })
@@ -78,6 +103,30 @@ describe('UiToasts', () => {
     await router.push('/toasts-page-b')
     await nextTick()
     expect(wrapper.find('[data-testid="toast"]').exists()).toBe(false)
+  })
+
+  it('ferme « Annuler » quand on change de page, et garde une réussite sans bouton', async () => {
+    const wrapper = await mountSuspended(UiToasts)
+    const router = useRouter()
+    const blank = { render: () => null }
+    router.addRoute({ path: '/toasts-undo-a', component: blank })
+    router.addRoute({ path: '/toasts-undo-b', component: blank })
+    await router.push('/toasts-undo-a')
+    const { show } = useToasts()
+    show({
+      tone: 'success',
+      messageKey: 'toast.recordArchived',
+      action: { kind: 'undo', run: vi.fn() },
+    })
+    show({ tone: 'success', messageKey: 'toast.recordSaved' })
+    await nextTick()
+    expect(wrapper.findAll('[data-testid="toast"]')).toHaveLength(2)
+
+    await router.push('/toasts-undo-b')
+    await nextTick()
+
+    expect(wrapper.findAll('[data-testid="toast"]')).toHaveLength(1)
+    expect(wrapper.find('[data-testid="toast-undo"]').exists()).toBe(false)
   })
 
   it('se ferme avec la croix, nommée pour les lecteurs d’écran', async () => {
