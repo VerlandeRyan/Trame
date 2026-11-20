@@ -116,7 +116,7 @@ function changeStatus(status: LibraryStatus) {
       entry.value,
       { chapters: detail.chapters, volumes: detail.volumes },
       { status },
-      { apply: (changes) => library.save(changes), discard: () => undefined },
+      { apply: library.save, discard: () => undefined },
     )
   if (!isAsking) void library.save({ status })
 }
@@ -185,7 +185,7 @@ onMounted(() => {
         :entry="entry"
         :total-chapters="detail.chapters"
         :total-volumes="detail.volumes"
-        @change="library.save($event)"
+        @change="library.save"
       />
       <WorkSynopsis
         class="work__synopsis"

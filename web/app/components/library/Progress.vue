@@ -17,7 +17,7 @@ const props = defineProps<{
   totalChapters: number | null
   totalVolumes: number | null
 }>()
-const emit = defineEmits<{ change: [changes: LibraryEntryChanges] }>()
+const emit = defineEmits<{ change: [changes: LibraryEntryChanges, announceKey?: string] }>()
 const { t } = useI18n()
 
 const titleId = useId()
@@ -56,7 +56,10 @@ function changeProgress(changes: LibraryEntryChanges) {
     props.entry,
     { chapters: props.totalChapters, volumes: props.totalVolumes },
     changes,
-    { apply: (confirmed) => emit('change', confirmed), discard: () => (counterKey.value += 1) },
+    {
+      apply: (confirmed, announceKey) => emit('change', confirmed, announceKey),
+      discard: () => (counterKey.value += 1),
+    },
   )
   if (!isAsking) emit('change', changes)
 }

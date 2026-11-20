@@ -1,12 +1,14 @@
 <script setup lang="ts">
 /**
- * One announcement of the toast stack: icon, message, optional "Retry" and close button, with a
- * countdown bar. It hides itself when the delay runs out, except while hovered or focused.
+ * One announcement of the toast stack: icon, message, optional "Retry" or "Undo" button and close
+ * button, with a countdown bar. It hides itself when the delay runs out, except while hovered or
+ * focused; a lasting one (see `toastDismissDelay`) has no countdown bar. Only an
+ * error has a role (`alert`): information and success are read through the live region of `UiToasts`.
  */
-import { autoDismissDelay, type Toast, type ToastTone } from '~/utils/toasts'
+import { toastDismissDelay, type Toast, type ToastTone } from '~/utils/toasts'
 
 const props = defineProps<{ toast: Toast }>()
-const emit = defineEmits<{ dismiss: []; retry: [] }>()
+const emit = defineEmits<{ dismiss: []; action: [] }>()
 const { t } = useI18n()
 
 const TONE_ICONS: Record<ToastTone, string> = {
@@ -15,16 +17,19 @@ const TONE_ICONS: Record<ToastTone, string> = {
   error: 'tabler:alert-circle',
 }
 
-const durationMs = autoDismissDelay(props.toast.tone)
+const durationMs = toastDismissDelay(props.toast)
 const { isPaused, pauseListeners } = useAutoDismiss(durationMs, () => emit('dismiss'))
 </script>
 
 <template>
   <div
     class="toast"
-    :class="[`toast--${toast.tone}`, { 'toast--paused': isPaused }]"
-    :role="toast.tone === 'error' ? 'alert' : 'status'"
-    :style="{ '--dismiss-duration': `${durationMs}ms` }"
+    :class="[
+      `toast--${toast.tone}`,
+      { 'toast--paused': isPaused, 'toast--lasting': durationMs === null },
+    ]"
+    :role="toast.tone === 'error' ? 'alert' : undefined"
+    :style="{ '--dismiss-duration': `${durationMs ?? 0}ms` }"
     data-testid="toast"
     v-on="pauseListeners"
   >
@@ -34,13 +39,14 @@ const { isPaused, pauseListeners } = useAutoDismiss(durationMs, () => emit('dism
       <span v-if="toast.hintKey" class="toast__hint">{{ t(toast.hintKey) }}</span>
     </p>
     <UiButton
-      v-if="toast.retry"
+      v-if="toast.action"
       variant="secondary"
       size="small"
-      data-testid="toast-retry"
-      @click="emit('retry')"
+      class="toast__action"
+      :data-testid="`toast-${toast.action.kind}`"
+      @click="emit('action')"
     >
-      {{ t('action.retry') }}
+      {{ t(`action.${toast.action.kind}`) }}
     </UiButton>
     <button
       type="button"
@@ -77,6 +83,11 @@ const { isPaused, pauseListeners } = useAutoDismiss(durationMs, () => emit('dism
   @include countdown-bar('toast--paused');
 }
 
+// A toast that never hides itself has no countdown to show.
+.toast--lasting::after {
+  display: none;
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;
@@ -111,6 +122,13 @@ const { isPaused, pauseListeners } = useAutoDismiss(durationMs, () => emit('dism
 
   @media (min-width: 768px) {
     display: block;
+  }
+}
+
+// Finger: the button reaches the touch size, as the close cross does.
+.toast__action {
+  @media (pointer: coarse) {
+    min-height: var(--touch);
   }
 }
 

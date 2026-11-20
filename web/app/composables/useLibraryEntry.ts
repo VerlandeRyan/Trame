@@ -36,21 +36,30 @@ export function useLibraryEntry(workId: number) {
     } catch (cause) {
       hasFailed = true
       // Server rendering stays silent: the browser retries the read and announces its own failure.
-      if (import.meta.client) showWriteFailure(cause, () => void load())
+      if (import.meta.client) showWriteFailure(cause, { retry: () => void load() })
     }
     // A failure during server rendering leaves it "not loaded": the browser will retry.
     if (!(import.meta.server && hasFailed)) isLoaded.value = true
   }
 
-  /** Adds the work (status plan to read) or applies `changes` to the existing entry. */
-  function save(changes: LibraryEntryChanges) {
+  /** Writes `changes` (`extraBody`: flags the API understands), announcing `announce` once saved. */
+  function write(
+    changes: LibraryEntryChanges,
+    announce?: string,
+    extraBody: { restored?: true } = {},
+  ) {
     return run({
       overwriteKey: singleCounterOf(changes),
+      announce,
       apply: () => {
         if (entry.value) entry.value = { ...entry.value, ...changes }
       },
       send: async () => {
-        const body = { status: entry.value?.status ?? DEFAULT_LIBRARY_STATUS, ...changes }
+        const body = {
+          status: entry.value?.status ?? DEFAULT_LIBRARY_STATUS,
+          ...changes,
+          ...extraBody,
+        }
         return (await api.request<{ entry: LibraryEntry }>(path, { method: 'PUT', body })).entry
       },
       reconcile: (saved) => {
@@ -59,9 +68,22 @@ export function useLibraryEntry(workId: number) {
     })
   }
 
-  /** Removes the work from the reading list. */
+  /** Adds the work (status plan to read) or applies `changes` to the existing entry. */
+  const save = (changes: LibraryEntryChanges, announceKey?: string) => write(changes, announceKey)
+
+  /** Puts back an entry that was removed, exactly as it was (the API logs no new progress). */
+  function restore(removed: LibraryEntry) {
+    entry.value = removed
+    return write(removed, 'toast.entryRestored', { restored: true })
+  }
+
+  /** Removes the work from the reading list, then announces it with an "Undo". */
   function remove() {
+    const removed = entry.value
     return run({
+      announce: removed
+        ? { messageKey: 'toast.entryRemoved', undo: () => void restore(removed) }
+        : undefined,
       send: () => api.request(path, { method: 'DELETE' }),
       reconcile: () => {
         entry.value = null

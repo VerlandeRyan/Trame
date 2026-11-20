@@ -15,7 +15,7 @@ export function useAdminFailure() {
     if (!describeWriteFailure(toApiError(cause).code).isRetryable) {
       return adminErrorKey(cause, api.messageKeyFor)
     }
-    showWriteFailure(cause, retry)
+    showWriteFailure(cause, { retry })
     return undefined
   }
 }

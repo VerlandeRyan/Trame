@@ -644,3 +644,12 @@ export function parseAdminEditRoute(
 /** Edit address of a record (`new`: creation). */
 export const adminEditPath = (kind: AdminKind, id: number | 'new') =>
   `/admin/catalogue/${kind}/${id}`
+
+/** Cache key of the catalogue list read for a query (`useAsyncData`). */
+export const adminListKey = (query: AdminListQuery) => `admin-list-${JSON.stringify(query)}`
+
+/** Cache key of the archive count shown on the "Archives" tab of a kind. */
+export const adminArchivesKey = (kind: AdminKind) => `admin-list-archives-${kind}`
+
+/** Cache key of the drafts to finish, announced above the list. */
+export const ADMIN_DRAFT_COUNTS_KEY = 'admin-list-draft-counts'

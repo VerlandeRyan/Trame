@@ -22,13 +22,14 @@ export function useContinueReading(initialItems: () => ListedEntry[]) {
   }
 
   /** Shows the changes at once, saves them, and restores the previous entry on failure. */
-  function saveChanges(item: ListedEntry, changes: LibraryEntryChanges) {
+  function saveChanges(item: ListedEntry, changes: LibraryEntryChanges, announceKey?: string) {
     const workId = item.work.id
     const before = items.value.find((each) => each.work.id === workId)?.entry ?? item.entry
     const after = { ...before, ...changes }
     const counter = singleCounterOf(changes)
     return run({
       overwriteKey: counter && `${workId}:${counter}`,
+      announce: announceKey,
       apply: () => {
         replaceEntry(workId, after)
         if (after.status !== 'reading') {
@@ -58,7 +59,7 @@ export function useContinueReading(initialItems: () => ListedEntry[]) {
         : { volumesRead: volumesRead + 1 }
     const totals = { chapters: item.work.chapters, volumes: item.work.volumes }
     const isAsking = readingPrompt.request(item.entry, totals, changes, {
-      apply: (confirmed) => saveChanges(item, confirmed),
+      apply: (confirmed, announceKey) => saveChanges(item, confirmed, announceKey),
       discard: () => undefined,
     })
     if (!isAsking) void saveChanges(item, changes)

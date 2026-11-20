@@ -169,6 +169,44 @@ describe('saveEntry : journal de lecture', () => {
   });
 });
 
+describe('saveEntry : restauration d’une entrée retirée', () => {
+  const removed = {
+    status: 'reading',
+    chaptersRead: 120,
+    volumesRead: 8,
+    rating: 9,
+    startedOn: null,
+    finishedOn: null,
+  } as const;
+
+  it('remet l’entrée telle quelle, sans date proposée ni ligne de journal', async () => {
+    const { service, state } = serviceWith();
+
+    const saved = await service.saveEntry(1, 1, { ...removed, restored: true });
+
+    expect(saved).toEqual(removed);
+    expect(state.entry).toEqual(removed);
+    expect(state.events).toEqual([]);
+  });
+
+  it('ignore l’indicateur quand l’œuvre est déjà dans la liste : une modification se journalise', async () => {
+    const { service, state } = serviceWith(entry({ chaptersRead: 10 }));
+
+    await service.saveEntry(1, 1, { status: 'reading', chaptersRead: 20, restored: true });
+
+    expect(state.events).toEqual([{ kind: 'chapters', chaptersAdded: 10 }]);
+  });
+
+  it('journalise et propose les dates comme d’habitude sans l’indicateur', async () => {
+    const { service, state } = serviceWith();
+
+    const saved = await service.saveEntry(1, 1, { ...removed });
+
+    expect(saved.startedOn).toBe(TODAY);
+    expect(state.events.length).toBeGreaterThan(0);
+  });
+});
+
 describe('œuvre introuvable ou archivée', () => {
   it.each([
     ['getEntry', (s: ReturnType<typeof serviceWith>['service']) => s.getEntry(1, 1)],

@@ -428,6 +428,30 @@ test('restaurer depuis la fiche archivée demande confirmation', async ({ page, 
   await page.getByTestId('admin-restore').click()
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
   await expect(page.getByTestId('admin-state')).not.toHaveText('Archivée')
+  await expect(page.getByTestId('toast')).toContainText('Fiche restaurée')
+})
+
+test('archiver annonce « Fiche archivée » et « Annuler » restaure la fiche', async ({
+  page,
+  context,
+}) => {
+  const created = await context.request.post('/api/v1/admin/people', {
+    data: { name: `${DRAFT} à annuler`, kind: 'person' },
+  })
+  const person = (await created.json()) as { id: number }
+
+  await page.goto(`/admin/catalogue/people/${person.id}`)
+  await waitForHydration(page)
+  await page.getByTestId('admin-archive').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+  await expect(page).toHaveURL(LIST_URL)
+
+  const toast = page.getByTestId('toast')
+  await expect(toast).toContainText('Fiche archivée')
+  await page.getByTestId('toast-undo').click()
+  await expect(toast).toContainText('Fiche restaurée')
+  const restored = await context.request.get(`/api/v1/admin/people/${person.id}`)
+  expect(((await restored.json()) as { lifecycle: string }).lifecycle).not.toBe('archived')
 })
 
 test('une personne créditée sur une œuvre publiée ne s’archive pas', async ({ page, context }) => {
@@ -584,6 +608,7 @@ test('un brouillon se supprime définitivement, une fiche publiée non', async (
   await page.getByTestId('admin-delete-draft').click()
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
   await expect(page).toHaveURL(LIST_URL)
+  await expect(page.getByTestId('toast')).toContainText('Fiche supprimée définitivement')
   expect((await context.request.get(`/api/v1/admin/people/${person.id}`)).status()).toBe(404)
 })
 
@@ -616,6 +641,7 @@ test('une fiche archivée se supprime définitivement depuis la liste des archiv
   await page.getByRole('dialog').getByTestId('confirm-accept').click()
 
   await expect(row).toHaveCount(0)
+  await expect(page.getByTestId('toast')).toContainText('Fiche supprimée définitivement')
   expect((await context.request.get(`/api/v1/admin/people/${person.id}`)).status()).toBe(404)
 })
 

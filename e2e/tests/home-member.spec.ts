@@ -7,11 +7,14 @@ import { signUp } from '../support/session.js'
 // réels. Œuvre de démo sans lecteur ni ajout récent (n° 2) : une entrée de plus n'y change ni
 // « À la une » ni « Mieux notées ». Chaque test crée son lecteur.
 const CHRONIQUES = 2
+// Seule œuvre de démo à total de chapitres connu (120) : sert au « Terminé » du +1.
+const LANTERNES = 1
 
 test.describe.configure({ mode: 'serial' })
 
 test.afterEach(async ({ context }) => {
   await context.request.delete(`/api/v1/works/${CHRONIQUES}/entry`)
+  await context.request.delete(`/api/v1/works/${LANTERNES}/entry`)
 })
 
 async function openHome(page: Page): Promise<void> {
@@ -83,6 +86,28 @@ test('un membre avec une lecture en cours la reprend d’un +1, sans panneau vis
   await expect(page).toHaveURL('/list')
 })
 
+// Les Lanternes de Brume : 120 chapitres parus, le +1 depuis le 119e atteint le total connu.
+test('le +1 qui atteint le total propose « Terminé » ; confirmer annonce la fin et retire l’œuvre', async ({
+  page,
+  context,
+}) => {
+  await signUp(context)
+  const added = await context.request.put(`/api/v1/works/${LANTERNES}/entry`, {
+    data: { status: 'reading', chaptersRead: 119 },
+  })
+  expect(added.status()).toBe(200)
+  await openHome(page)
+
+  await page.getByTestId('continue-reading-add-one').click()
+  await expect(page.getByRole('dialog')).toContainText('Tu as fini cette œuvre ?')
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+
+  await expect(page.getByTestId('toast')).toContainText('Tu as terminé cette œuvre.')
+  await expect(page.getByTestId('continue-reading-work')).toHaveCount(0)
+  const stored = await context.request.get(`/api/v1/works/${LANTERNES}/entry`)
+  expect((await stored.json()).entry.status).toBe('completed')
+})
+
 // #164 : le « +1 » est incliné au survol (palier small) et, appuyé, s'enfonce de 2 px sur son
 // ombre comme tout bouton qui en a une.
 test('le +1 s’incline au survol et s’enfonce de 2 px à l’appui', async ({
@@ -147,7 +172,13 @@ test('« Réessayer » rejoue le +1 perdu une fois le réseau revenu', async ({ 
   await expect(page.getByTestId('toast')).toBeVisible()
   await page.unroute('**/api/v1/works/*/entry')
 
+  // L'écran affiche déjà le +1 avant la réponse : attendre le PUT avant de relire le serveur.
+  const replayed = page.waitForResponse(
+    (response) =>
+      response.url().includes('/entry') && response.request().method() === 'PUT' && response.ok(),
+  )
   await page.getByTestId('toast-retry').click()
+  await replayed
 
   await expect(progress).toHaveText('Manga · Chapitre 6')
   await expect(page.getByTestId('toast')).toHaveCount(0)

@@ -28,6 +28,31 @@ describe('useOptimisticWrite', () => {
     expect(write.isBusy.value).toBe(false)
   })
 
+  it('annonce la réussite une fois la requête passée, et seulement alors', async () => {
+    const write = useOptimisticWrite()
+    const { toasts } = useToasts()
+
+    const done = write.run({
+      announce: 'toast.entrySaved',
+      send: () => Promise.resolve('ok'),
+    })
+    expect(toasts.value).toEqual([])
+    await done
+
+    expect(toasts.value).toMatchObject([{ tone: 'success', messageKey: 'toast.entrySaved' }])
+  })
+
+  it('n’annonce pas de réussite quand la requête échoue', async () => {
+    const write = useOptimisticWrite()
+
+    await write.run({
+      announce: 'toast.entrySaved',
+      send: () => Promise.reject(failure('INTERNAL_ERROR')),
+    })
+
+    expect(useToasts().toasts.value).toMatchObject([{ tone: 'error' }])
+  })
+
   it('envoie dans l’ordre et ne réconcilie que la dernière réponse', async () => {
     const write = useOptimisticWrite()
     const sent: number[] = []
@@ -96,7 +121,7 @@ describe('useOptimisticWrite', () => {
     const { toasts } = useToasts()
     expect(toasts.value).toHaveLength(1)
     expect(toasts.value[0]).toMatchObject({ messageKey: 'writeError.generic' })
-    expect(toasts.value[0]?.retry).toBeUndefined()
+    expect(toasts.value[0]?.action).toBeUndefined()
     expect(toasts.value[0]?.hintKey).toBeUndefined()
   })
 
@@ -128,7 +153,7 @@ describe('useOptimisticWrite', () => {
     ])
 
     const [toast] = useToasts().toasts.value
-    expect(toast?.retry).toBeUndefined()
+    expect(toast?.action).toBeUndefined()
   })
 
   it('retire l’annonce d’un échec quand une écriture suivante du même compteur réussit', async () => {
@@ -159,7 +184,7 @@ describe('useOptimisticWrite', () => {
 
   it('rejoue l’étape au clic sur « Réessayer » et ferme l’annonce', async () => {
     const write = useOptimisticWrite()
-    const { toasts, retry } = useToasts()
+    const { toasts, runAction } = useToasts()
     const steps: string[] = []
     let attempts = 0
 
@@ -172,7 +197,7 @@ describe('useOptimisticWrite', () => {
       reconcile: (result) => steps.push(`reconcile:${result}`),
       revert: () => steps.push('revert'),
     })
-    retry(toasts.value[0]!.id)
+    runAction(toasts.value[0]!.id)
     await vi.waitFor(() => expect(steps).toContain('reconcile:saved'))
 
     expect(steps).toEqual(['apply', 'revert', 'apply', 'reconcile:saved'])

@@ -204,11 +204,9 @@ Une nouveauté ne doit créer **aucune divergence** : deux éléments qui jouent
 - **Deux rouges, deux sens** : `--color-crimson` = erreur et obligation (messages et cadres d'erreur, étoile « obligatoire », point d'alerte d'un onglet, annonce d'erreur) ; `--color-danger` = action destructrice (« Archiver », confirmation de perte de données). Un nouvel élément prend l'un ou l'autre selon son sens, jamais une teinte intermédiaire.
 - **Comparer avant de rendre** : regarder le nouvel élément à côté de ses voisins (taille de texte, taille d'icône, couleur, alignement), au bureau et à 390 px, et corriger l'écart avant de le montrer. Si un composant partagé convient presque, l'étendre (en demandant à Ryan s'il change d'aspect ailleurs) plutôt que d'en dupliquer l'aspect.
 
-### Échecs d'écriture
+### Annonces
 
-Deux cas, selon que rejouer peut aboutir (`describeWriteFailure`, `utils/write-errors.ts`) :
-- **Panne du serveur ou du réseau** (`INTERNAL_ERROR`, `RATE_LIMITED`) : notification d'erreur avec « Réessayer », qui rejoue l'écriture, message général puis « Réessaie dans un instant. » sur la 2e ligne. Point d'entrée unique : `useWriteFailure()(cause, retry)`, qui n'ajoute « Réessayer » et le conseil que pour ces deux codes (`useOptimisticWrite`, `useLibraryEntry`, profil, administration via `useAdminFailure`). Ce toast se ferme quand on change de page (`UiToasts` ferme tout toast portant un `retry` au changement de chemin) : on ne rejoue jamais une écriture d'un écran quitté. Un échec qui arrive après avoir quitté la page s'annonce sans « Réessayer » (`useWriteFailure` compare le chemin du départ à celui de l'échec).
-- **Refus qu'il faut corriger ou qui ne passera pas** (champ invalide, fiche modifiée entre-temps, référence en brouillon ou archivée, session expirée, œuvre retirée…) : jamais de « Réessayer ». Rejouer redonnerait le même refus. Dans l'administration, le message qui dit quoi faire s'affiche dans le formulaire (`UiFormError`), comme les contrôles faits avant l'envoi ; ailleurs, `showWriteFailure` affiche un toast avec le message seul.
+Échecs d'écriture (« Réessayer » seulement après une panne du serveur ou du réseau), réussites, « Annuler » et information : [web/annonces.md](web/annonces.md).
 
 ### Survol et appui
 

@@ -46,20 +46,29 @@ const unitName = computed(() =>
 // A change may ask for confirmation before being saved; if nothing is saved, the counters read
 // the real value again.
 const counterKey = ref(0)
-/** Saves a change, or first asks the confirmation it needs. */
-function changeEntryOrAskFirst(item: ListedEntry, changes: LibraryEntryChanges) {
+/**
+ * Saves a change, or first asks the confirmation it needs; `announceKey` is the success toast of
+ * a change that was not asked about (a confirmed question brings its own).
+ */
+function changeEntryOrAskFirst(
+  item: ListedEntry,
+  changes: LibraryEntryChanges,
+  announceKey?: string,
+) {
   const isAsking = requestPrompt(
     item.entry,
     { chapters: item.work.chapters, volumes: item.work.volumes },
     changes,
     {
-      apply: (confirmed) => list.changeEntry(item, confirmed),
+      apply: (confirmed, confirmedKey) =>
+        list.changeEntry(item, confirmed, confirmedKey ?? announceKey),
       discard: () => (counterKey.value += 1),
     },
   )
-  if (!isAsking) void list.changeEntry(item, changes)
+  if (!isAsking) void list.changeEntry(item, changes, announceKey)
 }
 
+const ENTRY_SAVED_KEY = 'toast.entrySaved'
 const editedWorkId = ref<number | null>(null)
 /**
  * Saves what was entered in the window; only a switch to "completed" can offer to set the
@@ -68,8 +77,8 @@ const editedWorkId = ref<number | null>(null)
 function saveEditedEntry(changes: LibraryEntryChanges) {
   const item = list.items.value.find((each) => each.work.id === editedWorkId.value)
   if (!item) return
-  if (changes.status === 'completed') changeEntryOrAskFirst(item, changes)
-  else void list.changeEntry(item, changes)
+  if (changes.status === 'completed') changeEntryOrAskFirst(item, changes, ENTRY_SAVED_KEY)
+  else void list.changeEntry(item, changes, ENTRY_SAVED_KEY)
 }
 /** Whether the edit window is open. */
 const isEditing = computed({

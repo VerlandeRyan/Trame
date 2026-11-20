@@ -42,6 +42,8 @@ function mountContinueReading(entries: ListedEntry[]) {
 
 describe('HomeContinueReading', () => {
   beforeEach(() => {
+    // Les annonces vivent dans l'état partagé : repartir de zéro à chaque test.
+    clearNuxtState()
     useRuntimeConfig().apiBase = ''
     saved = []
     saveFails = false
@@ -115,6 +117,23 @@ describe('HomeContinueReading', () => {
 
     await vi.waitFor(() => expect(saved).toEqual([{ status: 'completed', chaptersRead: 12 }]))
     expect(wrapper.findAll('[data-testid="continue-reading-work"]')).toHaveLength(1)
+    await vi.waitFor(() =>
+      expect(useToasts().toasts.value).toMatchObject([
+        { tone: 'success', messageKey: 'toast.readingFinished' },
+      ]),
+    )
+  })
+
+  it("n'annonce pas la fin de l'œuvre quand l'enregistrement échoue", async () => {
+    saveFails = true
+    const wrapper = await mountContinueReading([listed(1, { chaptersRead: 11 }, 12)])
+
+    await wrapper.get('[data-testid="continue-reading-add-one"]').trigger('click')
+    await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
+
+    const { toasts } = useToasts()
+    await vi.waitFor(() => expect(toasts.value).toHaveLength(1))
+    expect(toasts.value[0]).toMatchObject({ tone: 'error' })
   })
 
   it('« Garder » enregistre le chapitre seul, sans finir l’œuvre', async () => {
@@ -136,7 +155,7 @@ describe('HomeContinueReading', () => {
     const { toasts } = useToasts()
     await vi.waitFor(() => expect(toasts.value).toHaveLength(1))
     expect(toasts.value[0]).toMatchObject({ tone: 'error', messageKey: 'writeError.generic' })
-    expect(toasts.value[0]?.retry).toBeTypeOf('function')
+    expect(toasts.value[0]?.action?.kind).toBe('retry')
     expect(wrapper.get('[data-testid="continue-reading-progress"]').text()).toBe(
       'Webtoon · Chapitre 12',
     )

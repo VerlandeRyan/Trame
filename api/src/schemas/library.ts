@@ -41,6 +41,12 @@ export const entryBody = z.strictObject({
       'Date de fin `YYYY-MM-DD`. Proposée (aujourd’hui) au passage à `completed` si absente.',
     )
     .optional(),
+  restored: z
+    .boolean()
+    .describe(
+      'Remet une entrée qui vient d’être retirée (« Annuler ») : ni date proposée ni ligne de journal, car le retrait garde le journal. Ignoré si l’œuvre est déjà dans la liste.',
+    )
+    .optional(),
 }) satisfies z.ZodType<EntryInput>;
 
 /** Query of a reading list: search, status filter, sort and pagination. */

@@ -261,6 +261,42 @@ describe('DELETE /works/:id/entry', () => {
   });
 });
 
+describe('PUT /works/:id/entry avec `restored`', () => {
+  const countEvents = async () => {
+    const events = await client.query(
+      `SELECT count(*)::int AS n FROM reading_event
+       WHERE user_id IN (SELECT id FROM app_user WHERE handle = 'lectrice')`,
+    );
+    return events.rows[0].n as number;
+  };
+
+  it('remet une entrée retirée telle quelle, sans date proposée ni nouveau journal', async () => {
+    const agent = await newReader('lectrice');
+    const original = { status: 'reading', chaptersRead: 12, volumesRead: 2 };
+    const created = await agent.put(entryUrl(workId)).send(original);
+    const before = await countEvents();
+    await agent.delete(entryUrl(workId));
+
+    const restored = await agent
+      .put(entryUrl(workId))
+      .send({ ...created.body.entry, startedOn: null, restored: true });
+
+    expect(restored.status).toBe(200);
+    expect(restored.body.entry).toMatchObject({ ...original, startedOn: null });
+    expect(await countEvents()).toBe(before);
+  });
+
+  it('journalise normalement une modification, même avec l’indicateur', async () => {
+    const agent = await newReader('lectrice');
+    await agent.put(entryUrl(workId)).send({ status: 'reading', chaptersRead: 1 });
+    const before = await countEvents();
+
+    await agent.put(entryUrl(workId)).send({ status: 'reading', chaptersRead: 5, restored: true });
+
+    expect(await countEvents()).toBe(before + 1);
+  });
+});
+
 describe('GET /me/entries', () => {
   const LIST = '/api/v1/me/entries';
 

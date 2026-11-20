@@ -14,16 +14,21 @@ interface OptimisticStep<Result> {
    * key succeeds, the failure of this one no longer matters and its toast goes away.
    */
   overwriteKey?: string
+  /**
+   * Success toast shown once the request went through: a message key, or a key with an "Undo".
+   */
+  announce?: string | { messageKey: string; undo?: () => void }
 }
 
 /**
  * Write with immediate effect: the change shows at once, requests go out one after another and
- * only the last response replaces the display. A failure is announced by an error toast (with a
- * "Retry" button that replays the step when the failure may be transient, see
- * `showWriteFailure`), then the screen is put right (the step's `revert`, otherwise `resync`).
+ * only the last response replaces the display. A success may be announced (`announce`). A failure
+ * is announced by an error toast (with a "Retry" button that replays the step when the failure may
+ * be transient, see `showWriteFailure`), then the screen is put right (the step's `revert`,
+ * otherwise `resync`).
  */
 export function useOptimisticWrite(options: { resync?: () => Promise<void> } = {}) {
-  const { dismiss } = useToasts()
+  const { dismiss, show } = useToasts()
   const showWriteFailure = useWriteFailure()
   /** The last failure announced, with the value its step overwrote, if any. */
   let lastFailure: { toastId: number; overwriteKey?: string } | null = null
@@ -35,11 +40,10 @@ export function useOptimisticWrite(options: { resync?: () => Promise<void> } = {
 
   /** Announces the failure with a way to replay the step, then restores the screen. */
   async function recoverFrom<Result>(cause: unknown, step: OptimisticStep<Result>) {
-    const toastId = showWriteFailure(
-      cause,
+    const toastId = showWriteFailure(cause, {
       // With a newer write already queued, replaying this one would overwrite it.
-      isLatest() ? () => void run(step) : undefined,
-    )
+      retry: isLatest() ? () => void run(step) : undefined,
+    })
     lastFailure = { toastId, overwriteKey: step.overwriteKey }
     const { revert } = step
     if (revert) return revert()
@@ -68,6 +72,11 @@ export function useOptimisticWrite(options: { resync?: () => Promise<void> } = {
       try {
         const result = await step.send()
         dismissFailureOverwrittenBy(step)
+        if (step.announce) {
+          const { messageKey, undo } =
+            typeof step.announce === 'string' ? { messageKey: step.announce } : step.announce
+          show({ tone: 'success', messageKey, action: undo && { kind: 'undo', run: undo } })
+        }
         if (isLatest()) step.reconcile?.(result)
       } catch (cause) {
         await recoverFrom(cause, step)

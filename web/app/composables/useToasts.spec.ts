@@ -34,23 +34,38 @@ describe('useToasts', () => {
   })
 
   it('ferme les annonces à « Réessayer » et garde les autres', () => {
-    const { toasts, show, dismissRetryable } = useToasts()
-    show({ tone: 'error', messageKey: 'a', retry: vi.fn() })
+    const { toasts, show, dismissActionable } = useToasts()
+    show({ tone: 'error', messageKey: 'a', action: { kind: 'retry', run: vi.fn() } })
     const plain = show({ tone: 'error', messageKey: 'b' })
 
-    dismissRetryable()
+    dismissActionable()
 
     expect(toasts.value.map((each) => each.id)).toEqual([plain])
   })
 
-  it('ferme l’annonce puis rejoue l’action au clic sur « Réessayer »', () => {
-    const { toasts, show, retry } = useToasts()
-    const action = vi.fn()
-    const id = show({ tone: 'error', messageKey: 'a', retry: action })
+  it('ferme l’annonce puis lance l’action de son bouton, « Réessayer » ou « Annuler »', () => {
+    const { toasts, show, runAction } = useToasts()
+    const retry = vi.fn()
+    const undo = vi.fn()
+    const retryId = show({ tone: 'error', messageKey: 'a', action: { kind: 'retry', run: retry } })
+    const undoId = show({ tone: 'success', messageKey: 'b', action: { kind: 'undo', run: undo } })
 
-    retry(id)
+    runAction(retryId)
+    expect(retry).toHaveBeenCalledOnce()
+    expect(toasts.value.map((each) => each.id)).toEqual([undoId])
 
-    expect(action).toHaveBeenCalledOnce()
+    runAction(undoId)
+    expect(undo).toHaveBeenCalledOnce()
     expect(toasts.value).toEqual([])
+  })
+
+  it('ferme aussi une annonce à « Annuler » quand la page change, et garde une réussite simple', () => {
+    const { toasts, show, dismissActionable } = useToasts()
+    show({ tone: 'success', messageKey: 'a', action: { kind: 'undo', run: vi.fn() } })
+    const plain = show({ tone: 'success', messageKey: 'b' })
+
+    dismissActionable()
+
+    expect(toasts.value.map((each) => each.id)).toEqual([plain])
   })
 })

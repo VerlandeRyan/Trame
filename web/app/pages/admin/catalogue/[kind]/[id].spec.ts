@@ -199,6 +199,9 @@ describe('page d’édition du catalogue', () => {
       method: 'PUT',
       body: { name: 'Léa M.', kind: 'person', updatedAt: PERSON.updatedAt },
     })
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'success', messageKey: 'toast.recordSaved' },
+    ])
   })
 
   it('archive après confirmation', async () => {
@@ -212,6 +215,9 @@ describe('page d’édition du catalogue', () => {
 
     expect(sent[0]).toMatchObject({ method: 'POST', path: 'people/7/archive' })
     await vi.waitFor(() => expect(useRouter().currentRoute.value.path).toBe('/admin/catalogue'))
+    const [announced] = useToasts().toasts.value
+    expect(announced).toMatchObject({ tone: 'success', messageKey: 'toast.recordArchived' })
+    expect(announced?.action?.kind).toBe('undo')
   })
 
   it('repart d’un formulaire vide après une saisie abandonnée', async () => {
@@ -275,6 +281,9 @@ describe('page d’édition du catalogue', () => {
     expect(sent).toHaveLength(1)
     expect(sent[0]).toMatchObject({ method: 'POST', path: 'works', body: { published: false } })
     expect(wrapper.get('[data-testid="admin-save"]').text()).toBe('Enregistrer en brouillon')
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'success', messageKey: 'toast.draftSaved' },
+    ])
   })
 
   it('refuse le brouillon sans titre', async () => {
@@ -307,6 +316,9 @@ describe('page d’édition du catalogue', () => {
     await flushPromises()
 
     expect(sent[0]).toMatchObject({ path: 'people', body: { name: 'Léa', published: true } })
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'success', messageKey: 'toast.recordPublished' },
+    ])
   })
 
   it('annonce l’échec de la publication avec « Réessayer » : un seul remplacement, rejoué tel quel', async () => {
@@ -347,7 +359,7 @@ describe('page d’édition du catalogue', () => {
     expect(wrapper.get('[data-testid="admin-state"]').text()).toBe('Brouillon')
 
     publishFails = false
-    toasts.retry(toasts.toasts.value[0]!.id)
+    toasts.runAction(toasts.toasts.value[0]!.id)
     await flushPromises()
 
     expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7'])
@@ -411,6 +423,9 @@ describe('page d’édition du catalogue', () => {
     await flushPromises()
 
     expect(sent.map((call) => call.path)).toEqual(['people/7'])
+    expect(useToasts().toasts.value).toMatchObject([
+      { tone: 'success', messageKey: 'toast.recordDeleted' },
+    ])
   })
 
   it('supprime définitivement une fiche archivée après confirmation, et explique un refus', async () => {
@@ -611,7 +626,7 @@ describe('page d’édition du catalogue', () => {
     })
     expect(useRouter().currentRoute.value.path).toBe('/admin/catalogue/works/new')
     failWith = null
-    useToasts().retry(failureToast()!.id)
+    useToasts().runAction(failureToast()!.id)
     await flushPromises()
 
     expect(sent.map((call) => call.path)).toEqual(['works', 'works'])
@@ -642,7 +657,7 @@ describe('page d’édition du catalogue', () => {
 
     expect(failureToast()).toMatchObject({ messageKey: 'writeError.generic' })
     failWith = null
-    useToasts().retry(failureToast()!.id)
+    useToasts().runAction(failureToast()!.id)
     await flushPromises()
 
     expect(sent.map((call) => call.path)).toEqual(['people/7', 'people/7'])

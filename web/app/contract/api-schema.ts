@@ -2040,6 +2040,8 @@ export interface operations {
                     startedOn?: string | null;
                     /** @description Date de fin `YYYY-MM-DD`. Proposée (aujourd’hui) au passage à `completed` si absente. */
                     finishedOn?: string | null;
+                    /** @description Remet une entrée qui vient d’être retirée (« Annuler ») : ni date proposée ni ligne de journal, car le retrait garde le journal. Ignoré si l’œuvre est déjà dans la liste. */
+                    restored?: boolean;
                 };
             };
         };

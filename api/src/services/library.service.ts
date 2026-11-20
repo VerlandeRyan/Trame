@@ -18,6 +18,8 @@ export interface EntryInput {
   rating?: number | null;
   startedOn?: string | null;
   finishedOn?: string | null;
+  /** Puts back an entry that was just removed: no proposed date, no journal line (see `saveEntry`). */
+  restored?: boolean;
 }
 
 /** Reading-list operations. */
@@ -60,9 +62,11 @@ const NEW_ENTRY: Omit<LibraryEntry, 'status'> = {
 /** Today's date in UTC as `YYYY-MM-DD`. */
 const todayUtc = (): string => new Date().toISOString().slice(0, 10);
 
-/** The provided fields, `null` included (it clears); an omitted field keeps its current value. */
-function providedFields(input: EntryInput): Partial<EntryInput> {
-  return Object.fromEntries(Object.entries(input).filter(([, value]) => value !== undefined));
+/** The provided entry fields, `null` included (it clears); an omitted field keeps its current value. */
+function providedFields(input: EntryInput): Partial<LibraryEntry> {
+  return Object.fromEntries(
+    Object.entries(input).filter(([key, value]) => key !== 'restored' && value !== undefined),
+  );
 }
 
 /** On a status change, proposes the start date (reading) or end date (completed) if missing. */
@@ -84,6 +88,11 @@ function mergeEntry(current: LibraryEntry | null, input: EntryInput, today: stri
   const kept = current ?? { ...NEW_ENTRY, status: input.status };
   const merged: LibraryEntry = { ...kept, ...providedFields(input) };
   return withProposedDates(merged, current?.status, today);
+}
+
+/** An entry put back as it was: its fields exactly, with no proposed date. */
+function restoredEntry(input: EntryInput): LibraryEntry {
+  return { ...NEW_ENTRY, status: input.status, ...providedFields(input) };
 }
 
 /** Progress journal: one line per thing that changed (removing a rating produces none). */
@@ -120,6 +129,11 @@ export function createLibraryService(
       await assertWorkAvailable(workId);
       const day = today();
       return repository.save(userId, workId, (current): EntryChange => {
+        // Removing an entry keeps its journal: putting it back must not log the same progress twice.
+        // Only honoured when the work is not in the list, so an update cannot skip the journal.
+        if (input.restored === true && current === null) {
+          return { entry: restoredEntry(input), events: [] };
+        }
         const entry = mergeEntry(current, input, day);
         return { entry, events: journalEvents(current, entry) };
       });

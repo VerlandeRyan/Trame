@@ -83,7 +83,9 @@ describe('LibraryProgress', () => {
       await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
       await nextTick()
 
-      expect(wrapper.emitted('change')).toEqual([[{ volumesRead: 1, status: 'reading' }]])
+      expect(wrapper.emitted('change')).toEqual([
+        [{ volumesRead: 1, status: 'reading' }, 'toast.readingStarted'],
+      ])
     })
 
     it('n’enregistre rien quand on annule, ni compteur ni statut', async () => {
@@ -165,7 +167,9 @@ describe('LibraryProgress', () => {
       await wrapper.get('[data-testid="confirm-accept"]').trigger('click')
       await nextTick()
 
-      expect(wrapper.emitted('change')).toEqual([[{ chaptersRead: 158, status: 'completed' }]])
+      expect(wrapper.emitted('change')).toEqual([
+        [{ chaptersRead: 158, status: 'completed' }, 'toast.readingFinished'],
+      ])
     })
 
     it('enregistre le compteur seul quand on garde le statut', async () => {
@@ -175,7 +179,8 @@ describe('LibraryProgress', () => {
       await wrapper.get('[data-testid="confirm-cancel"]').trigger('click')
       await nextTick()
 
-      expect(wrapper.emitted('change')).toEqual([[{ chaptersRead: 158 }]])
+      // « Garder » : le compteur seul, sans annonce de changement de statut.
+      expect(wrapper.emitted('change')).toEqual([[{ chaptersRead: 158 }, undefined]])
     })
 
     it('n’enregistre rien quand on ferme la fenêtre par la croix', async () => {

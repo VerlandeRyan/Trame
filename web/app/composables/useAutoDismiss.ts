@@ -1,19 +1,20 @@
 /**
- * Calls `dismiss` once `durationMs` has elapsed, except while the element is hovered (mouse only)
- * or focused: the time left is kept. Returns the paused state, for the countdown bar, and the
- * listeners to put on the element (`v-on="pauseListeners"`).
+ * Calls `dismiss` once `durationMs` has elapsed (`null`: never), except while the element is
+ * hovered (mouse only) or focused: the time left is kept. Returns the paused state, for the
+ * countdown bar, and the listeners to put on the element (`v-on="pauseListeners"`).
  */
-export function useAutoDismiss(durationMs: number, dismiss: () => void) {
+export function useAutoDismiss(durationMs: number | null, dismiss: () => void) {
   const isHovered = ref(false)
   const hasFocus = ref(false)
   const isPaused = computed(() => isHovered.value || hasFocus.value)
 
-  let remainingMs = durationMs
+  let remainingMs = durationMs ?? 0
   let startedAt = 0
   let timer: ReturnType<typeof setTimeout> | undefined
 
   /** Starts (or restarts) the countdown with the time left. */
   function startTimer() {
+    if (durationMs === null) return
     startedAt = Date.now()
     timer = setTimeout(dismiss, remainingMs)
   }
