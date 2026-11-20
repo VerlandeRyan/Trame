@@ -11,16 +11,16 @@ export interface AdminResourceService<
   Item,
   Full,
   CreateInput,
-  ReplaceInput,
+  UpdateInput,
   ListInput extends AdminListInput,
 > {
   list(input: ListInput): Promise<Page<Item>>;
   get(id: number): Promise<Full>;
   create(input: CreateInput): Promise<Full>;
-  update(id: number, input: ReplaceInput): Promise<Full>;
+  update(id: number, input: UpdateInput): Promise<Full>;
   archive(id: number, adminId: number): Promise<Full>;
   restore(id: number, adminId: number): Promise<Full>;
-  remove(id: number): Promise<void>;
+  delete(id: number): Promise<void>;
 }
 
 /** The request handlers exposed for one administered resource. */
@@ -31,13 +31,13 @@ export interface AdminResourceController {
   update: RequestHandler;
   archive: RequestHandler;
   restore: RequestHandler;
-  remove: RequestHandler;
+  delete: RequestHandler;
 }
 
 /** The input schemas of a resource: the bodies to create and to replace a record, and the list query. */
-export interface AdminResourceSchemas<CreateInput, ReplaceInput, ListInput> {
+export interface AdminResourceSchemas<CreateInput, UpdateInput, ListInput> {
   createBody: z.ZodType<CreateInput>;
-  replaceBody: z.ZodType<ReplaceInput>;
+  updateBody: z.ZodType<UpdateInput>;
   listQuery: z.ZodType<ListInput>;
 }
 
@@ -46,11 +46,11 @@ export function createAdminResourceController<
   Item,
   Full,
   CreateInput,
-  ReplaceInput,
+  UpdateInput,
   ListInput extends AdminListInput,
 >(
-  service: AdminResourceService<Item, Full, CreateInput, ReplaceInput, ListInput>,
-  schemas: AdminResourceSchemas<CreateInput, ReplaceInput, ListInput>,
+  service: AdminResourceService<Item, Full, CreateInput, UpdateInput, ListInput>,
+  schemas: AdminResourceSchemas<CreateInput, UpdateInput, ListInput>,
 ): AdminResourceController {
   return {
     async list(req, res) {
@@ -67,7 +67,7 @@ export function createAdminResourceController<
 
     async update(req, res) {
       const { id } = validated(idParams, req.params);
-      res.json(await service.update(id, validated(schemas.replaceBody, req.body)));
+      res.json(await service.update(id, validated(schemas.updateBody, req.body)));
     },
 
     async archive(req, res) {
@@ -80,9 +80,9 @@ export function createAdminResourceController<
       res.json(await service.restore(id, currentUser(req).id));
     },
 
-    async remove(req, res) {
+    async delete(req, res) {
       const { id } = validated(idParams, req.params);
-      await service.remove(id);
+      await service.delete(id);
       res.status(204).end();
     },
   };

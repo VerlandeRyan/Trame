@@ -1,7 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import { reactive } from 'vue'
-import { emptyWorkDraft } from '~/utils/admin'
+import { emptyWorkFormValues } from '~/utils/admin'
 import AdminWorkInfoFields from './WorkInfoFields.vue'
 
 const GENRES = [
@@ -11,8 +11,8 @@ const GENRES = [
   { code: 'inconnu_code', category: 'theme' },
 ]
 
-function mountFields(overrides: Partial<ReturnType<typeof emptyWorkDraft>> = {}) {
-  const draft = reactive({ ...emptyWorkDraft(), ...overrides })
+function mountFields(overrides: Partial<ReturnType<typeof emptyWorkFormValues>> = {}) {
+  const draft = reactive({ ...emptyWorkFormValues(), ...overrides })
   return mountSuspended(AdminWorkInfoFields, {
     props: { modelValue: draft, genres: GENRES },
   }).then((wrapper) => ({ wrapper, draft }))

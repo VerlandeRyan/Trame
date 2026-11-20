@@ -48,10 +48,10 @@ describe('client d’administration', () => {
     )
   })
 
-  it('crée, remplace, archive et restaure', async () => {
+  it('crée, met à jour, archive et restaure', async () => {
     const { client, request } = setup()
     await client.create('works', { title: 'A' })
-    await client.replace('publishers', 7, { name: 'M' })
+    await client.update('publishers', 7, { name: 'M' })
     await client.archive('people', 3)
     await client.restore('people', 3)
     expect(request.mock.calls).toEqual([

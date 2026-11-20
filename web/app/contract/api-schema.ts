@@ -357,7 +357,7 @@ export interface paths {
         /** Lire : Person */
         get: operations["getAdminPerson"];
         /** Remplacer, et publier un brouillon avec `published: true` : Person */
-        put: operations["replaceAdminPerson"];
+        put: operations["updateAdminPerson"];
         post?: never;
         /** Supprimer un brouillon ou une fiche archivée : Person */
         delete: operations["deleteAdminRecordPerson"];
@@ -428,7 +428,7 @@ export interface paths {
         /** Lire : Publisher */
         get: operations["getAdminPublisher"];
         /** Remplacer, et publier un brouillon avec `published: true` : Publisher */
-        put: operations["replaceAdminPublisher"];
+        put: operations["updateAdminPublisher"];
         post?: never;
         /** Supprimer un brouillon ou une fiche archivée : Publisher */
         delete: operations["deleteAdminRecordPublisher"];
@@ -499,7 +499,7 @@ export interface paths {
         /** Lire : Work */
         get: operations["getAdminWork"];
         /** Remplacer, et publier un brouillon avec `published: true` : Work */
-        put: operations["replaceAdminWork"];
+        put: operations["updateAdminWork"];
         post?: never;
         /** Supprimer un brouillon ou une fiche archivée : Work */
         delete: operations["deleteAdminRecordWork"];
@@ -2479,7 +2479,7 @@ export interface operations {
             };
         };
     };
-    replaceAdminPerson: {
+    updateAdminPerson: {
         parameters: {
             query?: never;
             header?: never;
@@ -3044,7 +3044,7 @@ export interface operations {
             };
         };
     };
-    replaceAdminPublisher: {
+    updateAdminPublisher: {
         parameters: {
             query?: never;
             header?: never;
@@ -3658,7 +3658,7 @@ export interface operations {
             };
         };
     };
-    replaceAdminWork: {
+    updateAdminWork: {
         parameters: {
             query?: never;
             header?: never;

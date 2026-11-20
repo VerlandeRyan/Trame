@@ -12,23 +12,23 @@ import {
   lifecycleOf,
   lockRow,
   nameContains,
-  publishedAtOnReplace,
+  publishedAtOnUpdate,
   totalOf,
   versionOf,
   type Lifecycle,
   type LifecycleFilter,
 } from './admin-sql.js';
 
-/** Data written when creating or replacing a publisher; `published` publishes a draft (never the reverse). */
-export interface AdminPublisherDraft {
+/** Data sent to create a publisher; `published` publishes a draft (never the reverse). */
+export interface AdminPublisherCreateInput {
   name: string;
   kind: PublisherKind;
   url: string | null;
   published: boolean;
 }
 
-/** A publisher as shown in lists and details. */
-export interface AdminPublisherSummary extends Omit<AdminPublisherDraft, 'published'> {
+/** A publisher as listed and as served for editing: its list line already holds every field. */
+export interface AdminPublisherListItem extends Omit<AdminPublisherCreateInput, 'published'> {
   id: number;
   /** A draft is only visible in the administration. */
   lifecycle: Lifecycle;
@@ -53,11 +53,11 @@ export interface AdminPublisherListCriteria {
 export interface AdminPublisherRepository {
   list(
     criteria: AdminPublisherListCriteria,
-  ): Promise<{ items: AdminPublisherSummary[]; total: number }>;
-  find(id: number): Promise<AdminPublisherSummary | null>;
-  create(draft: AdminPublisherDraft): Promise<number>;
+  ): Promise<{ items: AdminPublisherListItem[]; total: number }>;
+  find(id: number): Promise<AdminPublisherListItem | null>;
+  create(input: AdminPublisherCreateInput): Promise<number>;
   /** False if the publisher does not exist, or if `version` is no longer the record's; publishes a draft when asked. */
-  update(id: number, draft: AdminPublisherDraft, version: string): Promise<boolean>;
+  update(id: number, input: AdminPublisherCreateInput, version: string): Promise<boolean>;
   /**
    * False if the publisher does not exist, or, when archiving, if an unarchived work lists it.
    * `adminId` is who archives, ignored on restore.
@@ -69,7 +69,7 @@ export interface AdminPublisherRepository {
 }
 
 /** Columns read for a publisher summary. */
-interface SummaryRow {
+interface ListItemRow {
   id: number;
   name: string;
   kind: PublisherKind;
@@ -94,7 +94,7 @@ const NO_ACTIVE_WORK_OF_PUBLISHER = sql<boolean>`NOT EXISTS (
 )`;
 
 /** Converts a database row into a summary. */
-function toSummary(row: SummaryRow): AdminPublisherSummary {
+function toListItem(row: ListItemRow): AdminPublisherListItem {
   return {
     id: row.id,
     name: row.name,
@@ -144,14 +144,14 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
           .executeTakeFirstOrThrow();
         return counted.total;
       });
-      return { items: rows.map(toSummary), total };
+      return { items: rows.map(toListItem), total };
     },
 
     async find(id) {
       const row = await selectSummaries(db.selectFrom('publisher'))
         .where('publisher.id', '=', id)
         .executeTakeFirst();
-      return row ? toSummary(row) : null;
+      return row ? toListItem(row) : null;
     },
 
     async create({ name, kind, url, published }) {
@@ -187,7 +187,7 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
           name,
           kind,
           url,
-          published_at: publishedAtOnReplace(published),
+          published_at: publishedAtOnUpdate(published),
           updated_at: sql<Date>`now()`,
         })
         .where('id', '=', id)

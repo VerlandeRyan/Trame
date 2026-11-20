@@ -6,7 +6,7 @@ Comportement côté front (Nuxt) de l'administration (#26, US-11, maquette 22). 
 - `pages/admin/catalogue/index.vue` : l'adresse porte `kind`, `lifecycle` (`draft`, `published` ou `archived` ; `active` par défaut, non écrit), `q`, `page` (`utils/admin.ts`).
 - `pages/admin/catalogue/[kind]/[id].vue` : `id` = `new` pour créer.
 - Réservées par le middleware `admin` (visiteur ⇒ accueil, membre simple ⇒ 404).
-- Appels par `utils/admin-client.ts` (`useAdminClient` transmet le cookie au rendu serveur), état d'édition par `useAdminEditor` (`useState` : le brouillon chargé au rendu serveur est repris par le navigateur).
+- Appels par `utils/admin-client.ts` (`useAdminClient` transmet le cookie au rendu serveur), état d'édition par `useAdminEditor` (`useState` : les valeurs du formulaire chargées au rendu serveur sont reprises par le navigateur).
 - Un échec de validation affiche `admin.error.validation`, pas `error.VALIDATION_ERROR` (qui parle du pseudo).
 
 ## Formulaires
@@ -29,7 +29,7 @@ Comportement côté front (Nuxt) de l'administration (#26, US-11, maquette 22). 
 Pas de filtre « À compléter » (le tri par complétude le remplace) ni de couvertures (#27) ; les filtres et les menus de rôle ou de relation gardent le `UiSelect` du site.
 
 ## Version de la fiche
-`GET /admin/{ressource}/{id}` donne `updatedAt`, gardé dans le brouillon (`WorkDraft`, `PersonDraft`, `PublisherDraft`) et renvoyé au `PUT` ; si quelqu'un a enregistré entre-temps, `STALE_RECORD` (409) s'affiche sans quitter la fiche.
+`GET /admin/{ressource}/{id}` donne `updatedAt`, gardé dans l'état du formulaire (`WorkFormValues`, `PersonFormValues`, `PublisherFormValues`) et renvoyé au `PUT` ; si quelqu'un a enregistré entre-temps, `STALE_RECORD` (409) s'affiche sans quitter la fiche.
 
 ## Sortie de la fiche
 `useAdminEditor` suit si la saisie a changé (`isDirty`, instantané pris au chargement et à l'enregistrement). La page pose un garde du routeur (`router.beforeEach`, retiré avec la page, pas `onBeforeRouteLeave` que les tests ne voient pas) qui ouvre `UiConfirm danger` « Quitter sans enregistrer ? » (`data-testid="leave-confirm"`), plus un `beforeunload` ; changer de section (`?section=`) ne la déclenche pas.

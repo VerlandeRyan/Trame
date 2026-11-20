@@ -8,7 +8,7 @@ import {
   WORK_STATUSES,
   WORK_TYPES,
   type PublicationGap,
-  type WorkDraft,
+  type WorkFormValues,
 } from '~/utils/admin'
 
 /**
@@ -24,34 +24,34 @@ const props = defineProps<{
   /** Gaps the API reported, flagged like the local ones. */
   serverGaps?: readonly PublicationGap[]
 }>()
-const draft = defineModel<WorkDraft>({ required: true })
+const form = defineModel<WorkFormValues>({ required: true })
 const { t } = useI18n()
 const genreLabel = useGenreLabel()
 const languageOptionsFor = useLanguageOptions()
 const typeOptions = optionsOf(WORK_TYPES, (code) => t(`admin.option.workType.${code}`))
 const statusOptions = optionsOf(WORK_STATUSES, (code) => t(`admin.option.workStatus.${code}`))
 // Totals stay empty while the work is ongoing.
-const isOngoing = computed(() => draft.value.status === 'ongoing')
+const isOngoing = computed(() => form.value.status === 'ongoing')
 /** Genre options of one category. */
 const optionsIn = (category: string) =>
   props.genres
     .filter((genre) => genre.category === category)
     .map(({ code }) => ({ value: code, label: genreLabel(code) }))
 const formatOptions = computed(() => optionsIn('format'))
-const isTitleMissing = computed(() => isBlank(draft.value.title))
+const isTitleMissing = computed(() => isBlank(form.value.title))
 const isFormatMissing = computed(() =>
-  publicationGapsOf(draft.value, formatCodesOf(props.genres), props.serverGaps).includes('genres'),
+  publicationGapsOf(form.value, formatCodesOf(props.genres), props.serverGaps).includes('genres'),
 )
 const themeOptions = computed(() => optionsIn('theme'))
 
 /** Ticks or unticks the codes of one category without touching those of the other. */
 function setCategory(options: { value: string }[], chosen: string[]) {
   const codes = new Set(options.map((option) => option.value))
-  draft.value.genres = [...draft.value.genres.filter((code) => !codes.has(code)), ...chosen]
+  form.value.genres = [...form.value.genres.filter((code) => !codes.has(code)), ...chosen]
 }
 /** The chosen codes that belong to the given options. */
 const chosenIn = (options: { value: string }[]) =>
-  draft.value.genres.filter((code) => options.some((option) => option.value === code))
+  form.value.genres.filter((code) => options.some((option) => option.value === code))
 </script>
 
 <template>
@@ -59,25 +59,25 @@ const chosenIn = (options: { value: string }[]) =>
     <AdminPanel :title="t('admin.work.identity')">
       <UiField
         id="work-title"
-        v-model="draft.title"
+        v-model="form.title"
         :label="t('admin.work.title')"
         :error="showErrors && isTitleMissing ? t('admin.error.required') : undefined"
         :input-attributes="{ maxlength: 200, required: true }"
       />
       <AdminSelectField
-        v-model="draft.originalLanguage"
+        v-model="form.originalLanguage"
         :label="t('admin.work.originalLanguage')"
-        :options="languageOptionsFor(draft.originalLanguage)"
+        :options="languageOptionsFor(form.originalLanguage)"
         required
       />
       <AdminPillGroup
-        v-model="draft.type"
+        v-model="form.type"
         :label="t('admin.work.type')"
         :options="typeOptions"
         required
       />
       <AdminPillGroup
-        v-model="draft.status"
+        v-model="form.status"
         :label="t('admin.work.status')"
         :options="statusOptions"
         required
@@ -86,13 +86,13 @@ const chosenIn = (options: { value: string }[]) =>
       <div v-else class="info__pair">
         <UiField
           id="work-chapters"
-          v-model="draft.chapters"
+          v-model="form.chapters"
           :label="t('admin.work.chapters')"
           :input-attributes="{ inputmode: 'numeric', maxlength: 5, sanitize: digitsOnly }"
         />
         <UiField
           id="work-volumes"
-          v-model="draft.volumes"
+          v-model="form.volumes"
           :label="t('admin.work.volumes')"
           :input-attributes="{ inputmode: 'numeric', maxlength: 5, sanitize: digitsOnly }"
         />
@@ -102,15 +102,15 @@ const chosenIn = (options: { value: string }[]) =>
       <div class="info__dates">
         <UiField
           id="work-started"
-          v-model="draft.startedOn"
+          v-model="form.startedOn"
           :label="t('admin.work.startedOn')"
           :input-attributes="{ type: 'date' }"
         />
         <UiField
           id="work-ended"
-          v-model="draft.endedOn"
+          v-model="form.endedOn"
           :label="t('admin.work.endedOn')"
-          :input-attributes="{ type: 'date', min: draft.startedOn || undefined }"
+          :input-attributes="{ type: 'date', min: form.startedOn || undefined }"
         />
       </div>
       <AdminPillGroup

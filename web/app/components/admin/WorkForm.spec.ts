@@ -1,7 +1,7 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { reactive } from 'vue'
-import { emptyWorkDraft, type PublicationGap } from '~/utils/admin'
+import { emptyWorkFormValues, type PublicationGap } from '~/utils/admin'
 import AdminWorkForm from './WorkForm.vue'
 
 function mountForm(
@@ -12,7 +12,7 @@ function mountForm(
     saving?: boolean
   } = {},
 ) {
-  const draft = reactive(emptyWorkDraft())
+  const draft = reactive(emptyWorkFormValues())
   const { errorScope = 'none', serverGaps = [], ...rest } = props
   return mountSuspended(AdminWorkForm, {
     props: {
@@ -112,7 +112,7 @@ describe('AdminWorkForm', () => {
 
   describe('champs obligatoires et lignes incomplètes refusés à l’enregistrement', () => {
     /** Fills everything a published work needs. */
-    const fillRequired = (draft: ReturnType<typeof emptyWorkDraft>) => {
+    const fillRequired = (draft: ReturnType<typeof emptyWorkFormValues>) => {
       draft.title = 'Aube Fictive'
       draft.genres = ['manga']
       draft.synopses.push({ language: 'fr', source: 'official', text: 'Résumé.' })

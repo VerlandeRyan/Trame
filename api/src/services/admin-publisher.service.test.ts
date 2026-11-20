@@ -1,14 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import type {
   AdminPublisherRepository,
-  AdminPublisherSummary,
+  AdminPublisherListItem,
 } from '../repositories/admin-publisher.repository.js';
 import { createAdminPublisherService } from './admin-publisher.service.js';
 
 const VERSION = '2026-10-24T10:00:00.000Z';
 const ADMIN_ID = 5;
 
-const publisher = (overrides: Partial<AdminPublisherSummary> = {}): AdminPublisherSummary => ({
+const publisher = (overrides: Partial<AdminPublisherListItem> = {}): AdminPublisherListItem => ({
   id: 1,
   name: 'Maison Fictive',
   kind: 'publisher',
@@ -22,7 +22,7 @@ const publisher = (overrides: Partial<AdminPublisherSummary> = {}): AdminPublish
 });
 
 /** Comme le dépôt : l'archivage échoue tant qu'une œuvre non archivée cite l'éditeur. */
-function fakeRepository(record: AdminPublisherSummary | null): AdminPublisherRepository {
+function fakeRepository(record: AdminPublisherListItem | null): AdminPublisherRepository {
   return {
     list: vi.fn(async () => ({ items: [], total: 0 })),
     find: vi.fn(async () => record),
@@ -94,24 +94,24 @@ describe('archivage', () => {
         updatedAt: VERSION,
       }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
-    await expect(service.remove(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(service.delete(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
 
 describe('version', () => {
-  const draft = { name: 'x', kind: 'publisher', url: null, published: true } as const;
+  const createInput = { name: 'x', kind: 'publisher', url: null, published: true } as const;
 
   it('transmet la version lue au dépôt, sans la mêler aux données', async () => {
     const repository = fakeRepository(publisher());
-    await createAdminPublisherService(repository).update(1, { ...draft, updatedAt: VERSION });
-    expect(repository.update).toHaveBeenCalledWith(1, draft, VERSION);
+    await createAdminPublisherService(repository).update(1, { ...createInput, updatedAt: VERSION });
+    expect(repository.update).toHaveBeenCalledWith(1, createInput, VERSION);
   });
 
   it('refuse une fiche modifiée entre-temps', async () => {
     const repository = fakeRepository(publisher());
     vi.mocked(repository.update).mockResolvedValueOnce(false);
     await expect(
-      createAdminPublisherService(repository).update(1, { ...draft, updatedAt: VERSION }),
+      createAdminPublisherService(repository).update(1, { ...createInput, updatedAt: VERSION }),
     ).rejects.toMatchObject({ code: 'STALE_RECORD' });
   });
 });
@@ -119,7 +119,7 @@ describe('version', () => {
 describe('brouillon', () => {
   it('ne supprime pas un éditeur publié', async () => {
     const repository = fakeRepository(publisher());
-    await expect(createAdminPublisherService(repository).remove(1)).rejects.toMatchObject({
+    await expect(createAdminPublisherService(repository).delete(1)).rejects.toMatchObject({
       code: 'NOT_REMOVABLE',
     });
     expect(repository.deleteRecord).not.toHaveBeenCalled();
@@ -127,7 +127,7 @@ describe('brouillon', () => {
 
   it('supprime un éditeur archivé', async () => {
     const repository = fakeRepository(publisher({ lifecycle: 'archived' }));
-    await expect(createAdminPublisherService(repository).remove(1)).resolves.toBeUndefined();
+    await expect(createAdminPublisherService(repository).delete(1)).resolves.toBeUndefined();
     expect(repository.deleteRecord).toHaveBeenCalledWith(1);
   });
 
@@ -135,12 +135,12 @@ describe('brouillon', () => {
     const service = createAdminPublisherService(
       fakeRepository(publisher({ lifecycle: 'draft', activeWorkCount: 1 })),
     );
-    await expect(service.remove(1)).rejects.toMatchObject({ code: 'RECORD_IN_USE' });
+    await expect(service.delete(1)).rejects.toMatchObject({ code: 'RECORD_IN_USE' });
   });
 
   it('supprime un brouillon libre', async () => {
     const repository = fakeRepository(publisher({ lifecycle: 'draft' }));
-    await expect(createAdminPublisherService(repository).remove(1)).resolves.toBeUndefined();
+    await expect(createAdminPublisherService(repository).delete(1)).resolves.toBeUndefined();
     expect(repository.deleteRecord).toHaveBeenCalledWith(1);
   });
 

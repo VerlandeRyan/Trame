@@ -1,31 +1,30 @@
 /** Business rules for administering publishers and platforms. */
 import { AppError } from '../errors.js';
 import type {
-  AdminPublisherDraft,
+  AdminPublisherCreateInput,
+  AdminPublisherListItem,
   AdminPublisherRepository,
-  AdminPublisherSummary,
 } from '../repositories/admin-publisher.repository.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
-import { assertNotDraft, removeRecord } from './admin-lifecycle.js';
-import { refuseReplacement, type Replacement } from './admin-replace.js';
+import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
+import { refuseUpdate, type UpdateInput } from './admin-update.js';
 
-/** Data accepted to create a publisher. */
-export type AdminPublisherInput = AdminPublisherDraft;
+export type { AdminPublisherCreateInput };
 
-/** Data accepted to replace a publisher. */
-export type AdminPublisherReplacement = Replacement<AdminPublisherDraft>;
+/** Data sent to update a publisher (full replacement: every field is sent, `PUT`). */
+export type AdminPublisherUpdateInput = UpdateInput<AdminPublisherCreateInput>;
 
 /** Publisher administration operations. */
 export interface AdminPublisherService {
-  list(input: AdminListInput): Promise<Page<AdminPublisherSummary>>;
-  get(id: number): Promise<AdminPublisherSummary>;
-  create(input: AdminPublisherInput): Promise<AdminPublisherSummary>;
-  update(id: number, input: AdminPublisherReplacement): Promise<AdminPublisherSummary>;
+  list(input: AdminListInput): Promise<Page<AdminPublisherListItem>>;
+  get(id: number): Promise<AdminPublisherListItem>;
+  create(input: AdminPublisherCreateInput): Promise<AdminPublisherListItem>;
+  update(id: number, input: AdminPublisherUpdateInput): Promise<AdminPublisherListItem>;
   /** Refused while the publisher has unarchived works. */
-  archive(id: number, adminId: number): Promise<AdminPublisherSummary>;
-  restore(id: number, adminId: number): Promise<AdminPublisherSummary>;
+  archive(id: number, adminId: number): Promise<AdminPublisherListItem>;
+  restore(id: number, adminId: number): Promise<AdminPublisherListItem>;
   /** Only a draft or archived publisher no work lists (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
-  remove(id: number): Promise<void>;
+  delete(id: number): Promise<void>;
   countDrafts(): Promise<number>;
 }
 
@@ -34,7 +33,7 @@ export function createAdminPublisherService(
   repository: AdminPublisherRepository,
 ): AdminPublisherService {
   /** Reads a publisher, archived or not; throws when it does not exist. */
-  async function get(id: number): Promise<AdminPublisherSummary> {
+  async function get(id: number): Promise<AdminPublisherListItem> {
     const publisher = await repository.find(id);
     if (!publisher) throw new AppError('NOT_FOUND');
     return publisher;
@@ -58,8 +57,8 @@ export function createAdminPublisherService(
 
     async update(id, input) {
       const { updatedAt, published, ...rest } = input;
-      const draft = { ...rest, published: published === true };
-      if (!(await repository.update(id, draft, updatedAt))) await refuseReplacement(get, id);
+      const fields = { ...rest, published: published === true };
+      if (!(await repository.update(id, fields, updatedAt))) await refuseUpdate(get, id);
       return get(id);
     },
 
@@ -80,7 +79,7 @@ export function createAdminPublisherService(
       return get(id);
     },
 
-    remove: (id) => removeRecord(get, repository, id),
+    delete: (id) => deleteRecord(get, repository, id),
 
     countDrafts: () => repository.countDrafts(),
   };

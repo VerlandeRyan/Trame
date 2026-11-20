@@ -1,15 +1,17 @@
-/** Catalogue administration: response types, form drafts and pure conversions (tested without Nuxt). */
+/** Catalogue administration: response types, form values and pure conversions (tested without Nuxt). */
 import {
   ADMIN_LIFECYCLE_FILTERS,
-  LINK_KINDS,
+  ADMIN_WORK_SORTS,
   PUBLICATION_GAPS,
   WORK_STATUSES,
   WORK_TYPES,
 } from '../contract/api'
 import type {
   AdminLifecycle,
+  AdminPage,
   AdminPerson,
   AdminPublisher,
+  AdminRecordLabel,
   AdminWork,
   PublicationGap,
 } from '../contract/api'
@@ -26,6 +28,7 @@ export type AdminLifecycleFilter = (typeof ADMIN_LIFECYCLE_FILTERS)[number]
 // and social networks belong to a person (`PERSON_LINK_KINDS`).
 export {
   CREDIT_ROLES,
+  LINK_KINDS,
   PERSON_KINDS,
   PERSON_LINK_KINDS,
   PUBLISHER_KINDS,
@@ -34,8 +37,9 @@ export {
   TITLE_KINDS,
   WORK_LINK_KINDS,
 } from '../contract/api'
-export { ADMIN_LIFECYCLE_FILTERS, LINK_KINDS, WORK_STATUSES, WORK_TYPES }
-export type { AdminLifecycle, PublicationGap }
+export type { AdminLink } from '../contract/api'
+export { ADMIN_LIFECYCLE_FILTERS, ADMIN_WORK_SORTS, WORK_STATUSES, WORK_TYPES }
+export type { AdminLifecycle, AdminPage, PublicationGap }
 
 /** Sections of the work form; the first one is open by default. */
 export const WORK_SECTIONS = ['info', 'texts', 'relations', 'links', 'people'] as const
@@ -44,21 +48,6 @@ export type WorkSection = (typeof WORK_SECTIONS)[number]
 /** Section requested by the address; an unknown value opens the first one. */
 export function parseWorkSection(value: unknown): WorkSection {
   return WORK_SECTIONS.find((section) => section === value) ?? WORK_SECTIONS[0]
-}
-
-/** A page of a paginated administration list. */
-export interface AdminPage<T> {
-  items: T[]
-  page: number
-  pageSize: number
-  total: number
-}
-
-/** An external link of a work or a person. */
-export interface AdminLink {
-  kind: (typeof LINK_KINDS)[number]
-  url: string
-  label: string | null
 }
 
 /** List row: a work (title, type, status…) or a person or publisher (name, kind). */
@@ -104,9 +93,7 @@ export const archiveImpact = (work: AdminWork): ArchiveImpact => ({
 })
 
 /** A record chosen in a picker: its identifier and what is displayed for it. */
-export interface RecordRef {
-  id: number
-  label: string
+export interface RecordRef extends AdminRecordLabel {
   /** Not yet published: a published work cannot cite it. */
   draft?: boolean
 }
@@ -158,13 +145,7 @@ export const optionsOf = (codes: readonly string[], label: (code: string) => str
 
 // --- List: the address carries the tab, lifecycle, search, filters, sort and page ---
 
-/** Sort orders of the work list. */
-export const ADMIN_WORK_SORTS = [
-  'title',
-  'title_desc',
-  'completeness',
-  'completeness_desc',
-] as const
+/** Sort order of the work list. */
 export type AdminWorkSort = (typeof ADMIN_WORK_SORTS)[number]
 
 /** Filters of the work list; an empty list means no filter, several values mean OR. */
@@ -281,7 +262,7 @@ export const itemLabel = (item: AdminListItem) => item.title ?? item.name ?? `#$
 // --- Work form: text in the fields, API body as output ---
 
 /** The work form content, kept as text so fields can be edited freely. */
-export interface WorkDraft {
+export interface WorkFormValues {
   title: string
   originalLanguage: string
   type: string
@@ -301,8 +282,8 @@ export interface WorkDraft {
   updatedAt: string
 }
 
-/** The draft of a new work. */
-export function emptyWorkDraft(): WorkDraft {
+/** The form values of a new work. */
+export function emptyWorkFormValues(): WorkFormValues {
   return {
     updatedAt: '',
     title: '',
@@ -336,8 +317,8 @@ const numberOrNull = (value: string) => (value.trim() === '' ? null : Number(val
 const refOf = (labels: RecordRef[], id: number): RecordRef =>
   labels.find((ref) => ref.id === id) ?? { id, label: `#${id}` }
 
-/** Converts a work record into a form draft. */
-export function workToDraft(work: AdminWork): WorkDraft {
+/** Converts a work record into a form form. */
+export function workToFormValues(work: AdminWork): WorkFormValues {
   const { labels } = work
   return {
     title: work.title,
@@ -399,13 +380,13 @@ export const hasInvalidLinkUrl = (links: readonly { url: string }[], isRequired 
   links.some((link) => urlErrorKey(link.url, isRequired) !== undefined)
 
 /** What a draft work cannot do without: a title, and valid addresses where some were typed. */
-export const hasUnsavableDraft = (draft: WorkDraft): boolean =>
-  isBlank(draft.title) || hasInvalidLinkUrl(draft.links, false)
+export const hasUnsavableDraft = (form: WorkFormValues): boolean =>
+  isBlank(form.title) || hasInvalidLinkUrl(form.links, false)
 
 /** What the record form offers: a new record, a draft or a published one. */
 export type FormMode = 'create' | 'draft' | 'published'
 
-/** What a refused save asks the form to flag: nothing, the title or name only (draft), or every gap. */
+/** What a refused save asks the form to flag: nothing, the title or name only (form), or every gap. */
 export type ErrorScope = 'none' | 'title' | 'all'
 
 /** Codes of the genres that are formats (manga, webtoon…). */
@@ -421,69 +402,69 @@ export const PUBLICATION_GAP_SECTION: Record<PublicationGap, WorkSection> = {
 }
 
 /**
- * The publication gaps of an unsaved draft, named as the API names them (the saved record's gaps
+ * The publication gaps of unsaved form values, named as the API names them (the saved record's gaps
  * come from the API itself). The format is only checked when the catalogue offers formats.
  */
 export function localPublicationGaps(
-  draft: WorkDraft,
+  form: WorkFormValues,
   formatCodes: readonly string[],
 ): PublicationGap[] {
   const isMissing: Record<PublicationGap, boolean> = {
-    genres: formatCodes.length > 0 && !draft.genres.some((code) => formatCodes.includes(code)),
-    credits: !draft.credits.some((row) => row.person !== null),
-    publisherIds: !draft.publishers.some((row) => row.publisher !== null),
-    synopses: !draft.synopses.some(
-      (row) => row.language === draft.originalLanguage && !isBlank(row.text),
+    genres: formatCodes.length > 0 && !form.genres.some((code) => formatCodes.includes(code)),
+    credits: !form.credits.some((row) => row.person !== null),
+    publisherIds: !form.publishers.some((row) => row.publisher !== null),
+    synopses: !form.synopses.some(
+      (row) => row.language === form.originalLanguage && !isBlank(row.text),
     ),
   }
   return PUBLICATION_GAPS.filter((gap) => isMissing[gap])
 }
 
 /**
- * Every publication gap to flag: those of the unsaved draft, plus those the API reported
+ * Every publication gap to flag: those of the unsaved form values, plus those the API reported
  * (`serverGaps`: its refusal, or the saved record's gaps), since the API owns the rule.
  */
 export function publicationGapsOf(
-  draft: WorkDraft,
+  form: WorkFormValues,
   formatCodes: readonly string[],
   serverGaps: readonly PublicationGap[] = [],
 ): PublicationGap[] {
-  const local = localPublicationGaps(draft, formatCodes)
+  const local = localPublicationGaps(form, formatCodes)
   return PUBLICATION_GAPS.filter((gap) => local.includes(gap) || serverGaps.includes(gap))
 }
 
 /**
  * Whether a required field is empty, including the required fields of a row that exists (title,
- * synopsis text, link address, credit, publisher or related work): `draftToWorkBody` would ignore
+ * synopsis text, link address, credit, publisher or related work): `formValuesToWorkBody` would ignore
  * such a row and the input would be lost silently.
  */
 export function hasIncompleteForm(
-  draft: WorkDraft,
+  form: WorkFormValues,
   formatCodes: readonly string[],
   serverGaps: readonly PublicationGap[] = [],
 ): boolean {
-  return incompleteSections(draft, formatCodes, serverGaps).length > 0
+  return incompleteSections(form, formatCodes, serverGaps).length > 0
 }
 
 /** The sections of the form that contain a gap (rule of `hasIncompleteForm`). */
 export function incompleteSections(
-  draft: WorkDraft,
+  form: WorkFormValues,
   formatCodes: readonly string[],
   serverGaps: readonly PublicationGap[] = [],
 ): WorkSection[] {
   const gapSections = new Set(
-    publicationGapsOf(draft, formatCodes, serverGaps).map((gap) => PUBLICATION_GAP_SECTION[gap]),
+    publicationGapsOf(form, formatCodes, serverGaps).map((gap) => PUBLICATION_GAP_SECTION[gap]),
   )
   const isIncomplete: Record<WorkSection, boolean> = {
-    info: isBlank(draft.title),
+    info: isBlank(form.title),
     texts:
-      draft.titles.some((row) => isBlank(row.title)) ||
-      draft.synopses.some((row) => isBlank(row.text)),
-    relations: draft.relations.some((row) => row.work === null),
-    links: hasInvalidLinkUrl(draft.links),
+      form.titles.some((row) => isBlank(row.title)) ||
+      form.synopses.some((row) => isBlank(row.text)),
+    relations: form.relations.some((row) => row.work === null),
+    links: hasInvalidLinkUrl(form.links),
     people:
-      draft.credits.some((row) => row.person === null) ||
-      draft.publishers.some((row) => row.publisher === null),
+      form.credits.some((row) => row.person === null) ||
+      form.publishers.some((row) => row.publisher === null),
   }
   return WORK_SECTIONS.filter((section) => isIncomplete[section] || gapSections.has(section))
 }
@@ -502,48 +483,49 @@ export function gapsOfRefusal(error: Pick<ApiError, 'code' | 'details'>): Public
 const hasText = (value: string) => !isBlank(value)
 
 /** Whether a title row has text. */
-export const isTitleRowFilled = (row: WorkDraft['titles'][number]) => hasText(row.title)
+export const isTitleRowFilled = (row: WorkFormValues['titles'][number]) => hasText(row.title)
 /** Whether a synopsis row has text. */
-export const isSynopsisRowFilled = (row: WorkDraft['synopses'][number]) => hasText(row.text)
+export const isSynopsisRowFilled = (row: WorkFormValues['synopses'][number]) => hasText(row.text)
 /** Whether a credit row has a person chosen. */
-export const isCreditRowFilled = (row: WorkDraft['credits'][number]) => row.person !== null
+export const isCreditRowFilled = (row: WorkFormValues['credits'][number]) => row.person !== null
 /** Whether a publisher row has a publisher chosen. */
-export const isPublisherRowFilled = (row: WorkDraft['publishers'][number]) => row.publisher !== null
+export const isPublisherRowFilled = (row: WorkFormValues['publishers'][number]) =>
+  row.publisher !== null
 /** Whether a relation row has a work chosen. */
-export const isRelationRowFilled = (row: WorkDraft['relations'][number]) => row.work !== null
+export const isRelationRowFilled = (row: WorkFormValues['relations'][number]) => row.work !== null
 /** Whether a link row has an address or a label. */
-export const isLinkRowFilled = (row: WorkDraft['links'][number]) =>
+export const isLinkRowFilled = (row: WorkFormValues['links'][number]) =>
   hasText(row.url) || hasText(row.label)
 
 /** Body to create or replace a work; rows left empty are ignored. */
-export function draftToWorkBody(draft: WorkDraft) {
-  const ongoing = draft.status === 'ongoing'
+export function formValuesToWorkBody(form: WorkFormValues) {
+  const ongoing = form.status === 'ongoing'
   return {
-    updatedAt: textOrUndefined(draft.updatedAt),
-    title: draft.title.trim(),
-    originalLanguage: draft.originalLanguage.trim(),
-    type: draft.type,
-    status: draft.status,
+    updatedAt: textOrUndefined(form.updatedAt),
+    title: form.title.trim(),
+    originalLanguage: form.originalLanguage.trim(),
+    type: form.type,
+    status: form.status,
     // Totals stay empty while the work is ongoing.
-    chapters: ongoing ? null : numberOrNull(draft.chapters),
-    volumes: ongoing ? null : numberOrNull(draft.volumes),
-    startedOn: textOrNull(draft.startedOn),
-    endedOn: textOrNull(draft.endedOn),
-    titles: draft.titles
+    chapters: ongoing ? null : numberOrNull(form.chapters),
+    volumes: ongoing ? null : numberOrNull(form.volumes),
+    startedOn: textOrNull(form.startedOn),
+    endedOn: textOrNull(form.endedOn),
+    titles: form.titles
       .filter((row) => row.title.trim() !== '')
       .map((row) => ({ ...row, title: row.title.trim() })),
-    synopses: draft.synopses
+    synopses: form.synopses
       .filter((row) => row.text.trim() !== '')
       .map((row) => ({ ...row, text: row.text.trim() })),
-    credits: draft.credits.flatMap((row) =>
+    credits: form.credits.flatMap((row) =>
       row.person ? [{ personId: row.person.id, role: row.role }] : [],
     ),
-    publisherIds: draft.publishers.flatMap((row) => (row.publisher ? [row.publisher.id] : [])),
-    genres: draft.genres,
-    relations: draft.relations.flatMap((row) =>
+    publisherIds: form.publishers.flatMap((row) => (row.publisher ? [row.publisher.id] : [])),
+    genres: form.genres,
+    relations: form.relations.flatMap((row) =>
       row.work ? [{ relatedWorkId: row.work.id, relation: row.relation }] : [],
     ),
-    links: draft.links
+    links: form.links
       .filter((row) => row.url.trim() !== '')
       .map((row) => ({ kind: row.kind, url: row.url.trim(), label: textOrNull(row.label) })),
   }
@@ -552,7 +534,7 @@ export function draftToWorkBody(draft: WorkDraft) {
 // --- People and publishers ---
 
 /** The person form content. */
-export interface PersonDraft {
+export interface PersonFormValues {
   name: string
   kind: string
   links: { kind: string; url: string; label: string }[]
@@ -561,7 +543,7 @@ export interface PersonDraft {
 }
 
 /** The publisher form content. */
-export interface PublisherDraft {
+export interface PublisherFormValues {
   name: string
   kind: string
   url: string
@@ -569,57 +551,57 @@ export interface PublisherDraft {
   updatedAt: string
 }
 
-/** The draft of a new person. */
-export const emptyPersonDraft = (): PersonDraft => ({
+/** The form values of a new person. */
+export const emptyPersonFormValues = (): PersonFormValues => ({
   name: '',
   kind: 'person',
   links: [],
   updatedAt: '',
 })
-/** The draft of a new publisher. */
-export const emptyPublisherDraft = (): PublisherDraft => ({
+/** The form values of a new publisher. */
+export const emptyPublisherFormValues = (): PublisherFormValues => ({
   name: '',
   kind: 'publisher',
   url: '',
   updatedAt: '',
 })
 
-/** Converts a person record into a form draft. */
-export const personToDraft = (person: AdminPerson): PersonDraft => ({
+/** Converts a person record into a form form. */
+export const personToFormValues = (person: AdminPerson): PersonFormValues => ({
   name: person.name,
   kind: person.kind,
   links: person.links.map((link) => ({ ...link, label: link.label ?? '' })),
   updatedAt: person.updatedAt,
 })
 
-/** Converts a publisher record into a form draft. */
-export const publisherToDraft = (publisher: AdminPublisher): PublisherDraft => ({
+/** Converts a publisher record into a form form. */
+export const publisherToFormValues = (publisher: AdminPublisher): PublisherFormValues => ({
   name: publisher.name,
   kind: publisher.kind,
   url: publisher.url ?? '',
   updatedAt: publisher.updatedAt,
 })
 
-/** Links of a draft as API body items; rows without an address are dropped. */
-const linksBody = (links: PersonDraft['links']) =>
+/** Links of form values as API body items; rows without an address are dropped. */
+const linksBody = (links: PersonFormValues['links']) =>
   links
     .filter((row) => row.url.trim() !== '')
     .map((row) => ({ kind: row.kind, url: row.url.trim(), label: textOrNull(row.label) }))
 
 /** Body to create or replace a person. */
-export const draftToPersonBody = (draft: PersonDraft) => ({
-  updatedAt: textOrUndefined(draft.updatedAt),
-  name: draft.name.trim(),
-  kind: draft.kind,
-  links: linksBody(draft.links),
+export const formValuesToPersonBody = (form: PersonFormValues) => ({
+  updatedAt: textOrUndefined(form.updatedAt),
+  name: form.name.trim(),
+  kind: form.kind,
+  links: linksBody(form.links),
 })
 
 /** Body to create or replace a publisher. */
-export const draftToPublisherBody = (draft: PublisherDraft) => ({
-  updatedAt: textOrUndefined(draft.updatedAt),
-  name: draft.name.trim(),
-  kind: draft.kind,
-  url: textOrNull(draft.url),
+export const formValuesToPublisherBody = (form: PublisherFormValues) => ({
+  updatedAt: textOrUndefined(form.updatedAt),
+  name: form.name.trim(),
+  kind: form.kind,
+  url: textOrNull(form.url),
 })
 
 /** Administration messages that replace the generic ones (the validation one talks about the handle). */

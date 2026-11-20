@@ -13,10 +13,10 @@ import {
 } from '../domain/catalogue-enums.js';
 import type { AdminWorkListItem, AdminWorkSummary } from '../repositories/admin-work.repository.js';
 import type {
-  AdminPersonRecord,
-  AdminPersonSummary,
+  AdminPersonDetail,
+  AdminPersonListItem,
 } from '../repositories/admin-person.repository.js';
-import type { AdminPublisherSummary } from '../repositories/admin-publisher.repository.js';
+import type { AdminPublisherListItem } from '../repositories/admin-publisher.repository.js';
 import { LIFECYCLES } from '../repositories/admin-sql.js';
 import type { DraftCounts } from '../controllers/admin-draft-counts.controller.js';
 import type { Page } from '../services/admin-list.js';
@@ -68,16 +68,16 @@ const personSummary = z.strictObject({
   updatedAt: recordVersion,
   archivedAt: z.iso.datetime().nullable(),
   archivedBy: archivedByHandle,
-}) satisfies z.ZodType<AdminPersonSummary>;
+}) satisfies z.ZodType<AdminPersonListItem>;
 
 /** A person with their links. */
 export const adminPersonSchema = personSummary.extend({
   links: z.array(link),
-}) satisfies z.ZodType<AdminPersonRecord>;
+}) satisfies z.ZodType<AdminPersonDetail>;
 
 /** A page of people. */
 export const adminPersonPageSchema = pageOf(personSummary) satisfies z.ZodType<
-  Page<AdminPersonSummary>
+  Page<AdminPersonListItem>
 >;
 
 /** A publisher or platform. */
@@ -91,11 +91,11 @@ export const adminPublisherSchema = z.strictObject({
   updatedAt: recordVersion,
   archivedAt: z.iso.datetime().nullable(),
   archivedBy: archivedByHandle,
-}) satisfies z.ZodType<AdminPublisherSummary>;
+}) satisfies z.ZodType<AdminPublisherListItem>;
 
 /** A page of publishers. */
 export const adminPublisherPageSchema = pageOf(adminPublisherSchema) satisfies z.ZodType<
-  Page<AdminPublisherSummary>
+  Page<AdminPublisherListItem>
 >;
 
 /** Identity and status of a work. */

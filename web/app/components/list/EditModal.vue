@@ -18,7 +18,7 @@ const { t, te } = useI18n()
 const NO_RATING = 0
 
 /** The form content, edited freely until saved. */
-interface Draft {
+interface EditFormValues {
   status: LibraryStatus
   chaptersRead: number
   volumesRead: number
@@ -27,7 +27,7 @@ interface Draft {
   finishedOn: string
 }
 
-const draft = reactive<Draft>({
+const form = reactive<EditFormValues>({
   status: 'plan_to_read',
   chaptersRead: 0,
   volumesRead: 0,
@@ -37,8 +37,8 @@ const draft = reactive<Draft>({
 })
 const confirmingRemoval = ref(false)
 
-/** The form draft that reproduces the entry as saved. */
-function createDraftFromEntry(entry: LibraryEntry): Draft {
+/** The form values that reproduce the entry as saved. */
+function createFormValuesFromEntry(entry: LibraryEntry): EditFormValues {
   return {
     status: entry.status,
     chaptersRead: entry.chaptersRead,
@@ -50,7 +50,7 @@ function createDraftFromEntry(entry: LibraryEntry): Draft {
 }
 
 watch(open, (isOpen) => {
-  if (isOpen && props.item) Object.assign(draft, createDraftFromEntry(props.item.entry))
+  if (isOpen && props.item) Object.assign(form, createFormValuesFromEntry(props.item.entry))
 })
 
 /** Rating choices: none, then 1 to 10 with their names. */
@@ -65,9 +65,9 @@ const ratingOptions = computed(() =>
 )
 /** The chosen rating as the select's text value. */
 const ratingChoice = computed({
-  get: () => String(draft.rating),
+  get: () => String(form.rating),
   set: (value: string) => {
-    draft.rating = Number(value)
+    form.rating = Number(value)
   },
 })
 
@@ -85,24 +85,24 @@ const kindLine = computed(() =>
     : '',
 )
 
-/** What the draft changes compared with the entry: only the modified fields (an empty date clears it). */
-function changesMadeInDraft(entry: LibraryEntry): LibraryEntryChanges {
-  const initial = createDraftFromEntry(entry)
+/** What the form changes compared with the entry: only the modified fields (an empty date clears it). */
+function changesMadeInForm(entry: LibraryEntry): LibraryEntryChanges {
+  const initial = createFormValuesFromEntry(entry)
   const changes: LibraryEntryChanges = {}
-  if (draft.status !== initial.status) changes.status = draft.status
-  if (draft.chaptersRead !== initial.chaptersRead) changes.chaptersRead = draft.chaptersRead
-  if (draft.volumesRead !== initial.volumesRead) changes.volumesRead = draft.volumesRead
-  if (draft.rating !== initial.rating)
-    changes.rating = draft.rating === NO_RATING ? null : draft.rating
-  if (draft.startedOn !== initial.startedOn) changes.startedOn = draft.startedOn || null
-  if (draft.finishedOn !== initial.finishedOn) changes.finishedOn = draft.finishedOn || null
+  if (form.status !== initial.status) changes.status = form.status
+  if (form.chaptersRead !== initial.chaptersRead) changes.chaptersRead = form.chaptersRead
+  if (form.volumesRead !== initial.volumesRead) changes.volumesRead = form.volumesRead
+  if (form.rating !== initial.rating)
+    changes.rating = form.rating === NO_RATING ? null : form.rating
+  if (form.startedOn !== initial.startedOn) changes.startedOn = form.startedOn || null
+  if (form.finishedOn !== initial.finishedOn) changes.finishedOn = form.finishedOn || null
   return changes
 }
 
 /** Reports the changed fields, if any, and closes the window. */
 function saveChangesAndClose() {
   if (!props.item) return
-  const changes = changesMadeInDraft(props.item.entry)
+  const changes = changesMadeInForm(props.item.entry)
   // Before closing: closing makes the page forget the work.
   if (Object.keys(changes).length > 0) emit('save', changes)
   open.value = false
@@ -135,9 +135,9 @@ function removeFromListAndClose() {
       <div class="edit__field">
         <span class="edit__label">{{ t('list.status') }}</span>
         <ListStatusButton
-          :status="draft.status"
+          :status="form.status"
           :title="item.work.title"
-          @change="draft.status = $event"
+          @change="form.status = $event"
         />
       </div>
 
@@ -146,7 +146,7 @@ function removeFromListAndClose() {
           {{ t('counter.chapters.label') }}
           <small>{{ publishedTotalLabel(item.work.chapters) }}</small>
         </span>
-        <UiCounter v-model="draft.chaptersRead" compact :label="t('counter.chapters.label')" />
+        <UiCounter v-model="form.chaptersRead" compact :label="t('counter.chapters.label')" />
       </div>
 
       <div class="edit__field">
@@ -154,7 +154,7 @@ function removeFromListAndClose() {
           {{ t('counter.volumes.label') }}
           <small>{{ publishedTotalLabel(item.work.volumes) }}</small>
         </span>
-        <UiCounter v-model="draft.volumesRead" compact :label="t('counter.volumes.label')" />
+        <UiCounter v-model="form.volumesRead" compact :label="t('counter.volumes.label')" />
       </div>
 
       <div class="edit__field">
@@ -177,12 +177,12 @@ function removeFromListAndClose() {
 
       <label class="edit__field">
         <span class="edit__label">{{ t('library.startedOn') }}</span>
-        <input v-model="draft.startedOn" type="date" class="edit__date" />
+        <input v-model="form.startedOn" type="date" class="edit__date" />
       </label>
 
       <label class="edit__field">
         <span class="edit__label">{{ t('library.finishedOn') }}</span>
-        <input v-model="draft.finishedOn" type="date" class="edit__date" />
+        <input v-model="form.finishedOn" type="date" class="edit__date" />
       </label>
     </div>
 

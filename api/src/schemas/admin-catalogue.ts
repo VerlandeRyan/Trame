@@ -17,14 +17,17 @@ import { LIFECYCLE_FILTERS } from '../repositories/admin-sql.js';
 import type { AdminListInput } from '../services/admin-list.js';
 import {
   ADMIN_WORK_SORTS,
-  type AdminWorkInput,
+  type AdminWorkCreateInput,
   type AdminWorkListInput,
-  type AdminWorkReplacement,
+  type AdminWorkUpdateInput,
 } from '../services/admin-work.service.js';
-import type { AdminPersonInput, AdminPersonReplacement } from '../services/admin-person.service.js';
 import type {
-  AdminPublisherInput,
-  AdminPublisherReplacement,
+  AdminPersonCreateInput,
+  AdminPersonUpdateInput,
+} from '../services/admin-person.service.js';
+import type {
+  AdminPublisherCreateInput,
+  AdminPublisherUpdateInput,
 } from '../services/admin-publisher.service.js';
 import { commaSeparatedList, genreCode, pageQuery } from './common.js';
 
@@ -47,7 +50,7 @@ const published = z
   .default(true);
 
 /** Publishes a draft when replacing it; no default, so a replacement that omits it keeps the draft. */
-const publishOnReplace = z
+const publishOnUpdate = z
   .boolean()
   .describe(
     'Publie le brouillon dans la même écriture (mêmes contrôles qu’une publication). Absent ou `false` : le brouillon reste brouillon ; une fiche publiée le reste.',
@@ -132,14 +135,14 @@ const personFields = {
 export const personBody = z.strictObject({
   ...personFields,
   published,
-}) satisfies z.ZodType<AdminPersonInput>;
+}) satisfies z.ZodType<AdminPersonCreateInput>;
 
 /** Body to replace a person: the fields, the version that was read, and whether to publish a draft. */
-export const personReplaceBody = z.strictObject({
+export const personUpdateBody = z.strictObject({
   ...personFields,
-  published: publishOnReplace,
+  published: publishOnUpdate,
   updatedAt: recordVersion,
-}) satisfies z.ZodType<AdminPersonReplacement>;
+}) satisfies z.ZodType<AdminPersonUpdateInput>;
 
 const publisherFields = {
   name,
@@ -151,17 +154,17 @@ const publisherFields = {
 export const publisherBody = z.strictObject({
   ...publisherFields,
   published,
-}) satisfies z.ZodType<AdminPublisherInput>;
+}) satisfies z.ZodType<AdminPublisherCreateInput>;
 
 /** Body to replace a publisher: the fields, the version that was read, and whether to publish a draft. */
-export const publisherReplaceBody = z.strictObject({
+export const publisherUpdateBody = z.strictObject({
   ...publisherFields,
-  published: publishOnReplace,
+  published: publishOnUpdate,
   updatedAt: recordVersion,
-}) satisfies z.ZodType<AdminPublisherReplacement>;
+}) satisfies z.ZodType<AdminPublisherUpdateInput>;
 
 /** The work fields the business rules read (all but the publication flag). */
-type WorkFields = Omit<AdminWorkInput, 'published'>;
+type WorkFields = Omit<AdminWorkCreateInput, 'published'>;
 
 /** A validation problem attached to a field of the work body. */
 type KeyedIssue = { path: string; message: string };
@@ -253,9 +256,9 @@ function checkWorkRules(work: WorkFields, ctx: z.RefinementCtx): void {
 /** Body to create a work, with its titles, credits, genres, relations and links. */
 export const workBody = z
   .strictObject({ ...workFields, published })
-  .superRefine(checkWorkRules) satisfies z.ZodType<AdminWorkInput>;
+  .superRefine(checkWorkRules) satisfies z.ZodType<AdminWorkCreateInput>;
 
 /** Body to replace a work: the fields, the version that was read, and whether to publish a draft. */
-export const workReplaceBody = z
-  .strictObject({ ...workFields, published: publishOnReplace, updatedAt: recordVersion })
-  .superRefine(checkWorkRules) satisfies z.ZodType<AdminWorkReplacement>;
+export const workUpdateBody = z
+  .strictObject({ ...workFields, published: publishOnUpdate, updatedAt: recordVersion })
+  .superRefine(checkWorkRules) satisfies z.ZodType<AdminWorkUpdateInput>;

@@ -1,11 +1,11 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import { reactive } from 'vue'
-import { emptyWorkDraft } from '~/utils/admin'
+import { emptyWorkFormValues } from '~/utils/admin'
 import AdminWorkTextFields from './WorkTextFields.vue'
 
 function mountFields() {
-  const draft = reactive(emptyWorkDraft())
+  const draft = reactive(emptyWorkFormValues())
   return mountSuspended(AdminWorkTextFields, { props: { modelValue: draft } }).then((wrapper) => ({
     wrapper,
     draft,

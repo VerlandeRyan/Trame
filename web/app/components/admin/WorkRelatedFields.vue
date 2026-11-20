@@ -10,7 +10,7 @@ import {
   type AdminKind,
   type PublicationGap,
   type RecordRef,
-  type WorkDraft,
+  type WorkFormValues,
 } from '~/utils/admin'
 
 /**
@@ -25,7 +25,7 @@ const props = defineProps<{
   /** Gaps the API reported, flagged like the local ones. */
   serverGaps?: readonly PublicationGap[]
 }>()
-const draft = defineModel<WorkDraft>({ required: true })
+const form = defineModel<WorkFormValues>({ required: true })
 const { t } = useI18n()
 const roleOptions = optionsOf(CREDIT_ROLES, (code) => t(`admin.option.creditRole.${code}`))
 const relationOptions = optionsOf(RELATION_KINDS, (code) => t(`admin.option.relation.${code}`))
@@ -33,7 +33,7 @@ const relationOptions = optionsOf(RELATION_KINDS, (code) => t(`admin.option.rela
 const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
 /** Whether the work has no author (or no publisher) yet: flagged after a refused publication. */
 const flaggedGaps = computed(() =>
-  props.showErrors === true ? publicationGapsOf(draft.value, [], props.serverGaps) : [],
+  props.showErrors === true ? publicationGapsOf(form.value, [], props.serverGaps) : [],
 )
 const isNoCredit = computed(() => flaggedGaps.value.includes('credits'))
 const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
@@ -43,14 +43,14 @@ const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
   <div class="related">
     <AdminPanel v-if="part === 'people'" :title="t('admin.work.credits')">
       <AdminRowList
-        :items="draft.credits"
+        :items="form.credits"
         :add-label="t('admin.work.addCredit')"
         :remove-label="t('admin.work.removeCredit')"
         :row-label="t('admin.work.creditRow')"
         :is-filled="isCreditRowFilled"
         columns="minmax(0, 1fr) 16rem"
-        @add="draft.credits.push({ person: null, role: 'story' })"
-        @remove="draft.credits.splice($event, 1)"
+        @add="form.credits.push({ person: null, role: 'story' })"
+        @remove="form.credits.splice($event, 1)"
       >
         <template #default="{ item }">
           <AdminRecordPicker
@@ -74,13 +74,13 @@ const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
     </AdminPanel>
     <AdminPanel v-if="part === 'people'" :title="t('admin.work.publishers')">
       <AdminRowList
-        :items="draft.publishers"
+        :items="form.publishers"
         :add-label="t('admin.work.addPublisher')"
         :remove-label="t('admin.work.removePublisher')"
         :row-label="t('admin.work.publisherRow')"
         :is-filled="isPublisherRowFilled"
-        @add="draft.publishers.push({ publisher: null })"
-        @remove="draft.publishers.splice($event, 1)"
+        @add="form.publishers.push({ publisher: null })"
+        @remove="form.publishers.splice($event, 1)"
       >
         <template #default="{ item }">
           <AdminRecordPicker
@@ -98,14 +98,14 @@ const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
     </AdminPanel>
     <AdminPanel v-else :title="t('admin.work.relations')" :hint="t('admin.work.relationHint')">
       <AdminRowList
-        :items="draft.relations"
+        :items="form.relations"
         :add-label="t('admin.work.addRelation')"
         :remove-label="t('admin.work.removeRelation')"
         :row-label="t('admin.work.relationRow')"
         :is-filled="isRelationRowFilled"
         columns="minmax(0, 1fr) 16rem"
-        @add="draft.relations.push({ work: null, relation: 'sequel' })"
-        @remove="draft.relations.splice($event, 1)"
+        @add="form.relations.push({ work: null, relation: 'sequel' })"
+        @remove="form.relations.splice($event, 1)"
       >
         <template #default="{ item }">
           <AdminRecordPicker

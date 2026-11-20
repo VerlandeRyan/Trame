@@ -64,7 +64,7 @@ export const archiveColumns = (archived: boolean, adminId: number) => ({
 });
 
 /** Publication date written when replacing a record: set if asked and still a draft, otherwise unchanged. */
-export const publishedAtOnReplace = (published: boolean) =>
+export const publishedAtOnUpdate = (published: boolean) =>
   published ? sql<Date>`COALESCE(published_at, now())` : sql<Date | null>`published_at`;
 
 /**

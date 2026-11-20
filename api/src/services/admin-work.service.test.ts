@@ -1,16 +1,16 @@
 import { describe, expect, it, vi, type Mock } from 'vitest';
 import type {
-  AdminWorkRecord,
+  AdminWorkCreateInput,
   AdminWorkRepository,
+  AdminWorkRaw,
   ArchivedReferences,
   MissingReferences,
   ReferenceReader,
-  WorkDraft,
 } from '../repositories/admin-work.repository.js';
 import type { Lifecycle } from '../repositories/admin-sql.js';
 import { createAdminWorkService } from './admin-work.service.js';
 
-const draft: WorkDraft = {
+const createInput: AdminWorkCreateInput = {
   title: 'Œuvre',
   originalLanguage: 'fr',
   type: 'series',
@@ -39,7 +39,7 @@ const NOTHING_MISSING: MissingReferences = {
 const NOTHING_ARCHIVED: ArchivedReferences = { personIds: [], publisherIds: [], workIds: [] };
 
 function fakeRepository(
-  record: AdminWorkRecord | null,
+  record: AdminWorkRaw | null,
   missing: MissingReferences = NOTHING_MISSING,
   archived: ArchivedReferences = NOTHING_ARCHIVED,
   isUpToDate = true,
@@ -58,12 +58,12 @@ function fakeRepository(
     written,
     list: vi.fn(async () => ({ items: [], total: 0 })),
     find: vi.fn(async () => record),
-    create: vi.fn(async (_draft, check) => {
+    create: vi.fn(async (_input, check) => {
       await check(references);
       written();
       return 1;
     }),
-    update: vi.fn(async (_id, _draft, _version, check) => {
+    update: vi.fn(async (_id, _input, _version, check) => {
       await check(references);
       written();
       return isUpToDate;
@@ -76,12 +76,12 @@ function fakeRepository(
 
 const VERSION = '2026-10-24T10:00:00.000Z';
 
-/** The data of a replacement: the draft and the version that was read. */
-const replacing = (input: WorkDraft) => ({ ...input, updatedAt: VERSION });
+/** The data sent to update a work: the creation data and the version that was read. */
+const replacing = (input: AdminWorkCreateInput) => ({ ...input, updatedAt: VERSION });
 
-const { published: _published, ...WORK_FIELDS } = draft;
+const { published: _published, ...WORK_FIELDS } = createInput;
 
-const record = (lifecycle: Lifecycle = 'published'): AdminWorkRecord => ({
+const record = (lifecycle: Lifecycle = 'published'): AdminWorkRaw => ({
   ...WORK_FIELDS,
   id: 1,
   lifecycle,
@@ -120,7 +120,7 @@ describe('références', () => {
   it('refuse un enregistrement cité qui n’existe pas', async () => {
     const missing = { ...NOTHING_MISSING, genres: ['inconnu'] };
     const repository = fakeRepository(record(), missing);
-    await expect(createAdminWorkService(repository).create(draft)).rejects.toMatchObject({
+    await expect(createAdminWorkService(repository).create(createInput)).rejects.toMatchObject({
       code: 'INVALID_REFERENCE',
       details: missing,
     });
@@ -135,15 +135,18 @@ describe('références', () => {
       details: [{ path: ['genres'], code: 'too_small' }],
     };
 
-    await expect(service.create(draft)).rejects.toMatchObject(expected);
-    await expect(service.update(1, replacing(draft))).rejects.toMatchObject(expected);
+    await expect(service.create(createInput)).rejects.toMatchObject(expected);
+    await expect(service.update(1, replacing(createInput))).rejects.toMatchObject(expected);
     expect(repository.written).not.toHaveBeenCalled();
     expect(repository.written).not.toHaveBeenCalled();
   });
 
   it('refuse une relation de l’œuvre avec elle-même', async () => {
     const repository = fakeRepository(record());
-    const selfRelated = { ...draft, relations: [{ relatedWorkId: 1, relation: 'other' as const }] };
+    const selfRelated = {
+      ...createInput,
+      relations: [{ relatedWorkId: 1, relation: 'other' as const }],
+    };
     await expect(
       createAdminWorkService(repository).update(1, replacing(selfRelated)),
     ).rejects.toMatchObject({ code: 'INVALID_REFERENCE' });
@@ -153,7 +156,7 @@ describe('références', () => {
   it('refuse de modifier une œuvre inconnue avant toute écriture', async () => {
     const repository = fakeRepository(null);
     await expect(
-      createAdminWorkService(repository).update(1, replacing(draft)),
+      createAdminWorkService(repository).update(1, replacing(createInput)),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
     expect(repository.written).not.toHaveBeenCalled();
   });
@@ -161,7 +164,7 @@ describe('références', () => {
   it('refuse de citer une fiche archivée', async () => {
     const archived = { ...NOTHING_ARCHIVED, personIds: [3] };
     const repository = fakeRepository(record(), NOTHING_MISSING, archived);
-    const credited = { ...draft, credits: [{ personId: 3, role: 'story' as const }] };
+    const credited = { ...createInput, credits: [{ personId: 3, role: 'story' as const }] };
     await expect(createAdminWorkService(repository).create(credited)).rejects.toMatchObject({
       code: 'ARCHIVED_REFERENCE',
       details: archived,
@@ -172,7 +175,7 @@ describe('références', () => {
   it('garde une fiche archivée que l’œuvre cite déjà', async () => {
     const archived = { ...NOTHING_ARCHIVED, personIds: [3], publisherIds: [4], workIds: [5] };
     const cited = {
-      ...draft,
+      ...createInput,
       credits: [{ personId: 3, role: 'story' as const }],
       publisherIds: [4],
       relations: [{ relatedWorkId: 5, relation: 'other' as const }],
@@ -184,7 +187,7 @@ describe('références', () => {
 });
 
 describe('brouillon', () => {
-  const asDraft = { ...draft, published: false };
+  const asDraft = { ...createInput, published: false };
 
   it('n’exige pas de format ni de fiche publiée pour un brouillon', async () => {
     const draftsCited = { ...NOTHING_ARCHIVED, personIds: [3] };
@@ -214,7 +217,7 @@ describe('brouillon', () => {
       true,
       draftsCited,
     );
-    await expect(createAdminWorkService(repository).create(draft)).rejects.toMatchObject({
+    await expect(createAdminWorkService(repository).create(createInput)).rejects.toMatchObject({
       code: 'DRAFT_REFERENCE',
       details: draftsCited,
     });
@@ -222,7 +225,7 @@ describe('brouillon', () => {
 
   it('publie un brouillon complet dans le même remplacement', async () => {
     const repository = fakeRepository(record('draft'));
-    await createAdminWorkService(repository).update(1, replacing(draft));
+    await createAdminWorkService(repository).update(1, replacing(createInput));
     expect(repository.update).toHaveBeenCalledWith(
       1,
       expect.objectContaining({ published: true }),
@@ -234,7 +237,7 @@ describe('brouillon', () => {
 
   it('garde un brouillon brouillon quand le remplacement ne demande pas la publication', async () => {
     const repository = fakeRepository(record('draft'));
-    const { published: _omitted, ...withoutPublished } = draft;
+    const { published: _omitted, ...withoutPublished } = createInput;
     await createAdminWorkService(repository).update(1, { ...withoutPublished, updatedAt: VERSION });
     expect(repository.update).toHaveBeenCalledWith(
       1,
@@ -246,7 +249,10 @@ describe('brouillon', () => {
 
   it('ne dépublie jamais une œuvre publiée, même avec published: false', async () => {
     const repository = fakeRepository(record());
-    await createAdminWorkService(repository).update(1, replacing({ ...draft, published: false }));
+    await createAdminWorkService(repository).update(
+      1,
+      replacing({ ...createInput, published: false }),
+    );
     expect(repository.update).toHaveBeenCalledWith(
       1,
       expect.objectContaining({ published: true }),
@@ -264,7 +270,7 @@ describe('brouillon', () => {
       false,
     );
     await expect(
-      createAdminWorkService(repository).update(1, replacing(draft)),
+      createAdminWorkService(repository).update(1, replacing(createInput)),
     ).rejects.toMatchObject({ code: 'VALIDATION_ERROR' });
     expect(repository.written).not.toHaveBeenCalled();
   });
@@ -280,28 +286,28 @@ describe('brouillon', () => {
       draftsCited,
     );
     await expect(
-      createAdminWorkService(repository).update(1, replacing(draft)),
+      createAdminWorkService(repository).update(1, replacing(createInput)),
     ).rejects.toMatchObject({ code: 'DRAFT_REFERENCE', details: draftsCited });
     expect(repository.written).not.toHaveBeenCalled();
   });
 
   it('ne supprime qu’un brouillon ou une œuvre archivée', async () => {
     const published = fakeRepository(record());
-    await expect(createAdminWorkService(published).remove(1)).rejects.toMatchObject({
+    await expect(createAdminWorkService(published).delete(1)).rejects.toMatchObject({
       code: 'NOT_REMOVABLE',
     });
     const draftRepository = fakeRepository(record('draft'));
-    await expect(createAdminWorkService(draftRepository).remove(1)).resolves.toBeUndefined();
+    await expect(createAdminWorkService(draftRepository).delete(1)).resolves.toBeUndefined();
     expect(draftRepository.deleteRecord).toHaveBeenCalledWith(1);
     const archivedRepository = fakeRepository(record('archived'));
-    await expect(createAdminWorkService(archivedRepository).remove(1)).resolves.toBeUndefined();
+    await expect(createAdminWorkService(archivedRepository).delete(1)).resolves.toBeUndefined();
     expect(archivedRepository.deleteRecord).toHaveBeenCalledWith(1);
   });
 
   it('refuse de supprimer une œuvre encore liée', async () => {
     const repository = fakeRepository(record('archived'));
     vi.mocked(repository.deleteRecord).mockResolvedValue(false);
-    await expect(createAdminWorkService(repository).remove(1)).rejects.toMatchObject({
+    await expect(createAdminWorkService(repository).delete(1)).rejects.toMatchObject({
       code: 'RECORD_IN_USE',
     });
   });
@@ -310,7 +316,7 @@ describe('brouillon', () => {
 describe('version de la fiche', () => {
   it('transmet la version lue par l’éditeur à l’écriture', async () => {
     const repository = fakeRepository(record());
-    await createAdminWorkService(repository).update(1, { ...draft, updatedAt: VERSION });
+    await createAdminWorkService(repository).update(1, { ...createInput, updatedAt: VERSION });
     expect(repository.update).toHaveBeenCalledWith(
       1,
       expect.objectContaining({ title: 'Œuvre' }),
@@ -322,7 +328,7 @@ describe('version de la fiche', () => {
   it('refuse une fiche modifiée entre-temps', async () => {
     const repository = fakeRepository(record(), NOTHING_MISSING, NOTHING_ARCHIVED, false);
     await expect(
-      createAdminWorkService(repository).update(1, { ...draft, updatedAt: VERSION }),
+      createAdminWorkService(repository).update(1, { ...createInput, updatedAt: VERSION }),
     ).rejects.toMatchObject({ code: 'STALE_RECORD' });
   });
 });

@@ -2078,7 +2078,7 @@
           }
         ],
         "summary": "Remplacer, et publier un brouillon avec `published: true` : Person",
-        "operationId": "replaceAdminPerson",
+        "operationId": "updateAdminPerson",
         "parameters": [
           {
             "name": "id",
@@ -2881,7 +2881,7 @@
           }
         ],
         "summary": "Remplacer, et publier un brouillon avec `published: true` : Publisher",
-        "operationId": "replaceAdminPublisher",
+        "operationId": "updateAdminPublisher",
         "parameters": [
           {
             "name": "id",
@@ -3917,7 +3917,7 @@
           }
         ],
         "summary": "Remplacer, et publier un brouillon avec `published: true` : Work",
-        "operationId": "replaceAdminWork",
+        "operationId": "updateAdminWork",
         "parameters": [
           {
             "name": "id",
