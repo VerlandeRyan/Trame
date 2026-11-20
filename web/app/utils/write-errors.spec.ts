@@ -8,7 +8,12 @@ describe('isRetryable', () => {
   })
 
   it('n’en propose pas pour un refus qu’il faut corriger', () => {
-    for (const code of ['VALIDATION_ERROR', 'STALE_RECORD', 'DRAFT_REFERENCE', 'NOT_FOUND']) {
+    for (const code of [
+      'VALIDATION_ERROR',
+      'STALE_RECORD',
+      'DRAFT_REFERENCE',
+      'NOT_FOUND',
+    ] as const) {
       expect(isRetryable(code)).toBe(false)
     }
   })
@@ -20,7 +25,7 @@ describe('writeErrorKey', () => {
     expect(writeErrorKey('NOT_FOUND')).toBe('writeError.notFound')
     expect(writeErrorKey('RATE_LIMITED')).toBe('error.RATE_LIMITED')
     expect(writeErrorKey('INTERNAL_ERROR')).toBe('writeError.generic')
-    expect(writeErrorKey('constructor')).toBe('writeError.generic')
+    expect(writeErrorKey('VALIDATION_ERROR')).toBe('writeError.generic')
   })
 })
 

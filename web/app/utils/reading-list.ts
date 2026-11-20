@@ -1,17 +1,21 @@
 /** My reading list: response types and pure logic of the page (tested without Nuxt). */
-import type {
-  LibraryEntry,
-  LibraryStatus,
-  ListedEntry,
-  ReadingTotals,
-  StatusCounts,
+import {
+  LIST_SORTS,
+  type LibraryEntry,
+  type LibraryStatus,
+  type ListedEntry,
+  type ListSort,
+  type ReadingTotals,
+  type StatusCounts,
 } from '../contract/api'
 import { LIBRARY_STATUSES } from './library'
 
+export { LIST_SORTS }
 export type {
   ListedEntry,
   ListedWork,
   ListPage,
+  ListSort,
   ReadingTotals,
   StatusCounts,
 } from '../contract/api'
@@ -19,9 +23,6 @@ export type {
 /** Works requested per page (the API limit). */
 export const LIST_PAGE_SIZE = 50
 
-/** Sort orders of the list: latest progress, title, best rated. */
-export type ListSort = 'updated' | 'title' | 'rating'
-export const LIST_SORTS: ListSort[] = ['updated', 'title', 'rating']
 const DEFAULT_SORT: ListSort = 'updated'
 
 /** Display modes of the list. */

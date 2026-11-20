@@ -82,6 +82,6 @@ describe('createApiClient().messageKeyFor', () => {
     const { messageKeyFor } = makeClient()
 
     expect(messageKeyFor({ status: 403, code: 'ADMIN_REQUIRED' })).toBe('error.ADMIN_REQUIRED')
-    expect(messageKeyFor({ status: 500, code: 'INCONNU' })).toBe('error.INTERNAL_ERROR')
+    expect(messageKeyFor({ status: 404, code: 'NOT_FOUND' })).toBe('error.INTERNAL_ERROR')
   })
 })

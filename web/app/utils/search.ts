@@ -1,7 +1,16 @@
 /** Search: API response types and pure logic of the results page. */
-import { WORK_STATUSES, WORK_TYPES, type FacetCount, type WorkSummary } from '../contract/api'
+import {
+  SEARCH_SORTS,
+  WORK_STATUSES,
+  WORK_TYPES,
+  type FacetCount,
+  type SearchSort,
+  type WorkSearchParams,
+  type WorkSummary,
+} from '../contract/api'
 
-export type { FacetCount, WorkFacets, WorkPage, WorkSummary } from '../contract/api'
+export { SEARCH_SORTS }
+export type { FacetCount, SearchSort, WorkFacets, WorkPage, WorkSummary } from '../contract/api'
 
 /** Shortest search text sent to the API. */
 export const MIN_QUERY_LENGTH = 2
@@ -10,20 +19,22 @@ export const PAGE_SIZE = 20
 /** Number of suggestions offered while typing. */
 export const SUGGESTION_COUNT = 3
 
-/** Filter groups of the search. */
-export type FilterKey = 'type' | 'format' | 'genre' | 'status' | 'originalLanguage'
+/** Filter groups of the search: each one is a query parameter of the API (checked by `satisfies`). */
+export const FILTER_KEYS = [
+  'type',
+  'format',
+  'genre',
+  'status',
+  'originalLanguage',
+] as const satisfies readonly (keyof WorkSearchParams)[]
 
-export const FILTER_KEYS: FilterKey[] = ['type', 'format', 'genre', 'status', 'originalLanguage']
+export type FilterKey = (typeof FILTER_KEYS)[number]
 
 /** Several values per group (OR, except genres which are AND); groups combine together (AND). */
 export type SearchFilters = Partial<Record<FilterKey, string[]>>
 
 /** Maximum number of values in one filter group. */
 export const MAX_FILTER_VALUES = 10
-
-/** Sort orders of the results. */
-export type SearchSort = 'relevance' | 'title' | 'recent'
-export const SORTS: SearchSort[] = ['relevance', 'title', 'recent']
 
 /** The API's default sort. */
 const API_DEFAULT_SORT: SearchSort = 'relevance'
@@ -89,7 +100,7 @@ export function parseSearchQuery(query: Record<string, unknown>): SearchState {
   }
   const page = Number.parseInt(firstString(query.page), 10)
   const q = normalizeQuery(firstString(query.q))
-  const requested = SORTS.find((candidate) => candidate === firstString(query.sort))
+  const requested = SEARCH_SORTS.find((candidate) => candidate === firstString(query.sort))
   // No relevance sort without search text.
   const sort =
     requested === undefined || (requested === 'relevance' && !hasSearchText(q))

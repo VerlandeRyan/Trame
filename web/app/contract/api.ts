@@ -2,13 +2,14 @@
  * API response types, taken from the generated `api-schema.ts`. The only place that names a
  * piece of the contract: never copy a type elsewhere.
  */
-import type { components } from './api-schema'
+import type { components, operations } from './api-schema'
 
 type Schemas = components['schemas']
 
 // Runtime values of the enumerations, generated with the types: never copied.
 export {
   creditRoleValues as CREDIT_ROLES,
+  errorCodeValues as ERROR_CODES,
   externalLinkKindValues as LINK_KINDS,
   libraryStatusValues as LIBRARY_STATUSES,
   personKindValues as PERSON_KINDS,
@@ -24,6 +25,9 @@ export {
   pathsApiV1AdminWorksGetParametersQueryLifecycleValues as ADMIN_LIFECYCLE_FILTERS,
   // Sort orders of the administration work list.
   pathsApiV1AdminWorksGetParametersQuerySortValues as ADMIN_WORK_SORTS,
+  // Sort orders of the search and of the reading list.
+  pathsApiV1WorksGetParametersQuerySortValues as SEARCH_SORTS,
+  pathsApiV1MeEntriesGetParametersQuerySortValues as LIST_SORTS,
   publicationGapValues as PUBLICATION_GAPS,
 } from './api-schema'
 
@@ -34,6 +38,12 @@ export type WorkType = WorkSummary['type']
 export type WorkStatus = WorkSummary['status']
 export type WorkFacets = Schemas['WorkFacets']
 export type FacetCount = WorkFacets['type'][number]
+/** The query parameters of the work search: the filters are checked against its keys. */
+export type WorkSearchParams = NonNullable<operations['listWorks']['parameters']['query']>
+export type SearchSort = NonNullable<WorkSearchParams['sort']>
+
+/** An error code of the API. */
+export type ErrorCode = Schemas['Error']['code']
 
 // Work detail
 export type WorkDetail = Schemas['WorkDetail']
@@ -68,6 +78,10 @@ export type ListedEntry = RawListPage['items'][number]
 export type ListedWork = ListedEntry['work']
 export type LibraryEntry = ListedEntry['entry']
 export type LibraryStatus = LibraryEntry['status']
+/** Sort orders of the reading list. */
+export type ListSort = NonNullable<
+  NonNullable<operations['listLibraryEntries']['parameters']['query']>['sort']
+>
 export type ReadingTotals = RawListPage['totals']
 
 /** One number per status: the contract describes them as a dictionary, the API gives them all. */

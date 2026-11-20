@@ -1,6 +1,7 @@
 <script setup lang="ts">
 /** Button, or a link styled as a button, in several colour variants and two sizes. */
 import type { RouteLocationRaw } from 'vue-router'
+import type { LibraryStatus } from '~/contract/api'
 
 /** Hover tilt tier, chosen by button width. */
 type Tilt = 'small' | 'medium' | 'wide'
@@ -10,7 +11,7 @@ const props = withDefaults(
     variant?: 'primary' | 'secondary' | 'blue' | 'success' | 'danger' | 'danger-solid'
     size?: 'normal' | 'small'
     /** Status colour: work already in the list (the label is always present). */
-    status?: 'reading' | 'completed' | 'plan_to_read' | 'on_hold' | 'dropped'
+    status?: LibraryStatus
     /** A link (full navigation) styled as a button. */
     href?: string
     /** An internal site link (navigation without reload) styled as a button. */

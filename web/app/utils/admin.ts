@@ -13,6 +13,7 @@ import type {
   AdminPublisher,
   AdminRecordLabel,
   AdminWork,
+  ErrorCode,
   PublicationGap,
 } from '../contract/api'
 import type { ApiError } from './api-error'
@@ -605,7 +606,7 @@ export const formValuesToPublisherBody = (form: PublisherFormValues) => ({
 })
 
 /** Administration messages that replace the generic ones (the validation one talks about the handle). */
-const ADMIN_ERROR_KEYS = new Map([
+const ADMIN_ERROR_KEYS = new Map<ErrorCode, string>([
   ['VALIDATION_ERROR', 'admin.error.validation'],
   ['NOT_FOUND', 'admin.error.notFound'],
 ])

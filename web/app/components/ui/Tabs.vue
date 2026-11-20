@@ -1,11 +1,13 @@
 <script setup lang="ts">
+import type { LibraryStatus } from '~/contract/api'
+
 /** One tab of the control. */
 export interface UiTab {
   id: string
   label: string
   count?: number
   /** Reading status colour. */
-  status?: 'reading' | 'completed' | 'plan_to_read' | 'on_hold' | 'dropped'
+  status?: LibraryStatus
   /** Alert text: the tab carries a red dot (an error to fix in this panel). */
   alert?: string
 }
