@@ -80,6 +80,18 @@ Le code se reprend sans ouvrir d'autres fichiers ; le commentaire est court, uti
 - **Contrôles** : `eslint-plugin-jsdoc` (`npm run lint`) impose la ligne par fonction, interface et classe (les types dérivés d'une constante documentée n'ont pas leur propre ligne) ; un test d'en-têtes (`file-headers.test.ts` côté API, `file-headers.spec.ts` côté web) impose l'en-tête de fichier. Aucun outil ne juge la qualité : voir ci-dessous.
 - **Relecture** : avant de rendre un travail, se demander « un nouveau venu comprendrait-il ce fichier sans ouvrir les autres ? » et relire le diff avec `/simplify` (ou `/code-review` sur une PR) pour retirer ce qui redit le code. L'assistant prend cette habitude à chaque tâche.
 
+## 6 quater. Vocabulaire des types d'administration
+
+Les trois ressources du catalogue d'administration (œuvre, personne, éditeur) utilisent les mêmes mots, côté API comme côté web (`Admin` + ressource + mot : `AdminWorkListItem`).
+
+- **Fiche** : une ligne d'une des trois tables (une œuvre, une personne, un éditeur).
+- **`ListItem`** : une ligne du tableau d'administration (une œuvre, une personne ou un éditeur).
+- **`Detail`** : la fiche complète, ce que renvoie `GET /{id}` et ce que le formulaire affiche. L'éditeur n'a pas de `Detail` : sa ligne de liste contient déjà tous les champs. Pour l'œuvre, le dépôt lit un `AdminWorkRaw` (la fiche brute), et le service sert un `AdminWorkDetail` (sans `hasFormat`, avec `publicationGaps`).
+- **`CreateInput`** : les champs envoyés pour créer une fiche (`POST`).
+- **`UpdateInput`** : les mêmes champs plus `updatedAt`, la version lue avant l'édition. C'est un remplacement complet (`PUT`, tous les champs sont envoyés, y compris pour publier) ; une fiche modifiée entre-temps donne `STALE_RECORD`.
+- **`record`** veut dire « fiche » (`STALE_RECORD`, `RecordRef`), jamais un champ structuré au sens d'une base de données.
+- **`Draft`** ne désigne qu'une fiche non publiée (brouillon), jamais des données d'écriture. Le mot `body` reste réservé au schéma HTTP d'une requête (`workBody`).
+
 ## 6 bis. Budget de documentation
 
 La documentation doit rester petite pour rester juste et peu coûteuse à lire.
@@ -114,6 +126,17 @@ Node LTS, TypeScript stable, aucune version préliminaire, versions épinglées,
 - **PR externe** : `.claude/`, `CLAUDE.md` et `.github/` sont chargés ou exécutés par l'assistant ; leur diff se relit avant de récupérer la branche et d'y ouvrir une session. `.github/CODEOWNERS` les désigne.
 - Autorisations locales (`.claude/settings.local.json`, non versionné) : commandes nommées plutôt que génériques ; pas d'exécution de code arbitraire (`node -e`, `npx` libre) ni de requête réseau libre.
 
+### Refactorisation et renommage
+
+Un refactor a un coût (relecture, risque, historique) : il doit se justifier.
+
+- **Un problème concret** : un bug évité, du code dupliqué, une vraie confusion de lecture. « Ce serait plus propre » ne suffit pas ; sans cas concret, on laisse.
+- **Un thème par PR** : ce qui n'est pas nécessaire au thème du ticket va dans un ticket à part, avec la condition qui le justifie.
+- **Vocabulaire d'abord** : avant de renommer, écrire les mots (ce que chacun veut dire) et les faire valider, puis renommer d'un bloc ; jamais de renommage au fil de l'eau.
+- **Cohérence entre ressources** : une même idée porte le même nom partout (œuvre, personne, éditeur ; API et web).
+- **On s'arrête** quand le problème de départ est réglé : pas de poursuite « tant qu'on y est ».
+- Un renommage ne change ni comportement, ni contrat d'API, ni schéma : `openapi:export` sans différence le prouve.
+
 ### Revues complémentaires
 
 L'assistant lance ces revues **de lui-même** quand le déclencheur est rempli, corrige ce qu'elles relèvent et ne rend que le résultat : pas de question tant que la règle est écrite. La correspondance avec les outils de revue est dans `private/docs/revues.md`.
@@ -126,6 +149,8 @@ L'assistant lance ces revues **de lui-même** quand le déclencheur est rempli, 
 | Diff touchant l'API (route, authentification, SQL, migration) | Relecture sécurité et performance, en plus des deux précédentes |
 | Ticket transverse (API, web, E2E, docs) | Cycle de développement guidé, **après** la branche et le ticket « In progress » ; mêmes règles de tests et de git, aucun commit |
 | Fermeture d'un jalon du Project, ou sur demande | Contrôle d'écart entre `docs/` et le code (lecture seule) |
+
+**Exception : renommage pur.** Un diff qui ne fait que renommer (aucune logique, aucun contrat de requête ou de réponse, aucun schéma modifié) est dispensé de `/simplify`, de `/code-review` et de la revue sécurité de l'API : le typecheck, les tests et `openapi:export` détectent déjà un renommage cassé. À la place, l'assistant parcourt le diff mot à mot (`git diff --word-diff`) pour vérifier qu'il ne contient que des renommages, et le compte rendu écrit « renommage pur ».
 
 Le compte rendu de fin de ticket est unique : ce qui est vérifié, ce qui ne l'est pas, les corrections faites et le message de commit.
 

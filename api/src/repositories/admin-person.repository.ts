@@ -12,7 +12,7 @@ import {
   lifecycleOf,
   lockRow,
   nameContains,
-  publishedAtOnReplace,
+  publishedAtOnUpdate,
   totalOf,
   versionOf,
   type Lifecycle,
@@ -20,8 +20,8 @@ import {
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
 
-/** Data written when creating or replacing a person; `published` publishes a draft (never the reverse). */
-export interface AdminPersonDraft {
+/** Data sent to create a person; `published` publishes a draft (never the reverse). */
+export interface AdminPersonCreateInput {
   name: string;
   kind: PersonKind;
   links: ExternalLinkRecord[];
@@ -29,7 +29,7 @@ export interface AdminPersonDraft {
 }
 
 /** A person as shown in lists. */
-export interface AdminPersonSummary {
+export interface AdminPersonListItem {
   id: number;
   name: string;
   kind: PersonKind;
@@ -44,8 +44,8 @@ export interface AdminPersonSummary {
   archivedBy: string | null;
 }
 
-/** A person with their links. */
-export interface AdminPersonRecord extends AdminPersonSummary {
+/** A person with their links, as served for editing. */
+export interface AdminPersonDetail extends AdminPersonListItem {
   links: ExternalLinkRecord[];
 }
 
@@ -59,11 +59,11 @@ export interface AdminPersonListCriteria {
 
 /** People administration queries. */
 export interface AdminPersonRepository {
-  list(criteria: AdminPersonListCriteria): Promise<{ items: AdminPersonSummary[]; total: number }>;
-  find(id: number): Promise<AdminPersonRecord | null>;
-  create(draft: AdminPersonDraft): Promise<number>;
+  list(criteria: AdminPersonListCriteria): Promise<{ items: AdminPersonListItem[]; total: number }>;
+  find(id: number): Promise<AdminPersonDetail | null>;
+  create(input: AdminPersonCreateInput): Promise<number>;
   /** False if the person does not exist, or if `version` is no longer the record's; publishes a draft when asked. */
-  update(id: number, draft: AdminPersonDraft, version: string): Promise<boolean>;
+  update(id: number, input: AdminPersonCreateInput, version: string): Promise<boolean>;
   /**
    * False if the person does not exist, or, when archiving, if an unarchived work credits them.
    * `adminId` is who archives, ignored on restore.
@@ -75,7 +75,7 @@ export interface AdminPersonRepository {
 }
 
 /** Columns read for a person summary. */
-type SummaryRow = Pick<
+type ListItemRow = Pick<
   Selectable<PersonRow>,
   'id' | 'name' | 'kind' | 'deleted_at' | 'published_at'
 > & {
@@ -85,7 +85,7 @@ type SummaryRow = Pick<
 };
 
 /** Converts a database row into a summary. */
-function toSummary(row: SummaryRow): AdminPersonSummary {
+function toListItem(row: ListItemRow): AdminPersonListItem {
   return {
     id: row.id,
     name: row.name,
@@ -148,7 +148,7 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
           .executeTakeFirstOrThrow();
         return counted.total;
       });
-      return { items: rows.map(toSummary), total };
+      return { items: rows.map(toListItem), total };
     },
 
     async find(id) {
@@ -168,7 +168,7 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
         .where('person_id', '=', id)
         .orderBy('id')
         .execute();
-      return { ...toSummary(row), links };
+      return { ...toListItem(row), links };
     },
 
     async create({ name, kind, links, published }) {
@@ -190,7 +190,7 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
           .set({
             name,
             kind,
-            published_at: publishedAtOnReplace(published),
+            published_at: publishedAtOnUpdate(published),
             updated_at: sql<Date>`now()`,
           })
           .where('id', '=', id)

@@ -115,7 +115,7 @@ async function createWork(admin: Agent, overrides: Record<string, unknown> = {})
 }
 
 /** Replaces a record with the version it has now, as an editor opened on it would. */
-async function replace(admin: Agent, path: string, id: number, body: object) {
+async function updateRecord(admin: Agent, path: string, id: number, body: object) {
   const { updatedAt } = (await admin.get(`${ADMIN}/${path}/${id}`)).body;
   return admin.put(`${ADMIN}/${path}/${id}`).send({ ...body, updatedAt });
 }
@@ -237,7 +237,7 @@ describe('personnes', () => {
     });
 
     const id = created.body.id;
-    const replaced = await replace(admin, 'people', id, {
+    const replaced = await updateRecord(admin, 'people', id, {
       name: `${PREFIX} Léa M.`,
       kind: 'collective',
     });
@@ -356,7 +356,7 @@ describe('éditeurs', () => {
     expectMatches(adminPublisherSchema, created.body);
 
     const id = created.body.id;
-    const replaced = await replace(admin, 'publishers', id, {
+    const replaced = await updateRecord(admin, 'publishers', id, {
       name: `${PREFIX} Maison 2`,
       kind: 'self_published',
     });
@@ -652,7 +652,7 @@ describe('œuvres', () => {
     const incomplete = await admin.get(`${ADMIN}/works/${id}`);
     expect(incomplete.body.publicationGaps).toEqual(['genres', 'credits']);
 
-    const refused = await replace(admin, 'works', id, {
+    const refused = await updateRecord(admin, 'works', id, {
       ...workBody({ genres: [], credits: [] }),
       updatedAt: incomplete.body.updatedAt,
       published: true,
@@ -675,7 +675,7 @@ describe('œuvres', () => {
       links: [{ kind: 'read', url: 'https://exemple.test/a' }],
     });
 
-    const res = await replace(
+    const res = await updateRecord(
       admin,
       'works',
       id,
@@ -808,7 +808,7 @@ describe('œuvres', () => {
     });
 
     const id = await createWork(admin);
-    const self = await replace(
+    const self = await updateRecord(
       admin,
       'works',
       id,
@@ -841,7 +841,7 @@ describe('œuvres', () => {
     const related = await admin.post(`${ADMIN}/works`).send(workBody(relation));
     expect(related.body.code).toBe('ARCHIVED_REFERENCE');
 
-    const kept = await replace(
+    const kept = await updateRecord(
       admin,
       'works',
       citingId,
@@ -1053,12 +1053,17 @@ describe('brouillons', () => {
     expect(search.body.total).toBe(0);
 
     // Publishing needs the complete record: a format here. The refusal leaves the draft untouched.
-    const refused = await replace(admin, 'works', id, workBody({ ...DRAFT_WORK, published: true }));
+    const refused = await updateRecord(
+      admin,
+      'works',
+      id,
+      workBody({ ...DRAFT_WORK, published: true }),
+    );
     expect(refused.status).toBe(400);
     expect(refused.body.code).toBe('VALIDATION_ERROR');
     expect((await admin.get(`${ADMIN}/works/${id}`)).body.lifecycle).toBe('draft');
 
-    const published = await replace(
+    const published = await updateRecord(
       admin,
       'works',
       id,
@@ -1068,7 +1073,7 @@ describe('brouillons', () => {
     expect(published.body.lifecycle).toBe('published');
     expect((await request(app).get(`/api/v1/works/${id}`)).status).toBe(200);
     // Publication is one way: a replacement that says `published: false` keeps it published.
-    const again = await replace(
+    const again = await updateRecord(
       admin,
       'works',
       id,
@@ -1081,13 +1086,15 @@ describe('brouillons', () => {
     const admin = await newAdmin();
     const id = await createWork(admin, DRAFT_WORK);
 
-    expect((await replace(admin, 'works', id, workBody(DRAFT_WORK))).body.lifecycle).toBe('draft');
+    expect((await updateRecord(admin, 'works', id, workBody(DRAFT_WORK))).body.lifecycle).toBe(
+      'draft',
+    );
     const draftPerson = (
       await admin
         .post(`${ADMIN}/people`)
         .send({ name: `${PREFIX} Brouillon P`, kind: 'person', published: false })
     ).body.id;
-    const replaced = await replace(admin, 'people', draftPerson, {
+    const replaced = await updateRecord(admin, 'people', draftPerson, {
       name: `${PREFIX} Brouillon P2`,
       kind: 'person',
     });
@@ -1099,7 +1106,7 @@ describe('brouillons', () => {
     const id = await createWork(admin, { ...DRAFT_WORK, genres: ['manga'] });
     const { updatedAt } = (await admin.get(`${ADMIN}/works/${id}`)).body;
 
-    const published = await replace(admin, 'works', id, workBody({ published: true }));
+    const published = await updateRecord(admin, 'works', id, workBody({ published: true }));
     expect(published.body.updatedAt).not.toBe(updatedAt);
 
     const stale = await admin.put(`${ADMIN}/works/${id}`).send(workBody({ updatedAt }));
@@ -1112,7 +1119,7 @@ describe('brouillons', () => {
     const res = await admin.post(`${ADMIN}/works`).send(workBody({ genres: [] }));
     expect(res.status).toBe(400);
     const id = await createWork(admin, DRAFT_WORK);
-    const update = await replace(admin, 'works', id, workBody({ genres: [] }));
+    const update = await updateRecord(admin, 'works', id, workBody({ genres: [] }));
     expect(update.status).toBe(200);
     expect(update.body.lifecycle).toBe('draft');
   });
@@ -1138,7 +1145,7 @@ describe('brouillons', () => {
       credits: [{ personId: draftPerson.id, role: 'story' }],
     });
     const publishWork = () =>
-      replace(
+      updateRecord(
         admin,
         'works',
         id,
@@ -1151,7 +1158,7 @@ describe('brouillons', () => {
       );
     const blocked = await publishWork();
     expect(blocked.body.code).toBe('DRAFT_REFERENCE');
-    const publishedPerson = await replace(admin, 'people', draftPerson.id, {
+    const publishedPerson = await updateRecord(admin, 'people', draftPerson.id, {
       name: draftPerson.name,
       kind: 'person',
       published: true,
@@ -1167,7 +1174,7 @@ describe('brouillons', () => {
       .send({ name: `${PREFIX} Éditeur brouillon`, kind: 'publisher', published: false });
     expect(publisher.body.lifecycle).toBe('draft');
     expectMatches(adminPublisherSchema, publisher.body);
-    const published = await replace(admin, 'publishers', publisher.body.id, {
+    const published = await updateRecord(admin, 'publishers', publisher.body.id, {
       name: publisher.body.name,
       kind: 'publisher',
       published: true,
@@ -1466,8 +1473,8 @@ describe('brouillons', () => {
 
     for (let round = 0; round < 5; round++) {
       const [a, b] = await Promise.all([
-        replace(admin, 'works', first, citing(`${PREFIX} Jumelle A`, second)),
-        replace(admin, 'works', second, citing(`${PREFIX} Jumelle B`, first)),
+        updateRecord(admin, 'works', first, citing(`${PREFIX} Jumelle A`, second)),
+        updateRecord(admin, 'works', second, citing(`${PREFIX} Jumelle B`, first)),
       ]);
       expect([a.status, b.status]).toEqual([200, 200]);
     }

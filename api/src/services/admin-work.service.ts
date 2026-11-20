@@ -2,29 +2,28 @@
 import type { WorkStatus, WorkType } from '../domain/catalogue-enums.js';
 import { AppError } from '../errors.js';
 import type {
-  AdminWorkRecord,
+  AdminWorkCreateInput,
   AdminWorkRepository,
   AdminWorkListItem,
+  AdminWorkRaw,
   ArchivedReferences,
   MissingReferences,
   ReferenceReader,
-  WorkDraft,
 } from '../repositories/admin-work.repository.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
-import { assertNotDraft, removeRecord } from './admin-lifecycle.js';
-import { refuseReplacement, type Replacement } from './admin-replace.js';
+import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
+import { refuseUpdate, type UpdateInput } from './admin-update.js';
 import { publicationGaps, type PublicationGap } from './admin-publication.js';
 
-/** A work as served for editing: the record plus what it still lacks to be published. */
-export type AdminWorkDetail = Omit<AdminWorkRecord, 'hasFormat'> & {
+export type { AdminWorkCreateInput };
+
+/** A work as served for editing: the stored work plus what it still lacks to be published. */
+export type AdminWorkDetail = Omit<AdminWorkRaw, 'hasFormat'> & {
   publicationGaps: PublicationGap[];
 };
 
-/** Data accepted to create a work. */
-export type AdminWorkInput = WorkDraft;
-
-/** Data accepted to replace a work. */
-export type AdminWorkReplacement = Replacement<WorkDraft>;
+/** Data sent to update a work (full replacement: every field is sent, `PUT`). */
+export type AdminWorkUpdateInput = UpdateInput<AdminWorkCreateInput>;
 
 /** Sort orders of the work list. */
 export const ADMIN_WORK_SORTS = [
@@ -48,14 +47,14 @@ export interface AdminWorkListInput extends AdminListInput {
 export interface AdminWorkService {
   list(input: AdminWorkListInput): Promise<Page<AdminWorkListItem>>;
   get(id: number): Promise<AdminWorkDetail>;
-  create(input: AdminWorkInput): Promise<AdminWorkDetail>;
+  create(input: AdminWorkCreateInput): Promise<AdminWorkDetail>;
   /** Publishing needs the complete record and published references (`VALIDATION_ERROR`, `DRAFT_REFERENCE`). */
-  update(id: number, input: AdminWorkReplacement): Promise<AdminWorkDetail>;
+  update(id: number, input: AdminWorkUpdateInput): Promise<AdminWorkDetail>;
   /** Readers' list entries are kept; the work only disappears from the public. */
   archive(id: number, adminId: number): Promise<AdminWorkDetail>;
   restore(id: number, adminId: number): Promise<AdminWorkDetail>;
   /** Only a draft or archived work that no other work relates to (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
-  remove(id: number): Promise<void>;
+  delete(id: number): Promise<void>;
   countDrafts(): Promise<number>;
 }
 
@@ -85,7 +84,7 @@ function newlyArchived(
  */
 async function checkReferences(
   references: ReferenceReader,
-  input: AdminWorkInput,
+  input: AdminWorkCreateInput,
   isPublished: boolean,
   current?: AdminWorkDetail,
 ): Promise<void> {
@@ -151,11 +150,11 @@ export function createAdminWorkService(repository: AdminWorkRepository): AdminWo
       // A published (or archived) work stays published: `published: false` never unpublishes it.
       const published = current.lifecycle !== 'draft' || input.published === true;
       const { updatedAt, ...rest } = input;
-      const draft = { ...rest, published };
-      const isWritten = await repository.update(id, draft, updatedAt, (references) =>
-        checkReferences(references, draft, published, current),
+      const fields = { ...rest, published };
+      const isWritten = await repository.update(id, fields, updatedAt, (references) =>
+        checkReferences(references, fields, published, current),
       );
-      if (!isWritten) await refuseReplacement(get, id);
+      if (!isWritten) await refuseUpdate(get, id);
       return get(id);
     },
 
@@ -173,7 +172,7 @@ export function createAdminWorkService(repository: AdminWorkRepository): AdminWo
       return get(id);
     },
 
-    remove: (id) => removeRecord(get, repository, id),
+    delete: (id) => deleteRecord(get, repository, id),
 
     countDrafts: () => repository.countDrafts(),
   };

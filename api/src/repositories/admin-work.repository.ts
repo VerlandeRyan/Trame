@@ -24,7 +24,7 @@ import {
   lockRow,
   MAIN_AUTHOR_NAME,
   nameContains,
-  publishedAtOnReplace,
+  publishedAtOnUpdate,
   REMOVABLE,
   totalOf,
   versionOf,
@@ -62,8 +62,11 @@ export interface WorkRelationRecord {
   relation: RelationKind;
 }
 
-/** Everything a work record contains, except the cover (image upload is handled separately). */
-export interface WorkDraft {
+/**
+ * Data sent to create a work: everything a work contains, except the cover (image upload is
+ * handled separately). `UpdateInput` adds the version to replace one.
+ */
+export interface AdminWorkCreateInput {
   title: string;
   originalLanguage: string;
   type: WorkType;
@@ -121,8 +124,11 @@ export interface WorkReferenceLabels {
   works: RecordLabel[];
 }
 
-/** A full work record for editing. */
-export interface AdminWorkRecord extends Omit<WorkDraft, 'published'> {
+/**
+ * A work as stored, read for editing. The service turns it into `AdminWorkDetail`: it drops
+ * `hasFormat` and adds the publication gaps.
+ */
+export interface AdminWorkRaw extends Omit<AdminWorkCreateInput, 'published'> {
   id: number;
   lifecycle: Lifecycle;
   /** Names of the cited people, publishers and related works, sorted by identifier. */
@@ -135,7 +141,7 @@ export interface AdminWorkRecord extends Omit<WorkDraft, 'published'> {
   hasFormat: boolean;
 }
 
-/** References of a draft that do not exist in the database. */
+/** References of an input that do not exist in the database. */
 export interface MissingReferences {
   personIds: number[];
   publisherIds: number[];
@@ -143,13 +149,13 @@ export interface MissingReferences {
   genres: string[];
 }
 
-/** What a draft cites: the references that do not exist, and whether one of its genres is a format. */
+/** What an input cites: the references that do not exist, and whether one of its genres is a format. */
 export interface ReferenceLookup {
   missing: MissingReferences;
   hasFormat: boolean;
 }
 
-/** References of a draft that exist but are archived. */
+/** References of an input that exist but are archived. */
 export interface ArchivedReferences {
   personIds: number[];
   publisherIds: number[];
@@ -173,12 +179,12 @@ export interface AdminWorkListCriteria {
 export interface AdminWorkRepository {
   list(criteria: AdminWorkListCriteria): Promise<{ items: AdminWorkListItem[]; total: number }>;
   /** Archived or not. */
-  find(id: number): Promise<AdminWorkRecord | null>;
+  find(id: number): Promise<AdminWorkRaw | null>;
   /**
    * Creates the work. `check` runs inside the write transaction, once the cited records are
    * locked: what it throws rolls the creation back.
    */
-  create(draft: WorkDraft, check: ReferenceCheck): Promise<number>;
+  create(input: AdminWorkCreateInput, check: ReferenceCheck): Promise<number>;
   /** Deletes a draft no other work relates to; false if it is not a draft or is related. */
   deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
@@ -187,18 +193,23 @@ export interface AdminWorkRepository {
    * when asked. `check` runs inside the write transaction, once the cited records are locked, so
    * they cannot be archived or turned back into drafts between the check and the write.
    */
-  update(id: number, draft: WorkDraft, version: string, check: ReferenceCheck): Promise<boolean>;
+  update(
+    id: number,
+    input: AdminWorkCreateInput,
+    version: string,
+    check: ReferenceCheck,
+  ): Promise<boolean>;
   /** False if the work does not exist. `adminId` is who archives, ignored on restore. */
   setArchived(id: number, archived: boolean, adminId: number): Promise<boolean>;
 }
 
 /** Reads what a work cites, on the connection or the transaction it was created for. */
 export interface ReferenceReader {
-  /** Looks up what the draft cites: the references that do not exist, and whether it carries a format. */
-  lookUpReferences(draft: WorkDraft): Promise<ReferenceLookup>;
-  findArchivedReferences(draft: WorkDraft): Promise<ArchivedReferences>;
-  /** References of the draft that are themselves drafts (same shape as the archived ones). */
-  findDraftReferences(draft: WorkDraft): Promise<ArchivedReferences>;
+  /** Looks up what the input cites: the references that do not exist, and whether it carries a format. */
+  lookUpReferences(input: AdminWorkCreateInput): Promise<ReferenceLookup>;
+  findArchivedReferences(input: AdminWorkCreateInput): Promise<ArchivedReferences>;
+  /** References of the input that are themselves drafts (same shape as the archived ones). */
+  findDraftReferences(input: AdminWorkCreateInput): Promise<ArchivedReferences>;
 }
 
 /** A rule on the cited records, run by the repository inside its write transaction. */
@@ -233,18 +244,22 @@ async function findFlaggedIds(
   return rows.map((row) => row.id);
 }
 
-/** The identifiers of the people, publishers and related works a draft cites. */
-function citedIds(draft: WorkDraft) {
+/** The identifiers of the people, publishers and related works an input cites. */
+function citedIds(input: AdminWorkCreateInput) {
   return {
-    personIds: [...new Set(draft.credits.map((credit) => credit.personId))],
-    publisherIds: [...new Set(draft.publisherIds)],
-    workIds: [...new Set(draft.relations.map((relation) => relation.relatedWorkId))],
+    personIds: [...new Set(input.credits.map((credit) => credit.personId))],
+    publisherIds: [...new Set(input.publisherIds)],
+    workIds: [...new Set(input.relations.map((relation) => relation.relatedWorkId))],
   };
 }
 
-/** The people, publishers and related works a draft cites that are archived, or drafts. */
-async function findFlaggedReferences(q: Db, draft: WorkDraft, flag: 'archived' | 'draft') {
-  const { personIds, publisherIds, workIds } = citedIds(draft);
+/** The people, publishers and related works an input cites that are archived, or drafts. */
+async function findFlaggedReferences(
+  q: Db,
+  input: AdminWorkCreateInput,
+  flag: 'archived' | 'draft',
+) {
+  const { personIds, publisherIds, workIds } = citedIds(input);
   const [people, publishers, works] = await Promise.all([
     findFlaggedIds(q, 'person', personIds, flag),
     findFlaggedIds(q, 'publisher', publisherIds, flag),
@@ -256,18 +271,18 @@ async function findFlaggedReferences(q: Db, draft: WorkDraft, flag: 'archived' |
 /** The reference reads on a connection (`db`) or a transaction. */
 function createReferenceReader(q: Db): ReferenceReader {
   return {
-    async lookUpReferences(draft) {
-      const { personIds, publisherIds, workIds } = citedIds(draft);
+    async lookUpReferences(input) {
+      const { personIds, publisherIds, workIds } = citedIds(input);
       const [people, publishers, works, genres] = await Promise.all([
         findExistingIds(q, 'person', personIds),
         findExistingIds(q, 'publisher', publisherIds),
         findExistingIds(q, 'work', workIds),
-        draft.genres.length === 0
+        input.genres.length === 0
           ? []
           : q
               .selectFrom('genre')
               .select(['code', 'category'])
-              .where('code', 'in', draft.genres)
+              .where('code', 'in', input.genres)
               .execute(),
       ]);
       const knownGenres = new Set(genres.map((genre) => genre.code));
@@ -276,15 +291,15 @@ function createReferenceReader(q: Db): ReferenceReader {
           personIds: personIds.filter((id) => !people.has(id)),
           publisherIds: publisherIds.filter((id) => !publishers.has(id)),
           workIds: workIds.filter((id) => !works.has(id)),
-          genres: draft.genres.filter((code) => !knownGenres.has(code)),
+          genres: input.genres.filter((code) => !knownGenres.has(code)),
         },
         hasFormat: genres.some((genre) => genre.category === 'format'),
       };
     },
 
-    findArchivedReferences: (draft) => findFlaggedReferences(q, draft, 'archived'),
+    findArchivedReferences: (input) => findFlaggedReferences(q, input, 'archived'),
 
-    findDraftReferences: (draft) => findFlaggedReferences(q, draft, 'draft'),
+    findDraftReferences: (input) => findFlaggedReferences(q, input, 'draft'),
   };
 }
 
@@ -298,11 +313,11 @@ function createReferenceReader(q: Db): ReferenceReader {
  */
 async function checkReferencesLocked(
   trx: Trx,
-  draft: WorkDraft,
+  input: AdminWorkCreateInput,
   check: ReferenceCheck,
   ownWorkId?: number,
 ): Promise<void> {
-  const { personIds, publisherIds, workIds } = citedIds(draft);
+  const { personIds, publisherIds, workIds } = citedIds(input);
   /** Locks the rows shared, ordered by identifier; nothing to lock for an empty list. */
   const lockShared = async (table: 'person' | 'publisher', ids: number[]) => {
     if (ids.length === 0) return;
@@ -329,9 +344,9 @@ async function checkReferencesLocked(
   await check(createReferenceReader(trx));
 }
 
-/** Inserts the titles, synopses, credits, publishers and relations of a draft. */
-async function insertAll(trx: Trx, workId: number, draft: WorkDraft): Promise<void> {
-  const { titles, synopses, credits, publisherIds, relations } = draft;
+/** Inserts the titles, synopses, credits, publishers and relations of an input. */
+async function insertAll(trx: Trx, workId: number, input: AdminWorkCreateInput): Promise<void> {
+  const { titles, synopses, credits, publisherIds, relations } = input;
   if (titles.length > 0) {
     await trx
       .insertInto('work_title')
@@ -390,24 +405,24 @@ async function deleteChildren(trx: Trx, workId: number): Promise<void> {
   await trx.deleteFrom('work_relation').where('work_id', '=', workId).execute();
 }
 
-/** Writes every child table of a draft. */
-async function writeChildren(trx: Trx, workId: number, draft: WorkDraft): Promise<void> {
-  await insertAll(trx, workId, draft);
-  await insertGenres(trx, workId, draft.genres);
-  await replaceLinks(trx, { workId }, draft.links);
+/** Writes every child table of an input. */
+async function writeChildren(trx: Trx, workId: number, input: AdminWorkCreateInput): Promise<void> {
+  await insertAll(trx, workId, input);
+  await insertGenres(trx, workId, input.genres);
+  await replaceLinks(trx, { workId }, input.links);
 }
 
-/** Columns of the work table taken from a draft. */
-function workColumns(draft: WorkDraft) {
+/** Columns of the work table taken from an input. */
+function workColumns(input: AdminWorkCreateInput) {
   return {
-    title: draft.title,
-    original_language: draft.originalLanguage,
-    type: draft.type,
-    status: draft.status,
-    chapters: draft.chapters,
-    volumes: draft.volumes,
-    started_on: draft.startedOn,
-    ended_on: draft.endedOn,
+    title: input.title,
+    original_language: input.originalLanguage,
+    type: input.type,
+    status: input.status,
+    chapters: input.chapters,
+    volumes: input.volumes,
+    started_on: input.startedOn,
+    ended_on: input.endedOn,
   };
 }
 
@@ -645,30 +660,30 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
       };
     },
 
-    async create(draft, check) {
+    async create(input, check) {
       return db.transaction().execute(async (trx) => {
-        await checkReferencesLocked(trx, draft, check);
+        await checkReferencesLocked(trx, input, check);
         const { id } = await trx
           .insertInto('work')
           .values({
-            ...workColumns(draft),
-            published_at: draft.published ? sql<Date>`now()` : null,
+            ...workColumns(input),
+            published_at: input.published ? sql<Date>`now()` : null,
           })
           .returning('id')
           .executeTakeFirstOrThrow();
-        await writeChildren(trx, id, draft);
+        await writeChildren(trx, id, input);
         return id;
       });
     },
 
-    async update(id, draft, version, check) {
+    async update(id, input, version, check) {
       return db.transaction().execute(async (trx) => {
-        await checkReferencesLocked(trx, draft, check, id);
+        await checkReferencesLocked(trx, input, check, id);
         const row = await trx
           .updateTable('work')
           .set({
-            ...workColumns(draft),
-            published_at: publishedAtOnReplace(draft.published),
+            ...workColumns(input),
+            published_at: publishedAtOnUpdate(input.published),
             updated_at: sql<Date>`now()`,
           })
           .where('id', '=', id)
@@ -677,7 +692,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
           .executeTakeFirst();
         if (!row) return false;
         await deleteChildren(trx, id);
-        await writeChildren(trx, id, draft);
+        await writeChildren(trx, id, input);
         return true;
       });
     },

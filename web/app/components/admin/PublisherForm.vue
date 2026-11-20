@@ -6,7 +6,7 @@ import {
   URL_MAX_LENGTH,
   urlErrorKey,
   type FormMode,
-  type PublisherDraft,
+  type PublisherFormValues,
 } from '~/utils/admin'
 
 /** Form of a publisher or a platform: name, kind, website. */
@@ -17,13 +17,13 @@ const props = defineProps<{
   saving: boolean
   mode?: FormMode
 }>()
-const draft = defineModel<PublisherDraft>({ required: true })
+const form = defineModel<PublisherFormValues>({ required: true })
 const emit = defineEmits<{ submit: []; publish: [] }>()
 const { t } = useI18n()
 const kindOptions = optionsOf(PUBLISHER_KINDS, (code) => t(`admin.option.publisher.${code}`))
-const isNameMissing = computed(() => props.showErrors === true && isBlank(draft.value.name))
+const isNameMissing = computed(() => props.showErrors === true && isBlank(form.value.name))
 const urlError = computed(() => {
-  const key = props.showErrors ? urlErrorKey(draft.value.url, false) : undefined
+  const key = props.showErrors ? urlErrorKey(form.value.url, false) : undefined
   return key ? t(key) : undefined
 })
 </script>
@@ -33,20 +33,20 @@ const urlError = computed(() => {
     <UiRequiredLegend />
     <UiField
       id="publisher-name"
-      v-model="draft.name"
+      v-model="form.name"
       :label="t('admin.publisher.name')"
       :error="isNameMissing ? t('admin.error.required') : undefined"
       :input-attributes="{ maxlength: 200, required: true }"
     />
     <AdminPillGroup
-      v-model="draft.kind"
+      v-model="form.kind"
       :options="kindOptions"
       :label="t('admin.publisher.kind')"
       required
     />
     <UiField
       id="publisher-url"
-      v-model="draft.url"
+      v-model="form.url"
       :label="t('admin.publisher.url')"
       :error="urlError"
       :input-attributes="{ type: 'url', autocomplete: 'off', maxlength: URL_MAX_LENGTH }"

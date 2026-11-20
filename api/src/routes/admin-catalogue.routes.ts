@@ -14,11 +14,11 @@ import {
   adminListQuery,
   adminWorkListQuery,
   personBody,
-  personReplaceBody,
+  personUpdateBody,
   publisherBody,
-  publisherReplaceBody,
+  publisherUpdateBody,
   workBody,
-  workReplaceBody,
+  workUpdateBody,
 } from '../schemas/admin-catalogue.js';
 import { idParams } from '../schemas/common.js';
 import type { AdminWorkService } from '../services/admin-work.service.js';
@@ -37,10 +37,10 @@ function addResourceRoutes(
   router: Router,
   base: string,
   controller: AdminResourceController,
-  schemas: { createBody: z.ZodType; replaceBody: z.ZodType; listQuery: z.ZodType },
+  schemas: { createBody: z.ZodType; updateBody: z.ZodType; listQuery: z.ZodType },
   limiter: RequestHandler,
 ): void {
-  const { createBody, replaceBody, listQuery } = schemas;
+  const { createBody, updateBody, listQuery } = schemas;
   const item = `${base}/:id`;
   router.get(base, validate('query', listQuery), controller.list);
   router.get(item, validate('params', idParams), controller.get);
@@ -49,12 +49,12 @@ function addResourceRoutes(
     item,
     limiter,
     validate('params', idParams),
-    validate('body', replaceBody),
+    validate('body', updateBody),
     controller.update,
   );
   router.post(`${item}/archive`, limiter, validate('params', idParams), controller.archive);
   router.post(`${item}/restore`, limiter, validate('params', idParams), controller.restore);
-  router.delete(item, limiter, validate('params', idParams), controller.remove);
+  router.delete(item, limiter, validate('params', idParams), controller.delete);
 }
 
 /** Builds the administration router, mounted under the admin prefix. */
@@ -68,17 +68,17 @@ export function createAdminCatalogueRouter(
   router.get('/draft-counts', createDraftCountsController({ works, people, publishers }));
   const person = {
     createBody: personBody,
-    replaceBody: personReplaceBody,
+    updateBody: personUpdateBody,
     listQuery: adminListQuery,
   };
   const publisher = {
     createBody: publisherBody,
-    replaceBody: publisherReplaceBody,
+    updateBody: publisherUpdateBody,
     listQuery: adminListQuery,
   };
   const work = {
     createBody: workBody,
-    replaceBody: workReplaceBody,
+    updateBody: workUpdateBody,
     listQuery: adminWorkListQuery,
   };
   addResourceRoutes(

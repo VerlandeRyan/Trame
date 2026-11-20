@@ -1,5 +1,11 @@
 <script setup lang="ts">
-import { isBlank, optionsOf, PERSON_KINDS, type FormMode, type PersonDraft } from '~/utils/admin'
+import {
+  isBlank,
+  optionsOf,
+  PERSON_KINDS,
+  type FormMode,
+  type PersonFormValues,
+} from '~/utils/admin'
 
 /** Form of a person or a collective: name, kind, links. */
 const props = defineProps<{
@@ -9,11 +15,11 @@ const props = defineProps<{
   saving: boolean
   mode?: FormMode
 }>()
-const draft = defineModel<PersonDraft>({ required: true })
+const form = defineModel<PersonFormValues>({ required: true })
 const emit = defineEmits<{ submit: []; publish: [] }>()
 const { t } = useI18n()
 const kindOptions = optionsOf(PERSON_KINDS, (code) => t(`admin.option.person.${code}`))
-const isNameMissing = computed(() => props.showErrors === true && isBlank(draft.value.name))
+const isNameMissing = computed(() => props.showErrors === true && isBlank(form.value.name))
 </script>
 
 <template>
@@ -21,23 +27,19 @@ const isNameMissing = computed(() => props.showErrors === true && isBlank(draft.
     <UiRequiredLegend />
     <UiField
       id="person-name"
-      v-model="draft.name"
+      v-model="form.name"
       :label="t('admin.person.name')"
       :error="isNameMissing ? t('admin.error.required') : undefined"
       :input-attributes="{ maxlength: 200, required: true }"
     />
     <AdminPillGroup
-      v-model="draft.kind"
+      v-model="form.kind"
       :options="kindOptions"
       :label="t('admin.person.kind')"
       required
     />
     <AdminPanel :title="t('admin.links.title')">
-      <AdminLinksFields
-        v-model="draft.links"
-        :kinds="PERSON_LINK_KINDS"
-        :show-errors="showErrors"
-      />
+      <AdminLinksFields v-model="form.links" :kinds="PERSON_LINK_KINDS" :show-errors="showErrors" />
     </AdminPanel>
     <AdminFormActions
       :error-key="errorKey"

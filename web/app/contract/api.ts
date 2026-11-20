@@ -22,6 +22,8 @@ export {
   workTypeValues as WORK_TYPES,
   // Values of the list filter `lifecycle` (the generator's long name, aliased once).
   pathsApiV1AdminWorksGetParametersQueryLifecycleValues as ADMIN_LIFECYCLE_FILTERS,
+  // Sort orders of the administration work list.
+  pathsApiV1AdminWorksGetParametersQuerySortValues as ADMIN_WORK_SORTS,
   publicationGapValues as PUBLICATION_GAPS,
 } from './api-schema'
 
@@ -46,6 +48,13 @@ export type AdminPerson = Schemas['AdminPerson']
 export type AdminPublisher = Schemas['AdminPublisher']
 export type AdminWork = Schemas['AdminWork']
 export type AdminLifecycle = AdminWork['lifecycle']
+/** An external link of a work (read, buy) or of a person (website, social). */
+export type AdminLink = AdminWork['links'][number] | AdminPerson['links'][number]
+export type AdminDraftCounts = Schemas['AdminDraftCounts']
+/** A page of an administration list: the contract's pagination around the items of one kind. */
+export type AdminPage<T> = Omit<Schemas['AdminWorkPage'], 'items'> & { items: T[] }
+/** A cited record as the pickers show it: identifier and name. */
+export type AdminRecordLabel = AdminWork['labels']['people'][number]
 export type PublicationGap = Schemas['PublicationGap']
 
 // Home

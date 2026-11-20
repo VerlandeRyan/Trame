@@ -1,4 +1,5 @@
 /** Client of the catalogue administration API (list, read, write, archive and search). */
+import type { AdminDraftCounts } from '../contract/api'
 import {
   ADMIN_PAGE_SIZE,
   itemLabel,
@@ -34,8 +35,8 @@ export function createAdminClient(request: Request) {
   const create = <T>(kind: AdminKind, body: unknown) =>
     request<T>(base(kind), { method: 'POST', body })
 
-  /** Replaces a record. */
-  const replace = <T>(kind: AdminKind, id: number, body: unknown) =>
+  /** Updates a record (full replacement: every field is sent). */
+  const update = <T>(kind: AdminKind, id: number, body: unknown) =>
     request<T>(`${base(kind)}/${id}`, { method: 'PUT', body })
 
   /** Archives a record. */
@@ -47,7 +48,7 @@ export function createAdminClient(request: Request) {
     request<AdminListItem>(`${base(kind)}/${id}/restore`, { method: 'POST' })
 
   /** Number of drafts of each kind. */
-  const draftCounts = () => request<Record<AdminKind, number>>('/admin/draft-counts')
+  const draftCounts = () => request<AdminDraftCounts>('/admin/draft-counts')
 
   /** Deletes a draft or an archived record for good. */
   const remove = (kind: AdminKind, id: number) =>
@@ -65,7 +66,7 @@ export function createAdminClient(request: Request) {
     }))
   }
 
-  return { list, get, create, replace, archive, restore, remove, draftCounts, search }
+  return { list, get, create, update, archive, restore, remove, draftCounts, search }
 }
 
 /** The administration client. */

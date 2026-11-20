@@ -2,7 +2,7 @@ import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { readBody, setResponseStatus, type H3Event } from 'h3'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { WorkDraft } from '~/utils/admin'
+import type { WorkFormValues } from '~/utils/admin'
 import type { AuthState } from '~/utils/auth'
 import EditPage from './[id].vue'
 
@@ -252,7 +252,10 @@ describe('page d’édition du catalogue', () => {
 
   it('refuse d’enregistrer une ligne d’auteur sans personne choisie', async () => {
     const wrapper = await mountEdit('/admin/catalogue/works/new')
-    useState<WorkDraft>('admin-work-works-new').value.credits.push({ person: null, role: 'art' })
+    useState<WorkFormValues>('admin-work-works-new').value.credits.push({
+      person: null,
+      role: 'art',
+    })
     await wrapper.get('#work-title').setValue('Aube Fictive')
 
     await wrapper.get('[data-testid="admin-publish"]').trigger('click')

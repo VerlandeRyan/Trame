@@ -1,39 +1,38 @@
 /** Business rules for administering people (creators). */
 import { AppError } from '../errors.js';
 import type {
-  AdminPersonDraft,
-  AdminPersonRecord,
+  AdminPersonCreateInput,
+  AdminPersonDetail,
   AdminPersonRepository,
-  AdminPersonSummary,
+  AdminPersonListItem,
 } from '../repositories/admin-person.repository.js';
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
-import { assertNotDraft, removeRecord } from './admin-lifecycle.js';
-import { refuseReplacement, type Replacement } from './admin-replace.js';
+import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
+import { refuseUpdate, type UpdateInput } from './admin-update.js';
 
-/** Data accepted to create a person. */
-export type AdminPersonInput = AdminPersonDraft;
+export type { AdminPersonCreateInput };
 
-/** Data accepted to replace a person. */
-export type AdminPersonReplacement = Replacement<AdminPersonDraft>;
+/** Data sent to update a person (full replacement: every field is sent, `PUT`). */
+export type AdminPersonUpdateInput = UpdateInput<AdminPersonCreateInput>;
 
 /** People administration operations. */
 export interface AdminPersonService {
-  list(input: AdminListInput): Promise<Page<AdminPersonSummary>>;
-  get(id: number): Promise<AdminPersonRecord>;
-  create(input: AdminPersonInput): Promise<AdminPersonRecord>;
-  update(id: number, input: AdminPersonReplacement): Promise<AdminPersonRecord>;
+  list(input: AdminListInput): Promise<Page<AdminPersonListItem>>;
+  get(id: number): Promise<AdminPersonDetail>;
+  create(input: AdminPersonCreateInput): Promise<AdminPersonDetail>;
+  update(id: number, input: AdminPersonUpdateInput): Promise<AdminPersonDetail>;
   /** Refused while the person is credited on an unarchived work. */
-  archive(id: number, adminId: number): Promise<AdminPersonRecord>;
-  restore(id: number, adminId: number): Promise<AdminPersonRecord>;
+  archive(id: number, adminId: number): Promise<AdminPersonDetail>;
+  restore(id: number, adminId: number): Promise<AdminPersonDetail>;
   /** Only a draft or archived person no work credits (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
-  remove(id: number): Promise<void>;
+  delete(id: number): Promise<void>;
   countDrafts(): Promise<number>;
 }
 
 /** Creates the people administration service. */
 export function createAdminPersonService(repository: AdminPersonRepository): AdminPersonService {
   /** Reads a person, archived or not; throws when it does not exist. */
-  async function get(id: number): Promise<AdminPersonRecord> {
+  async function get(id: number): Promise<AdminPersonDetail> {
     const person = await repository.find(id);
     if (!person) throw new AppError('NOT_FOUND');
     return person;
@@ -57,8 +56,8 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
 
     async update(id, input) {
       const { updatedAt, published, ...rest } = input;
-      const draft = { ...rest, published: published === true };
-      if (!(await repository.update(id, draft, updatedAt))) await refuseReplacement(get, id);
+      const fields = { ...rest, published: published === true };
+      if (!(await repository.update(id, fields, updatedAt))) await refuseUpdate(get, id);
       return get(id);
     },
 
@@ -79,7 +78,7 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
       return get(id);
     },
 
-    remove: (id) => removeRecord(get, repository, id),
+    delete: (id) => deleteRecord(get, repository, id),
 
     countDrafts: () => repository.countDrafts(),
   };

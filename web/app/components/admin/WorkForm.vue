@@ -5,7 +5,7 @@ import type {
   FormMode,
   PublicationGap,
   RecordRef,
-  WorkDraft,
+  WorkFormValues,
 } from '~/utils/admin'
 
 /**
@@ -25,7 +25,7 @@ const props = defineProps<{
   saving: boolean
   mode?: FormMode
 }>()
-const draft = defineModel<WorkDraft>({ required: true })
+const form = defineModel<WorkFormValues>({ required: true })
 const emit = defineEmits<{ submit: []; publish: [] }>()
 const { t } = useI18n()
 
@@ -46,8 +46,8 @@ const isTitleOnly = computed(() => props.flagged?.scope === 'title')
 const showsGaps = computed(() => props.flagged?.scope === 'all')
 /** Sections to mark with an alert (gaps are only flagged after a refused save). */
 const flaggedSections = computed(() => {
-  if (isTitleOnly.value) return isBlank(draft.value.title) ? ['info' as const] : []
-  return showsGaps.value ? incompleteSections(draft.value, formatCodes.value, serverGaps.value) : []
+  if (isTitleOnly.value) return isBlank(form.value.title) ? ['info' as const] : []
+  return showsGaps.value ? incompleteSections(form.value, formatCodes.value, serverGaps.value) : []
 })
 /** One tab per section, with an alert on incomplete ones. */
 const tabs = computed(() =>
@@ -65,7 +65,7 @@ const tabs = computed(() =>
     <UiTabs v-model="section" underline :tabs="tabs" :label="t('admin.work.sections')" />
     <section v-show="section === 'info'" role="tabpanel" class="form__section">
       <AdminWorkInfoFields
-        v-model="draft"
+        v-model="form"
         :genres="genres"
         :show-errors="isTitleOnly || showsGaps"
         :title-only="isTitleOnly"
@@ -73,11 +73,11 @@ const tabs = computed(() =>
       />
     </section>
     <section v-show="section === 'texts'" role="tabpanel" class="form__section">
-      <AdminWorkTextFields v-model="draft" :show-errors="showsGaps" :server-gaps="serverGaps" />
+      <AdminWorkTextFields v-model="form" :show-errors="showsGaps" :server-gaps="serverGaps" />
     </section>
     <section v-show="section === 'relations'" role="tabpanel" class="form__section">
       <AdminWorkRelatedFields
-        v-model="draft"
+        v-model="form"
         part="relations"
         :search="search"
         :show-errors="showsGaps"
@@ -85,12 +85,12 @@ const tabs = computed(() =>
     </section>
     <section v-show="section === 'links'" role="tabpanel" class="form__section">
       <AdminPanel :title="t('admin.links.title')">
-        <AdminLinksFields v-model="draft.links" :kinds="WORK_LINK_KINDS" :show-errors="showsGaps" />
+        <AdminLinksFields v-model="form.links" :kinds="WORK_LINK_KINDS" :show-errors="showsGaps" />
       </AdminPanel>
     </section>
     <section v-show="section === 'people'" role="tabpanel" class="form__section">
       <AdminWorkRelatedFields
-        v-model="draft"
+        v-model="form"
         part="people"
         :search="search"
         :show-errors="showsGaps"

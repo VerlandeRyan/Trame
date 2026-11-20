@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type {
-  AdminPersonDraft,
-  AdminPersonRecord,
+  AdminPersonCreateInput,
+  AdminPersonDetail,
   AdminPersonRepository,
 } from '../repositories/admin-person.repository.js';
 import { createAdminPersonService } from './admin-person.service.js';
@@ -9,7 +9,7 @@ import { createAdminPersonService } from './admin-person.service.js';
 const VERSION = '2026-10-24T10:00:00.000Z';
 const ADMIN_ID = 5;
 
-const person = (overrides: Partial<AdminPersonRecord> = {}): AdminPersonRecord => ({
+const person = (overrides: Partial<AdminPersonDetail> = {}): AdminPersonDetail => ({
   id: 1,
   name: 'Léa',
   kind: 'person',
@@ -23,7 +23,7 @@ const person = (overrides: Partial<AdminPersonRecord> = {}): AdminPersonRecord =
 });
 
 /** Comme le dépôt : l'archivage échoue tant qu'une œuvre non archivée cite la personne. */
-function fakeRepository(record: AdminPersonRecord | null): AdminPersonRepository {
+function fakeRepository(record: AdminPersonDetail | null): AdminPersonRepository {
   return {
     list: vi.fn(async () => ({ items: [], total: 0 })),
     find: vi.fn(async () => record),
@@ -94,24 +94,29 @@ describe('archivage', () => {
         updatedAt: VERSION,
       }),
     ).rejects.toMatchObject({ code: 'NOT_FOUND' });
-    await expect(service.remove(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await expect(service.delete(9)).rejects.toMatchObject({ code: 'NOT_FOUND' });
   });
 });
 
 describe('version', () => {
-  const draft: AdminPersonDraft = { name: 'x', kind: 'person', links: [], published: true };
+  const createInput: AdminPersonCreateInput = {
+    name: 'x',
+    kind: 'person',
+    links: [],
+    published: true,
+  };
 
   it('transmet la version lue au dépôt, sans la mêler aux données', async () => {
     const repository = fakeRepository(person());
-    await createAdminPersonService(repository).update(1, { ...draft, updatedAt: VERSION });
-    expect(repository.update).toHaveBeenCalledWith(1, draft, VERSION);
+    await createAdminPersonService(repository).update(1, { ...createInput, updatedAt: VERSION });
+    expect(repository.update).toHaveBeenCalledWith(1, createInput, VERSION);
   });
 
   it('refuse une fiche modifiée entre-temps', async () => {
     const repository = fakeRepository(person());
     vi.mocked(repository.update).mockResolvedValueOnce(false);
     await expect(
-      createAdminPersonService(repository).update(1, { ...draft, updatedAt: VERSION }),
+      createAdminPersonService(repository).update(1, { ...createInput, updatedAt: VERSION }),
     ).rejects.toMatchObject({ code: 'STALE_RECORD' });
   });
 });
@@ -119,7 +124,7 @@ describe('version', () => {
 describe('brouillon', () => {
   it('ne supprime pas une personne publiée', async () => {
     const repository = fakeRepository(person());
-    await expect(createAdminPersonService(repository).remove(1)).rejects.toMatchObject({
+    await expect(createAdminPersonService(repository).delete(1)).rejects.toMatchObject({
       code: 'NOT_REMOVABLE',
     });
     expect(repository.deleteRecord).not.toHaveBeenCalled();
@@ -127,7 +132,7 @@ describe('brouillon', () => {
 
   it('supprime une personne archivée', async () => {
     const repository = fakeRepository(person({ lifecycle: 'archived' }));
-    await expect(createAdminPersonService(repository).remove(1)).resolves.toBeUndefined();
+    await expect(createAdminPersonService(repository).delete(1)).resolves.toBeUndefined();
     expect(repository.deleteRecord).toHaveBeenCalledWith(1);
   });
 
@@ -137,7 +142,7 @@ describe('brouillon', () => {
       .mockResolvedValueOnce(person({ lifecycle: 'archived' }))
       .mockResolvedValueOnce(person());
     vi.mocked(repository.deleteRecord).mockResolvedValue(false);
-    await expect(createAdminPersonService(repository).remove(1)).rejects.toMatchObject({
+    await expect(createAdminPersonService(repository).delete(1)).rejects.toMatchObject({
       code: 'NOT_REMOVABLE',
     });
   });
@@ -148,7 +153,7 @@ describe('brouillon', () => {
       .mockResolvedValueOnce(person({ lifecycle: 'archived' }))
       .mockResolvedValueOnce(null);
     vi.mocked(repository.deleteRecord).mockResolvedValue(false);
-    await expect(createAdminPersonService(repository).remove(1)).rejects.toMatchObject({
+    await expect(createAdminPersonService(repository).delete(1)).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
   });
@@ -157,19 +162,23 @@ describe('brouillon', () => {
     const service = createAdminPersonService(
       fakeRepository(person({ lifecycle: 'draft', activeWorkCount: 1 })),
     );
-    await expect(service.remove(1)).rejects.toMatchObject({ code: 'RECORD_IN_USE' });
+    await expect(service.delete(1)).rejects.toMatchObject({ code: 'RECORD_IN_USE' });
   });
 
   it('supprime un brouillon libre', async () => {
     const repository = fakeRepository(person({ lifecycle: 'draft' }));
-    await expect(createAdminPersonService(repository).remove(1)).resolves.toBeUndefined();
+    await expect(createAdminPersonService(repository).delete(1)).resolves.toBeUndefined();
     expect(repository.deleteRecord).toHaveBeenCalledWith(1);
   });
 
   it('publie un brouillon par le remplacement, sans jamais dépublier', async () => {
     const repository = fakeRepository(person({ lifecycle: 'draft' }));
     const service = createAdminPersonService(repository);
-    const fields: Omit<AdminPersonDraft, 'published'> = { name: 'x', kind: 'person', links: [] };
+    const fields: Omit<AdminPersonCreateInput, 'published'> = {
+      name: 'x',
+      kind: 'person',
+      links: [],
+    };
     await service.update(1, { ...fields, published: true, updatedAt: VERSION });
     await service.update(1, { ...fields, updatedAt: VERSION });
     expect(repository.update).toHaveBeenNthCalledWith(

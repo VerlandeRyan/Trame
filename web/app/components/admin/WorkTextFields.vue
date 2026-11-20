@@ -8,7 +8,7 @@ import {
   SYNOPSIS_SOURCES,
   TITLE_KINDS,
   type PublicationGap,
-  type WorkDraft,
+  type WorkFormValues,
 } from '~/utils/admin'
 
 /**
@@ -22,13 +22,13 @@ const props = defineProps<{
 }>()
 /** Whether a required text is flagged: empty, after a refused save. */
 const isFlagged = (text: string) => props.showErrors === true && isBlank(text)
-const draft = defineModel<WorkDraft>({ required: true })
+const form = defineModel<WorkFormValues>({ required: true })
 const { t } = useI18n()
 /** Whether no synopsis is written in the original language: flagged after a refused publication. */
 const isNoOriginalSynopsis = computed(
   () =>
     props.showErrors === true &&
-    publicationGapsOf(draft.value, [], props.serverGaps).includes('synopses'),
+    publicationGapsOf(form.value, [], props.serverGaps).includes('synopses'),
 )
 const uid = useId()
 const languageOptionsFor = useLanguageOptions()
@@ -40,14 +40,14 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
   <div class="texts">
     <AdminPanel :title="t('admin.work.titles')" :hint="t('admin.work.titlesHint')">
       <AdminRowList
-        :items="draft.titles"
+        :items="form.titles"
         :add-label="t('admin.work.addTitle')"
         :remove-label="t('admin.work.removeTitle')"
         :row-label="t('admin.work.titleRow')"
         :is-filled="isTitleRowFilled"
         columns="9rem 16rem minmax(0, 1fr)"
-        @add="draft.titles.push({ language: 'en', kind: 'international', title: '' })"
-        @remove="draft.titles.splice($event, 1)"
+        @add="form.titles.push({ language: 'en', kind: 'international', title: '' })"
+        @remove="form.titles.splice($event, 1)"
       >
         <template #default="{ item, index }">
           <AdminSelectField
@@ -75,14 +75,14 @@ const sourceOptions = optionsOf(SYNOPSIS_SOURCES, (code) => t(`admin.option.syno
 
     <AdminPanel :title="t('admin.work.synopses')" :hint="t('admin.work.synopsesHint')">
       <AdminRowList
-        :items="draft.synopses"
+        :items="form.synopses"
         :add-label="t('admin.work.addSynopsis')"
         :remove-label="t('admin.work.removeSynopsis')"
         :row-label="t('admin.work.synopsisRow')"
         :is-filled="isSynopsisRowFilled"
         columns="9rem 16rem minmax(0, 1fr)"
-        @add="draft.synopses.push({ language: 'fr', source: 'official', text: '' })"
-        @remove="draft.synopses.splice($event, 1)"
+        @add="form.synopses.push({ language: 'fr', source: 'official', text: '' })"
+        @remove="form.synopses.splice($event, 1)"
       >
         <template #default="{ item, index }">
           <AdminSelectField

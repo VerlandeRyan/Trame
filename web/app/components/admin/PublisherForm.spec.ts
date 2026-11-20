@@ -1,11 +1,11 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
 import { reactive } from 'vue'
-import { emptyPublisherDraft } from '~/utils/admin'
+import { emptyPublisherFormValues } from '~/utils/admin'
 import AdminPublisherForm from './PublisherForm.vue'
 
 function mountForm(props: { errorKey?: string; showErrors?: boolean; saving?: boolean } = {}) {
-  const draft = reactive(emptyPublisherDraft())
+  const draft = reactive(emptyPublisherFormValues())
   return mountSuspended(AdminPublisherForm, {
     props: { modelValue: draft, saving: false, ...props },
   }).then((wrapper) => ({ wrapper, draft }))

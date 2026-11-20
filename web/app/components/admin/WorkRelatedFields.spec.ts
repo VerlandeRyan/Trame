@@ -1,11 +1,11 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it, vi } from 'vitest'
 import { reactive } from 'vue'
-import { emptyWorkDraft } from '~/utils/admin'
+import { emptyWorkFormValues } from '~/utils/admin'
 import AdminWorkRelatedFields from './WorkRelatedFields.vue'
 
 function mountFields(part: 'people' | 'relations') {
-  const draft = reactive(emptyWorkDraft())
+  const draft = reactive(emptyWorkFormValues())
   const search = vi.fn(async () => [])
   return mountSuspended(AdminWorkRelatedFields, {
     props: { modelValue: draft, part, search },

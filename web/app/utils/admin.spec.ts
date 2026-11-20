@@ -4,12 +4,12 @@ import {
   archiveImpact,
   adminErrorKey,
   digitsOnly,
-  draftToPersonBody,
-  draftToPublisherBody,
-  draftToWorkBody,
-  emptyPersonDraft,
-  emptyPublisherDraft,
-  emptyWorkDraft,
+  formValuesToPersonBody,
+  formValuesToPublisherBody,
+  formValuesToWorkBody,
+  emptyPersonFormValues,
+  emptyPublisherFormValues,
+  emptyWorkFormValues,
   hasUnsavableDraft,
   formatCodesOf,
   hasIncompleteForm,
@@ -38,13 +38,13 @@ import {
   parseAdminEditRoute,
   parseAdminListQuery,
   parseWorkSection,
-  personToDraft,
-  publisherToDraft,
+  personToFormValues,
+  publisherToFormValues,
   queryForTab,
   tabOf,
   toAdminApiQuery,
   toAdminRouteQuery,
-  workToDraft,
+  workToFormValues,
   type AdminListQuery,
   type AdminWork,
 } from './admin'
@@ -176,7 +176,7 @@ describe('liste du catalogue dans l’adresse', () => {
   })
 
   it('un brouillon n’exige que le titre et des adresses valides', () => {
-    const draft = { ...emptyWorkDraft(), title: 'Aube' }
+    const draft = { ...emptyWorkFormValues(), title: 'Aube' }
     expect(hasUnsavableDraft(draft)).toBe(false)
     expect(hasUnsavableDraft({ ...draft, title: ' ' })).toBe(true)
     const link = { kind: 'read', url: 'http://non-https.example', label: '' }
@@ -245,7 +245,7 @@ describe('adresse d’édition', () => {
 
 describe('formulaire œuvre', () => {
   it('remplit le brouillon avec les libellés, `#id` à défaut', () => {
-    const draft = workToDraft(WORK)
+    const draft = workToFormValues(WORK)
     expect(draft).toMatchObject({
       chapters: '86',
       volumes: '',
@@ -259,7 +259,7 @@ describe('formulaire œuvre', () => {
   })
 
   it('renvoie le corps d’origine après un aller-retour', () => {
-    const body = draftToWorkBody(workToDraft(WORK))
+    const body = formValuesToWorkBody(workToFormValues(WORK))
     expect(body).toMatchObject({
       title: 'Aube Fictive',
       chapters: 86,
@@ -274,18 +274,18 @@ describe('formulaire œuvre', () => {
   })
 
   it('garde la version lue pour le remplacement, et n’en envoie pas à la création', () => {
-    expect(draftToWorkBody(workToDraft(WORK)).updatedAt).toBe(WORK.updatedAt)
-    expect(draftToWorkBody(emptyWorkDraft()).updatedAt).toBeUndefined()
+    expect(formValuesToWorkBody(workToFormValues(WORK)).updatedAt).toBe(WORK.updatedAt)
+    expect(formValuesToWorkBody(emptyWorkFormValues()).updatedAt).toBeUndefined()
   })
 
   it('vide les totaux d’une œuvre en cours (RG-18)', () => {
-    const draft = { ...emptyWorkDraft(), title: 'X', status: 'ongoing', chapters: '5' }
-    expect(draftToWorkBody(draft)).toMatchObject({ chapters: null, volumes: null })
+    const draft = { ...emptyWorkFormValues(), title: 'X', status: 'ongoing', chapters: '5' }
+    expect(formValuesToWorkBody(draft)).toMatchObject({ chapters: null, volumes: null })
   })
 
   it('ignore les lignes laissées incomplètes', () => {
     const draft = {
-      ...emptyWorkDraft(),
+      ...emptyWorkFormValues(),
       titles: [{ language: 'en', kind: 'short', title: '  ' }],
       synopses: [{ language: 'fr', source: 'human', text: '' }],
       credits: [{ person: null, role: 'art' }],
@@ -293,7 +293,7 @@ describe('formulaire œuvre', () => {
       relations: [{ work: null, relation: 'other' }],
       links: [{ kind: 'read', url: ' ', label: '' }],
     }
-    expect(draftToWorkBody(draft)).toMatchObject({
+    expect(formValuesToWorkBody(draft)).toMatchObject({
       titles: [],
       synopses: [],
       credits: [],
@@ -314,14 +314,14 @@ describe('champs obligatoires', () => {
   const FORMATS = ['manga', 'bd']
 
   it('repère ce qui manque, avec les noms de champs de l’API', () => {
-    expect(localPublicationGaps(emptyWorkDraft(), FORMATS)).toEqual([
+    expect(localPublicationGaps(emptyWorkFormValues(), FORMATS)).toEqual([
       'genres',
       'credits',
       'publisherIds',
       'synopses',
     ])
     const filled = {
-      ...emptyWorkDraft(),
+      ...emptyWorkFormValues(),
       title: ' Aube ',
       genres: ['fantasy', 'bd'],
       credits: [{ person: { id: 1, label: 'Léa' }, role: 'story' }],
@@ -333,7 +333,7 @@ describe('champs obligatoires', () => {
 
   it('le synopsis doit être dans la langue originale', () => {
     const draft = {
-      ...emptyWorkDraft(),
+      ...emptyWorkFormValues(),
       originalLanguage: 'fr',
       synopses: [{ language: 'en', source: 'official', text: 'Summary.' }],
     }
@@ -341,17 +341,17 @@ describe('champs obligatoires', () => {
   })
 
   it('un genre thématique ne tient pas lieu de format', () => {
-    const draft = { ...emptyWorkDraft(), title: 'Aube', genres: ['fantasy'] }
+    const draft = { ...emptyWorkFormValues(), title: 'Aube', genres: ['fantasy'] }
     expect(localPublicationGaps(draft, FORMATS)).toContain('genres')
   })
 
   it('ne réclame pas de format quand le catalogue n’en propose aucun', () => {
-    expect(localPublicationGaps(emptyWorkDraft(), [])).not.toContain('genres')
+    expect(localPublicationGaps(emptyWorkFormValues(), [])).not.toContain('genres')
   })
 
   it('ajoute aux manques locaux ceux que l’API a signalés, sans doublon', () => {
     const complete = {
-      ...emptyWorkDraft(),
+      ...emptyWorkFormValues(),
       genres: ['manga'],
       credits: [{ person: { id: 1, label: 'Léa' }, role: 'story' }],
       publishers: [{ publisher: { id: 2, label: 'Maison' } }],
@@ -362,7 +362,7 @@ describe('champs obligatoires', () => {
       'genres',
       'synopses',
     ])
-    expect(publicationGapsOf(emptyWorkDraft(), FORMATS, ['genres'])).toEqual([
+    expect(publicationGapsOf(emptyWorkFormValues(), FORMATS, ['genres'])).toEqual([
       'genres',
       'credits',
       'publisherIds',
@@ -402,14 +402,14 @@ describe('champs obligatoires', () => {
 
 describe('lignes incomplètes', () => {
   const FORMATS = ['manga', 'bd']
-  const complete = { ...workToDraft(WORK), genres: ['manga'] }
+  const complete = { ...workToFormValues(WORK), genres: ['manga'] }
 
   it('accepte une fiche complète dont toutes les lignes sont choisies, ou vides', () => {
     expect(hasIncompleteForm(complete, FORMATS)).toBe(false)
   })
 
   it('signale le titre ou le format manquant, dans la section « info »', () => {
-    expect(hasIncompleteForm(emptyWorkDraft(), FORMATS)).toBe(true)
+    expect(hasIncompleteForm(emptyWorkFormValues(), FORMATS)).toBe(true)
     expect(incompleteSections({ ...complete, title: ' ' }, FORMATS)).toEqual(['info'])
     expect(incompleteSections({ ...complete, genres: [] }, FORMATS)).toEqual(['info'])
   })
@@ -507,16 +507,18 @@ describe('adresses https', () => {
 describe('formulaires personne et éditeur', () => {
   it('convertit les liens et l’adresse vide en null', () => {
     const person = {
-      ...emptyPersonDraft(),
+      ...emptyPersonFormValues(),
       name: ' Léa ',
       links: [{ kind: 'website', url: ' https://a.test ', label: ' ' }],
     }
-    expect(draftToPersonBody(person)).toEqual({
+    expect(formValuesToPersonBody(person)).toEqual({
       name: 'Léa',
       kind: 'person',
       links: [{ kind: 'website', url: 'https://a.test', label: null }],
     })
-    expect(draftToPublisherBody({ ...emptyPublisherDraft(), name: 'M', url: '' })).toEqual({
+    expect(
+      formValuesToPublisherBody({ ...emptyPublisherFormValues(), name: 'M', url: '' }),
+    ).toEqual({
       name: 'M',
       kind: 'publisher',
       url: null,
@@ -525,17 +527,19 @@ describe('formulaires personne et éditeur', () => {
 
   it('renvoie la version lue, et aucune pour une nouvelle fiche', () => {
     const version = '2026-10-24T10:00:00.000Z'
-    expect(draftToPersonBody({ ...emptyPersonDraft(), updatedAt: version }).updatedAt).toBe(version)
-    expect(draftToPublisherBody({ ...emptyPublisherDraft(), updatedAt: version }).updatedAt).toBe(
-      version,
-    )
-    expect(draftToPersonBody(emptyPersonDraft()).updatedAt).toBeUndefined()
-    expect(draftToPublisherBody(emptyPublisherDraft()).updatedAt).toBeUndefined()
+    expect(
+      formValuesToPersonBody({ ...emptyPersonFormValues(), updatedAt: version }).updatedAt,
+    ).toBe(version)
+    expect(
+      formValuesToPublisherBody({ ...emptyPublisherFormValues(), updatedAt: version }).updatedAt,
+    ).toBe(version)
+    expect(formValuesToPersonBody(emptyPersonFormValues()).updatedAt).toBeUndefined()
+    expect(formValuesToPublisherBody(emptyPublisherFormValues()).updatedAt).toBeUndefined()
   })
 
   it('remplit le brouillon depuis la fiche', () => {
     expect(
-      personToDraft({
+      personToFormValues({
         id: 1,
         name: 'Léa',
         kind: 'collective',
@@ -553,7 +557,7 @@ describe('formulaires personne et éditeur', () => {
       updatedAt: '2026-10-24T10:00:00.000Z',
     })
     expect(
-      publisherToDraft({
+      publisherToFormValues({
         id: 1,
         name: 'M',
         kind: 'platform',

@@ -13,7 +13,7 @@ export function assertNotDraft(record: LifecycleRecord): void {
 }
 
 /** Deletes a draft or an archived record nothing cites (`NOT_REMOVABLE` if published, `RECORD_IN_USE` if cited). */
-export async function removeRecord(
+export async function deleteRecord(
   get: (id: number) => Promise<LifecycleRecord>,
   repository: { deleteRecord(id: number): Promise<boolean> },
   id: number,

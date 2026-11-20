@@ -20,11 +20,11 @@ import {
   adminListQuery,
   adminWorkListQuery,
   personBody,
-  personReplaceBody,
+  personUpdateBody,
   publisherBody,
-  publisherReplaceBody,
+  publisherUpdateBody,
   workBody,
-  workReplaceBody,
+  workUpdateBody,
 } from '../schemas/admin-catalogue.js';
 import { handleBody, loginQuery } from '../schemas/auth.js';
 import { idParams } from '../schemas/common.js';
@@ -169,7 +169,7 @@ interface AdminResource {
   page: string;
   /** Body to create a record, and body to replace one (the same plus the version that was read, `updatedAt`). */
   createBody: z.ZodType;
-  replaceBody: z.ZodType;
+  updateBody: z.ZodType;
   /** List parameters (search, lifecycle, page, and filters specific to the resource). */
   listQuery: z.ZodObject;
   /** Code returned (409) when archiving is refused, if applicable. */
@@ -262,9 +262,9 @@ function adminResourcePaths(resource: AdminResource) {
       put: {
         ...writeBase,
         summary: `Remplacer, et publier un brouillon avec \`published: true\` : ${resource.singular}`,
-        operationId: `replaceAdmin${resource.singular}`,
+        operationId: `updateAdmin${resource.singular}`,
         parameters: idParameters,
-        requestBody: requestBodyOf(resource.replaceBody),
+        requestBody: requestBodyOf(resource.updateBody),
         responses: {
           '200': jsonResponse(resource.record, 'Enregistrée.'),
           '400': invalidBody,
@@ -678,7 +678,7 @@ export function buildOpenApiDocument() {
         record: 'AdminPerson',
         page: 'AdminPersonPage',
         createBody: personBody,
-        replaceBody: personReplaceBody,
+        updateBody: personUpdateBody,
         listQuery: adminListQuery,
         archiveBlockedBy: 'PERSON_HAS_WORKS',
       }),
@@ -689,7 +689,7 @@ export function buildOpenApiDocument() {
         record: 'AdminPublisher',
         page: 'AdminPublisherPage',
         createBody: publisherBody,
-        replaceBody: publisherReplaceBody,
+        updateBody: publisherUpdateBody,
         listQuery: adminListQuery,
         archiveBlockedBy: 'PUBLISHER_HAS_WORKS',
       }),
@@ -700,7 +700,7 @@ export function buildOpenApiDocument() {
         record: 'AdminWork',
         page: 'AdminWorkPage',
         createBody: workBody,
-        replaceBody: workReplaceBody,
+        updateBody: workUpdateBody,
         listQuery: adminWorkListQuery,
         invalidReference: true,
       }),

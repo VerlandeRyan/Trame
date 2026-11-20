@@ -1,5 +1,5 @@
 /** The single rule of what a work needs to be published, served to the web and enforced on publication. */
-import type { WorkDraft } from '../repositories/admin-work.repository.js';
+import type { AdminWorkCreateInput } from '../repositories/admin-work.repository.js';
 
 /** Names of the fields (as the API calls them) a work can lack to be published. */
 export const PUBLICATION_GAPS = ['genres', 'credits', 'publisherIds', 'synopses'] as const;
@@ -10,7 +10,7 @@ export type PublicationGap = (typeof PUBLICATION_GAPS)[number];
  * the original language.
  */
 export function publicationGaps(
-  work: Pick<WorkDraft, 'credits' | 'publisherIds' | 'synopses' | 'originalLanguage'>,
+  work: Pick<AdminWorkCreateInput, 'credits' | 'publisherIds' | 'synopses' | 'originalLanguage'>,
   hasFormat: boolean,
 ): PublicationGap[] {
   const isMissing: Record<PublicationGap, boolean> = {
