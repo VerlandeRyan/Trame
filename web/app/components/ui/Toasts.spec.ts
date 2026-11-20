@@ -62,6 +62,24 @@ describe('UiToasts', () => {
     expect(success?.attributes('style')).toContain('--dismiss-duration: 5000ms')
   })
 
+  it('ferme « Réessayer » quand on change de page, mais pas quand seuls les filtres changent', async () => {
+    const wrapper = await mountSuspended(UiToasts)
+    const router = useRouter()
+    const blank = { render: () => null }
+    router.addRoute({ path: '/toasts-page-a', component: blank })
+    router.addRoute({ path: '/toasts-page-b', component: blank })
+    await router.push('/toasts-page-a')
+    useToasts().show({ tone: 'error', messageKey: 'writeError.generic', retry: vi.fn() })
+    await nextTick()
+
+    await router.push({ path: '/toasts-page-a', query: { q: 'basalte' } })
+    expect(wrapper.find('[data-testid="toast-retry"]').exists()).toBe(true)
+
+    await router.push('/toasts-page-b')
+    await nextTick()
+    expect(wrapper.find('[data-testid="toast"]').exists()).toBe(false)
+  })
+
   it('se ferme avec la croix, nommée pour les lecteurs d’écran', async () => {
     const wrapper = await mountSuspended(UiToasts)
     useToasts().show({ tone: 'error', messageKey: 'writeError.generic' })

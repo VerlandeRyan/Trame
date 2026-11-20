@@ -1,6 +1,10 @@
 <script setup lang="ts">
 /** Stack of announcements fixed at the bottom of the screen (see `useToasts`). */
-const { toasts, dismiss, retry } = useToasts()
+const { toasts, dismiss, dismissRetryable, retry } = useToasts()
+const route = useRoute()
+
+// A "Retry" replays a write of the page that failed: it must not outlive that page.
+watch(() => route.path, dismissRetryable)
 </script>
 
 <template>

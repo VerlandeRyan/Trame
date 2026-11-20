@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type BrowserContext, type Page } from '@playwright/test'
 import { signInAsAdmin } from '../support/admin.js'
 import { waitForHydration } from '../support/hydration.js'
 import { signUp } from '../support/session.js'
@@ -650,12 +650,14 @@ test('le bandeau des brouillons mène à la liste du type choisi', async ({ page
   await expect(page.getByTestId('admin-row').filter({ hasText: `${DRAFT} bandeau` })).toBeVisible()
 })
 
-test('une panne d’enregistrement s’annonce avec « Réessayer », qui rejoue l’envoi', async ({
-  page,
-  context,
-}) => {
+/** Opens the editor of a new draft person whose first save fails with a server error. */
+async function openEditorWhoseFirstSaveFails(
+  page: Page,
+  context: BrowserContext,
+  name: string,
+): Promise<number> {
   const created = await context.request.post('/api/v1/admin/people', {
-    data: { name: `${DRAFT} panne`, kind: 'person', published: false },
+    data: { name, kind: 'person', published: false },
   })
   const person = (await created.json()) as { id: number }
   await page.goto(`/admin/catalogue/people/${person.id}`)
@@ -667,12 +669,34 @@ test('une panne d’enregistrement s’annonce avec « Réessayer », qui rejoue
     failed = true
     return route.fulfill({ status: 500, json: { code: 'INTERNAL_ERROR', message: 'simulated' } })
   })
+  return person.id
+}
+
+test('une panne d’enregistrement s’annonce avec « Réessayer », qui rejoue l’envoi', async ({
+  page,
+  context,
+}) => {
+  const personId = await openEditorWhoseFirstSaveFails(page, context, `${DRAFT} panne`)
   await page.getByTestId('admin-save').click()
   await expect(page.getByTestId('toast')).toContainText("Impossible d'enregistrer")
-  await expect(page).toHaveURL(new RegExp(`people/${person.id}$`))
+  await expect(page).toHaveURL(new RegExp(`people/${personId}$`))
 
   await page.getByTestId('toast-retry').click()
   await expect(page).toHaveURL(LIST_URL)
+})
+
+test('quitter la page ferme le « Réessayer » d’une panne d’enregistrement', async ({
+  page,
+  context,
+}) => {
+  await openEditorWhoseFirstSaveFails(page, context, `${DRAFT} panne quittée`)
+  await page.getByTestId('admin-save').click()
+  await expect(page.getByTestId('toast-retry')).toBeVisible()
+
+  await page.getByTestId('admin-back').click()
+
+  await expect(page).toHaveURL(LIST_URL)
+  await expect(page.getByTestId('toast-retry')).toHaveCount(0)
 })
 
 test('le refus de supprimer un brouillon cité s’affiche à l’écran, sans défiler', async ({

@@ -51,6 +51,23 @@ describe('useWriteFailure', () => {
     expect(toasts.value[0]?.retry).toBeUndefined()
   })
 
+  it('n’offre plus « Réessayer » ni conseil quand la page a été quittée avant l’échec', async () => {
+    const { toasts } = useToasts()
+    const router = useRouter()
+    const blank = { render: () => null }
+    router.addRoute({ path: '/write-failure-start', component: blank })
+    router.addRoute({ path: '/write-failure-elsewhere', component: blank })
+    await router.push('/write-failure-start')
+    const showWriteFailure = useWriteFailure()
+    await router.push('/write-failure-elsewhere')
+
+    showWriteFailure(failure('INTERNAL_ERROR'), vi.fn())
+
+    expect(toasts.value[0]).toMatchObject({ messageKey: 'writeError.generic' })
+    expect(toasts.value[0]?.retry).toBeUndefined()
+    expect(toasts.value[0]?.hintKey).toBeUndefined()
+  })
+
   it('traite une erreur qui n’est pas une erreur d’API comme une panne du serveur', () => {
     const { toasts } = useToasts()
     const showWriteFailure = useWriteFailure()

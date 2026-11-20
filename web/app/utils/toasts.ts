@@ -37,6 +37,11 @@ export function removeToast(toasts: Toast[], id: number): Toast[] {
   return toasts.filter((each) => each.id !== id)
 }
 
+/** Removes the toasts that offer "Retry": their action belongs to the page that showed them. */
+export function removeRetryToasts(toasts: Toast[]): Toast[] {
+  return toasts.some((each) => each.retry) ? toasts.filter((each) => !each.retry) : toasts
+}
+
 /** Delay before a toast hides itself; the countdown bar lasts as long. */
 export function autoDismissDelay(tone: ToastTone): number {
   return tone === 'error' ? ERROR_DISMISS_MS : AUTO_DISMISS_MS
