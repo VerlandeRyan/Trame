@@ -16,6 +16,7 @@ import {
   countDraftRows,
   deleteRecordRow,
   DRAFTS_FIRST,
+  falseWhenCited,
   FILTERED_TOTAL,
   FORMAT_CODES,
   isVersion,
@@ -32,9 +33,6 @@ import {
   type LifecycleFilter,
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
-
-/** No other work lists this one as related. */
-const NOT_RELATED = sql<boolean>`NOT EXISTS (SELECT 1 FROM work_relation wr WHERE wr.related_work_id = work.id)`;
 
 /** An alternative title of a work. */
 export interface WorkTitleRecord {
@@ -706,20 +704,20 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
     },
 
     async deleteRecord(id) {
-      return db.transaction().execute(async (trx) => {
-        // The row lock makes a member's concurrent "add to my list" wait for the outcome; taken in a
-        // statement of its own so the guard below sees a relation committed while this delete waited.
-        await lockRow(trx, 'work', id);
-        const removable = await sql`
-          SELECT id FROM work
-          WHERE id = ${id} AND ${REMOVABLE} AND ${NOT_RELATED}
-          FOR UPDATE`.execute(trx);
-        if (removable.rows.length === 0) return false;
-        // Members' lists are erased explicitly: the foreign keys stay strict for any other delete.
-        await trx.deleteFrom('reading_event').where('work_id', '=', id).execute();
-        await trx.deleteFrom('library_entry').where('work_id', '=', id).execute();
-        return deleteRecordRow(trx, 'work', id, NOT_RELATED);
-      });
+      return falseWhenCited(() =>
+        db.transaction().execute(async (trx) => {
+          // The row lock makes a member's concurrent "add to my list" wait for the outcome.
+          await lockRow(trx, 'work', id);
+          const removable = await sql`
+            SELECT id FROM work WHERE id = ${id} AND ${REMOVABLE}`.execute(trx);
+          if (removable.rows.length === 0) return false;
+          // Members' lists are erased explicitly: the foreign keys stay strict for any other delete.
+          // A relation that cites the work refuses the final delete, which rolls these two back.
+          await trx.deleteFrom('reading_event').where('work_id', '=', id).execute();
+          await trx.deleteFrom('library_entry').where('work_id', '=', id).execute();
+          return deleteRecordRow(trx, 'work', id);
+        }),
+      );
     },
 
     async countDrafts() {

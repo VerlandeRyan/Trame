@@ -6,6 +6,7 @@ import {
   countDraftRows,
   deleteRecordRow,
   DRAFTS_FIRST,
+  falseWhenCited,
   FILTERED_TOTAL,
   isVersion,
   lifecycleCondition,
@@ -164,16 +165,7 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
     },
 
     async deleteRecord(id) {
-      return db.transaction().execute(async (trx) => {
-        // Locked first: the guard sees a work that listed the publisher while this delete waited.
-        await lockRow(trx, 'publisher', id);
-        return deleteRecordRow(
-          trx,
-          'publisher',
-          id,
-          sql<boolean>`NOT EXISTS (SELECT 1 FROM work_publisher wp WHERE wp.publisher_id = publisher.id)`,
-        );
-      });
+      return falseWhenCited(() => deleteRecordRow(db, 'publisher', id));
     },
 
     async countDrafts() {
