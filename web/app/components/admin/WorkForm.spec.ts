@@ -1,20 +1,27 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { reactive } from 'vue'
-import { emptyWorkDraft } from '~/utils/admin'
+import { emptyWorkDraft, type PublicationGap } from '~/utils/admin'
 import AdminWorkForm from './WorkForm.vue'
 
 function mountForm(
-  props: { errorKey?: string; errorScope?: 'none' | 'title' | 'all'; saving?: boolean } = {},
+  props: {
+    errorKey?: string
+    errorScope?: 'none' | 'title' | 'all'
+    serverGaps?: PublicationGap[]
+    saving?: boolean
+  } = {},
 ) {
   const draft = reactive(emptyWorkDraft())
+  const { errorScope = 'none', serverGaps = [], ...rest } = props
   return mountSuspended(AdminWorkForm, {
     props: {
       modelValue: draft,
       genres: [{ code: 'manga', category: 'format' }],
       search: vi.fn(async () => []),
       saving: false,
-      ...props,
+      flagged: { scope: errorScope, serverGaps },
+      ...rest,
     },
   }).then((wrapper) => ({ wrapper, draft }))
 }
@@ -119,6 +126,29 @@ describe('AdminWorkForm', () => {
       expect(alertedTabs(wrapper)).toContain('Informations')
       expect(wrapper.get('#work-title').attributes('aria-invalid')).toBe('true')
       expect(wrapper.text()).toContain('Champ obligatoire')
+      expect(wrapper.text()).toContain('Choisis au moins un format.')
+    })
+
+    it('signale un manque que seule l’API voit, dans son onglet et sur son champ', async () => {
+      const { wrapper, draft } = await mountForm({
+        errorScope: 'all',
+        serverGaps: ['synopses', 'credits', 'publisherIds'],
+      })
+      fillRequired(draft)
+      await wrapper.vm.$nextTick()
+
+      expect(alertedTabs(wrapper)).toEqual(['Titres et synopsis', 'Auteurs et éditeurs'])
+      expect(wrapper.text()).toContain('Écris un synopsis dans la langue originale')
+      expect(wrapper.text()).toContain('Ajoute au moins un auteur.')
+      expect(wrapper.text()).toContain('Ajoute au moins un éditeur')
+    })
+
+    it('signale le format quand l’API le dit manquant, même si la saisie en a un', async () => {
+      const { wrapper, draft } = await mountForm({ errorScope: 'all', serverGaps: ['genres'] })
+      fillRequired(draft)
+      await wrapper.vm.$nextTick()
+
+      expect(alertedTabs(wrapper)).toEqual(['Informations'])
       expect(wrapper.text()).toContain('Choisis au moins un format.')
     })
 

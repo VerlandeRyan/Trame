@@ -31,6 +31,7 @@ import { idParams } from '../schemas/common.js';
 import { entryBody, listEntriesQuery } from '../schemas/library.js';
 import { profileParams, profileQuery, visibilityBody } from '../schemas/profile.js';
 import { facetsQuery, listWorksQuery, workQuery } from '../schemas/work.js';
+import { PUBLICATION_GAPS } from '../services/admin-publication.js';
 import { sessionCookieName } from '../session/middleware.js';
 import {
   adminDraftCountsSchema,
@@ -80,6 +81,7 @@ const NAMED_ENUMS: Record<string, readonly string[]> = {
   UserRole: USER_ROLES,
   // `ProfileVisibility` already names the response of the visibility update.
   Visibility: PROFILE_VISIBILITIES,
+  PublicationGap: PUBLICATION_GAPS,
 };
 
 /** Component name looked up by the joined values of an enumeration. */

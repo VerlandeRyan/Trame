@@ -10,12 +10,13 @@ Le squelette Nuxt (#18) fixe la base visuelle. Les maquettes ont une identité m
 - **Nuxt 4** en rendu serveur, `@nuxtjs/i18n` (français sans préfixe, autres langues en `/en/…`, repli sur le français, ADR 0007).
 - **Pas de kit de composants** : SCSS maison, tous les styles lisent des **jetons CSS** (`web/app/assets/styles/_tokens.scss`) ; composants de base `Ui*` écrits à la main.
 - **Icônes Tabler** en SVG embarqués par `@nuxt/icon` (aucun CDN, aucune police d'icônes).
+- **État partagé : `useState` de Nuxt, pas de Pinia.** Chaque état (session, annonces, brouillon d'administration, fiche de lecture…) vit dans un composable `useXxx` qui enveloppe `useState` avec une clé unique ; il est sérialisé du rendu serveur au navigateur, sans scintillement. Pinia se reconsidère si plusieurs composants modifient un même objet par des actions nommées.
 - Primitives **headless** (accessibilité des modales complexes, combobox de recherche) ajoutées plus tard, au besoin ; `<dialog>` natif pour les modales simples.
 - Pile de polices système tant que la police finale n'est pas choisie ; elle sera auto-hébergée.
 - Qualité : `vue-tsc`, ESLint, E2E Playwright (bureau Chromium, WebKit iPhone).
 
 ## Alternatives écartées
-Nuxt UI / PrimeVue / Vuetify (style imposé à contourner, dépendance forte) ; Tailwind (jetons déjà exprimés en variables CSS, peu de gain) ; police d'icônes ou CDN (rendu et vie privée).
+Nuxt UI / PrimeVue / Vuetify (style imposé à contourner, dépendance forte) ; Tailwind (jetons déjà exprimés en variables CSS, peu de gain) ; police d'icônes ou CDN (rendu et vie privée) ; Pinia (une dépendance de plus pour un état simple, sans store à actions imbriquées).
 
 ## Conséquences
 + Rendu fidèle aux maquettes, aucune ressource tierce au chargement.

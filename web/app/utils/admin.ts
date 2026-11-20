@@ -1,6 +1,18 @@
 /** Catalogue administration: response types, form drafts and pure conversions (tested without Nuxt). */
-import { ADMIN_LIFECYCLE_FILTERS, LINK_KINDS, WORK_STATUSES, WORK_TYPES } from '../contract/api'
-import type { AdminLifecycle, AdminPerson, AdminPublisher, AdminWork } from '../contract/api'
+import {
+  ADMIN_LIFECYCLE_FILTERS,
+  LINK_KINDS,
+  PUBLICATION_GAPS,
+  WORK_STATUSES,
+  WORK_TYPES,
+} from '../contract/api'
+import type {
+  AdminLifecycle,
+  AdminPerson,
+  AdminPublisher,
+  AdminWork,
+  PublicationGap,
+} from '../contract/api'
 import type { ApiError } from './api-error'
 
 /** Kinds of administered records. */
@@ -23,7 +35,7 @@ export {
   WORK_LINK_KINDS,
 } from '../contract/api'
 export { ADMIN_LIFECYCLE_FILTERS, LINK_KINDS, WORK_STATUSES, WORK_TYPES }
-export type { AdminLifecycle }
+export type { AdminLifecycle, PublicationGap }
 
 /** Sections of the work form; the first one is open by default. */
 export const WORK_SECTIONS = ['info', 'texts', 'relations', 'links', 'people'] as const
@@ -400,21 +412,44 @@ export type ErrorScope = 'none' | 'title' | 'all'
 export const formatCodesOf = (genres: readonly { code: string; category: string }[]) =>
   genres.filter((genre) => genre.category === 'format').map((genre) => genre.code)
 
+/** The section of the form where each publication gap is filled in. */
+export const PUBLICATION_GAP_SECTION: Record<PublicationGap, WorkSection> = {
+  genres: 'info',
+  synopses: 'texts',
+  credits: 'people',
+  publisherIds: 'people',
+}
+
 /**
- * The required fields of a work left empty: the title, the format (at least one, only checked
- * when the catalogue offers formats), an author, a publisher and a synopsis in the original
- * language. Only the title is required to save a draft.
+ * The publication gaps of an unsaved draft, named as the API names them (the saved record's gaps
+ * come from the API itself). The format is only checked when the catalogue offers formats.
  */
-export function missingWorkFields(draft: WorkDraft, formatCodes: readonly string[]) {
-  return {
-    title: isBlank(draft.title),
-    formats: formatCodes.length > 0 && !draft.genres.some((code) => formatCodes.includes(code)),
+export function localPublicationGaps(
+  draft: WorkDraft,
+  formatCodes: readonly string[],
+): PublicationGap[] {
+  const isMissing: Record<PublicationGap, boolean> = {
+    genres: formatCodes.length > 0 && !draft.genres.some((code) => formatCodes.includes(code)),
     credits: !draft.credits.some((row) => row.person !== null),
-    publishers: !draft.publishers.some((row) => row.publisher !== null),
-    synopsis: !draft.synopses.some(
+    publisherIds: !draft.publishers.some((row) => row.publisher !== null),
+    synopses: !draft.synopses.some(
       (row) => row.language === draft.originalLanguage && !isBlank(row.text),
     ),
   }
+  return PUBLICATION_GAPS.filter((gap) => isMissing[gap])
+}
+
+/**
+ * Every publication gap to flag: those of the unsaved draft, plus those the API reported
+ * (`serverGaps`: its refusal, or the saved record's gaps), since the API owns the rule.
+ */
+export function publicationGapsOf(
+  draft: WorkDraft,
+  formatCodes: readonly string[],
+  serverGaps: readonly PublicationGap[] = [],
+): PublicationGap[] {
+  const local = localPublicationGaps(draft, formatCodes)
+  return PUBLICATION_GAPS.filter((gap) => local.includes(gap) || serverGaps.includes(gap))
 }
 
 /**
@@ -422,31 +457,44 @@ export function missingWorkFields(draft: WorkDraft, formatCodes: readonly string
  * synopsis text, link address, credit, publisher or related work): `draftToWorkBody` would ignore
  * such a row and the input would be lost silently.
  */
-export function hasIncompleteForm(draft: WorkDraft, formatCodes: readonly string[]): boolean {
-  return incompleteSections(draft, formatCodes).length > 0
+export function hasIncompleteForm(
+  draft: WorkDraft,
+  formatCodes: readonly string[],
+  serverGaps: readonly PublicationGap[] = [],
+): boolean {
+  return incompleteSections(draft, formatCodes, serverGaps).length > 0
 }
 
 /** The sections of the form that contain a gap (rule of `hasIncompleteForm`). */
 export function incompleteSections(
   draft: WorkDraft,
   formatCodes: readonly string[],
+  serverGaps: readonly PublicationGap[] = [],
 ): WorkSection[] {
-  const missing = missingWorkFields(draft, formatCodes)
+  const gapSections = new Set(
+    publicationGapsOf(draft, formatCodes, serverGaps).map((gap) => PUBLICATION_GAP_SECTION[gap]),
+  )
   const isIncomplete: Record<WorkSection, boolean> = {
-    info: missing.title || missing.formats,
+    info: isBlank(draft.title),
     texts:
-      missing.synopsis ||
       draft.titles.some((row) => isBlank(row.title)) ||
       draft.synopses.some((row) => isBlank(row.text)),
     relations: draft.relations.some((row) => row.work === null),
     links: hasInvalidLinkUrl(draft.links),
     people:
-      missing.credits ||
-      missing.publishers ||
       draft.credits.some((row) => row.person === null) ||
       draft.publishers.some((row) => row.publisher === null),
   }
-  return WORK_SECTIONS.filter((section) => isIncomplete[section])
+  return WORK_SECTIONS.filter((section) => isIncomplete[section] || gapSections.has(section))
+}
+
+/** The publication gaps named by an API refusal (`VALIDATION_ERROR` details, `path[0]` = field). */
+export function gapsOfRefusal(error: Pick<ApiError, 'code' | 'details'>): PublicationGap[] {
+  if (error.code !== 'VALIDATION_ERROR') return []
+  const paths = new Set(
+    (error.details ?? []).map((issue) => (issue as { path?: unknown[] }).path?.[0]),
+  )
+  return PUBLICATION_GAPS.filter((gap) => paths.has(gap))
 }
 
 // A row counts as filled in when removing it would lose something: it then asks for confirmation.

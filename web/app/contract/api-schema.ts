@@ -576,6 +576,8 @@ export interface components {
         UserRole: "user" | "admin";
         /** @enum {string} */
         Visibility: "public" | "private";
+        /** @enum {string} */
+        PublicationGap: "genres" | "credits" | "publisherIds" | "synopses";
         /** @description Réponse d’erreur unique. */
         Error: {
             /**
@@ -758,6 +760,8 @@ export interface components {
              * @description Version de la fiche, à renvoyer avec le remplacement (`PUT`).
              */
             updatedAt: string;
+            /** @description Champs qui manquent pour publier l’œuvre (noms des champs de l’API). */
+            publicationGaps: components["schemas"]["PublicationGap"][];
         };
         AdminWorkPage: {
             items: {
@@ -4088,6 +4092,7 @@ export const genreCategoryValues: ReadonlyArray<FlattenedDeepRequired<components
 export const libraryStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["LibraryStatus"]> = ["reading", "completed", "plan_to_read", "on_hold", "dropped"];
 export const userRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["UserRole"]> = ["user", "admin"];
 export const visibilityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Visibility"]> = ["public", "private"];
+export const publicationGapValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PublicationGap"]> = ["genres", "credits", "publisherIds", "synopses"];
 export const errorCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Error"]["code"]> = ["NOT_FOUND", "VALIDATION_ERROR", "INVALID_JSON", "UNAUTHENTICATED", "HANDLE_REQUIRED", "SIGNUP_EXPIRED", "ADMIN_REQUIRED", "PROFILE_PRIVATE", "PERSON_HAS_WORKS", "PUBLISHER_HAS_WORKS", "INVALID_REFERENCE", "ARCHIVED_REFERENCE", "DRAFT_REFERENCE", "DRAFT_NOT_ARCHIVABLE", "NOT_REMOVABLE", "RECORD_IN_USE", "STALE_RECORD", "FORBIDDEN_ORIGIN", "HANDLE_NOT_ALLOWED", "HANDLE_TAKEN", "AUTH_STATE_INVALID", "AUTH_UNAVAILABLE", "RATE_LIMITED", "INTERNAL_ERROR"];
 export const adminPersonLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPerson"]["lifecycle"]> = ["draft", "published", "archived"];
 export const adminPersonPageItemsLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPersonPage"]["items"]["lifecycle"]> = ["draft", "published", "archived"];

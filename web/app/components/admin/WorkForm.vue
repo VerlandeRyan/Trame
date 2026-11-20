@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import type { AdminKind, ErrorScope, FormMode, RecordRef, WorkDraft } from '~/utils/admin'
+import type {
+  AdminKind,
+  ErrorScope,
+  FormMode,
+  PublicationGap,
+  RecordRef,
+  WorkDraft,
+} from '~/utils/admin'
 
 /**
  * Work form in sections: all stay in the form, only one is visible, so that a save takes
@@ -9,8 +16,12 @@ const props = defineProps<{
   genres: { code: string; category: string }[]
   search: (kind: AdminKind, text: string) => Promise<RecordRef[]>
   errorKey?: string
-  /** What to flag after a refused save: every gap (publication) or the title alone (draft). */
-  errorScope?: ErrorScope
+  /**
+   * What to flag after a refused save: `scope` is every gap (publication) or the title alone
+   * (draft); `serverGaps` are those the API reported (its refusal, or the saved record's own),
+   * flagged with the local ones.
+   */
+  flagged?: { scope: ErrorScope; serverGaps: readonly PublicationGap[] }
   saving: boolean
   mode?: FormMode
 }>()
@@ -29,13 +40,14 @@ const section = computed({
     }),
 })
 const formatCodes = computed(() => formatCodesOf(props.genres))
-const isTitleOnly = computed(() => props.errorScope === 'title')
+const serverGaps = computed(() => props.flagged?.serverGaps ?? [])
+const isTitleOnly = computed(() => props.flagged?.scope === 'title')
 /** Whether the fields other than the title flag their gaps. */
-const showsGaps = computed(() => props.errorScope === 'all')
+const showsGaps = computed(() => props.flagged?.scope === 'all')
 /** Sections to mark with an alert (gaps are only flagged after a refused save). */
 const flaggedSections = computed(() => {
   if (isTitleOnly.value) return isBlank(draft.value.title) ? ['info' as const] : []
-  return showsGaps.value ? incompleteSections(draft.value, formatCodes.value) : []
+  return showsGaps.value ? incompleteSections(draft.value, formatCodes.value, serverGaps.value) : []
 })
 /** One tab per section, with an alert on incomplete ones. */
 const tabs = computed(() =>
@@ -57,10 +69,11 @@ const tabs = computed(() =>
         :genres="genres"
         :show-errors="isTitleOnly || showsGaps"
         :title-only="isTitleOnly"
+        :server-gaps="serverGaps"
       />
     </section>
     <section v-show="section === 'texts'" role="tabpanel" class="form__section">
-      <AdminWorkTextFields v-model="draft" :show-errors="showsGaps" />
+      <AdminWorkTextFields v-model="draft" :show-errors="showsGaps" :server-gaps="serverGaps" />
     </section>
     <section v-show="section === 'relations'" role="tabpanel" class="form__section">
       <AdminWorkRelatedFields
@@ -81,6 +94,7 @@ const tabs = computed(() =>
         part="people"
         :search="search"
         :show-errors="showsGaps"
+        :server-gaps="serverGaps"
       />
     </section>
     <AdminFormActions

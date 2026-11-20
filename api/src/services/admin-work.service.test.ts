@@ -88,6 +88,32 @@ const record = (lifecycle: Lifecycle = 'published'): AdminWorkRecord => ({
   labels: { people: [], publishers: [], works: [] },
   followerCount: 0,
   updatedAt: VERSION,
+  hasFormat: true,
+});
+
+describe('champs manquants à la publication', () => {
+  it('liste ce qui manque à une fiche, publiée ou non', async () => {
+    const incomplete = {
+      ...record('draft'),
+      hasFormat: false,
+      credits: [],
+      publisherIds: [],
+      synopses: [{ language: 'en', text: 'Summary', source: 'official' as const }],
+    };
+    const service = createAdminWorkService(fakeRepository(incomplete));
+    expect((await service.get(1)).publicationGaps).toEqual([
+      'genres',
+      'credits',
+      'publisherIds',
+      'synopses',
+    ]);
+  });
+
+  it('renvoie une liste vide pour une fiche complète, sans exposer hasFormat', async () => {
+    const detail = await createAdminWorkService(fakeRepository(record())).get(1);
+    expect(detail.publicationGaps).toEqual([]);
+    expect(detail).not.toHaveProperty('hasFormat');
+  });
 });
 
 describe('références', () => {

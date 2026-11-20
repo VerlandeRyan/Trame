@@ -13,9 +13,11 @@ const { t } = useI18n()
 const target = parseAdminEditRoute(route.params) ?? { kind: 'works' as const, id: 'new' as const }
 const { kind, id } = target
 const editor = useAdminEditor(kind, id)
-const { record, errorKey, errorScope, saving } = editor
+const { record, errorKey, errorScope, serverGaps, saving } = editor
 /** Whether a refused save asks the person and publisher forms to flag their gaps. */
 const showErrors = computed(() => errorScope.value !== 'none')
+/** What the work form flags: the scope of the last refusal and the gaps the API reported. */
+const flagged = computed(() => ({ scope: errorScope.value, serverGaps: serverGaps.value }))
 // The message sits above "Save", far from the buttons at the top of a long form: bring it into view.
 watch(errorKey, async (key) => {
   if (!key) return
@@ -197,7 +199,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :genres="genres?.items ?? []"
       :search="search"
       :error-key="errorKey"
-      :error-scope="errorScope"
+      :flagged="flagged"
       :saving="saving"
       :mode="formMode"
       @submit="submit"

@@ -1,5 +1,6 @@
 /** Editing state of a catalogue record (work, person or publisher), new or existing. */
-import type { AdminLifecycle, ArchiveImpact, ErrorScope } from '~/utils/admin'
+import type { ApiError } from '~/utils/api-error'
+import type { AdminLifecycle, ArchiveImpact, ErrorScope, PublicationGap } from '~/utils/admin'
 
 /** What runs once a write went through (leaving the form, for instance). */
 type Followup = () => void | Promise<void>
@@ -11,6 +12,8 @@ export interface EditedRecord {
   heading: string
   /** Works only: what archiving leaves in place, recalled in the confirmation. */
   impact?: ArchiveImpact
+  /** Works only: what the API says the saved record still lacks to be published. */
+  publicationGaps?: PublicationGap[]
 }
 
 /** Loads, edits, saves and archives one record; the draft lives in shared state. */
@@ -27,6 +30,8 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   const errorKey = ref<string>()
   /** What the last refused save asks the form to flag: the title or name (draft) or every gap (publication). */
   const errorScope = ref<ErrorScope>('none')
+  /** Gaps named by the API's last refusal, with the draft it refused. */
+  const refusal = ref<{ gaps: PublicationGap[]; draft: string }>({ gaps: [], draft: '' })
   const saving = ref(false)
   const announceFailure = useAdminFailure()
 
@@ -47,6 +52,13 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   const isDirty = computed(() => JSON.stringify(currentDraft()) !== savedSnapshot.value)
   /** Remembers the current draft as the saved state. */
   const markSaved = () => (savedSnapshot.value = JSON.stringify(currentDraft()))
+  /** Gaps the API reported: its refusal of the current input, and the saved record's own while unchanged. */
+  const serverGaps = computed<PublicationGap[]>(() => [
+    ...(refusal.value.gaps.length > 0 && refusal.value.draft === JSON.stringify(currentDraft())
+      ? refusal.value.gaps
+      : []),
+    ...(isDirty.value ? [] : (record.value?.publicationGaps ?? [])),
+  ])
 
   /** Reads the existing record into its draft; does nothing for a new one. */
   async function load() {
@@ -58,6 +70,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
         lifecycle: loaded.lifecycle,
         heading: loaded.title,
         impact: archiveImpact(loaded),
+        publicationGaps: loaded.publicationGaps,
       }
     } else if (kind === 'people') {
       const loaded = await client.get<AdminPerson>(kind, id)
@@ -86,7 +99,9 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   function hasGaps(scope: Exclude<ErrorScope, 'none'>, formatCodes: readonly string[]): boolean {
     const isFull = scope === 'all'
     if (kind === 'works') {
-      return isFull ? hasIncompleteForm(work.value, formatCodes) : hasUnsavableDraft(work.value)
+      return isFull
+        ? hasIncompleteForm(work.value, formatCodes, serverGaps.value)
+        : hasUnsavableDraft(work.value)
     }
     if (kind === 'people') {
       return isBlank(person.value.name) || hasInvalidLinkUrl(person.value.links, isFull)
@@ -98,6 +113,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   function validate(scope: Exclude<ErrorScope, 'none'>, formatCodes: readonly string[]): boolean {
     errorKey.value = undefined
     errorScope.value = 'none'
+    refusal.value = { gaps: [], draft: '' }
     if (!hasGaps(scope, formatCodes)) return true
     errorKey.value = INCOMPLETE_FORM_ERROR_KEY
     errorScope.value = scope
@@ -127,10 +143,25 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     saving.value = true
     try {
       if (id === 'new') await client.create(kind, { ...body(), published: publish })
-      else await client.replace(kind, id, publish ? { ...body(), published: true } : body())
-      if (publish && record.value) record.value = { ...record.value, lifecycle: 'published' }
+      else {
+        const saved = await client.replace<{ publicationGaps?: PublicationGap[] } | undefined>(
+          kind,
+          id,
+          publish ? { ...body(), published: true } : body(),
+        )
+        if (record.value) {
+          record.value = {
+            ...record.value,
+            lifecycle: publish ? 'published' : record.value.lifecycle,
+            publicationGaps: saved?.publicationGaps,
+          }
+        }
+      }
       markSaved()
     } catch (cause) {
+      const gaps = gapsOfRefusal(cause as ApiError)
+      refusal.value = { gaps, draft: JSON.stringify(currentDraft()) }
+      if (gaps.length > 0) errorScope.value = 'all'
       errorKey.value = announceFailure(cause, () => void save(formatCodes, publish, onDone))
       return false
     } finally {
@@ -179,6 +210,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     record,
     errorKey,
     errorScope,
+    serverGaps,
     saving,
     isDirty,
     load,
