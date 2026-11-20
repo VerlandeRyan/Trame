@@ -47,9 +47,7 @@ function fakeRepository(
   drafts: ArchivedReferences = NOTHING_ARCHIVED,
 ): AdminWorkRepository & { references: ReferenceReader; written: Mock } {
   const references: ReferenceReader = {
-    lookUpReferences: vi.fn(async () => ({ missing, hasFormat })),
-    findArchivedReferences: vi.fn(async () => archived),
-    findDraftReferences: vi.fn(async () => drafts),
+    readReferences: vi.fn(async () => ({ missing, hasFormat, archived, drafts })),
   };
   /** Called once the references check passed, like the repository's write after its check. */
   const written = vi.fn();
@@ -204,7 +202,12 @@ describe('brouillon', () => {
     await service.update(1, replacing(asDraft));
     expect(repository.create).toHaveBeenCalled();
     expect(repository.update).toHaveBeenCalled();
-    expect(repository.references.findDraftReferences).not.toHaveBeenCalled();
+  });
+
+  it('lit les références une seule fois par écriture', async () => {
+    const repository = fakeRepository(record());
+    await createAdminWorkService(repository).create(createInput);
+    expect(repository.references.readReferences).toHaveBeenCalledOnce();
   });
 
   it('refuse une œuvre publiée qui cite un brouillon', async () => {
@@ -232,7 +235,6 @@ describe('brouillon', () => {
       VERSION,
       expect.any(Function),
     );
-    expect(repository.references.findDraftReferences).toHaveBeenCalledOnce();
   });
 
   it('garde un brouillon brouillon quand le remplacement ne demande pas la publication', async () => {

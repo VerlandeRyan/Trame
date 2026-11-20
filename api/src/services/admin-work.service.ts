@@ -91,10 +91,12 @@ async function checkReferences(
   if (input.relations.some((relation) => relation.relatedWorkId === current?.id)) {
     throw new AppError('INVALID_REFERENCE', { workIds: [current?.id] });
   }
-  const [{ missing, hasFormat }, archivedReferences] = await Promise.all([
-    references.lookUpReferences(input),
-    references.findArchivedReferences(input),
-  ]);
+  const {
+    missing,
+    hasFormat,
+    archived: archivedReferences,
+    drafts,
+  } = await references.readReferences(input);
   if (hasAny(missing)) throw new AppError('INVALID_REFERENCE', missing);
   if (isPublished) {
     const gaps = publicationGaps(input, hasFormat);
@@ -107,9 +109,7 @@ async function checkReferences(
   }
   const archived = newlyArchived(archivedReferences, current);
   if (hasAny(archived)) throw new AppError('ARCHIVED_REFERENCE', archived);
-  if (!isPublished) return;
-  const drafts = await references.findDraftReferences(input);
-  if (hasAny(drafts)) throw new AppError('DRAFT_REFERENCE', drafts);
+  if (isPublished && hasAny(drafts)) throw new AppError('DRAFT_REFERENCE', drafts);
 }
 
 /** Creates the work administration service. */

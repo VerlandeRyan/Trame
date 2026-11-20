@@ -149,17 +149,19 @@ export interface MissingReferences {
   genres: string[];
 }
 
-/** What an input cites: the references that do not exist, and whether one of its genres is a format. */
-export interface ReferenceLookup {
-  missing: MissingReferences;
-  hasFormat: boolean;
-}
-
-/** References of an input that exist but are archived. */
+/** References of an input that exist and are archived, or drafts. */
 export interface ArchivedReferences {
   personIds: number[];
   publisherIds: number[];
   workIds: number[];
+}
+
+/** What an input cites: what does not exist, is archived or is a draft, and whether it has a format. */
+export interface ReferenceLookup {
+  missing: MissingReferences;
+  hasFormat: boolean;
+  archived: ArchivedReferences;
+  drafts: ArchivedReferences;
 }
 
 /** Search, filters, sort and page of the administration work list. */
@@ -205,11 +207,8 @@ export interface AdminWorkRepository {
 
 /** Reads what a work cites, on the connection or the transaction it was created for. */
 export interface ReferenceReader {
-  /** Looks up what the input cites: the references that do not exist, and whether it carries a format. */
-  lookUpReferences(input: AdminWorkCreateInput): Promise<ReferenceLookup>;
-  findArchivedReferences(input: AdminWorkCreateInput): Promise<ArchivedReferences>;
-  /** References of the input that are themselves drafts (same shape as the archived ones). */
-  findDraftReferences(input: AdminWorkCreateInput): Promise<ArchivedReferences>;
+  /** Reads what the input cites in one query per table (three at most, plus the genres). */
+  readReferences(input: AdminWorkCreateInput): Promise<ReferenceLookup>;
 }
 
 /** A rule on the cited records, run by the repository inside its write transaction. */
@@ -220,28 +219,51 @@ type Trx = Transaction<Database>;
 /** Tables a work can cite. */
 type ReferenceTable = 'person' | 'publisher' | 'work';
 
-/** Identifiers among `ids` that exist in the table. */
-async function findExistingIds(q: Db, table: ReferenceTable, ids: number[]) {
-  if (ids.length === 0) return new Set<number>();
-  const rows = await q.selectFrom(table).select('id').where('id', 'in', ids).execute();
-  return new Set(rows.map((row) => row.id));
+/** The rows among `ids` that exist in the table, with whether each is archived or a draft. */
+async function findReferenceRows(q: Db, table: ReferenceTable, ids: number[]) {
+  if (ids.length === 0) return [];
+  const rows = await q
+    .selectFrom(table)
+    .select(['id', 'deleted_at', 'published_at'])
+    .where('id', 'in', ids)
+    .execute();
+  return rows.map((row) => ({
+    id: row.id,
+    isArchived: row.deleted_at !== null,
+    isDraft: row.published_at === null,
+  }));
 }
 
-/** Identifiers among `ids` that are archived, or drafts. */
-async function findFlaggedIds(
-  q: Db,
-  table: ReferenceTable,
-  ids: number[],
-  flag: 'archived' | 'draft',
-) {
-  if (ids.length === 0) return [];
-  const query = q.selectFrom(table).select('id').where('id', 'in', ids);
-  const rows = await (
-    flag === 'archived'
-      ? query.where('deleted_at', 'is not', null)
-      : query.where('published_at', 'is', null)
-  ).execute();
-  return rows.map((row) => row.id);
+/** A cited row that exists in its table. */
+type ReferenceRow = Awaited<ReturnType<typeof findReferenceRows>>[number];
+
+/** The cited identifiers of one table: those absent from it, archived, or drafts. */
+interface ClassifiedReferences {
+  missing: number[];
+  archived: number[];
+  drafts: number[];
+}
+
+/** Splits the cited identifiers of one table by what its rows say about them. */
+function classifyReferences(cited: number[], rows: ReferenceRow[]): ClassifiedReferences {
+  const found = new Set(rows.map((row) => row.id));
+  return {
+    missing: cited.filter((id) => !found.has(id)),
+    archived: rows.filter((row) => row.isArchived).map((row) => row.id),
+    drafts: rows.filter((row) => row.isDraft).map((row) => row.id),
+  };
+}
+
+/** One kind of identifiers (missing, archived or drafts) of the three tables, in the shape the service reads. */
+function pickIds(
+  classified: Record<'person' | 'publisher' | 'work', ClassifiedReferences>,
+  kind: keyof ClassifiedReferences,
+): ArchivedReferences {
+  return {
+    personIds: classified.person[kind],
+    publisherIds: classified.publisher[kind],
+    workIds: classified.work[kind],
+  };
 }
 
 /** The identifiers of the people, publishers and related works an input cites. */
@@ -253,30 +275,15 @@ function citedIds(input: AdminWorkCreateInput) {
   };
 }
 
-/** The people, publishers and related works an input cites that are archived, or drafts. */
-async function findFlaggedReferences(
-  q: Db,
-  input: AdminWorkCreateInput,
-  flag: 'archived' | 'draft',
-) {
-  const { personIds, publisherIds, workIds } = citedIds(input);
-  const [people, publishers, works] = await Promise.all([
-    findFlaggedIds(q, 'person', personIds, flag),
-    findFlaggedIds(q, 'publisher', publisherIds, flag),
-    findFlaggedIds(q, 'work', workIds, flag),
-  ]);
-  return { personIds: people, publisherIds: publishers, workIds: works };
-}
-
 /** The reference reads on a connection (`db`) or a transaction. */
 function createReferenceReader(q: Db): ReferenceReader {
   return {
-    async lookUpReferences(input) {
+    async readReferences(input) {
       const { personIds, publisherIds, workIds } = citedIds(input);
       const [people, publishers, works, genres] = await Promise.all([
-        findExistingIds(q, 'person', personIds),
-        findExistingIds(q, 'publisher', publisherIds),
-        findExistingIds(q, 'work', workIds),
+        findReferenceRows(q, 'person', personIds),
+        findReferenceRows(q, 'publisher', publisherIds),
+        findReferenceRows(q, 'work', workIds),
         input.genres.length === 0
           ? []
           : q
@@ -286,20 +293,21 @@ function createReferenceReader(q: Db): ReferenceReader {
               .execute(),
       ]);
       const knownGenres = new Set(genres.map((genre) => genre.code));
+      const classified = {
+        person: classifyReferences(personIds, people),
+        publisher: classifyReferences(publisherIds, publishers),
+        work: classifyReferences(workIds, works),
+      };
       return {
         missing: {
-          personIds: personIds.filter((id) => !people.has(id)),
-          publisherIds: publisherIds.filter((id) => !publishers.has(id)),
-          workIds: workIds.filter((id) => !works.has(id)),
+          ...pickIds(classified, 'missing'),
           genres: input.genres.filter((code) => !knownGenres.has(code)),
         },
         hasFormat: genres.some((genre) => genre.category === 'format'),
+        archived: pickIds(classified, 'archived'),
+        drafts: pickIds(classified, 'drafts'),
       };
     },
-
-    findArchivedReferences: (input) => findFlaggedReferences(q, input, 'archived'),
-
-    findDraftReferences: (input) => findFlaggedReferences(q, input, 'draft'),
   };
 }
 
