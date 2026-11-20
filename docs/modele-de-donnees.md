@@ -133,6 +133,9 @@ PK (`work_id`, `related_work_id`, `relation`). Un seul sens est stocké ; l'inve
 ### `work_publisher`
 `work_id`, `publisher_id`. PK composite. Facultatif : une œuvre peut n'avoir aucun éditeur (auto-édition sans structure).
 
+### Fiche citée et suppression
+Les clés qui **citent** une fiche (`work_credit.person_id`, `work_publisher.publisher_id`, `work_relation.related_work_id`) n'ont pas d'`ON DELETE CASCADE` : la base refuse (SQLSTATE 23503, `RECORD_IN_USE`) de supprimer une personne, un éditeur ou une œuvre qu'une autre œuvre cite. Seules les lignes propres à la fiche (titres, synopsis, genres, liens, crédits, éditeurs et relations qu'elle porte) partent avec elle. `src/db/catalogue-references.test.ts` échoue si une autre clé vers ces trois tables est en cascade.
+
 ### `genre` / `work_genre`
 `genre(id, code unique, category)` : la liste des étiquettes qui existent. `code` est un slug stable en anglais (`manhwa`, `fantasy`…), jamais un texte traduit ; `category` vaut `format` (tradition ou mode de publication : manga, manhwa, bd, webtoon, webcomic) ou `theme` (fantasy, humor, science_fiction…). `work_genre(work_id, genre_id)` : quelles étiquettes porte chaque œuvre, plusieurs de chaque catégorie. Ajouter une valeur (ex. `manhua`) est une ligne de données, sans migration.
 

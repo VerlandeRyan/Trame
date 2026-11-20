@@ -1,9 +1,7 @@
 /** Storage of user accounts. */
 import type { Db, UserRole } from '../db/database.js';
+import { CHECK_VIOLATION, isPgError, UNIQUE_VIOLATION } from '../db/pg-errors.js';
 
-/** PostgreSQL error codes (SQLSTATE) translated here into business results. */
-const UNIQUE_VIOLATION = '23505';
-const CHECK_VIOLATION = '23514';
 /** Name of the unique constraint on handles. */
 const HANDLE_UNIQUE_CONSTRAINT = 'app_user_handle_key';
 
@@ -36,17 +34,6 @@ export interface UserRepository {
   findByGoogleSub(sub: string): Promise<{ user: AuthUser; deleted: boolean } | null>;
   /** Creates an account, or reports why it could not be created. */
   create(user: NewUser): Promise<CreateUserResult>;
-}
-
-/** The fields of a PostgreSQL error the code relies on. */
-interface PgError {
-  code?: string;
-  constraint?: string;
-}
-
-/** Whether an unknown error looks like a PostgreSQL error. */
-function isPgError(err: unknown): err is PgError {
-  return typeof err === 'object' && err !== null && 'code' in err;
 }
 
 /** Business result of a database error; `null` when the error is not an expected one. */

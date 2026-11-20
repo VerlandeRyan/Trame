@@ -6,6 +6,7 @@ import {
   countDraftRows,
   deleteRecordRow,
   DRAFTS_FIRST,
+  falseWhenCited,
   FILTERED_TOTAL,
   isVersion,
   lifecycleCondition,
@@ -218,16 +219,7 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
     },
 
     async deleteRecord(id) {
-      return db.transaction().execute(async (trx) => {
-        // Locked first: the guard sees a work that credited the person while this delete waited.
-        await lockRow(trx, 'person', id);
-        return deleteRecordRow(
-          trx,
-          'person',
-          id,
-          sql<boolean>`NOT EXISTS (SELECT 1 FROM work_credit wc WHERE wc.person_id = person.id)`,
-        );
-      });
+      return falseWhenCited(() => deleteRecordRow(db, 'person', id));
     },
 
     async countDrafts() {

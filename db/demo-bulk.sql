@@ -9,6 +9,9 @@ DELETE FROM library_entry
  WHERE work_id IN (SELECT id FROM work WHERE title LIKE '[Démo] %')
     OR user_id IN (SELECT id FROM app_user WHERE email LIKE 'demo.%@exemple.test');
 DELETE FROM app_user WHERE email LIKE 'demo.%@exemple.test';
+-- Une œuvre citée refuse sa suppression : les relations vers les œuvres de démo partent d'abord.
+DELETE FROM work_relation
+ WHERE related_work_id IN (SELECT id FROM work WHERE title LIKE '[Démo] %');
 DELETE FROM work WHERE title LIKE '[Démo] %';
 DELETE FROM person WHERE name LIKE '% (démo)';
 DELETE FROM publisher WHERE name LIKE '% (démo)';

@@ -136,6 +136,10 @@ beforeEach(async () => {
       `DELETE FROM ${table} WHERE user_id IN (SELECT id FROM app_user WHERE email LIKE '%${TEST_EMAIL_DOMAIN}')`,
     );
   }
+  // A cited work refuses its deletion: relations go first, so works citing each other can go.
+  await client.query(
+    `DELETE FROM work_relation WHERE related_work_id IN (SELECT id FROM work WHERE title LIKE '${PREFIX}%')`,
+  );
   await client.query(`DELETE FROM work WHERE title LIKE '${PREFIX}%'`);
   await client.query(`DELETE FROM person WHERE name LIKE '${PREFIX}%' OR name = '${BASE_PERSON}'`);
   await client.query(

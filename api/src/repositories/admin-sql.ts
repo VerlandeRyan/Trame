@@ -1,6 +1,7 @@
 /** SQL fragments shared by the administration repositories: search, lifecycle, totals and derived columns. */
 import { sql, type RawBuilder } from 'kysely';
 import { CREDIT_ROLE_RANK, type Db } from '../db/database.js';
+import { FOREIGN_KEY_VIOLATION, isPgError } from '../db/pg-errors.js';
 
 /** The three exclusive states of a record, derived from `published_at` and `deleted_at`. */
 export const LIFECYCLES = ['draft', 'published', 'archived'] as const;
@@ -79,18 +80,27 @@ export async function lockRow(trx: Db, table: CatalogueTable, id: number): Promi
 /** A record that may be deleted for good: a draft or an archive. */
 export const REMOVABLE = sql<boolean>`(published_at IS NULL OR deleted_at IS NOT NULL)`;
 
-/** Deletes a draft or archived record that `notCited` lets go; false if it is published, cited or missing. */
-export async function deleteRecordRow(
-  db: Db,
-  table: CatalogueTable,
-  id: number,
-  notCited: RawBuilder<boolean>,
-): Promise<boolean> {
+/** Deletes a draft or archived record; false if it is published or missing. A cited one raises 23503. */
+export async function deleteRecordRow(db: Db, table: CatalogueTable, id: number): Promise<boolean> {
   const result = await sql`
     DELETE FROM ${sql.table(table)}
-    WHERE id = ${id} AND ${REMOVABLE} AND ${notCited}
+    WHERE id = ${id} AND ${REMOVABLE}
     RETURNING id`.execute(db);
   return result.rows.length > 0;
+}
+
+/**
+ * Runs a deletion and returns false when the database refuses it because another record still
+ * cites the one deleted: in a transaction, it is rolled back, so nothing deleted before the refusal
+ * stays deleted. The foreign keys are the single list of what cites a record.
+ */
+export async function falseWhenCited(run: () => Promise<boolean>): Promise<boolean> {
+  try {
+    return await run();
+  } catch (error) {
+    if (isPgError(error) && error.code === FOREIGN_KEY_VIOLATION) return false;
+    throw error;
+  }
 }
 
 /** Number of drafts of a table. */
