@@ -11,11 +11,7 @@ import {
   WORK_STATUSES,
   WORK_TYPES,
 } from '../domain/catalogue-enums.js';
-import type {
-  AdminWorkListItem,
-  AdminWorkRecord,
-  AdminWorkSummary,
-} from '../repositories/admin-work.repository.js';
+import type { AdminWorkListItem, AdminWorkSummary } from '../repositories/admin-work.repository.js';
 import type {
   AdminPersonRecord,
   AdminPersonSummary,
@@ -24,6 +20,8 @@ import type { AdminPublisherSummary } from '../repositories/admin-publisher.repo
 import { LIFECYCLES } from '../repositories/admin-sql.js';
 import type { DraftCounts } from '../controllers/admin-draft-counts.controller.js';
 import type { Page } from '../services/admin-list.js';
+import { PUBLICATION_GAPS } from '../services/admin-publication.js';
+import type { AdminWorkDetail } from '../services/admin-work.service.js';
 
 /** Lifecycle of a record: a draft is only visible in the administration. */
 const lifecycle = z
@@ -141,7 +139,10 @@ export const adminWorkSchema = workSummary.extend({
     .describe('Noms des personnes, éditeurs et œuvres liées cités, triés par identifiant.'),
   followerCount: z.number().int().describe('Membres qui ont l’œuvre dans leur liste de lecture.'),
   updatedAt: recordVersion,
-}) satisfies z.ZodType<AdminWorkRecord>;
+  publicationGaps: z
+    .array(z.enum(PUBLICATION_GAPS))
+    .describe('Champs qui manquent pour publier l’œuvre (noms des champs de l’API).'),
+}) satisfies z.ZodType<AdminWorkDetail>;
 
 /** A work as listed. */
 const workListItem = workSummary.extend({

@@ -13,6 +13,12 @@ import type {
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
 import { assertNotDraft, removeRecord } from './admin-lifecycle.js';
 import { refuseReplacement, type Replacement } from './admin-replace.js';
+import { publicationGaps, type PublicationGap } from './admin-publication.js';
+
+/** A work as served for editing: the record plus what it still lacks to be published. */
+export type AdminWorkDetail = Omit<AdminWorkRecord, 'hasFormat'> & {
+  publicationGaps: PublicationGap[];
+};
 
 /** Data accepted to create a work. */
 export type AdminWorkInput = WorkDraft;
@@ -41,13 +47,13 @@ export interface AdminWorkListInput extends AdminListInput {
 /** Work administration operations. */
 export interface AdminWorkService {
   list(input: AdminWorkListInput): Promise<Page<AdminWorkListItem>>;
-  get(id: number): Promise<AdminWorkRecord>;
-  create(input: AdminWorkInput): Promise<AdminWorkRecord>;
+  get(id: number): Promise<AdminWorkDetail>;
+  create(input: AdminWorkInput): Promise<AdminWorkDetail>;
   /** Publishing needs the complete record and published references (`VALIDATION_ERROR`, `DRAFT_REFERENCE`). */
-  update(id: number, input: AdminWorkReplacement): Promise<AdminWorkRecord>;
+  update(id: number, input: AdminWorkReplacement): Promise<AdminWorkDetail>;
   /** Readers' list entries are kept; the work only disappears from the public. */
-  archive(id: number, adminId: number): Promise<AdminWorkRecord>;
-  restore(id: number, adminId: number): Promise<AdminWorkRecord>;
+  archive(id: number, adminId: number): Promise<AdminWorkDetail>;
+  restore(id: number, adminId: number): Promise<AdminWorkDetail>;
   /** Only a draft or archived work that no other work relates to (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
   remove(id: number): Promise<void>;
   countDrafts(): Promise<number>;
@@ -61,7 +67,7 @@ function hasAny(references: MissingReferences | ArchivedReferences): boolean {
 /** Archived records the work already cites stay allowed: they are kept, not newly added. */
 function newlyArchived(
   archived: ArchivedReferences,
-  current?: AdminWorkRecord,
+  current?: AdminWorkDetail,
 ): ArchivedReferences {
   /** The identifiers that are not in the kept list. */
   const without = (ids: number[], kept: number[]) => ids.filter((id) => !kept.includes(id));
@@ -73,20 +79,6 @@ function newlyArchived(
 }
 
 /**
- * Fields a published work cannot do without: a format, an author, a publisher and a synopsis in
- * the original language.
- */
-function publicationGaps(input: AdminWorkInput, hasFormat: boolean) {
-  const missingFields = [
-    !hasFormat && 'genres',
-    input.credits.length === 0 && 'credits',
-    input.publisherIds.length === 0 && 'publisherIds',
-    !input.synopses.some((synopsis) => synopsis.language === input.originalLanguage) && 'synopses',
-  ];
-  return missingFields.filter(Boolean).map((path) => ({ path: [path], code: 'too_small' }));
-}
-
-/**
  * Rejects missing or newly archived references and a work related to itself. A work that is
  * (or becomes) published also needs a format and no draft reference; a draft needs neither.
  * Runs inside the repository's write transaction (`references` reads through it).
@@ -95,7 +87,7 @@ async function checkReferences(
   references: ReferenceReader,
   input: AdminWorkInput,
   isPublished: boolean,
-  current?: AdminWorkRecord,
+  current?: AdminWorkDetail,
 ): Promise<void> {
   if (input.relations.some((relation) => relation.relatedWorkId === current?.id)) {
     throw new AppError('INVALID_REFERENCE', { workIds: [current?.id] });
@@ -107,7 +99,12 @@ async function checkReferences(
   if (hasAny(missing)) throw new AppError('INVALID_REFERENCE', missing);
   if (isPublished) {
     const gaps = publicationGaps(input, hasFormat);
-    if (gaps.length > 0) throw new AppError('VALIDATION_ERROR', gaps);
+    if (gaps.length > 0) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        gaps.map((gap) => ({ path: [gap], code: 'too_small' })),
+      );
+    }
   }
   const archived = newlyArchived(archivedReferences, current);
   if (hasAny(archived)) throw new AppError('ARCHIVED_REFERENCE', archived);
@@ -119,10 +116,11 @@ async function checkReferences(
 /** Creates the work administration service. */
 export function createAdminWorkService(repository: AdminWorkRepository): AdminWorkService {
   /** Reads a work, archived or not; throws when it does not exist. */
-  async function get(id: number): Promise<AdminWorkRecord> {
-    const work = await repository.find(id);
-    if (!work) throw new AppError('NOT_FOUND');
-    return work;
+  async function get(id: number): Promise<AdminWorkDetail> {
+    const found = await repository.find(id);
+    if (!found) throw new AppError('NOT_FOUND');
+    const { hasFormat, ...work } = found;
+    return { ...work, publicationGaps: publicationGaps(work, hasFormat) };
   }
 
   return {

@@ -4,8 +4,10 @@ import {
   isSynopsisRowFilled,
   isTitleRowFilled,
   optionsOf,
+  publicationGapsOf,
   SYNOPSIS_SOURCES,
   TITLE_KINDS,
+  type PublicationGap,
   type WorkDraft,
 } from '~/utils/admin'
 
@@ -13,14 +15,20 @@ import {
  * Alternative titles (per language) and synopses (one per language, with its source), each in its
  * own panel. `showErrors` flags the required fields left empty (after a refused save).
  */
-const props = defineProps<{ showErrors?: boolean }>()
+const props = defineProps<{
+  showErrors?: boolean
+  /** Gaps the API reported, flagged like the local ones. */
+  serverGaps?: readonly PublicationGap[]
+}>()
 /** Whether a required text is flagged: empty, after a refused save. */
 const isFlagged = (text: string) => props.showErrors === true && isBlank(text)
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
 /** Whether no synopsis is written in the original language: flagged after a refused publication. */
 const isNoOriginalSynopsis = computed(
-  () => props.showErrors === true && missingWorkFields(draft.value, []).synopsis,
+  () =>
+    props.showErrors === true &&
+    publicationGapsOf(draft.value, [], props.serverGaps).includes('synopses'),
 )
 const uid = useId()
 const languageOptionsFor = useLanguageOptions()

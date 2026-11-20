@@ -645,6 +645,27 @@ describe('œuvres', () => {
     expect(res.body.labels).toEqual({ people: [], publishers: [], works: [] });
   });
 
+  it('sert avec la fiche ce qui manque pour la publier, comme le refus de publication', async () => {
+    const admin = await newAdmin();
+    const id = await createWork(admin, { published: false, genres: [], credits: [] });
+
+    const incomplete = await admin.get(`${ADMIN}/works/${id}`);
+    expect(incomplete.body.publicationGaps).toEqual(['genres', 'credits']);
+
+    const refused = await replace(admin, 'works', id, {
+      ...workBody({ genres: [], credits: [] }),
+      updatedAt: incomplete.body.updatedAt,
+      published: true,
+    });
+    expect(refused.body.details.map((issue: { path: string[] }) => issue.path[0])).toEqual(
+      incomplete.body.publicationGaps,
+    );
+
+    const complete = await createWork(admin, {});
+    const served = await admin.get(`${ADMIN}/works/${complete}`);
+    expect(served.body.publicationGaps).toEqual([]);
+  });
+
   it('remplace les listes de la fiche', async () => {
     const admin = await newAdmin();
     const personId = await createPerson(admin);

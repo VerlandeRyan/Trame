@@ -355,7 +355,9 @@ test('enregistrer une fiche modifiée entre-temps est refusé', async ({ page, c
 
   // Une autre session enregistre la fiche pendant qu'elle est ouverte ici.
   const body = await (await context.request.get(url)).json()
-  for (const readOnly of ['id', 'lifecycle', 'followerCount', 'labels']) delete body[readOnly]
+  for (const readOnly of ['id', 'lifecycle', 'followerCount', 'labels', 'publicationGaps']) {
+    delete body[readOnly]
+  }
   const other = await context.request.put(url, { data: body })
   expect(other.status()).toBe(200)
 
@@ -527,7 +529,10 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
     )[0]!.id
   const url = `/api/v1/admin/works/${work!.id}`
   const body = await (await context.request.get(url)).json()
-  for (const readOnly of ['id', 'lifecycle', 'followerCount', 'labels']) delete body[readOnly]
+  expect(body.publicationGaps).toEqual(['genres', 'credits', 'publisherIds', 'synopses'])
+  for (const readOnly of ['id', 'lifecycle', 'followerCount', 'labels', 'publicationGaps']) {
+    delete body[readOnly]
+  }
   const complete = await context.request.put(url, {
     data: {
       ...body,
@@ -537,6 +542,8 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
     },
   })
   expect(complete.status()).toBe(200)
+  // L'API sert elle-même ce qui manque encore : seul le format.
+  expect((await complete.json()).publicationGaps).toEqual(['genres'])
 
   // Publier sans format est refusé ; avec un format et après confirmation, la fiche devient publique.
   await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&lifecycle=draft`)

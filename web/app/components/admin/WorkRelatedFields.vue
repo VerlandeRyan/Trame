@@ -5,8 +5,10 @@ import {
   isPublisherRowFilled,
   isRelationRowFilled,
   optionsOf,
+  publicationGapsOf,
   RELATION_KINDS,
   type AdminKind,
+  type PublicationGap,
   type RecordRef,
   type WorkDraft,
 } from '~/utils/admin'
@@ -20,6 +22,8 @@ const props = defineProps<{
   part: 'people' | 'relations'
   search: (kind: AdminKind, text: string) => Promise<RecordRef[]>
   showErrors?: boolean
+  /** Gaps the API reported, flagged like the local ones. */
+  serverGaps?: readonly PublicationGap[]
 }>()
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
@@ -28,12 +32,11 @@ const relationOptions = optionsOf(RELATION_KINDS, (code) => t(`admin.option.rela
 /** Search function restricted to one kind of record. */
 const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
 /** Whether the work has no author (or no publisher) yet: flagged after a refused publication. */
-const isNoCredit = computed(
-  () => props.showErrors === true && missingWorkFields(draft.value, []).credits,
+const flaggedGaps = computed(() =>
+  props.showErrors === true ? publicationGapsOf(draft.value, [], props.serverGaps) : [],
 )
-const isNoPublisher = computed(
-  () => props.showErrors === true && missingWorkFields(draft.value, []).publishers,
-)
+const isNoCredit = computed(() => flaggedGaps.value.includes('credits'))
+const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
 </script>
 
 <template>

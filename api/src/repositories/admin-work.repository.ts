@@ -131,6 +131,8 @@ export interface AdminWorkRecord extends Omit<WorkDraft, 'published'> {
   followerCount: number;
   /** Record version (ISO 8601 date, to the millisecond): send it back with the replacement. */
   updatedAt: string;
+  /** Whether one of the work's genres is a format (the service turns it into the publication gaps). */
+  hasFormat: boolean;
 }
 
 /** References of a draft that do not exist in the database. */
@@ -590,7 +592,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
           db
             .selectFrom('work_genre')
             .innerJoin('genre', 'genre.id', 'work_genre.genre_id')
-            .select('genre.code')
+            .select(['genre.code', 'genre.category'])
             .where('work_genre.work_id', '=', id)
             .orderBy('genre.code')
             .execute(),
@@ -639,6 +641,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         links,
         followerCount: followers.total,
         updatedAt: work.version.toISOString(),
+        hasFormat: genres.some((row) => row.category === 'format'),
       };
     },
 

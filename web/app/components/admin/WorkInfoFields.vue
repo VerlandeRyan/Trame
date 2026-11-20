@@ -2,10 +2,12 @@
 import {
   digitsOnly,
   formatCodesOf,
-  missingWorkFields,
+  isBlank,
   optionsOf,
+  publicationGapsOf,
   WORK_STATUSES,
   WORK_TYPES,
+  type PublicationGap,
   type WorkDraft,
 } from '~/utils/admin'
 
@@ -19,6 +21,8 @@ const props = defineProps<{
   showErrors?: boolean
   /** Draft: only the title is required, the formats are not flagged. */
   titleOnly?: boolean
+  /** Gaps the API reported, flagged like the local ones. */
+  serverGaps?: readonly PublicationGap[]
 }>()
 const draft = defineModel<WorkDraft>({ required: true })
 const { t } = useI18n()
@@ -34,7 +38,10 @@ const optionsIn = (category: string) =>
     .filter((genre) => genre.category === category)
     .map(({ code }) => ({ value: code, label: genreLabel(code) }))
 const formatOptions = computed(() => optionsIn('format'))
-const missing = computed(() => missingWorkFields(draft.value, formatCodesOf(props.genres)))
+const isTitleMissing = computed(() => isBlank(draft.value.title))
+const isFormatMissing = computed(() =>
+  publicationGapsOf(draft.value, formatCodesOf(props.genres), props.serverGaps).includes('genres'),
+)
 const themeOptions = computed(() => optionsIn('theme'))
 
 /** Ticks or unticks the codes of one category without touching those of the other. */
@@ -54,7 +61,7 @@ const chosenIn = (options: { value: string }[]) =>
         id="work-title"
         v-model="draft.title"
         :label="t('admin.work.title')"
-        :error="showErrors && missing.title ? t('admin.error.required') : undefined"
+        :error="showErrors && isTitleMissing ? t('admin.error.required') : undefined"
         :input-attributes="{ maxlength: 200, required: true }"
       />
       <AdminSelectField
@@ -112,7 +119,7 @@ const chosenIn = (options: { value: string }[]) =>
         required
         :label="t('admin.work.formats')"
         :error="
-          showErrors && !titleOnly && missing.formats ? t('admin.error.formatRequired') : undefined
+          showErrors && !titleOnly && isFormatMissing ? t('admin.error.formatRequired') : undefined
         "
         :options="formatOptions"
         :model-value="chosenIn(formatOptions)"

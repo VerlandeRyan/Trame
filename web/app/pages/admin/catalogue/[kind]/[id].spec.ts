@@ -103,8 +103,16 @@ const WORK_9 = {
     ],
   },
   followerCount: 34,
+  publicationGaps: [] as string[],
   updatedAt: '2026-10-24T10:00:00.000Z',
 }
+
+/** Labels of the tabs of the work form that carry an incomplete-section alert. */
+const alertedTabs = (wrapper: Awaited<ReturnType<typeof mountEdit>>) =>
+  wrapper
+    .findAll('[role="tab"]')
+    .filter((tab) => tab.find('.tabs__alert').exists())
+    .map((tab) => tab.text())
 
 /** Une œuvre en cours de modification : ses libellés viennent avec elle. */
 function registerWork9() {
@@ -482,6 +490,52 @@ describe('page d’édition du catalogue', () => {
     expect(wrapper.text()).toContain("modifiée depuis que tu l'as ouverte")
     expect(failureToast()).toBeUndefined()
     expect(useRouter().currentRoute.value.path).toBe('/admin/catalogue/works/9')
+  })
+
+  it('bloque l’enregistrement sur un manque que l’API a servi avec la fiche, sans rien envoyer', async () => {
+    registerEndpoint('/api/v1/admin/works/9', {
+      method: 'GET',
+      handler: () => ({ ...WORK_9, publicationGaps: ['genres'] }),
+    })
+    registerEndpoint('/api/v1/admin/works/9', {
+      method: 'PUT',
+      handler: async (event) => {
+        sent.push({ method: 'PUT', path: 'works/9', body: await readBody(event) })
+        return WORK_9
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/works/9')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(sent).toEqual([])
+    expect(alertedTabs(wrapper)).toEqual(['Informations'])
+  })
+
+  it('signale dans le formulaire les champs que l’API refuse, et se corrige à la reprise', async () => {
+    registerWork9()
+    let refuse = true
+    registerEndpoint('/api/v1/admin/works/9', {
+      method: 'PUT',
+      handler: async (event) => {
+        sent.push({ method: 'PUT', path: 'works/9', body: await readBody(event) })
+        if (!refuse) return { ...WORK_9, publicationGaps: [] }
+        setResponseStatus(event, 400)
+        return { code: 'VALIDATION_ERROR', details: [{ path: ['synopses'], code: 'too_small' }] }
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/works/9')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(alertedTabs(wrapper)).toEqual(['Titres et synopsis'])
+
+    refuse = false
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(sent).toHaveLength(2)
+    expect(alertedTabs(wrapper)).toEqual([])
   })
 
   it('demande confirmation avant de quitter avec une saisie non enregistrée', async () => {

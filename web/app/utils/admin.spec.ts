@@ -19,7 +19,10 @@ import {
   isHttpsUrl,
   URL_MAX_LENGTH,
   urlErrorKey,
-  missingWorkFields,
+  localPublicationGaps,
+  PUBLICATION_GAP_SECTION,
+  publicationGapsOf,
+  gapsOfRefusal,
   isCreditRowFilled,
   isLinkRowFilled,
   isPublisherRowFilled,
@@ -53,6 +56,7 @@ const WORK: AdminWork = {
   type: 'series',
   status: 'completed',
   lifecycle: 'published',
+  publicationGaps: [],
   chapters: 86,
   volumes: null,
   startedOn: '2020-01-01',
@@ -309,14 +313,13 @@ describe('récapitulatif d’archivage', () => {
 describe('champs obligatoires', () => {
   const FORMATS = ['manga', 'bd']
 
-  it('repère le titre vide et l’absence de format', () => {
-    expect(missingWorkFields(emptyWorkDraft(), FORMATS)).toEqual({
-      title: true,
-      formats: true,
-      credits: true,
-      publishers: true,
-      synopsis: true,
-    })
+  it('repère ce qui manque, avec les noms de champs de l’API', () => {
+    expect(localPublicationGaps(emptyWorkDraft(), FORMATS)).toEqual([
+      'genres',
+      'credits',
+      'publisherIds',
+      'synopses',
+    ])
     const filled = {
       ...emptyWorkDraft(),
       title: ' Aube ',
@@ -325,13 +328,7 @@ describe('champs obligatoires', () => {
       publishers: [{ publisher: { id: 2, label: 'Maison' } }],
       synopses: [{ language: 'fr', source: 'official', text: 'Résumé.' }],
     }
-    expect(missingWorkFields(filled, FORMATS)).toEqual({
-      title: false,
-      formats: false,
-      credits: false,
-      publishers: false,
-      synopsis: false,
-    })
+    expect(localPublicationGaps(filled, FORMATS)).toEqual([])
   })
 
   it('le synopsis doit être dans la langue originale', () => {
@@ -340,16 +337,53 @@ describe('champs obligatoires', () => {
       originalLanguage: 'fr',
       synopses: [{ language: 'en', source: 'official', text: 'Summary.' }],
     }
-    expect(missingWorkFields(draft, FORMATS).synopsis).toBe(true)
+    expect(localPublicationGaps(draft, FORMATS)).toContain('synopses')
   })
 
   it('un genre thématique ne tient pas lieu de format', () => {
     const draft = { ...emptyWorkDraft(), title: 'Aube', genres: ['fantasy'] }
-    expect(missingWorkFields(draft, FORMATS).formats).toBe(true)
+    expect(localPublicationGaps(draft, FORMATS)).toContain('genres')
   })
 
   it('ne réclame pas de format quand le catalogue n’en propose aucun', () => {
-    expect(missingWorkFields(emptyWorkDraft(), []).formats).toBe(false)
+    expect(localPublicationGaps(emptyWorkDraft(), [])).not.toContain('genres')
+  })
+
+  it('ajoute aux manques locaux ceux que l’API a signalés, sans doublon', () => {
+    const complete = {
+      ...emptyWorkDraft(),
+      genres: ['manga'],
+      credits: [{ person: { id: 1, label: 'Léa' }, role: 'story' }],
+      publishers: [{ publisher: { id: 2, label: 'Maison' } }],
+      synopses: [{ language: 'fr', source: 'official', text: 'Résumé.' }],
+    }
+    expect(publicationGapsOf(complete, FORMATS)).toEqual([])
+    expect(publicationGapsOf(complete, FORMATS, ['synopses', 'genres'])).toEqual([
+      'genres',
+      'synopses',
+    ])
+    expect(publicationGapsOf(emptyWorkDraft(), FORMATS, ['genres'])).toEqual([
+      'genres',
+      'credits',
+      'publisherIds',
+      'synopses',
+    ])
+  })
+
+  it('range chaque manque dans l’onglet où on le corrige', () => {
+    expect(PUBLICATION_GAP_SECTION).toEqual({
+      genres: 'info',
+      synopses: 'texts',
+      credits: 'people',
+      publisherIds: 'people',
+    })
+  })
+
+  it('lit les manques dans le refus de publication de l’API', () => {
+    const details = [{ path: ['credits'], code: 'too_small' }, { path: ['title'] }, {}]
+    expect(gapsOfRefusal({ code: 'VALIDATION_ERROR', details })).toEqual(['credits'])
+    expect(gapsOfRefusal({ code: 'VALIDATION_ERROR' })).toEqual([])
+    expect(gapsOfRefusal({ code: 'STALE_RECORD', details })).toEqual([])
   })
 
   it('distingue les formats des genres thématiques', () => {
@@ -378,6 +412,14 @@ describe('lignes incomplètes', () => {
     expect(hasIncompleteForm(emptyWorkDraft(), FORMATS)).toBe(true)
     expect(incompleteSections({ ...complete, title: ' ' }, FORMATS)).toEqual(['info'])
     expect(incompleteSections({ ...complete, genres: [] }, FORMATS)).toEqual(['info'])
+  })
+
+  it('signale aussi la section d’un manque que seule l’API voit', () => {
+    expect(incompleteSections(complete, FORMATS, ['synopses', 'credits'])).toEqual([
+      'texts',
+      'people',
+    ])
+    expect(hasIncompleteForm(complete, FORMATS, ['genres'])).toBe(true)
   })
 
   it.each([
