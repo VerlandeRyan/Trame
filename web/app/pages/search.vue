@@ -7,7 +7,7 @@ import {
   hasSearchText,
   parseSearchQuery,
   resetFilters,
-  SORTS,
+  SEARCH_SORTS,
   toApiQuery,
   toRouteQuery,
   toggleFilter,
@@ -133,10 +133,12 @@ const labelOf = (key: FilterKey, code: string) => filterValueLabel(t, te, key, c
 
 /** Sort choices; relevance only exists with search text. */
 const sortOptions = computed(() =>
-  SORTS.filter((sort) => sort !== 'relevance' || hasSearchText(state.value.q)).map((sort) => ({
-    value: sort,
-    label: t(`search.sort.${sort}`),
-  })),
+  SEARCH_SORTS.filter((sort) => sort !== 'relevance' || hasSearchText(state.value.q)).map(
+    (sort) => ({
+      value: sort,
+      label: t(`search.sort.${sort}`),
+    }),
+  ),
 )
 
 /** Applies a new sort. */

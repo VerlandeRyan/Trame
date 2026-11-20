@@ -25,6 +25,12 @@ describe('toApiError', () => {
     ).toEqual({ status: 403, code: 'ADMIN_REQUIRED', details: undefined })
   })
 
+  it('retombe sur INTERNAL_ERROR pour un code que le contrat ne connaît pas', () => {
+    const error = toApiError({ response: { status: 418, _data: { code: 'CODE_INCONNU' } } })
+    expect(error).toEqual({ status: 418, code: 'INTERNAL_ERROR', details: undefined })
+    expect(toApiError({ status: 418, code: 'CODE_INCONNU' }).code).toBe('INTERNAL_ERROR')
+  })
+
   it('retombe sur INTERNAL_ERROR sans corps exploitable', () => {
     expect(toApiError(new Error('réseau'))).toEqual({
       status: 0,
