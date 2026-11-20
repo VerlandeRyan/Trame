@@ -1,31 +1,39 @@
-/** Messages shown when a write to the API fails (pure logic, tested without Nuxt). */
+/** What to tell the reader when a write to the API fails (pure logic, tested without Nuxt). */
 import type { ErrorCode } from '../contract/api'
-
-/** Translation key of the message shown for each handled API error code. */
-const WRITE_ERROR_KEYS = new Map<ErrorCode, string>([
-  ['UNAUTHENTICATED', 'writeError.signedOut'],
-  ['HANDLE_REQUIRED', 'writeError.signedOut'],
-  ['NOT_FOUND', 'writeError.notFound'],
-  ['RATE_LIMITED', 'error.RATE_LIMITED'],
-])
 
 /** Advice shown under a failed save that can simply be replayed. */
 export const RETRY_HINT_KEY = 'writeError.retryHint'
 
-/** Failures of the server or the network, not of the request: replaying the write may succeed. */
-const TRANSIENT_CODES = new Set<ErrorCode>(['INTERNAL_ERROR', 'RATE_LIMITED'])
-
-/** Whether "Retry" makes sense: any other refusal comes back identical until the user fixes the cause. */
-export function isRetryable(code: ErrorCode): boolean {
-  return TRANSIENT_CODES.has(code)
+/** How a failed write is announced: its message, its advice, and whether replaying may succeed. */
+export interface WriteFailure {
+  /** Translation key of the message. */
+  messageKey: string
+  /** Translation key of the advice that follows the message; only a replayable failure has one. */
+  hintKey?: string
+  /** Whether "Retry" makes sense: any refusal comes back identical until the user fixes the cause. */
+  isRetryable: boolean
 }
 
-/** Translation key of the message to display for an API error code. */
-export function writeErrorKey(code: ErrorCode): string {
-  return WRITE_ERROR_KEYS.get(code) ?? 'writeError.generic'
+/** Failure of the server or the network, not of the request: replaying the write may succeed. */
+const TRANSIENT_FAILURE: WriteFailure = {
+  messageKey: 'writeError.generic',
+  hintKey: RETRY_HINT_KEY,
+  isRetryable: true,
 }
 
-/** Key of the "try again" advice that follows the generic message; the other codes have none. */
-export function writeErrorHintKey(code: ErrorCode): string | undefined {
-  return WRITE_ERROR_KEYS.has(code) ? undefined : RETRY_HINT_KEY
+/** Refusal that replaying cannot change and that has no message of its own. */
+const GENERIC_REFUSAL: WriteFailure = { messageKey: 'writeError.generic', isRetryable: false }
+
+/** The failure announced for each handled API error code; any other code is a generic refusal. */
+const WRITE_FAILURES = new Map<ErrorCode, WriteFailure>([
+  ['INTERNAL_ERROR', TRANSIENT_FAILURE],
+  ['RATE_LIMITED', { messageKey: 'error.RATE_LIMITED', isRetryable: true }],
+  ['UNAUTHENTICATED', { messageKey: 'writeError.signedOut', isRetryable: false }],
+  ['HANDLE_REQUIRED', { messageKey: 'writeError.signedOut', isRetryable: false }],
+  ['NOT_FOUND', { messageKey: 'writeError.notFound', isRetryable: false }],
+])
+
+/** The failure to announce for an API error code. */
+export function describeWriteFailure(code: ErrorCode): WriteFailure {
+  return WRITE_FAILURES.get(code) ?? GENERIC_REFUSAL
 }

@@ -1,6 +1,6 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { readBody, setResponseStatus } from 'h3'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UnwrapNestedRefs } from 'vue'
 import type { LibraryEntry } from '~/utils/library'
 
@@ -17,6 +17,7 @@ let stored: LibraryEntry | null = null
 let sentBodies: Partial<LibraryEntry>[] = []
 let firstSaveDelayMs = 0
 let failNextSave = false
+let isLoadFailing = false
 let deletes = 0
 
 // Le composable se teste monté dans un composant, comme dans l'application.
@@ -40,10 +41,17 @@ describe('useLibraryEntry', () => {
     sentBodies = []
     firstSaveDelayMs = 0
     failNextSave = false
+    isLoadFailing = false
     deletes = 0
     registerEndpoint('/api/v1/works/7/entry', {
       method: 'GET',
-      handler: () => ({ entry: stored }),
+      handler: (event) => {
+        if (isLoadFailing) {
+          setResponseStatus(event, 500)
+          return { code: 'INTERNAL_ERROR' }
+        }
+        return { entry: stored }
+      },
     })
     registerEndpoint('/api/v1/works/7/entry', {
       method: 'PUT',
@@ -144,6 +152,21 @@ describe('useLibraryEntry', () => {
 
     expect(deletes).toBe(1)
     expect(library.entry).toBeNull()
+  })
+
+  it('propose « Réessayer » après une panne de lecture, qui relit l’entrée', async () => {
+    stored = READING
+    isLoadFailing = true
+    const library = await mountProbe()
+    await library.load()
+    const { toasts, retry } = useToasts()
+    expect(toasts.value[0]?.retry).toBeTypeOf('function')
+    isLoadFailing = false
+
+    retry(toasts.value[0]!.id)
+
+    await vi.waitFor(() => expect(library.entry).toEqual(READING))
+    expect(toasts.value).toEqual([])
   })
 
   it('annonce un échec de lecture et se déclare tout de même chargé', async () => {

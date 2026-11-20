@@ -153,6 +153,31 @@ test('un changement de statut perdu revient à l’état d’avant et se rejoue 
   await expect(page.getByTestId('toast')).toHaveCount(0)
 })
 
+test('une session expirée pendant un changement de statut revient à l’état d’avant, sans « Réessayer »', async ({
+  page,
+  context,
+}) => {
+  await signUp(context)
+  await openWork(page)
+  await addToList(page)
+  await expect(statusButton(page)).toContainText('À lire')
+  await page.route('**/api/v1/works/*/entry', (route) =>
+    route.request().method() === 'PUT'
+      ? route.fulfill({
+          status: 401,
+          contentType: 'application/json',
+          body: JSON.stringify({ code: 'UNAUTHENTICATED', message: 'Not signed in' }),
+        })
+      : route.continue(),
+  )
+
+  await chooseStatus(page, 'on_hold')
+
+  await expect(page.getByTestId('toast')).toContainText('Ta session a expiré')
+  await expect(page.getByTestId('toast-retry')).toHaveCount(0)
+  await expect(statusButton(page)).toContainText('À lire')
+})
+
 test('le bouton de statut prend la couleur du statut', async ({ page, context }) => {
   await signUp(context)
   await openWork(page)

@@ -17,7 +17,7 @@ Deux composants d'après les maquettes de la fiche œuvre, pilotés par `pages/w
 Colonne de gauche, au-dessus de « Lire / Acheter » ; sous le titre au mobile.
 - « Ajouter à ma liste + » (une seule ligne) pour un visiteur (ouvre la fenêtre de connexion) ou une œuvre absente de la liste (ajout en « À lire »).
 - Puis le bouton **de la couleur du statut** (`UiButton status`, « En cours ▾ ») qui ouvre un menu `role="menu"` : les 5 statuts puis **« Retirer de ma liste »** avec `UiConfirm danger` (rouge, comme dans « Modifier ma lecture »). Style des menus de choix : [conventions §12](../conventions-projet.md).
-- Erreur d'API annoncée par une annonce en bas de l'écran (`UiToasts`, `writeErrorKey`, `writeError.*`, jamais le `VALIDATION_ERROR` du pseudo), avec « Réessayer » pour une écriture.
+- Erreur d'API annoncée par une annonce en bas de l'écran (`UiToasts`, `useWriteFailure`, `writeError.*`, jamais le `VALIDATION_ERROR` du pseudo), avec « Réessayer » seulement après une panne du serveur ou du réseau.
 
 ### `library/Progress`
 Colonne principale, après « Note / Membres », **avant** au mobile.

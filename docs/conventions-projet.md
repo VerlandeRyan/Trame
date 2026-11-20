@@ -206,9 +206,9 @@ Une nouveauté ne doit créer **aucune divergence** : deux éléments qui jouent
 
 ### Échecs d'écriture
 
-Deux cas, selon que rejouer peut aboutir (`isRetryable`, `utils/write-errors.ts`) :
-- **Panne du serveur ou du réseau** (`INTERNAL_ERROR`, `RATE_LIMITED`) : notification d'erreur avec « Réessayer », qui rejoue l'écriture, message général puis « Réessaie dans un instant. » sur la 2e ligne (`useToasts`, `useOptimisticWrite` ; administration : `useAdminFailure`).
-- **Refus qu'il faut corriger** (champ invalide, fiche modifiée entre-temps, référence en brouillon ou archivée…) : pas de notification. Le message qui dit quoi faire s'affiche dans le formulaire (`UiFormError`), comme les contrôles faits avant l'envoi : rejouer redonnerait le même refus.
+Deux cas, selon que rejouer peut aboutir (`describeWriteFailure`, `utils/write-errors.ts`) :
+- **Panne du serveur ou du réseau** (`INTERNAL_ERROR`, `RATE_LIMITED`) : notification d'erreur avec « Réessayer », qui rejoue l'écriture, message général puis « Réessaie dans un instant. » sur la 2e ligne. Point d'entrée unique : `useWriteFailure()(cause, retry)`, qui n'ajoute « Réessayer » et le conseil que pour ces deux codes (`useOptimisticWrite`, `useLibraryEntry`, profil, administration via `useAdminFailure`).
+- **Refus qu'il faut corriger ou qui ne passera pas** (champ invalide, fiche modifiée entre-temps, référence en brouillon ou archivée, session expirée, œuvre retirée…) : jamais de « Réessayer ». Rejouer redonnerait le même refus. Dans l'administration, le message qui dit quoi faire s'affiche dans le formulaire (`UiFormError`), comme les contrôles faits avant l'envoi ; ailleurs, `showWriteFailure` affiche un toast avec le message seul.
 
 ### Survol et appui
 
