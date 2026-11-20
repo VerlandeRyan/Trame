@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { addToast, autoDismissDelay, MAX_TOASTS, removeToast, type Toast } from './toasts'
+import {
+  addToast,
+  autoDismissDelay,
+  MAX_TOASTS,
+  removeRetryToasts,
+  removeToast,
+  type Toast,
+} from './toasts'
 
 function toast(id: number, overrides: Partial<Toast> = {}): Toast {
   return { id, tone: 'error', messageKey: `message.${id}`, ...overrides }
@@ -42,6 +49,20 @@ describe('removeToast', () => {
 
   it('ne change rien pour un identifiant inconnu', () => {
     expect(removeToast([toast(1)], 42)).toHaveLength(1)
+  })
+})
+
+describe('removeRetryToasts', () => {
+  it('retire les annonces à « Réessayer » et garde les autres', () => {
+    const toasts = [toast(1, { retry: () => undefined }), toast(2), toast(3, { tone: 'success' })]
+
+    expect(removeRetryToasts(toasts).map((each) => each.id)).toEqual([2, 3])
+  })
+
+  it('rend la même liste quand aucune annonce n’est à retirer', () => {
+    const toasts = [toast(1), toast(2)]
+
+    expect(removeRetryToasts(toasts)).toBe(toasts)
   })
 })
 

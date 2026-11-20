@@ -33,6 +33,16 @@ describe('useToasts', () => {
     expect(second).not.toBe(first)
   })
 
+  it('ferme les annonces à « Réessayer » et garde les autres', () => {
+    const { toasts, show, dismissRetryable } = useToasts()
+    show({ tone: 'error', messageKey: 'a', retry: vi.fn() })
+    const plain = show({ tone: 'error', messageKey: 'b' })
+
+    dismissRetryable()
+
+    expect(toasts.value.map((each) => each.id)).toEqual([plain])
+  })
+
   it('ferme l’annonce puis rejoue l’action au clic sur « Réessayer »', () => {
     const { toasts, show, retry } = useToasts()
     const action = vi.fn()
