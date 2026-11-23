@@ -8,6 +8,7 @@ import {
   publicationGapsOf,
   RELATION_KINDS,
   type AdminKind,
+  type DraftReference,
   type PublicationGap,
   type RecordRef,
   type WorkFormValues,
@@ -24,6 +25,8 @@ const props = defineProps<{
   showErrors?: boolean
   /** Gaps the API reported, flagged like the local ones. */
   serverGaps?: readonly PublicationGap[]
+  /** Draft records the API named as blocking the publication: their rows are flagged. */
+  draftReferences?: readonly DraftReference[]
 }>()
 const form = defineModel<WorkFormValues>({ required: true })
 const { t } = useI18n()
@@ -35,6 +38,10 @@ const searchIn = (kind: AdminKind) => (text: string) => props.search(kind, text)
 const flaggedGaps = computed(() =>
   props.showErrors === true ? publicationGapsOf(form.value, [], props.serverGaps) : [],
 )
+/** Whether the chosen record is one of the drafts blocking the publication. */
+const isBlocking = (kind: AdminKind, record: RecordRef | null) =>
+  record !== null &&
+  props.draftReferences?.some((draft) => draft.kind === kind && draft.id === record.id) === true
 const isNoCredit = computed(() => flaggedGaps.value.includes('credits'))
 const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
 </script>
@@ -60,6 +67,7 @@ const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
             :clear-label="t('action.clearChoice')"
             :search="searchIn('people')"
             :invalid="showErrors && item.person === null"
+            :blocked="isBlocking('people', item.person)"
             required
           />
           <AdminSelectField
@@ -90,6 +98,7 @@ const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
             :clear-label="t('action.clearChoice')"
             :search="searchIn('publishers')"
             :invalid="showErrors && item.publisher === null"
+            :blocked="isBlocking('publishers', item.publisher)"
             required
           />
         </template>
@@ -115,6 +124,7 @@ const isNoPublisher = computed(() => flaggedGaps.value.includes('publisherIds'))
             :clear-label="t('action.clearChoice')"
             :search="searchIn('works')"
             :invalid="showErrors && item.work === null"
+            :blocked="isBlocking('works', item.work)"
             required
           />
           <AdminSelectField

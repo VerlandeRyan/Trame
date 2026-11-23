@@ -4,8 +4,10 @@ import { MENU_PREFERRED_HEIGHT_PX } from '~/utils/menu'
 
 /**
  * Picks a catalogue record by searching; `search` is provided by the page. `invalid`: no record
- * is chosen although one is required (red frame and message).
+ * is chosen although one is required (red frame and message); `blocked`: the chosen record is a
+ * draft that stops a publication.
  */
+// eslint-disable-next-line vue/max-props -- each prop is one independent flag of a single field
 const props = defineProps<{
   label: string
   placeholder: string
@@ -14,6 +16,8 @@ const props = defineProps<{
   invalid?: boolean
   /** Adds the red star and `aria-required` on the search field. */
   required?: boolean
+  /** The chosen record is a draft that blocks the publication (red frame and message). */
+  blocked?: boolean
 }>()
 const model = defineModel<RecordRef | null>({ default: null })
 const { t } = useI18n()
@@ -85,7 +89,11 @@ onBeforeUnmount(() => clearTimeout(timer))
   <div ref="root" class="picker">
     <template v-if="model">
       <span class="picker__name">{{ label }}<UiRequiredMark v-if="required" /></span>
-      <div class="picker__chosen" data-testid="picker-chosen">
+      <div
+        class="picker__chosen"
+        :class="{ 'picker__chosen--blocked': blocked }"
+        data-testid="picker-chosen"
+      >
         <span class="picker__label">
           {{ model.label }}
           <UiDraftBadge v-if="model.draft" class="picker__draft" data-testid="picker-draft">{{
@@ -103,6 +111,9 @@ onBeforeUnmount(() => clearTimeout(timer))
           <Icon name="tabler:x" size="16" aria-hidden="true" />
         </button>
       </div>
+      <UiFormError v-if="blocked" data-testid="picker-draft-error">
+        {{ t('admin.pickerDraft') }}
+      </UiFormError>
     </template>
     <template v-else>
       <label :for="`${uid}-input`" class="picker__name"
@@ -188,6 +199,10 @@ onBeforeUnmount(() => clearTimeout(timer))
   min-width: 0;
   overflow-wrap: anywhere;
   font-weight: 700;
+}
+
+.picker__chosen--blocked {
+  border-color: var(--color-crimson);
 }
 
 // Change the choice: a plain icon inside the frame, so it is not mistaken for removing the row.

@@ -17,6 +17,14 @@ describe('toApiError', () => {
     expect(error.details).toEqual(details)
   })
 
+  it('conserve des détails qui ne sont pas une liste (fiches en brouillon)', () => {
+    const details = { personIds: [1], publisherIds: [], workIds: [] }
+    const error = toApiError({
+      response: { status: 400, _data: { code: 'DRAFT_REFERENCE', details } },
+    })
+    expect(error.details).toEqual(details)
+  })
+
   it('est idempotent : une erreur déjà normalisée est rendue telle quelle', () => {
     const normalized = { status: 404, code: 'NOT_FOUND', details: undefined }
     expect(toApiError(normalized)).toBe(normalized)

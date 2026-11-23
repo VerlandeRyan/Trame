@@ -593,6 +593,72 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
   expect((await context.request.get(`/api/v1/works/${work!.id}`)).status()).toBe(200)
 })
 
+test('une publication refusée nomme la fiche en brouillon citée, puis aboutit une fois publiée', async ({
+  page,
+  context,
+}) => {
+  const draftPerson = (await (
+    await context.request.post('/api/v1/admin/people', {
+      data: { name: `${DRAFT} bloquante`, kind: 'person', published: false },
+    })
+  ).json()) as { id: number; updatedAt: string }
+  const publisher = (await (
+    await context.request.post('/api/v1/admin/publishers', {
+      data: { name: `${DRAFT} éditeur`, kind: 'publisher' },
+    })
+  ).json()) as { id: number }
+  const created = await context.request.post('/api/v1/admin/works', {
+    data: {
+      title: `${DRAFT} citant un brouillon`,
+      originalLanguage: 'fr',
+      type: 'oneshot',
+      status: 'completed',
+      chapters: null,
+      volumes: 1,
+      startedOn: null,
+      endedOn: null,
+      genres: ['manga'],
+      synopses: [{ language: 'fr', text: 'Un résumé.', source: 'official' }],
+      credits: [{ personId: draftPerson.id, role: 'story' }],
+      publisherIds: [publisher.id],
+      published: false,
+    },
+  })
+  expect(created.status()).toBe(201)
+  const { id } = (await created.json()) as { id: number }
+
+  await page.goto(`/admin/catalogue/works/${id}`)
+  await waitForHydration(page)
+  await page.getByTestId('admin-publish').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+
+  const named = page.getByTestId('draft-references')
+  await expect(named).toContainText(`${DRAFT} bloquante`)
+  await expect(named.getByRole('link')).toHaveAttribute(
+    'href',
+    `/admin/catalogue/people/${draftPerson.id}`,
+  )
+  await expect(
+    page.getByRole('tab', { name: /Auteurs et éditeurs/ }).getByRole('img'),
+  ).toHaveAccessibleName('Contient un champ obligatoire vide ou une ligne incomplète')
+  await page.getByRole('tab', { name: /Auteurs et éditeurs/ }).click()
+  await expect(page.getByTestId('picker-draft-error')).toBeVisible()
+
+  // Une fois la personne publiée, la même publication aboutit.
+  const published = await context.request.put(`/api/v1/admin/people/${draftPerson.id}`, {
+    data: {
+      name: `${DRAFT} bloquante`,
+      kind: 'person',
+      published: true,
+      updatedAt: draftPerson.updatedAt,
+    },
+  })
+  expect(published.status()).toBe(200)
+  await page.getByTestId('admin-publish').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+  await expect(page).toHaveURL(LIST_URL)
+})
+
 test('un brouillon se supprime définitivement, une fiche publiée non', async ({
   page,
   context,

@@ -26,6 +26,7 @@ import {
   PUBLICATION_GAP_SECTION,
   publicationGapsOf,
   gapsOfRefusal,
+  draftReferencesOf,
   isCreditRowFilled,
   isLinkRowFilled,
   isPublisherRowFilled,
@@ -404,6 +405,34 @@ describe('champs obligatoires', () => {
     expect(gapsOfRefusal({ code: 'VALIDATION_ERROR', details })).toEqual(['credits'])
     expect(gapsOfRefusal({ code: 'VALIDATION_ERROR' })).toEqual([])
     expect(gapsOfRefusal({ code: 'STALE_RECORD', details })).toEqual([])
+  })
+
+  it('nomme les fiches en brouillon que le formulaire cite, par type', () => {
+    const form = emptyWorkFormValues()
+    form.credits = [
+      { person: { id: 1, label: 'Aya Morel', draft: true }, role: 'story' },
+      { person: { id: 2, label: 'Théo Lambert' }, role: 'art' },
+    ]
+    form.publishers = [{ publisher: { id: 3, label: 'Éditions du Phare', draft: true } }]
+    form.relations = [{ work: { id: 4, label: 'Suite', draft: true }, relation: 'sequel' }]
+    const details = { personIds: [1], publisherIds: [3], workIds: [4, 99] }
+    expect(draftReferencesOf({ code: 'DRAFT_REFERENCE', details }, form)).toEqual([
+      { kind: 'people', id: 1, label: 'Aya Morel' },
+      { kind: 'publishers', id: 3, label: 'Éditions du Phare' },
+      { kind: 'works', id: 4, label: 'Suite' },
+    ])
+  })
+
+  it('ne nomme rien hors d’un refus de brouillon bien formé', () => {
+    const form = emptyWorkFormValues()
+    form.credits = [{ person: { id: 1, label: 'Aya Morel' }, role: 'story' }]
+    const details = { personIds: [1], publisherIds: [], workIds: [] }
+    expect(draftReferencesOf({ code: 'VALIDATION_ERROR', details }, form)).toEqual([])
+    expect(draftReferencesOf({ code: 'DRAFT_REFERENCE' }, form)).toEqual([])
+    expect(draftReferencesOf({ code: 'DRAFT_REFERENCE', details: [1] }, form)).toEqual([])
+    expect(
+      draftReferencesOf({ code: 'DRAFT_REFERENCE', details: { personIds: 'x' } }, form),
+    ).toEqual([])
   })
 
   it('distingue les formats des genres thématiques', () => {

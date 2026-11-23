@@ -1,7 +1,7 @@
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 import { enableAutoUnmount, flushPromises } from '@vue/test-utils'
 import { readBody, setResponseStatus, type H3Event } from 'h3'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest'
 import type { WorkFormValues } from '~/utils/admin'
 import type { AuthState } from '~/utils/auth'
 import EditPage from './[id].vue'
@@ -554,6 +554,86 @@ describe('page d’édition du catalogue', () => {
     await flushPromises()
     expect(sent).toHaveLength(2)
     expect(alertedTabs(wrapper)).toEqual([])
+  })
+
+  it('nomme les fiches en brouillon qui bloquent la publication, avec un lien et un cadre', async () => {
+    registerWork9()
+    registerEndpoint('/api/v1/admin/works/9', {
+      method: 'PUT',
+      handler: (event) => {
+        setResponseStatus(event, 400)
+        return {
+          code: 'DRAFT_REFERENCE',
+          details: { personIds: [1], publisherIds: [], workIds: [12] },
+        }
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/works/9')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const links = wrapper.findAll('[data-testid="draft-references"] a')
+    expect(links.map((link) => link.text())).toEqual(['Léa', 'Dérivé'])
+    expect(links.map((link) => link.attributes('href'))).toEqual([
+      '/admin/catalogue/people/1',
+      '/admin/catalogue/works/12',
+    ])
+    expect(alertedTabs(wrapper)).toEqual(['Relations', 'Auteurs et éditeurs'])
+    expect(wrapper.findAll('[data-testid="picker-draft-error"]')).toHaveLength(2)
+    // The generic message is replaced by the named list.
+    expect(wrapper.find('.actions [role="alert"]').exists()).toBe(false)
+
+    await wrapper.get('#work-title').setValue('Aube Fictive 2')
+    expect(wrapper.find('[data-testid="draft-references"]').exists()).toBe(false)
+  })
+
+  it('fait défiler jusqu’à l’encadré qui nomme les brouillons', async () => {
+    registerWork9()
+    registerEndpoint('/api/v1/admin/works/9', {
+      method: 'PUT',
+      handler: (event) => {
+        setResponseStatus(event, 400)
+        return {
+          code: 'DRAFT_REFERENCE',
+          details: { personIds: [1], publisherIds: [], workIds: [] },
+        }
+      },
+    })
+    const original = Element.prototype.scrollIntoView
+    const scrollIntoView = vi.fn()
+    Element.prototype.scrollIntoView = scrollIntoView
+    onTestFinished(() => {
+      Element.prototype.scrollIntoView = original
+    })
+    const wrapper = await mountEdit('/admin/catalogue/works/9')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    const targets = scrollIntoView.mock.contexts as Element[]
+    expect(targets.some((el) => el.closest('[data-testid="draft-references"]'))).toBe(true)
+  })
+
+  it('garde le message générique quand le formulaire ne contient plus la fiche nommée', async () => {
+    registerWork9()
+    registerEndpoint('/api/v1/admin/works/9', {
+      method: 'PUT',
+      handler: (event) => {
+        setResponseStatus(event, 400)
+        return {
+          code: 'DRAFT_REFERENCE',
+          details: { personIds: [99], publisherIds: [], workIds: [] },
+        }
+      },
+    })
+    const wrapper = await mountEdit('/admin/catalogue/works/9')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(wrapper.find('[data-testid="draft-references"]').exists()).toBe(false)
+    expect(wrapper.get('.actions [role="alert"]').text()).toContain('en brouillon')
   })
 
   it('demande confirmation avant de quitter avec une saisie non enregistrée', async () => {
