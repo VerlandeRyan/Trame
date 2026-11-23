@@ -13,16 +13,21 @@ const { t } = useI18n()
 const target = parseAdminEditRoute(route.params) ?? { kind: 'works' as const, id: 'new' as const }
 const { kind, id } = target
 const editor = useAdminEditor(kind, id)
-const { record, errorKey, errorScope, serverGaps, saving } = editor
+const { record, errorKey, errorScope, serverGaps, draftReferences, saving } = editor
 /** Whether a refused save asks the person and publisher forms to flag their gaps. */
 const showErrors = computed(() => errorScope.value !== 'none')
-/** What the work form flags: the scope of the last refusal and the gaps the API reported. */
-const flagged = computed(() => ({ scope: errorScope.value, serverGaps: serverGaps.value }))
-// The message sits above "Save", far from the buttons at the top of a long form: bring it into view.
-watch(errorKey, async (key) => {
-  if (!key) return
+/** What the work form flags: the scope of the last refusal, the gaps the API reported and the drafts it named. */
+const flagged = computed(() => ({
+  scope: errorScope.value,
+  serverGaps: serverGaps.value,
+  draftReferences: draftReferences.value,
+}))
+const root = ref<HTMLElement | null>(null)
+// A refusal message sits far from the buttons (above "Save", or the draft list above the tabs): bring it into view.
+watch([errorKey, draftReferences], async ([key, drafts]) => {
+  if (!key && drafts.length === 0) return
   await nextTick()
-  document.querySelector('.edit [role="alert"]')?.scrollIntoView({ block: 'center' })
+  root.value?.querySelector('[role="alert"]')?.scrollIntoView({ block: 'center' })
 })
 // Arrived without going through the list (direct address): "Back" leads to this record's tab.
 const { last: lastList, location: listLocation } = useAdminListLocation()
@@ -130,7 +135,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
 </script>
 
 <template>
-  <div class="edit">
+  <div ref="root" class="edit">
     <AdminNav />
     <NuxtLink :to="listLocation" class="edit__back link-underlined" data-testid="admin-back">
       <Icon name="tabler:chevron-left" size="16" aria-hidden="true" />{{ t('admin.back') }}

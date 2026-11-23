@@ -5,7 +5,8 @@ import { ERROR_CODES, type ErrorCode } from '../contract/api'
 export interface ApiError {
   status: number
   code: ErrorCode
-  details?: unknown[]
+  /** A list of issues (validation), or an object (ids of the records a refusal names). */
+  details?: unknown
 }
 
 /** Code used when an error carries none, or one the contract does not list. */
@@ -40,7 +41,7 @@ export function toApiError(error: unknown): ApiError {
   const body = candidate?.data ?? candidate?.response?._data
   const status = candidate?.response?.status ?? candidate?.statusCode ?? candidate?.status ?? 0
   const code = isErrorCode(body?.code) ? body.code : FALLBACK_CODE
-  const details = Array.isArray(body?.details) ? body.details : undefined
+  const details = body?.details ?? undefined
   return { status, code, details }
 }
 

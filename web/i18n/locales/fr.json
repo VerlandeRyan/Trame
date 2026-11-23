@@ -661,6 +661,17 @@
     "back": "Catalogue",
     "save": "Enregistrer",
     "pickerRequired": "Choisis une proposition dans la liste.",
+    "pickerDraft": "Encore en brouillon : publie-la d'abord, ou retire-la d'ici.",
+    "draftReferences": {
+      "title": "Publication refusée : {count} fiche est encore en brouillon. | Publication refusée : {count} fiches sont encore en brouillon.",
+      "hint": "Publie-la d'abord, ou retire-la de la fiche : | Publie-les d'abord, ou retire-les de la fiche :",
+      "open": "{name} (s'ouvre dans un nouvel onglet)",
+      "kind": {
+        "people": "Personne",
+        "publishers": "Éditeur",
+        "works": "Œuvre"
+      }
+    },
     "sectionIncomplete": "Contient un champ obligatoire vide ou une ligne incomplète",
     "rowRemove": {
       "title": "Retirer cette ligne ?",

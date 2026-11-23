@@ -178,4 +178,28 @@ describe('AdminRecordPicker', () => {
 
     expect(wrapper.find('[data-testid="picker-results"]').exists()).toBe(false)
   })
+
+  it('cadre en rouge et explique le brouillon qui bloque une publication', async () => {
+    const wrapper = await mountSuspended(AdminRecordPicker, {
+      props: {
+        modelValue: { id: 1, label: 'Léa Auteure', draft: true },
+        label: 'Personne',
+        placeholder: 'Rechercher…',
+        clearLabel: 'Effacer le choix',
+        search: vi.fn(async () => RESULTS),
+        blocked: true,
+      },
+    })
+
+    expect(wrapper.get('[data-testid="picker-chosen"]').classes()).toContain(
+      'picker__chosen--blocked',
+    )
+    expect(wrapper.get('[data-testid="picker-draft-error"]').text()).toContain('en brouillon')
+  })
+
+  it('ne signale rien d’un choix qui ne bloque pas', async () => {
+    const { wrapper } = await mountInvalidPicker({ id: 1, label: 'Léa Auteure' })
+
+    expect(wrapper.find('[data-testid="picker-draft-error"]').exists()).toBe(false)
+  })
 })

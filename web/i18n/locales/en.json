@@ -657,6 +657,17 @@
     "back": "Catalogue",
     "save": "Save",
     "pickerRequired": "Choose a suggestion from the list.",
+    "pickerDraft": "Still a draft: publish it first, or remove it from here.",
+    "draftReferences": {
+      "title": "Publication refused: {count} record is still a draft. | Publication refused: {count} records are still drafts.",
+      "hint": "Publish it first, or remove it from the record: | Publish them first, or remove them from the record:",
+      "open": "{name} (opens in a new tab)",
+      "kind": {
+        "people": "Person",
+        "publishers": "Publisher",
+        "works": "Work"
+      }
+    },
     "sectionIncomplete": "Contains an empty required field or an incomplete row",
     "rowRemove": {
       "title": "Remove this row?",

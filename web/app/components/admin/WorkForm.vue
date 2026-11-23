@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type {
   AdminKind,
+  DraftReference,
   ErrorScope,
   FormMode,
   PublicationGap,
   RecordRef,
   WorkFormValues,
+  WorkSection,
 } from '~/utils/admin'
 
 /**
@@ -21,7 +23,12 @@ const props = defineProps<{
    * (draft); `serverGaps` are those the API reported (its refusal, or the saved record's own),
    * flagged with the local ones.
    */
-  flagged?: { scope: ErrorScope; serverGaps: readonly PublicationGap[] }
+  flagged?: {
+    scope: ErrorScope
+    serverGaps: readonly PublicationGap[]
+    /** Draft records the API named as blocking the publication. */
+    draftReferences?: readonly DraftReference[]
+  }
   saving: boolean
   mode?: FormMode
 }>()
@@ -41,13 +48,19 @@ const section = computed({
 })
 const formatCodes = computed(() => formatCodesOf(props.genres))
 const serverGaps = computed(() => props.flagged?.serverGaps ?? [])
+const draftReferences = computed(() => props.flagged?.draftReferences ?? [])
 const isTitleOnly = computed(() => props.flagged?.scope === 'title')
 /** Whether the fields other than the title flag their gaps. */
 const showsGaps = computed(() => props.flagged?.scope === 'all')
 /** Sections to mark with an alert (gaps are only flagged after a refused save). */
 const flaggedSections = computed(() => {
   if (isTitleOnly.value) return isBlank(form.value.title) ? ['info' as const] : []
-  return showsGaps.value ? incompleteSections(form.value, formatCodes.value, serverGaps.value) : []
+  if (!showsGaps.value) return []
+  const sections = incompleteSections(form.value, formatCodes.value, serverGaps.value)
+  const draftSections = new Set<WorkSection>(
+    draftReferences.value.map(({ kind }) => (kind === 'works' ? 'relations' : 'people')),
+  )
+  return WORK_SECTIONS.filter((id) => sections.includes(id) || draftSections.has(id))
 })
 /** One tab per section, with an alert on incomplete ones. */
 const tabs = computed(() =>
@@ -62,6 +75,7 @@ const tabs = computed(() =>
 <template>
   <form class="form" data-testid="work-form" novalidate @submit.prevent="emit('submit')">
     <UiRequiredLegend />
+    <AdminDraftReferences :references="draftReferences" />
     <UiTabs v-model="section" underline :tabs="tabs" :label="t('admin.work.sections')" />
     <section v-show="section === 'info'" role="tabpanel" class="form__section">
       <AdminWorkInfoFields
@@ -81,6 +95,7 @@ const tabs = computed(() =>
         part="relations"
         :search="search"
         :show-errors="showsGaps"
+        :draft-references="draftReferences"
       />
     </section>
     <section v-show="section === 'links'" role="tabpanel" class="form__section">
@@ -95,6 +110,7 @@ const tabs = computed(() =>
         :search="search"
         :show-errors="showsGaps"
         :server-gaps="serverGaps"
+        :draft-references="draftReferences"
       />
     </section>
     <AdminFormActions

@@ -473,10 +473,48 @@ export function incompleteSections(
 /** The publication gaps named by an API refusal (`VALIDATION_ERROR` details, `path[0]` = field). */
 export function gapsOfRefusal(error: Pick<ApiError, 'code' | 'details'>): PublicationGap[] {
   if (error.code !== 'VALIDATION_ERROR') return []
-  const paths = new Set(
-    (error.details ?? []).map((issue) => (issue as { path?: unknown[] }).path?.[0]),
-  )
+  const issues = Array.isArray(error.details) ? error.details : []
+  const paths = new Set(issues.map((issue) => (issue as { path?: unknown[] }).path?.[0]))
   return PUBLICATION_GAPS.filter((gap) => paths.has(gap))
+}
+
+/** A draft record that blocks a publication. */
+export interface DraftReference {
+  kind: AdminKind
+  id: number
+  label: string
+}
+
+/** Whether a value is a list of numbers. */
+const isIdList = (value: unknown): value is number[] =>
+  Array.isArray(value) && value.every((id) => typeof id === 'number')
+
+/**
+ * The draft records an API refusal (`DRAFT_REFERENCE`) names, as the form cites them; ids the form
+ * does not hold (the record changed meanwhile) are left out.
+ */
+export function draftReferencesOf(
+  error: Pick<ApiError, 'code' | 'details'>,
+  form: WorkFormValues,
+): DraftReference[] {
+  const details: unknown = error.details
+  if (error.code !== 'DRAFT_REFERENCE' || typeof details !== 'object' || details === null) return []
+  const named = details as Record<string, unknown>
+  const cited: { kind: AdminKind; ids: unknown; records: (RecordRef | null)[] }[] = [
+    { kind: 'people', ids: named.personIds, records: form.credits.map((row) => row.person) },
+    {
+      kind: 'publishers',
+      ids: named.publisherIds,
+      records: form.publishers.map((row) => row.publisher),
+    },
+    { kind: 'works', ids: named.workIds, records: form.relations.map((row) => row.work) },
+  ]
+  return cited.flatMap(({ kind, ids, records }) =>
+    (isIdList(ids) ? ids : []).flatMap((id) => {
+      const record = records.find((candidate) => candidate?.id === id)
+      return record ? [{ kind, id, label: record.label }] : []
+    }),
+  )
 }
 
 // A row counts as filled in when removing it would lose something: it then asks for confirmation.
@@ -621,9 +659,9 @@ export function adminErrorKey(error: unknown, messageKeyFor: (error: ApiError) =
 // --- API validation errors: first path segment = field ---
 
 /** Fields refused by the API (`details[].path[0]`), to flag them in the form. */
-export function invalidFields(details: unknown[] | undefined): Set<string> {
+export function invalidFields(details: unknown): Set<string> {
   const fields = new Set<string>()
-  for (const detail of details ?? []) {
+  for (const detail of Array.isArray(details) ? details : []) {
     const path = (detail as { path?: unknown[] } | null)?.path
     if (Array.isArray(path) && typeof path[0] === 'string') fields.add(path[0])
   }

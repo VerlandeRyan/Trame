@@ -33,7 +33,8 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 ## Autres dossiers
 - `library/` (`StatusMenu`, `StatusList` : menu des cinq statuts partagé par la fiche et `list/StatusButton`, déclencheur en slot `trigger`, action de pied en slot `footer`, `Progress`, `RemoveConfirm` : confirmation rouge du retrait, partagée par la fiche et « Modifier ma lecture ») : [fiche-oeuvre.md](fiche-oeuvre.md).
 - `list/` (`Summary`, `StatusButton`, `Row`, `GridItem`, `EditModal`) : [liste-et-profil.md](liste-et-profil.md).
-- `admin/RecordPicker` : recherche d'une fiche ; une proposition (et le choix fait) en brouillon (`RecordRef.draft`) porte la pastille « Brouillon », les archives n'y figurent pas.
+- `admin/RecordPicker` : recherche d'une fiche ; une proposition (et le choix fait) en brouillon (`RecordRef.draft`) porte la pastille « Brouillon », les archives n'y figurent pas. `blocked` : le choix est un brouillon qui bloque une publication (cadre et message rouges).
+- `admin/DraftReferences` : encadré d'un refus de publication (`DRAFT_REFERENCE`) qui nomme chaque brouillon cité, avec son type et un lien vers sa fiche (nouvel onglet) ; vide sans référence.
 - `admin/` (`WorkForm`, `PersonForm`, `PublisherForm`, `RowList`, `RecordPicker`, `LinksFields`, `PillGroup`, `TagPicker`, `Nav`, `Filters`, `FilterGroup`, `ResourceRows`, `RowMenu`, `RowDropdown`, `ArchiveConfirm`, `RestoreConfirm`, `DeleteConfirm`, `RowRemoveConfirm`) : [administration.md](administration.md).
 - `home/` (`Pitch`, `ContinueReading`, `Featured`, `Shelf`, `Explore`) et `search/` (`Filters`, `FilterGroup`, `ResultItem`) : [accueil-recherche.md](accueil-recherche.md).
 - `auth/` (`SignInModal`, `Notice`, `NoticeBar`) : [connexion-compte.md](connexion-compte.md).

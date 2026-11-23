@@ -1,6 +1,12 @@
 /** Editing state of a catalogue record (work, person or publisher), new or existing. */
 import type { ApiError } from '~/utils/api-error'
-import type { AdminLifecycle, ArchiveImpact, ErrorScope, PublicationGap } from '~/utils/admin'
+import type {
+  AdminLifecycle,
+  ArchiveImpact,
+  DraftReference,
+  ErrorScope,
+  PublicationGap,
+} from '~/utils/admin'
 
 /** What runs once a write went through (leaving the form, for instance). */
 type Followup = () => void | Promise<void>
@@ -38,6 +44,11 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
   const errorScope = ref<ErrorScope>('none')
   /** Gaps named by the API's last refusal, with the form values it refused. */
   const refusal = ref<{ gaps: PublicationGap[]; formValues: string }>({ gaps: [], formValues: '' })
+  /** Draft records the API's last refusal named, with the form values it refused. */
+  const draftRefusal = ref<{ references: DraftReference[]; formValues: string }>({
+    references: [],
+    formValues: '',
+  })
   const saving = ref(false)
   const announceFailure = useAdminFailure()
   const { show } = useToasts()
@@ -68,6 +79,13 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
       : []),
     ...(isDirty.value ? [] : (record.value?.publicationGaps ?? [])),
   ])
+
+  /** Draft records still cited, named by the API's refusal while the form is unchanged. */
+  const draftReferences = computed<DraftReference[]>(() =>
+    draftRefusal.value.formValues === JSON.stringify(currentFormValues())
+      ? draftRefusal.value.references
+      : [],
+  )
 
   /** Reads the existing record into its form values; does nothing for a new one. */
   async function load() {
@@ -123,6 +141,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     errorKey.value = undefined
     errorScope.value = 'none'
     refusal.value = { gaps: [], formValues: '' }
+    draftRefusal.value = { references: [], formValues: '' }
     if (!hasGaps(scope, formatCodes)) return true
     errorKey.value = INCOMPLETE_FORM_ERROR_KEY
     errorScope.value = scope
@@ -131,6 +150,18 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
 
   /** Whether the record has every field publishing needs; otherwise flags the gaps. */
   const checkPublishable = (formatCodes: readonly string[] = []) => validate('all', formatCodes)
+
+  /** Flags what a refused save names (gaps, draft records) and returns the message key to show, if any. */
+  function flagRefusal(cause: unknown, retry: () => void): string | undefined {
+    const formValues = JSON.stringify(currentFormValues())
+    const gaps = gapsOfRefusal(cause as ApiError)
+    const references = draftReferencesOf(cause as ApiError, work.value)
+    refusal.value = { gaps, formValues }
+    draftRefusal.value = { references, formValues }
+    if (gaps.length > 0 || references.length > 0) errorScope.value = 'all'
+    // The named list replaces the generic message; without it the message stays.
+    return references.length > 0 ? undefined : announceFailure(cause, retry)
+  }
 
   /** Whether the record stays a draft after this save (`publish` asks for the full checks). */
   const staysDraft = (publish: boolean) =>
@@ -169,10 +200,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
       }
       markSaved()
     } catch (cause) {
-      const gaps = gapsOfRefusal(cause as ApiError)
-      refusal.value = { gaps, formValues: JSON.stringify(currentFormValues()) }
-      if (gaps.length > 0) errorScope.value = 'all'
-      errorKey.value = announceFailure(cause, () => void save(formatCodes, publish, onDone))
+      errorKey.value = flagRefusal(cause, () => void save(formatCodes, publish, onDone))
       return false
     } finally {
       saving.value = false
@@ -225,6 +253,7 @@ export function useAdminEditor(kind: AdminKind, id: number | 'new') {
     errorKey,
     errorScope,
     serverGaps,
+    draftReferences,
     saving,
     isDirty,
     load,
