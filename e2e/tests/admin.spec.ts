@@ -20,14 +20,20 @@ test.beforeEach(async ({ context }) => {
   await signInAsAdmin(context)
 })
 
-/** Publie une nouvelle fiche, après confirmation (ou enregistre une fiche publiée, sans bouton « Publier »). */
+/** Enregistre une fiche publiée : « Enregistrer et republier », puis la confirmation. */
+async function saveAndRepublish(page: Page) {
+  await page.getByTestId('admin-save').click()
+  await page.getByRole('dialog').getByTestId('confirm-accept').click()
+}
+
+/** Publie une nouvelle fiche, après confirmation (ou republie une fiche publiée, sans bouton « Publier »). */
 async function saveAndWaitForList(page: Page) {
   const publish = page.getByTestId('admin-publish')
   if ((await publish.count()) > 0) {
     await publish.click()
     await page.getByRole('dialog').getByTestId('confirm-accept').click()
   } else {
-    await page.getByTestId('admin-save').click()
+    await saveAndRepublish(page)
   }
   await expect(page).toHaveURL(LIST_URL)
 }
@@ -361,7 +367,7 @@ test('enregistrer une fiche modifiée entre-temps est refusé', async ({ page, c
   const other = await context.request.put(url, { data: body })
   expect(other.status()).toBe(200)
 
-  await page.getByTestId('admin-save').click()
+  await saveAndRepublish(page)
   await expect(page.getByRole('alert').filter({ hasText: 'modifiée depuis' })).toBeVisible()
   await expect(page.getByTestId('toast')).toHaveCount(0)
   await expect(page).toHaveURL(/\/admin\/catalogue\/works\/\d+$/)
@@ -381,9 +387,32 @@ test('enregistrer une personne modifiée entre-temps est refusé', async ({ page
   const other = await context.request.put(url, { data: body })
   expect(other.status()).toBe(200)
 
-  await page.getByTestId('admin-save').click()
+  await saveAndRepublish(page)
   await expect(page.getByRole('alert').filter({ hasText: 'modifiée depuis' })).toBeVisible()
   await expect(page).toHaveURL(/\/admin\/catalogue\/people\/\d+$/)
+})
+
+test('une fiche publiée s’enregistre par « Enregistrer et republier », après confirmation', async ({
+  page,
+  context,
+}) => {
+  const created = await context.request.post('/api/v1/admin/people', {
+    data: { name: `${DRAFT} republier`, kind: 'person', published: true },
+  })
+  const person = (await created.json()) as { id: number }
+  await page.goto(`/admin/catalogue/people/${person.id}`)
+  await waitForHydration(page)
+  const save = page.getByTestId('admin-save')
+  await expect(save).toHaveText('Enregistrer et republier')
+  await expect(page.getByTestId('admin-republish-hint')).toBeVisible()
+
+  // Refuser la confirmation n'envoie rien : on reste sur la fiche.
+  await save.click()
+  await page.getByRole('dialog').getByTestId('confirm-cancel').click()
+  await expect(page).toHaveURL(new RegExp(`people/${person.id}$`))
+
+  await saveAndRepublish(page)
+  await expect(page).toHaveURL(LIST_URL)
 })
 
 test('archiver masque l’œuvre au public, restaurer la rend', async ({ page, context }) => {

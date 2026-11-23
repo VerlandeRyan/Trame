@@ -585,6 +585,13 @@
     "published": "Publiée",
     "draft": "Brouillon",
     "saveDraft": "Enregistrer en brouillon",
+    "saveRepublish": "Enregistrer et republier",
+    "republishHint": "Fiche publiée : tes modifications seront visibles du public.",
+    "republishConfirm": {
+      "title": "Republier cette fiche ?",
+      "text": "Tes modifications remplacent la version publique : elles seront visibles du public dès l'enregistrement.",
+      "cancel": "Pas encore"
+    },
     "publish": "Publier",
     "publishConfirm": {
       "title": "Publier cette fiche ?",

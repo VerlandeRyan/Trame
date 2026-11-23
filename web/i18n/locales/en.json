@@ -581,6 +581,13 @@
     "published": "Published",
     "draft": "Draft",
     "saveDraft": "Save as draft",
+    "saveRepublish": "Save and republish",
+    "republishHint": "Published record: your changes will be visible to the public.",
+    "republishConfirm": {
+      "title": "Republish this record?",
+      "text": "Your changes replace the public version: they are visible to the public as soon as you save.",
+      "cancel": "Not yet"
+    },
     "publish": "Publish",
     "publishConfirm": {
       "title": "Publish this record?",
