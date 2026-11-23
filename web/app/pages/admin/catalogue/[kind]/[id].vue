@@ -61,7 +61,18 @@ async function backToList() {
 const formatCodes = computed(() => formatCodesOf(genres.value?.items ?? []))
 
 /** Saves (as a draft for a new record), then goes back to the list. */
-const submit = () => editor.save(formatCodes.value, false, backToList)
+const saveAndLeave = () => editor.save(formatCodes.value, false, backToList)
+
+const confirmingRepublish = ref(false)
+/** Saving a published record edits the public version: it asks first, once nothing is missing. */
+function askRepublish() {
+  if (editor.checkPublishable(formatCodes.value)) {
+    confirmingRepublish.value = true
+  }
+}
+
+/** The form's save: a published record asks first, the others save at once. */
+const submit = () => (formMode.value === 'published' ? askRepublish() : saveAndLeave())
 
 const confirmingPublish = ref(false)
 /** Publishing makes the record public: it asks first, once nothing is missing. */
@@ -74,10 +85,10 @@ function askPublish() {
 /** Saves and publishes, then goes back to the list. */
 const publish = () => editor.save(formatCodes.value, true, backToList)
 
-/** Form footer mode: a new record, a draft or a published one. */
+/** Form footer mode: a new record, or the lifecycle of the edited one. */
 const formMode = computed(() => {
   if (id === 'new') return 'create' as const
-  return record.value?.lifecycle === 'draft' ? ('draft' as const) : ('published' as const)
+  return record.value?.lifecycle ?? ('published' as const)
 })
 /** Translation key of the state pill. */
 const stateKey = computed(() => `admin.${record.value?.lifecycle ?? 'published'}`)
@@ -241,6 +252,16 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       v-model="confirmingRestore"
       data-testid="restore-confirm"
       @confirm="restore"
+    />
+    <UiConfirm
+      v-model="confirmingRepublish"
+      data-testid="republish-confirm"
+      :title="t('admin.republishConfirm.title')"
+      :text="t('admin.republishConfirm.text')"
+      :confirm-label="t('admin.saveRepublish')"
+      :cancel-label="t('admin.republishConfirm.cancel')"
+      :close-label="t('action.close')"
+      @confirm="saveAndLeave"
     />
     <UiConfirm
       v-model="confirmingPublish"

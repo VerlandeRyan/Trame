@@ -384,8 +384,8 @@ export const hasInvalidLinkUrl = (links: readonly { url: string }[], isRequired 
 export const hasUnsavableDraft = (form: WorkFormValues): boolean =>
   isBlank(form.title) || hasInvalidLinkUrl(form.links, false)
 
-/** What the record form offers: a new record, a draft or a published one. */
-export type FormMode = 'create' | 'draft' | 'published'
+/** What the record form offers: a new record, a draft, a published or an archived one. */
+export type FormMode = 'create' | 'draft' | 'published' | 'archived'
 
 /** What a refused save asks the form to flag: nothing, the title or name only (form), or every gap. */
 export type ErrorScope = 'none' | 'title' | 'all'

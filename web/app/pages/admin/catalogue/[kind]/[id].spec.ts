@@ -114,6 +114,16 @@ const alertedTabs = (wrapper: Awaited<ReturnType<typeof mountEdit>>) =>
     .filter((tab) => tab.find('.tabs__alert').exists())
     .map((tab) => tab.text())
 
+/** Soumet le formulaire d'une fiche publiée et confirme la republication. */
+async function submitAndConfirm(wrapper: Awaited<ReturnType<typeof mountEdit>>) {
+  await wrapper.get('form').trigger('submit')
+  await flushPromises()
+  await wrapper
+    .get('[data-testid="republish-confirm"] [data-testid="confirm-accept"]')
+    .trigger('click')
+  await flushPromises()
+}
+
 /** Une œuvre en cours de modification : ses libellés viennent avec elle. */
 function registerWork9() {
   registerEndpoint('/api/v1/admin/works/9', { method: 'GET', handler: () => WORK_9 })
@@ -185,6 +195,56 @@ describe('page d’édition du catalogue', () => {
     expect(useRouter().currentRoute.value.path).not.toBe('/admin/catalogue')
   })
 
+  it('demande confirmation avant de republier une fiche publiée, et n’envoie rien sinon', async () => {
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+    await wrapper.get('#person-name').setValue('Léa M.')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(sent).toEqual([])
+
+    await wrapper
+      .get('[data-testid="republish-confirm"] [data-testid="confirm-cancel"]')
+      .trigger('click')
+    await flushPromises()
+    expect(sent).toEqual([])
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await wrapper
+      .get('[data-testid="republish-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
+    await flushPromises()
+    expect(sent).toHaveLength(1)
+    expect(sent[0]).toMatchObject({ method: 'PUT', body: { name: 'Léa M.' } })
+  })
+
+  it('ne demande pas confirmation si la fiche publiée est incomplète : il montre les manques', async () => {
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+    await wrapper.get('#person-name').setValue('')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(sent).toEqual([])
+    expect(wrapper.get('[data-testid="republish-confirm"]').attributes('open')).toBeUndefined()
+  })
+
+  it('enregistre une fiche archivée sans confirmation : elle ne devient pas publique', async () => {
+    registerEndpoint('/api/v1/admin/people/7', {
+      method: 'GET',
+      handler: () => ({ ...PERSON, lifecycle: 'archived' }),
+    })
+    const wrapper = await mountEdit('/admin/catalogue/people/7')
+    expect(wrapper.get('[data-testid="admin-save"]').text()).toBe('Enregistrer')
+
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+
+    expect(sent).toHaveLength(1)
+    expect(sent[0]).toMatchObject({ method: 'PUT' })
+  })
+
   it('charge une personne existante et la remplace', async () => {
     const wrapper = await mountEdit('/admin/catalogue/people/7')
 
@@ -193,6 +253,10 @@ describe('page d’édition du catalogue', () => {
 
     await wrapper.get('#person-name').setValue('Léa M.')
     await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    await wrapper
+      .get('[data-testid="republish-confirm"] [data-testid="confirm-accept"]')
+      .trigger('click')
     await flushPromises()
 
     expect(sent[0]).toMatchObject({
@@ -393,8 +457,7 @@ describe('page d’édition du catalogue', () => {
   it('un enregistrement sans publier n’envoie pas `published` pour une fiche publiée', async () => {
     const wrapper = await mountEdit('/admin/catalogue/people/7')
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await submitAndConfirm(wrapper)
 
     expect(sent).toHaveLength(1)
     expect(sent[0]!.body).not.toHaveProperty('published')
@@ -501,8 +564,7 @@ describe('page d’édition du catalogue', () => {
     })
     const wrapper = await mountEdit('/admin/catalogue/works/9')
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await submitAndConfirm(wrapper)
 
     expect(sent[0]).toMatchObject({ body: { updatedAt: WORK_9.updatedAt } })
     expect(wrapper.text()).toContain("modifiée depuis que tu l'as ouverte")
@@ -545,13 +607,11 @@ describe('page d’édition du catalogue', () => {
     })
     const wrapper = await mountEdit('/admin/catalogue/works/9')
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await submitAndConfirm(wrapper)
     expect(alertedTabs(wrapper)).toEqual(['Titres et synopsis'])
 
     refuse = false
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await submitAndConfirm(wrapper)
     expect(sent).toHaveLength(2)
     expect(alertedTabs(wrapper)).toEqual([])
   })
@@ -570,8 +630,7 @@ describe('page d’édition du catalogue', () => {
     })
     const wrapper = await mountEdit('/admin/catalogue/works/9')
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await submitAndConfirm(wrapper)
 
     const links = wrapper.findAll('[data-testid="draft-references"] a')
     expect(links.map((link) => link.text())).toEqual(['Léa', 'Dérivé'])
@@ -608,8 +667,7 @@ describe('page d’édition du catalogue', () => {
     })
     const wrapper = await mountEdit('/admin/catalogue/works/9')
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await submitAndConfirm(wrapper)
 
     const targets = scrollIntoView.mock.contexts as Element[]
     expect(targets.some((el) => el.closest('[data-testid="draft-references"]'))).toBe(true)
@@ -629,8 +687,7 @@ describe('page d’édition du catalogue', () => {
     })
     const wrapper = await mountEdit('/admin/catalogue/works/9')
 
-    await wrapper.get('form').trigger('submit')
-    await flushPromises()
+    await submitAndConfirm(wrapper)
 
     expect(wrapper.find('[data-testid="draft-references"]').exists()).toBe(false)
     expect(wrapper.get('.actions [role="alert"]').text()).toContain('en brouillon')

@@ -2,8 +2,9 @@
 import type { FormMode } from '~/utils/admin'
 
 /**
- * Common footer of the catalogue forms: API error, "Save" (green), "Publish" for a new record or a
- * draft (the first one saves as a draft) and "Cancel", which goes back to the list the user came from.
+ * Common footer of the catalogue forms: API error, "Save" (green; "Save and republish" in pink on a
+ * published record, which edits the public version), "Publish" for a new record or a draft (the
+ * first one saves as a draft) and "Cancel", which goes back to the list the user came from.
  */
 const props = withDefaults(defineProps<{ errorKey?: string; saving: boolean; mode?: FormMode }>(), {
   errorKey: undefined,
@@ -12,15 +13,25 @@ const props = withDefaults(defineProps<{ errorKey?: string; saving: boolean; mod
 const emit = defineEmits<{ publish: [] }>()
 const { t } = useI18n()
 const { location } = useAdminListLocation()
-const canPublish = computed(() => props.mode !== 'published')
+const isPublished = computed(() => props.mode === 'published')
+const canPublish = computed(() => props.mode === 'create' || props.mode === 'draft')
+const saveKey = computed(() => {
+  if (props.mode === 'create') return 'admin.saveDraft'
+  return isPublished.value ? 'admin.saveRepublish' : 'admin.save'
+})
 </script>
 
 <template>
   <div class="actions">
     <UiFormError v-if="errorKey">{{ t(errorKey) }}</UiFormError>
     <div class="actions__buttons">
-      <UiButton type="submit" variant="success" :disabled="saving" data-testid="admin-save">
-        {{ t(mode === 'create' ? 'admin.saveDraft' : 'admin.save') }}
+      <UiButton
+        type="submit"
+        :variant="isPublished ? 'primary' : 'success'"
+        :disabled="saving"
+        data-testid="admin-save"
+      >
+        {{ t(saveKey) }}
       </UiButton>
       <UiButton
         v-if="canPublish"
@@ -36,6 +47,9 @@ const canPublish = computed(() => props.mode !== 'published')
         {{ t('admin.cancel') }}
       </UiButton>
     </div>
+    <p v-if="isPublished" class="actions__hint" data-testid="admin-republish-hint">
+      {{ t('admin.republishHint') }}
+    </p>
   </div>
 </template>
 
@@ -43,6 +57,12 @@ const canPublish = computed(() => props.mode !== 'published')
 .actions {
   display: grid;
   gap: var(--space-3);
+}
+
+.actions__hint {
+  margin: 0;
+  color: var(--color-ink-soft);
+  font-size: 0.875rem;
 }
 
 .actions__buttons {

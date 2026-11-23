@@ -14,7 +14,9 @@ describe('AdminFormActions', () => {
   it('propose « Publier » pour une nouvelle fiche ou un brouillon, pas pour une fiche publiée', async () => {
     const published = await mountSuspended(AdminFormActions, { props: { saving: false } })
     expect(published.find('[data-testid="admin-publish"]').exists()).toBe(false)
-    expect(published.get('[data-testid="admin-save"]').text()).toBe('Enregistrer')
+    expect(published.get('[data-testid="admin-save"]').text()).toBe('Enregistrer et republier')
+    // Republishing is a publishing action: pink like « Publier », green stays for a plain save.
+    expect(published.get('[data-testid="admin-save"]').classes()).toContain('btn--primary')
 
     const creating = await mountSuspended(AdminFormActions, {
       props: { saving: false, mode: 'create' },
@@ -28,6 +30,29 @@ describe('AdminFormActions', () => {
     })
     expect(draft.get('[data-testid="admin-save"]').text()).toBe('Enregistrer')
     expect(draft.find('[data-testid="admin-publish"]').exists()).toBe(true)
+  })
+
+  it('prévient qu’une fiche publiée est modifiée en public, et seulement elle', async () => {
+    const published = await mountSuspended(AdminFormActions, { props: { saving: false } })
+    expect(published.get('[data-testid="admin-republish-hint"]').text()).toBe(
+      'Fiche publiée : tes modifications seront visibles du public.',
+    )
+
+    for (const mode of ['create', 'draft'] as const) {
+      const wrapper = await mountSuspended(AdminFormActions, { props: { saving: false, mode } })
+      expect(wrapper.find('[data-testid="admin-republish-hint"]').exists()).toBe(false)
+    }
+  })
+
+  it('garde « Enregistrer » en vert, sans « Publier » ni mention, sur une fiche archivée', async () => {
+    const archived = await mountSuspended(AdminFormActions, {
+      props: { saving: false, mode: 'archived' },
+    })
+
+    expect(archived.get('[data-testid="admin-save"]').text()).toBe('Enregistrer')
+    expect(archived.get('[data-testid="admin-save"]').classes()).toContain('btn--success')
+    expect(archived.find('[data-testid="admin-publish"]').exists()).toBe(false)
+    expect(archived.find('[data-testid="admin-republish-hint"]').exists()).toBe(false)
   })
 
   it('annonce l’erreur et bloque l’envoi pendant l’enregistrement', async () => {
