@@ -7,6 +7,7 @@ import { createApp } from '../app.js';
 import { createDb } from '../db/database.js';
 import { AppError } from '../errors.js';
 import {
+  adminNamesakesSchema,
   adminPersonPageSchema,
   adminPersonSchema,
   adminPublisherSchema,
@@ -345,6 +346,92 @@ describe('personnes', () => {
       await client.query('ROLLBACK');
     }
     expect((await admin.get(`${ADMIN}/people/${personId}`)).body.lifecycle).toBe('published');
+  });
+});
+
+describe('homonymes', () => {
+  const namesakes = (admin: Agent, path: string, query: Record<string, string | number>) =>
+    admin.get(`${ADMIN}/${path}/namesakes`).query(query);
+
+  it.each([
+    ['people', (admin: Agent, name: string) => createPerson(admin, name)],
+    ['publishers', (admin: Agent, name: string) => createPublisher(admin, name)],
+    ['works', (admin: Agent, name: string) => createWork(admin, { title: name })],
+  ])(
+    'trouve les fiches de même nom sans tenir compte de la casse ni des accents (%s)',
+    async (path, create) => {
+      const admin = await newAdmin();
+      const id = await create(admin, `${PREFIX} Élodie Dupont`);
+      await create(admin, `${PREFIX} Autre nom`);
+
+      const res = await namesakes(admin, path, {
+        name: `  ${PREFIX.toLowerCase()} elodie DUPONT `,
+      });
+
+      expect(res.status).toBe(200);
+      expectMatches(adminNamesakesSchema, res.body);
+      expect(res.body.items).toEqual([
+        { id, name: `${PREFIX} Élodie Dupont`, lifecycle: 'published' },
+      ]);
+    },
+  );
+
+  it('compte les brouillons et les archives, et ignore la fiche en cours de renommage', async () => {
+    const admin = await newAdmin();
+    const draft = await admin
+      .post(`${ADMIN}/publishers`)
+      .send({ name: `${PREFIX} Maison`, kind: 'publisher', published: false });
+    const archivedId = await createPublisher(admin, `${PREFIX} Maison`);
+    await admin.post(`${ADMIN}/publishers/${archivedId}/archive`);
+    const self = await createPublisher(admin, `${PREFIX} Maison`);
+
+    const res = await namesakes(admin, 'publishers', {
+      name: `${PREFIX} Maison`,
+      excludeId: self,
+    });
+
+    expect(
+      res.body.items.map((item: { id: number; lifecycle: string }) => item.lifecycle).sort(),
+    ).toEqual(['archived', 'draft']);
+    expect(res.body.items.map((item: { id: number }) => item.id).sort()).toEqual(
+      [draft.body.id, archivedId].sort(),
+    );
+  });
+
+  it('plafonne la liste à cinq fiches et signale qu’il y en a d’autres', async () => {
+    const admin = await newAdmin();
+    for (let copy = 0; copy < 6; copy++) await createPerson(admin, `${PREFIX} Jumeau`);
+
+    const res = await namesakes(admin, 'people', { name: `${PREFIX} Jumeau` });
+
+    expect(res.body.items).toHaveLength(5);
+    expect(res.body.hasMore).toBe(true);
+    expect(
+      (
+        await namesakes(admin, 'people', {
+          name: `${PREFIX} Jumeau`,
+          excludeId: res.body.items[0].id,
+        })
+      ).body,
+    ).toMatchObject({ hasMore: false });
+  });
+
+  it('ramène les suites d’espaces, insécables comprises, à une seule', async () => {
+    const nbsp = String.fromCodePoint(160);
+    const admin = await newAdmin();
+    const id = await createPerson(admin, `${PREFIX} Jean Dupont`);
+
+    const res = await namesakes(admin, 'people', { name: `${PREFIX}  Jean${nbsp}${nbsp} Dupont` });
+
+    expect(res.body.items.map((item: { id: number }) => item.id)).toEqual([id]);
+  });
+
+  it('refuse un visiteur et un nom vide', async () => {
+    expect((await request(app).get(`${ADMIN}/people/namesakes`).query({ name: 'x' })).status).toBe(
+      401,
+    );
+    const admin = await newAdmin();
+    expect((await namesakes(admin, 'people', { name: '  ' })).status).toBe(400);
   });
 });
 

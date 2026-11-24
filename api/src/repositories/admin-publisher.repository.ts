@@ -7,6 +7,7 @@ import {
   deleteRecordRow,
   falseWhenCited,
   FILTERED_TOTAL,
+  findNamesakes,
   isVersion,
   lifecycleCondition,
   lifecycleOf,
@@ -19,6 +20,7 @@ import {
   type AdminSort,
   type Lifecycle,
   type LifecycleFilter,
+  type Namesakes,
 } from './admin-sql.js';
 
 /** Data sent to create a publisher; `published` publishes a draft (never the reverse). */
@@ -69,6 +71,8 @@ export interface AdminPublisherRepository {
   /** Deletes a draft nothing cites; false if it is not a draft or a work lists it. */
   deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
+  /** Publishers bearing the same name, archives included, `excludeId` left out. */
+  findNamesakes(name: string, excludeId?: number): Promise<Namesakes>;
 }
 
 /** Columns read for a publisher summary. */
@@ -172,6 +176,8 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
     async countDrafts() {
       return countDraftRows(db, 'publisher');
     },
+
+    findNamesakes: (name, excludeId) => findNamesakes(db, 'publisher', 'name', name, excludeId),
 
     async update(id, { name, kind, url, published }, version) {
       const row = await db

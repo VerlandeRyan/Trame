@@ -7,6 +7,7 @@ import {
   deleteRecordRow,
   falseWhenCited,
   FILTERED_TOTAL,
+  findNamesakes,
   isVersion,
   lifecycleCondition,
   lifecycleOf,
@@ -19,6 +20,7 @@ import {
   type AdminSort,
   type Lifecycle,
   type LifecycleFilter,
+  type Namesakes,
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
 
@@ -75,6 +77,8 @@ export interface AdminPersonRepository {
   /** Deletes a draft nothing cites; false if it is not a draft or a work credits it. */
   deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
+  /** People bearing the same name, archives included, `excludeId` left out. */
+  findNamesakes(name: string, excludeId?: number): Promise<Namesakes>;
 }
 
 /** Columns read for a person summary. */
@@ -226,5 +230,7 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
     async countDrafts() {
       return countDraftRows(db, 'person');
     },
+
+    findNamesakes: (name, excludeId) => findNamesakes(db, 'person', 'name', name, excludeId),
   };
 }

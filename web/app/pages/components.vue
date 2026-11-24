@@ -84,6 +84,17 @@ function showNotice() {
   authNotice.value = { key: 'auth.signedOut', tone: 'success' }
 }
 const sampleHandle = ref('lecteur')
+const sampleNamesakeName = ref('Maison Éclair')
+/** Stands in for the administration API: the gallery shows the notice without a server. */
+const sampleNamesakes = () =>
+  Promise.resolve({
+    items: [
+      { id: 1, name: 'Maison Éclair', lifecycle: 'draft' as const },
+      { id: 2, name: 'Maison Éclair', lifecycle: 'published' as const },
+      { id: 3, name: 'Maison Éclair', lifecycle: 'archived' as const },
+    ],
+    hasMore: false,
+  })
 const searchText = ref('')
 const chaptersRead = ref(12)
 const volumesRead = ref(2)
@@ -252,6 +263,17 @@ const tabs = computed(() => [
         </UiButton>
       </div>
       <AuthNotice />
+    </section>
+
+    <section class="gallery__section" data-testid="gallery-namesakes">
+      <h2>{{ t('gallery.namesakes') }}</h2>
+      <AdminNamesakeNotice kind="publishers" :name="sampleNamesakeName" :lookup="sampleNamesakes">
+        <UiField
+          id="gallery-namesake"
+          v-model="sampleNamesakeName"
+          :label="t('admin.publisher.name')"
+        />
+      </AdminNamesakeNotice>
     </section>
 
     <UiStatePanel :title="t('gallery.emptyTitle')" :text="t('gallery.emptyText')" />

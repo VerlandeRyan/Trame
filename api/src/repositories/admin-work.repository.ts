@@ -20,6 +20,7 @@ import {
   falseWhenCited,
   FILTERED_TOTAL,
   FORMAT_CODES,
+  findNamesakes,
   isVersion,
   lifecycleCondition,
   lifecycleOf,
@@ -34,6 +35,7 @@ import {
   type AdminSort,
   type Lifecycle,
   type LifecycleFilter,
+  type Namesakes,
 } from './admin-sql.js';
 import { replaceLinks, type ExternalLinkRecord } from './external-link.repository.js';
 
@@ -193,6 +195,8 @@ export interface AdminWorkRepository {
   /** Deletes a draft no other work relates to; false if it is not a draft or is related. */
   deleteRecord(id: number): Promise<boolean>;
   countDrafts(): Promise<number>;
+  /** Works bearing the same title, archives included, `excludeId` left out. */
+  findNamesakes(title: string, excludeId?: number): Promise<Namesakes>;
   /**
    * False if the work does not exist, or if `version` is no longer the record's; publishes a draft
    * when asked. `check` runs inside the write transaction, once the cited records are locked, so
@@ -718,6 +722,8 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
     async countDrafts() {
       return countDraftRows(db, 'work');
     },
+
+    findNamesakes: (title, excludeId) => findNamesakes(db, 'work', 'title', title, excludeId),
 
     async setArchived(id, archived, adminId) {
       const row = await db

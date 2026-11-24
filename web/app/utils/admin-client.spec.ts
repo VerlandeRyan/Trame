@@ -31,6 +31,20 @@ describe('client d’administration', () => {
     expect(request).toHaveBeenCalledWith('/admin/draft-counts')
   })
 
+  it('cherche les homonymes d’un nom, sans la fiche en cours de modification', async () => {
+    const answer = { items: [{ id: 4, name: 'Léa', lifecycle: 'draft' }], hasMore: false }
+    const { client, request } = setup(() => answer)
+
+    const found = await client.namesakes('people', 'Léa', 9)
+    await client.namesakes('works', 'Brume')
+
+    expect(found).toEqual(answer)
+    expect(request.mock.calls).toEqual([
+      ['/admin/people/namesakes', { query: { name: 'Léa', excludeId: 9 } }],
+      ['/admin/works/namesakes', { query: { name: 'Brume' } }],
+    ])
+  })
+
   it('supprime un brouillon ou une fiche archivée', async () => {
     const { client, request } = setup()
     await client.remove('people', 3)

@@ -61,6 +61,8 @@ export type AdminLifecycle = AdminWork['lifecycle']
 /** An external link of a work (read, buy) or of a person (website, social). */
 export type AdminLink = AdminWork['links'][number] | AdminPerson['links'][number]
 export type AdminDraftCounts = Schemas['AdminDraftCounts']
+/** Records that already bear a given name, with their state. */
+export type AdminNamesakes = Schemas['AdminNamesakes']
 /** A page of an administration list: the contract's pagination around the items of one kind. */
 export type AdminPage<T> = Omit<Schemas['AdminWorkPage'], 'items'> & { items: T[] }
 /** A cited record as the pickers show it: identifier and name. */

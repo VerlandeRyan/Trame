@@ -171,6 +171,7 @@
     "emptyText": "Le catalogue apparaîtra ici.",
     "modalText": "Contenu de la fenêtre.",
     "auth": "Connexion, champs et confirmations",
+    "namesakes": "Avertissement d'homonymes (administration)",
     "wideLink": "Lien pleine largeur",
     "openSignIn": "Fenêtre de connexion",
     "openConfirm": "Fenêtre de confirmation",
@@ -608,6 +609,13 @@
       "title": "Supprimer définitivement cette fiche ?",
       "text": "Cette action est irréversible : la fiche est effacée, ainsi que, pour une œuvre, les entrées de liste de lecture des membres qui la suivent. Pour seulement la cacher, laisse-la archivée.",
       "cancel": "Garder"
+    },
+    "namesake": {
+      "one": "Une fiche porte déjà ce {field} :",
+      "many": "Des fiches portent déjà ce {field} :",
+      "more": "D'autres fiches portent aussi ce {field}.",
+      "name": "nom",
+      "title": "titre"
     },
     "draftBanner": "Cette fiche est un brouillon : elle n'est pas visible du public. Pour la publier, les champs minimum requis (marqués d'une étoile) doivent être remplis.",
     "state": {

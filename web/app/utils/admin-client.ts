@@ -1,5 +1,5 @@
-/** Client of the catalogue administration API (list, read, write, archive and search). */
-import type { AdminDraftCounts } from '../contract/api'
+/** Client of the catalogue administration API (list, read, write, archive, search and namesake lookup). */
+import type { AdminDraftCounts, AdminNamesakes } from '../contract/api'
 import {
   ADMIN_PAGE_SIZE,
   itemLabel,
@@ -66,7 +66,13 @@ export function createAdminClient(request: Request) {
     }))
   }
 
-  return { list, get, create, update, archive, restore, remove, draftCounts, search }
+  /** Records of a kind that already bear `name`; `excludeId` is the record being renamed. */
+  const namesakes = (kind: AdminKind, name: string, excludeId?: number) =>
+    request<AdminNamesakes>(`${base(kind)}/namesakes`, {
+      query: excludeId === undefined ? { name } : { name, excludeId },
+    })
+
+  return { list, get, create, update, archive, restore, remove, draftCounts, search, namesakes }
 }
 
 /** The administration client. */

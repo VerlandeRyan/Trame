@@ -329,6 +329,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/people/namesakes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chercher les homonymes : People */
+        get: operations["listAdminPeopleNamesakes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/people": {
         parameters: {
             query?: never;
@@ -400,6 +417,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/publishers/namesakes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chercher les homonymes : Publishers */
+        get: operations["listAdminPublishersNamesakes"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/publishers": {
         parameters: {
             query?: never;
@@ -465,6 +499,23 @@ export interface paths {
         put?: never;
         /** Restaurer : Publisher */
         post: operations["restoreAdminPublisher"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/works/namesakes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Chercher les homonymes : Works */
+        get: operations["listAdminWorksNamesakes"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -599,6 +650,19 @@ export interface components {
             works: number;
             people: number;
             publishers: number;
+        };
+        AdminNamesakes: {
+            items: {
+                id: number;
+                name: string;
+                /**
+                 * @description Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée.
+                 * @enum {string}
+                 */
+                lifecycle: "draft" | "published" | "archived";
+            }[];
+            /** @description Vrai si d’autres fiches de même nom existent au-delà de celles listées. */
+            hasMore: boolean;
         };
         AdminPerson: {
             id: number;
@@ -2263,6 +2327,67 @@ export interface operations {
             };
         };
     };
+    listAdminPeopleNamesakes: {
+        parameters: {
+            query: {
+                /** @description Nom ou titre saisi, comparé sans tenir compte de la casse ni des accents. */
+                name: string;
+                /** @description Fiche en cours de modification, écartée du résultat. */
+                excludeId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fiches de même nom (liste plafonnée, `hasMore` signale la suite), brouillons et archives compris. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminNamesakes"];
+                };
+            };
+            /** @description Paramètres invalides. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listAdminPeople: {
         parameters: {
             query?: {
@@ -2839,6 +2964,67 @@ export interface operations {
             };
         };
     };
+    listAdminPublishersNamesakes: {
+        parameters: {
+            query: {
+                /** @description Nom ou titre saisi, comparé sans tenir compte de la casse ni des accents. */
+                name: string;
+                /** @description Fiche en cours de modification, écartée du résultat. */
+                excludeId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fiches de même nom (liste plafonnée, `hasMore` signale la suite), brouillons et archives compris. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminNamesakes"];
+                };
+            };
+            /** @description Paramètres invalides. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
     listAdminPublishers: {
         parameters: {
             query?: {
@@ -3379,6 +3565,67 @@ export interface operations {
             };
             /** @description Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`. */
             429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    listAdminWorksNamesakes: {
+        parameters: {
+            query: {
+                /** @description Nom ou titre saisi, comparé sans tenir compte de la casse ni des accents. */
+                name: string;
+                /** @description Fiche en cours de modification, écartée du résultat. */
+                excludeId?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Fiches de même nom (liste plafonnée, `hasMore` signale la suite), brouillons et archives compris. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminNamesakes"];
+                };
+            };
+            /** @description Paramètres invalides. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`. */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -4104,6 +4351,7 @@ export const userRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["sc
 export const visibilityValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Visibility"]> = ["public", "private"];
 export const publicationGapValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["PublicationGap"]> = ["genres", "credits", "publisherIds", "synopses"];
 export const errorCodeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["Error"]["code"]> = ["NOT_FOUND", "VALIDATION_ERROR", "INVALID_JSON", "UNAUTHENTICATED", "HANDLE_REQUIRED", "SIGNUP_EXPIRED", "ADMIN_REQUIRED", "PROFILE_PRIVATE", "PERSON_HAS_WORKS", "PUBLISHER_HAS_WORKS", "INVALID_REFERENCE", "ARCHIVED_REFERENCE", "DRAFT_REFERENCE", "DRAFT_NOT_ARCHIVABLE", "NOT_REMOVABLE", "RECORD_IN_USE", "STALE_RECORD", "FORBIDDEN_ORIGIN", "HANDLE_NOT_ALLOWED", "HANDLE_TAKEN", "AUTH_STATE_INVALID", "AUTH_UNAVAILABLE", "RATE_LIMITED", "INTERNAL_ERROR"];
+export const adminNamesakesItemsLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminNamesakes"]["items"]["lifecycle"]> = ["draft", "published", "archived"];
 export const adminPersonLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPerson"]["lifecycle"]> = ["draft", "published", "archived"];
 export const adminPersonPageItemsLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPersonPage"]["items"]["lifecycle"]> = ["draft", "published", "archived"];
 export const adminPublisherLifecycleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["AdminPublisher"]["lifecycle"]> = ["draft", "published", "archived"];

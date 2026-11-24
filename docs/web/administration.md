@@ -10,7 +10,7 @@ Comportement côté front (Nuxt) de l'administration (#26, US-11, maquette 22). 
 - Un échec de validation affiche `admin.error.validation`, pas `error.VALIDATION_ERROR` (qui parle du pseudo).
 
 ## Formulaires
-- `admin/WorkForm` (sections en onglets, toutes dans le formulaire, une seule visible), `PersonForm`, `PublisherForm`, construits sur `admin/RowList` (lignes modifiables), `RecordPicker` (recherche d'une fiche, `search` fourni par la page) et `LinksFields`.
+- `admin/WorkForm` (sections en onglets, toutes dans le formulaire, une seule visible), `PersonForm`, `PublisherForm`, construits sur `admin/RowList` (lignes modifiables), `RecordPicker` (recherche d'une fiche, `search` fourni par la page) et `LinksFields`. Le champ nom (ou titre) des trois formulaires est enveloppé par `admin/NamesakeNotice`, qui avertit qu'une fiche porte déjà ce nom (voir `composants.md`).
 - Saisie sécurisée par `inputAttributes.sanitize` de `UiField` (`digitsOnly`). Les langues (origine, titres, synopsis) se choisissent dans un `AdminSelectField` (`useLanguageOptions`, liste courte `ADMIN_LANGUAGES`, code ISO affiché ; une langue déjà enregistrée hors liste reste proposée).
 - `admin/PillGroup` : choix en pastilles (type, statut, formats, natures). `admin/TagPicker` : choix multiple dans une longue liste (les genres), cherchée dans un champ, valeurs choisies en pastilles retirables.
 - Libellé d'un code de genre : `useGenreLabel()`.

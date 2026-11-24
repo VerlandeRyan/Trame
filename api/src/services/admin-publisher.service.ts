@@ -5,6 +5,7 @@ import type {
   AdminPublisherListItem,
   AdminPublisherRepository,
 } from '../repositories/admin-publisher.repository.js';
+import type { Namesakes } from '../repositories/admin-sql.js';
 import { listCriteria, type AdminListInput, type Page } from './admin-list.js';
 import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
 import { refuseUpdate, type UpdateInput } from './admin-update.js';
@@ -26,6 +27,7 @@ export interface AdminPublisherService {
   /** Only a draft or archived publisher no work lists (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
   delete(id: number): Promise<void>;
   countDrafts(): Promise<number>;
+  findNamesakes(name: string, excludeId?: number): Promise<Namesakes>;
 }
 
 /** Creates the publisher administration service. */
@@ -78,5 +80,7 @@ export function createAdminPublisherService(
     delete: (id) => deleteRecord(get, repository, id),
 
     countDrafts: () => repository.countDrafts(),
+
+    findNamesakes: (name, excludeId) => repository.findNamesakes(name, excludeId),
   };
 }

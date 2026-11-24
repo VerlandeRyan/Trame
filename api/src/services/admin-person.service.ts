@@ -6,6 +6,7 @@ import type {
   AdminPersonRepository,
   AdminPersonListItem,
 } from '../repositories/admin-person.repository.js';
+import type { Namesakes } from '../repositories/admin-sql.js';
 import { listCriteria, type AdminListInput, type Page } from './admin-list.js';
 import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
 import { refuseUpdate, type UpdateInput } from './admin-update.js';
@@ -27,6 +28,7 @@ export interface AdminPersonService {
   /** Only a draft or archived person no work credits (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
   delete(id: number): Promise<void>;
   countDrafts(): Promise<number>;
+  findNamesakes(name: string, excludeId?: number): Promise<Namesakes>;
 }
 
 /** Creates the people administration service. */
@@ -77,5 +79,7 @@ export function createAdminPersonService(repository: AdminPersonRepository): Adm
     delete: (id) => deleteRecord(get, repository, id),
 
     countDrafts: () => repository.countDrafts(),
+
+    findNamesakes: (name, excludeId) => repository.findNamesakes(name, excludeId),
   };
 }

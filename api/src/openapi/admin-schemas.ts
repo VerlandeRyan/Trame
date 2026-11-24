@@ -18,7 +18,7 @@ import type {
   AdminPersonListItem,
 } from '../repositories/admin-person.repository.js';
 import type { AdminPublisherListItem } from '../repositories/admin-publisher.repository.js';
-import { LIFECYCLES } from '../repositories/admin-sql.js';
+import { LIFECYCLES, type Namesakes } from '../repositories/admin-sql.js';
 import type { DraftCounts } from '../controllers/admin-draft-counts.controller.js';
 import type { Page } from '../services/admin-list.js';
 import type { AdminWorkDetail } from '../services/admin-work.service.js';
@@ -158,6 +158,14 @@ const workListItem = workSummary.extend({
       'Champs qui manquent à un brouillon pour être publié (noms des champs de l’API) ; vide pour une œuvre publiée ou archivée.',
     ),
 }) satisfies z.ZodType<AdminWorkListItem>;
+
+/** Records already bearing a given name. */
+export const adminNamesakesSchema = z.strictObject({
+  items: z.array(z.strictObject({ id: z.number().int(), name: z.string(), lifecycle })),
+  hasMore: z
+    .boolean()
+    .describe('Vrai si d’autres fiches de même nom existent au-delà de celles listées.'),
+}) satisfies z.ZodType<Namesakes>;
 
 /** Number of drafts of each administered resource. */
 export const adminDraftCountsSchema = z.strictObject({

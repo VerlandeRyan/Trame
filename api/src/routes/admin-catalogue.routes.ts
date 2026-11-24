@@ -13,6 +13,7 @@ import { validate } from '../middleware/validate.js';
 import {
   adminListQuery,
   adminWorkListQuery,
+  namesakesQuery,
   personBody,
   personUpdateBody,
   publisherBody,
@@ -42,6 +43,8 @@ function addResourceRoutes(
 ): void {
   const { createBody, updateBody, listQuery } = schemas;
   const item = `${base}/:id`;
+  // Before `item`: `namesakes` is not an identifier.
+  router.get(`${base}/namesakes`, validate('query', namesakesQuery), controller.namesakes);
   router.get(base, validate('query', listQuery), controller.list);
   router.get(item, validate('params', idParams), controller.get);
   router.post(base, limiter, validate('body', createBody), controller.create);

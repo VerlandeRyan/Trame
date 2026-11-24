@@ -20,6 +20,7 @@ import type { ErrorCode } from '../errors.js';
 import {
   adminListQuery,
   adminWorkListQuery,
+  namesakesQuery,
   personBody,
   personUpdateBody,
   publisherBody,
@@ -35,6 +36,7 @@ import { facetsQuery, listWorksQuery, workQuery } from '../schemas/work.js';
 import { sessionCookieName } from '../session/middleware.js';
 import {
   adminDraftCountsSchema,
+  adminNamesakesSchema,
   adminPersonPageSchema,
   adminPersonSchema,
   adminPublisherPageSchema,
@@ -219,6 +221,23 @@ function adminResourcePaths(resource: AdminResource) {
     content: { 'application/json': { schema: toJsonSchema(schema, 'input') } },
   });
   return {
+    [`${base}/namesakes`]: {
+      get: {
+        summary: `Chercher les homonymes : ${resource.plural}`,
+        operationId: `listAdmin${resource.plural}Namesakes`,
+        tags: ['admin'],
+        security: adminSecurity,
+        parameters: toParameters(namesakesQuery, 'query'),
+        responses: {
+          '200': jsonResponse(
+            'AdminNamesakes',
+            'Fiches de même nom (liste plafonnée, `hasMore` signale la suite), brouillons et archives compris.',
+          ),
+          '400': errorResponse('VALIDATION_ERROR', 'Paramètres invalides.'),
+          ...adminErrors,
+        },
+      },
+    },
     [base]: {
       get: {
         summary: `Lister : ${resource.plural}`,
@@ -719,6 +738,7 @@ export function buildOpenApiDocument() {
         ...enumComponents,
         Error: toJsonSchema(errorSchema, 'output'),
         AdminDraftCounts: toJsonSchema(adminDraftCountsSchema, 'output'),
+        AdminNamesakes: toJsonSchema(adminNamesakesSchema, 'output'),
         AdminPerson: toJsonSchema(adminPersonSchema, 'output'),
         AdminPersonPage: toJsonSchema(adminPersonPageSchema, 'output'),
         AdminPublisher: toJsonSchema(adminPublisherSchema, 'output'),

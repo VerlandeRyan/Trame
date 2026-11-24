@@ -33,6 +33,7 @@ function fakeRepository(record: AdminPublisherListItem | null): AdminPublisherRe
     ),
     deleteRecord: vi.fn(async () => record !== null && record.activeWorkCount === 0),
     countDrafts: vi.fn(async () => 1),
+    findNamesakes: vi.fn(async () => ({ items: [], hasMore: false })),
   };
 }
 

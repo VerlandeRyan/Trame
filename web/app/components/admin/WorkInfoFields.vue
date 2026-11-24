@@ -23,6 +23,8 @@ const props = defineProps<{
   titleOnly?: boolean
   /** Gaps the API reported, flagged like the local ones. */
   serverGaps?: readonly PublicationGap[]
+  /** Work being edited, left out of the namesake notice. */
+  recordId?: number
 }>()
 const form = defineModel<WorkFormValues>({ required: true })
 const { t } = useI18n()
@@ -57,13 +59,15 @@ const chosenIn = (options: { value: string }[]) =>
 <template>
   <div class="info">
     <AdminPanel :title="t('admin.work.identity')">
-      <UiField
-        id="work-title"
-        v-model="form.title"
-        :label="t('admin.work.title')"
-        :error="showErrors && isTitleMissing ? t('admin.error.required') : undefined"
-        :input-attributes="{ maxlength: 200, required: true }"
-      />
+      <AdminNamesakeNotice kind="works" :name="form.title" :record-id="recordId">
+        <UiField
+          id="work-title"
+          v-model="form.title"
+          :label="t('admin.work.title')"
+          :error="showErrors && isTitleMissing ? t('admin.error.required') : undefined"
+          :input-attributes="{ maxlength: 200, required: true }"
+        />
+      </AdminNamesakeNotice>
       <AdminSelectField
         v-model="form.originalLanguage"
         :label="t('admin.work.originalLanguage')"

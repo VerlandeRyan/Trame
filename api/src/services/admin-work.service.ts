@@ -10,6 +10,7 @@ import type {
   MissingReferences,
   ReferenceReader,
 } from '../repositories/admin-work.repository.js';
+import type { Namesakes } from '../repositories/admin-sql.js';
 import { listCriteria, type AdminListInput, type Page } from './admin-list.js';
 import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
 import { refuseUpdate, type UpdateInput } from './admin-update.js';
@@ -46,6 +47,7 @@ export interface AdminWorkService {
   /** Only a draft or archived work that no other work relates to (`NOT_REMOVABLE`, `RECORD_IN_USE`). */
   delete(id: number): Promise<void>;
   countDrafts(): Promise<number>;
+  findNamesakes(title: string, excludeId?: number): Promise<Namesakes>;
 }
 
 /** Whether any reference list is non-empty. */
@@ -162,5 +164,7 @@ export function createAdminWorkService(repository: AdminWorkRepository): AdminWo
     delete: (id) => deleteRecord(get, repository, id),
 
     countDrafts: () => repository.countDrafts(),
+
+    findNamesakes: (title, excludeId) => repository.findNamesakes(title, excludeId),
   };
 }
