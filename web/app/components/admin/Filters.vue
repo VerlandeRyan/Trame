@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import {
   ADMIN_LIFECYCLE_FILTERS,
-  ADMIN_WORK_SORTS,
   optionsOf,
+  sortsFor,
   WORK_STATUSES,
   WORK_TYPES,
   type AdminKind,
   type AdminLifecycleFilter,
+  type AdminSort,
   type AdminWorkFilters,
-  type AdminWorkSort,
 } from '~/utils/admin'
 
 /**
- * Filters of an administration list. Every kind has the lifecycle (drafts or published);
- * works also have type, format and status (multiple choice, an empty list means "all") and a sort.
+ * Filters of an administration list. Every kind has the lifecycle (drafts or published) and a sort;
+ * works also have type, format and status (multiple choice, an empty list means "all").
  * Changes are emitted at once. On mobile, the filters fit in a sheet opened by "Filters", like the
  * search page.
  */
@@ -21,7 +21,8 @@ const props = defineProps<{
   kind: AdminKind
   filters: AdminWorkFilters
   lifecycle: AdminLifecycleFilter
-  sort: AdminWorkSort
+  /** Sort really applied (never "drafts first" when the list cannot hold drafts). */
+  sort: AdminSort
   /** Known format codes (manga, webtoon…). */
   formats: string[]
   /** Number of records found, shown by the sheet button. */
@@ -30,7 +31,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   change: [filters: AdminWorkFilters]
   lifecycle: [lifecycle: AdminLifecycleFilter]
-  sort: [sort: AdminWorkSort]
+  sort: [sort: AdminSort]
   /** Clears the lifecycle and every filter at once. */
   reset: []
 }>()
@@ -52,7 +53,9 @@ const statusOptions = computed(() =>
   optionsOf(WORK_STATUSES, (code) => t(`admin.option.workStatus.${code}`)),
 )
 const formatOptions = computed(() => optionsOf(props.formats, genreLabel))
-const sortOptions = computed(() => optionsOf(ADMIN_WORK_SORTS, (code) => t(`admin.sort.${code}`)))
+const sortOptions = computed(() =>
+  optionsOf(sortsFor(props.lifecycle), (code) => t(`admin.sort.${code}`)),
+)
 
 /** Replaces the values of one filter. */
 const setFilter = (name: keyof AdminWorkFilters, values: string[]) =>
@@ -174,14 +177,13 @@ const sheetGroups = computed(() => [
       </UiButton>
     </div>
     <UiSelect
-      v-if="isWorks"
       class="filters__sort"
       boxed
       :model-value="sort"
       :options="sortOptions"
       :label="t('admin.sort.label')"
       trigger-test-id="filter-sort"
-      @update:model-value="emit('sort', $event as AdminWorkSort)"
+      @update:model-value="emit('sort', $event as AdminSort)"
     />
     <UiModal
       v-model="isSheetOpen"

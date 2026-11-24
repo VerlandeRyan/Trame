@@ -574,10 +574,9 @@
     },
     "sort": {
       "label": "Trier par",
+      "drafts": "Brouillons d'abord",
       "title": "Titre A → Z",
-      "title_desc": "Titre Z → A",
-      "completeness": "Moins complètes d'abord",
-      "completeness_desc": "Plus complètes d'abord"
+      "title_desc": "Titre Z → A"
     },
     "empty": "Aucune fiche",
     "emptyHint": "Ajoute une fiche avec le bouton « {action} » en haut de la page.",

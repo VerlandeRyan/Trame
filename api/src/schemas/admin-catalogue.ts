@@ -13,10 +13,9 @@ import {
   WORK_STATUSES,
   WORK_TYPES,
 } from '../domain/catalogue-enums.js';
-import { LIFECYCLE_FILTERS } from '../repositories/admin-sql.js';
+import { ADMIN_SORTS, LIFECYCLE_FILTERS } from '../repositories/admin-sql.js';
 import type { AdminListInput } from '../services/admin-list.js';
 import {
-  ADMIN_WORK_SORTS,
   type AdminWorkCreateInput,
   type AdminWorkListInput,
   type AdminWorkUpdateInput,
@@ -87,17 +86,17 @@ export const adminListQuery = z.object({
       'Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules.',
     )
     .default('active'),
+  sort: z
+    .enum(ADMIN_SORTS)
+    .describe(
+      'Ordre : `drafts` (défaut) brouillons d’abord, les plus incomplets en tête (œuvres), puis fiches publiées, par titre ; `title` titre A→Z ; `title_desc` titre Z→A.',
+    )
+    .default('drafts'),
   ...pageQuery('Éléments'),
 }) satisfies z.ZodType<AdminListInput>;
 
-/** Work list: same parameters plus sort and filters (values of one filter: OR; filters together: AND). */
+/** Work list: same parameters plus filters (values of one filter: OR; filters together: AND). */
 export const adminWorkListQuery = adminListQuery.extend({
-  sort: z
-    .enum(ADMIN_WORK_SORTS)
-    .describe(
-      'Ordre : titre A→Z ou Z→A, complétude croissante (les moins complètes d’abord) ou décroissante.',
-    )
-    .default('title'),
   type: commaSeparatedList(z.enum(WORK_TYPES))
     .describe('Types d’œuvre (OU), séparés par des virgules.')
     .optional(),

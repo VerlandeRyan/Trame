@@ -1,7 +1,7 @@
 /** Catalogue administration: response types, form values and pure conversions (tested without Nuxt). */
 import {
   ADMIN_LIFECYCLE_FILTERS,
-  ADMIN_WORK_SORTS,
+  ADMIN_SORTS,
   PUBLICATION_GAPS,
   WORK_STATUSES,
   WORK_TYPES,
@@ -39,7 +39,7 @@ export {
   WORK_LINK_KINDS,
 } from '../contract/api'
 export type { AdminLink } from '../contract/api'
-export { ADMIN_LIFECYCLE_FILTERS, ADMIN_WORK_SORTS, WORK_STATUSES, WORK_TYPES }
+export { ADMIN_LIFECYCLE_FILTERS, ADMIN_SORTS, WORK_STATUSES, WORK_TYPES }
 export type { AdminLifecycle, AdminPage, PublicationGap }
 
 /** Sections of the work form; the first one is open by default. */
@@ -149,8 +149,20 @@ export const optionsOf = (codes: readonly string[], label: (code: string) => str
 
 // --- List: the address carries the tab, lifecycle, search, filters, sort and page ---
 
-/** Sort order of the work list. */
-export type AdminWorkSort = (typeof ADMIN_WORK_SORTS)[number]
+/** Sort order of an administration list; `drafts` (the default) puts the drafts first. */
+export type AdminSort = (typeof ADMIN_SORTS)[number]
+
+/** Whether a list can hold drafts: neither "Published" nor the archives can. */
+export const canHoldDrafts = (lifecycle: AdminLifecycleFilter) =>
+  lifecycle === 'active' || lifecycle === 'draft'
+
+/** Sort orders a list offers: "drafts first" only means something when it can hold drafts. */
+export const sortsFor = (lifecycle: AdminLifecycleFilter): AdminSort[] =>
+  ADMIN_SORTS.filter((sort) => sort !== 'drafts' || canHoldDrafts(lifecycle))
+
+/** Sort shown in the menu: the chosen one, or the title when "drafts first" is not offered (same order, no draft to put first). */
+export const effectiveSort = (list: Pick<AdminListQuery, 'lifecycle' | 'sort'>): AdminSort =>
+  list.sort === 'drafts' && !canHoldDrafts(list.lifecycle) ? 'title' : list.sort
 
 /** Filters of the work list; an empty list means no filter, several values mean OR. */
 export interface AdminWorkFilters {
@@ -164,7 +176,7 @@ export interface AdminListQuery extends AdminWorkFilters {
   kind: AdminKind
   lifecycle: AdminLifecycleFilter
   q: string
-  sort: AdminWorkSort
+  sort: AdminSort
   page: number
 }
 
@@ -202,7 +214,7 @@ export function parseAdminListQuery(query: Record<string, unknown>): AdminListQu
     type: filterValues(query.type, (code) => isOneOf(WORK_TYPES, code)),
     status: filterValues(query.status, (code) => isOneOf(WORK_STATUSES, code)),
     format: filterValues(query.format, (code) => FORMAT_CODE.test(code)),
-    sort: isOneOf(ADMIN_WORK_SORTS, sort) ? sort : 'title',
+    sort: isOneOf(ADMIN_SORTS, sort) ? sort : 'drafts',
     page: Number.isInteger(page) && page > 1 ? page : 1,
   }
 }
@@ -216,23 +228,23 @@ export function toAdminRouteQuery(list: AdminListQuery): Record<string, string> 
   for (const filter of FILTER_NAMES) {
     if (list[filter].length > 0) query[filter] = list[filter].join(',')
   }
-  if (list.sort !== 'title') query.sort = list.sort
+  if (list.sort !== 'drafts') query.sort = list.sort
   if (list.page > 1) query.page = String(list.page)
   return query
 }
 
-/** API parameters of a list; filters and sort only exist for works. */
+/** API parameters of a list; the filters only exist for works. */
 export function toAdminApiQuery(list: AdminListQuery, pageSize: number) {
   const base = {
     q: list.q || undefined,
     lifecycle: list.lifecycle,
+    sort: list.sort,
     page: list.page,
     pageSize,
   }
   if (list.kind !== 'works') return base
   return {
     ...base,
-    sort: list.sort,
     type: list.type.join(',') || undefined,
     status: list.status.join(',') || undefined,
     format: list.format.join(',') || undefined,
@@ -245,7 +257,7 @@ export function queryForTab(list: AdminListQuery, tab: AdminTab): AdminListQuery
     ...list,
     ...NO_FILTERS,
     q: '',
-    sort: 'title' as const,
+    sort: 'drafts' as const,
     page: 1,
   }
   return tab === 'archives'

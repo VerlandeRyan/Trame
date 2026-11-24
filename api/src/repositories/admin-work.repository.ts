@@ -1,5 +1,5 @@
 /** Queries for administering works: list, read, write (with all child tables) and archive. */
-import { sql, type RawBuilder, type SelectQueryBuilder, type Transaction } from 'kysely';
+import { sql, type RawBuilder, type Transaction } from 'kysely';
 import type { PublicationGap } from '../domain/catalogue-enums.js';
 import type {
   CreditRole,
@@ -17,13 +17,13 @@ import {
   deleteRecordRow,
   DRAFT_GAP_COUNT,
   DRAFT_PUBLICATION_GAPS,
-  DRAFTS_FIRST,
   falseWhenCited,
   FILTERED_TOTAL,
   FORMAT_CODES,
   isVersion,
   lifecycleCondition,
   lifecycleOf,
+  listOrder,
   lockRow,
   MAIN_AUTHOR_NAME,
   nameContains,
@@ -31,6 +31,7 @@ import {
   REMOVABLE,
   totalOf,
   versionOf,
+  type AdminSort,
   type Lifecycle,
   type LifecycleFilter,
 } from './admin-sql.js';
@@ -170,7 +171,7 @@ export interface ReferenceLookup {
 export interface AdminWorkListCriteria {
   q?: string;
   lifecycle: LifecycleFilter;
-  sort: 'title' | 'title_desc' | 'completeness' | 'completeness_desc';
+  sort: AdminSort;
   types?: WorkType[];
   statuses?: WorkStatus[];
   /** Format codes: the work must have one of them. */
@@ -452,24 +453,13 @@ function titleOrAuthorContains(text: string): RawBuilder<boolean> {
   ))`;
 }
 
-/** List sort; the title always breaks ties (then the identifier, added by the caller). */
-function orderWorks<O>(
-  query: SelectQueryBuilder<Database, 'work' | 'app_user', O>,
-  sort: AdminWorkListCriteria['sort'],
-) {
-  const byTitle = sql`immutable_unaccent(work.title)`;
-  switch (sort) {
-    case 'title_desc':
-      return query.orderBy(byTitle, 'desc');
-    // Least complete first = most missing fields first.
-    case 'completeness':
-      return query.orderBy(DRAFT_GAP_COUNT, 'desc').orderBy(byTitle);
-    case 'completeness_desc':
-      return query.orderBy(DRAFT_GAP_COUNT, 'asc').orderBy(byTitle);
-    default:
-      return query.orderBy(byTitle);
-  }
-}
+/** `ORDER BY` of the work list for a sort (the identifier breaks the last ties, added by the caller). */
+const orderWorks = (sort: AdminSort) =>
+  listOrder(sort, {
+    publishedAt: 'work.published_at',
+    title: sql`immutable_unaccent(work.title)`,
+    gapCount: DRAFT_GAP_COUNT,
+  });
 
 /** Creates the work administration repository. */
 export function createAdminWorkRepository(db: Db): AdminWorkRepository {
@@ -538,8 +528,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         .select(FORMAT_CODES.as('formats'))
         .select(DRAFT_PUBLICATION_GAPS.as('publicationGaps'))
         .select(FILTERED_TOTAL.as('total'))
-        .orderBy(DRAFTS_FIRST('work.published_at'))
-        .$call((query) => orderWorks(query, criteria.sort))
+        .orderBy(orderWorks(criteria.sort))
         .orderBy('work.id')
         .limit(criteria.limit)
         .offset(criteria.offset)

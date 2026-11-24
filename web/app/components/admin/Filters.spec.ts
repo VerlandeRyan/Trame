@@ -1,20 +1,20 @@
 import { mountSuspended } from '@nuxt/test-utils/runtime'
 import { describe, expect, it } from 'vitest'
-import type { AdminKind, AdminLifecycleFilter, AdminWorkFilters } from '~/utils/admin'
+import type { AdminKind, AdminLifecycleFilter, AdminSort, AdminWorkFilters } from '~/utils/admin'
 import AdminFilters from './Filters.vue'
 
 const NO_FILTERS: AdminWorkFilters = { type: [], status: [], format: [] }
 
 const mountFilters = (
   filters: AdminWorkFilters = NO_FILTERS,
-  extra: { kind?: AdminKind; lifecycle?: AdminLifecycleFilter } = {},
+  extra: { kind?: AdminKind; lifecycle?: AdminLifecycleFilter; sort?: AdminSort } = {},
 ) =>
   mountSuspended(AdminFilters, {
     props: {
       kind: 'works',
       filters,
       lifecycle: 'active',
-      sort: 'title',
+      sort: 'drafts',
       formats: ['manga', 'webtoon'],
       total: 12,
       ...extra,
@@ -61,9 +61,36 @@ describe('AdminFilters', () => {
   it('émet le tri choisi', async () => {
     const wrapper = await mountFilters()
 
-    await choose(wrapper, 'filter-sort', 'Moins complètes')
+    await choose(wrapper, 'filter-sort', 'Titre Z → A')
 
-    expect(wrapper.emitted('sort')?.[0]).toEqual(['completeness'])
+    expect(wrapper.emitted('sort')?.[0]).toEqual(['title_desc'])
+  })
+
+  /** Labels of the sort menu once opened. */
+  async function sortLabels(wrapper: Wrapper) {
+    await wrapper.get('[data-testid="filter-sort"]').trigger('click')
+    return wrapper
+      .get('.filters__sort')
+      .findAll('[role="option"]')
+      .map((option) => option.text())
+  }
+
+  it('propose « Brouillons d’abord » quand la liste peut contenir des brouillons', async () => {
+    const wrapper = await mountFilters()
+
+    expect(await sortLabels(wrapper)).toEqual(["Brouillons d'abord", 'Titre A → Z', 'Titre Z → A'])
+  })
+
+  it('ne propose pas « Brouillons d’abord » parmi les fiches publiées', async () => {
+    const wrapper = await mountFilters(NO_FILTERS, { lifecycle: 'published', sort: 'title' })
+
+    expect(await sortLabels(wrapper)).toEqual(['Titre A → Z', 'Titre Z → A'])
+  })
+
+  it('propose le tri aussi pour les personnes et les éditeurs', async () => {
+    const wrapper = await mountFilters(NO_FILTERS, { kind: 'people' })
+
+    expect(wrapper.find('[data-testid="filter-sort"]').exists()).toBe(true)
   })
 
   it('compte les filtres actifs sur le bouton de la feuille mobile', async () => {
@@ -133,11 +160,11 @@ describe('AdminFilters', () => {
     expect(draftOnly.emitted('lifecycle')?.[0]).toEqual(['active'])
   })
 
-  it('ne garde que l’état pour les personnes et les éditeurs', async () => {
+  it('ne garde que l’état et le tri pour les personnes et les éditeurs', async () => {
     const wrapper = await mountFilters(NO_FILTERS, { kind: 'people' })
 
     expect(wrapper.find('[data-testid="admin-state-filter"]').exists()).toBe(true)
-    for (const testId of ['filter-type', 'filter-format', 'filter-status', 'filter-sort']) {
+    for (const testId of ['filter-type', 'filter-format', 'filter-status']) {
       expect(wrapper.find(`[data-testid="${testId}"]`).exists()).toBe(false)
     }
     expect(wrapper.findAll('.filter-group')).toHaveLength(1)

@@ -23,8 +23,8 @@ export {
   workTypeValues as WORK_TYPES,
   // Values of the list filter `lifecycle` (the generator's long name, aliased once).
   pathsApiV1AdminWorksGetParametersQueryLifecycleValues as ADMIN_LIFECYCLE_FILTERS,
-  // Sort orders of the administration work list.
-  pathsApiV1AdminWorksGetParametersQuerySortValues as ADMIN_WORK_SORTS,
+  // Sort orders of the administration lists (the same for works, people and publishers).
+  pathsApiV1AdminWorksGetParametersQuerySortValues as ADMIN_SORTS,
   // Sort orders of the search and of the reading list.
   pathsApiV1WorksGetParametersQuerySortValues as SEARCH_SORTS,
   pathsApiV1MeEntriesGetParametersQuerySortValues as LIST_SORTS,

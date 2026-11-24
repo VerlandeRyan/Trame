@@ -44,12 +44,14 @@ describe('liste', () => {
     const page = await service.list({
       q: 'le',
       lifecycle: 'draft',
+      sort: 'title_desc',
       page: 3,
       pageSize: 20,
     });
     expect(repository.list).toHaveBeenCalledWith({
       q: 'le',
       lifecycle: 'draft',
+      sort: 'title_desc',
       limit: 20,
       offset: 40,
     });

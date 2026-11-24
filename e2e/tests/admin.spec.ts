@@ -212,7 +212,7 @@ test('les filtres et le tri de la liste des œuvres se combinent', async ({ page
   await page.goto(`/admin/catalogue?q=${author}&type=oneshot,series`)
   await expect(rows).toHaveCount(1)
 
-  await page.goto(`/admin/catalogue?q=${author}&sort=completeness_desc`)
+  await page.goto(`/admin/catalogue?q=${author}&sort=title_desc`)
   await expect(rows).toHaveCount(1)
   await page.getByTestId('admin-search').fill('')
   // La recherche s'applique après une pause : on l'attend, sinon elle écrase le filtre coché ensuite.
@@ -231,6 +231,26 @@ test('les filtres et le tri de la liste des œuvres se combinent', async ({ page
   }
   await expect(page).not.toHaveURL(/type=/)
   await expect.poll(() => rows.count()).toBeGreaterThan(1)
+})
+
+test('« Brouillons d’abord » est le tri par défaut, absent parmi les fiches publiées', async ({
+  page,
+}) => {
+  const sortChoice = page.getByRole('option', { name: "Brouillons d'abord" })
+
+  await page.goto('/admin/catalogue')
+  await waitForHydration(page)
+  await expect(page.getByTestId('filter-sort')).toContainText("Brouillons d'abord")
+  await page.getByTestId('filter-sort').click()
+  await page.getByRole('option', { name: 'Titre Z → A' }).click()
+  await expect(page).toHaveURL(/sort=title_desc/)
+
+  await page.goto('/admin/catalogue?lifecycle=published')
+  await waitForHydration(page)
+  await expect(page.getByTestId('filter-sort')).toContainText('Titre A → Z')
+  await page.getByTestId('filter-sort').click()
+  await expect(page.getByRole('option', { name: 'Titre Z → A' })).toBeVisible()
+  await expect(sortChoice).toHaveCount(0)
 })
 
 test('revenir d’une fiche garde l’onglet et la recherche de la liste', async ({ page }) => {
