@@ -157,14 +157,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
         <UiDraftBadge v-if="record?.lifecycle === 'draft'" data-testid="admin-state">{{
           t(stateKey)
         }}</UiDraftBadge>
-        <span
+        <UiStateBadge
           v-else-if="record"
-          class="edit__badge"
-          :class="{ 'edit__badge--archived': record.lifecycle === 'archived' }"
+          :state="record.lifecycle === 'archived' ? 'archived' : 'published'"
           data-testid="admin-state"
         >
           {{ t(stateKey) }}
-        </span>
+        </UiStateBadge>
       </div>
       <template v-if="record">
         <UiButton
@@ -335,19 +334,6 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
   margin: 0;
   overflow-wrap: anywhere;
   color: var(--color-blue);
-}
-
-.edit__badge {
-  padding: 1px 9px;
-  border: var(--border);
-  border-radius: var(--radius);
-  background: var(--status-reading);
-  font-size: 0.75rem;
-  font-weight: 800;
-}
-
-.edit__badge--archived {
-  background: var(--color-chip);
 }
 
 .edit__banner {

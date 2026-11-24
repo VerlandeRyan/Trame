@@ -6,6 +6,7 @@ import {
   GENRE_CATEGORIES,
   PERSON_KINDS,
   PERSON_LINK_KINDS,
+  PUBLICATION_GAPS,
   PUBLISHER_KINDS,
   RELATION_KINDS,
   SYNOPSIS_SOURCES,
@@ -31,7 +32,6 @@ import { idParams } from '../schemas/common.js';
 import { entryBody, listEntriesQuery } from '../schemas/library.js';
 import { profileParams, profileQuery, visibilityBody } from '../schemas/profile.js';
 import { facetsQuery, listWorksQuery, workQuery } from '../schemas/work.js';
-import { PUBLICATION_GAPS } from '../services/admin-publication.js';
 import { sessionCookieName } from '../session/middleware.js';
 import {
   adminDraftCountsSchema,

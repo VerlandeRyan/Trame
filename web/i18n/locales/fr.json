@@ -631,7 +631,7 @@
       "typeFormat": "Type · format",
       "author": "Auteur",
       "status": "Statut",
-      "completeness": "Complétude",
+      "publication": "Publication",
       "name": "Nom",
       "kindLabel": "Nature",
       "works": "Œuvres"
@@ -639,7 +639,17 @@
     "row": {
       "updated": "Modifiée {age}",
       "archivedBy": "Archivée {age} par {'@'}{handle}",
-      "completeness": "Complétude : {percent} %",
+      "publication": {
+        "ready": "Prête",
+        "publishedOn": "Publiée le {date}",
+        "missing": "Manque : {fields}",
+        "gap": {
+          "genres": "format",
+          "credits": "auteur",
+          "publisherIds": "éditeur",
+          "synopses": "synopsis"
+        }
+      },
       "worksCount": "{count} œuvre | {count} œuvres",
       "actions": "Actions pour {name}",
       "menu": { "edit": "Modifier la fiche", "relations": "Relations et liens" }

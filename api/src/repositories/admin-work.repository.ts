@@ -1,5 +1,6 @@
 /** Queries for administering works: list, read, write (with all child tables) and archive. */
 import { sql, type RawBuilder, type SelectQueryBuilder, type Transaction } from 'kysely';
+import type { PublicationGap } from '../domain/catalogue-enums.js';
 import type {
   CreditRole,
   Database,
@@ -12,9 +13,10 @@ import type {
 } from '../db/database.js';
 import {
   archiveColumns,
-  COMPLETENESS_PERCENT,
   countDraftRows,
   deleteRecordRow,
+  DRAFT_GAP_COUNT,
+  DRAFT_PUBLICATION_GAPS,
   DRAFTS_FIRST,
   falseWhenCited,
   FILTERED_TOTAL,
@@ -102,11 +104,13 @@ export interface AdminWorkListItem extends AdminWorkSummary {
   mainAuthor: string | null;
   /** ISO 8601 dates. */
   updatedAt: string;
+  /** Null for a draft. */
+  publishedAt: string | null;
   /** When and by whom, for an archived work. */
   archivedAt: string | null;
   archivedBy: string | null;
-  /** 0 to 100, by quarters: synopsis, publisher, link, cover. */
-  completeness: number;
+  /** What a draft still lacks to be published; empty for a published or archived work. */
+  publicationGaps: PublicationGap[];
 }
 
 /** Name of a record cited by a work (archived or not), used to fill the selectors. */
@@ -457,10 +461,11 @@ function orderWorks<O>(
   switch (sort) {
     case 'title_desc':
       return query.orderBy(byTitle, 'desc');
+    // Least complete first = most missing fields first.
     case 'completeness':
-      return query.orderBy(COMPLETENESS_PERCENT, 'asc').orderBy(byTitle);
+      return query.orderBy(DRAFT_GAP_COUNT, 'desc').orderBy(byTitle);
     case 'completeness_desc':
-      return query.orderBy(COMPLETENESS_PERCENT, 'desc').orderBy(byTitle);
+      return query.orderBy(DRAFT_GAP_COUNT, 'asc').orderBy(byTitle);
     default:
       return query.orderBy(byTitle);
   }
@@ -531,7 +536,7 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         ])
         .select(MAIN_AUTHOR_NAME.as('mainAuthor'))
         .select(FORMAT_CODES.as('formats'))
-        .select(COMPLETENESS_PERCENT.as('completeness'))
+        .select(DRAFT_PUBLICATION_GAPS.as('publicationGaps'))
         .select(FILTERED_TOTAL.as('total'))
         .orderBy(DRAFTS_FIRST('work.published_at'))
         .$call((query) => orderWorks(query, criteria.sort))
@@ -555,9 +560,10 @@ export function createAdminWorkRepository(db: Db): AdminWorkRepository {
         formats: row.formats,
         mainAuthor: row.mainAuthor,
         updatedAt: row.updated_at.toISOString(),
+        publishedAt: row.published_at?.toISOString() ?? null,
         archivedAt: row.deleted_at?.toISOString() ?? null,
         archivedBy: row.archivedBy,
-        completeness: row.completeness,
+        publicationGaps: row.publicationGaps,
       }));
       return { items, total };
     },

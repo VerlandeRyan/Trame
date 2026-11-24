@@ -5,6 +5,7 @@ Un sous-dossier de `app/components/` = un préfixe de nom (`ui/Button.vue` → `
 ## `ui/` — génériques
 - `Button` : avec `href`, un lien à l'aspect d'un bouton ; `block` : pleine largeur, survol au palier `wide` (−1,2°) au lieu de `medium` (−1,6°) pour ne pas déborder sur les voisins. La règle `:active` est déclarée **après** les variantes, sinon l'inclinaison du survol l'emporte et le bouton ne s'enfonce pas au clic.
 - `Chip`.
+- `StateBadge` : pastille de l'état d'une fiche sortie des brouillons, `state="published"` (verte, `--status-reading`) ou `"archived"` (rose, `--color-chip`), seule définition de ce rôle (titre de la fiche, lignes de la liste d'administration) ; le texte est passé en contenu, les attributs passent au `span`.
 - `DraftBadge` : pastille jaune (`--status-on_hold`) « Brouillon », seule définition de ce rôle (lignes de la liste d'administration, fiche, propositions de `admin/RecordPicker`) ; le texte est passé en contenu, les attributs (`data-testid`) passent au `span`.
 - `Counter` : − / saisie / +.
 - `Field` : préfixe, erreur annoncée, `inputAttributes` ; `inputAttributes.required` ajoute l'étoile et `aria-required`, jamais l'attribut natif `required` (les formulaires se valident eux-mêmes).

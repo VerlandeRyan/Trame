@@ -19,14 +19,14 @@ Comportement côté front (Nuxt) de l'administration (#26, US-11, maquette 22). 
 
 ## Liste
 - Chaque onglet a sa recherche (changer d'onglet la vide, `queryForTab`), son placeholder et son bouton de création (« Nouvelle œuvre / personne / éditeur », absent des archives).
-- Les œuvres ont en plus `admin/Filters` : type, format, statut en `UiMultiSelect` (bouton à cadre, cases à cocher, OU dans un filtre, valeurs en liste séparée par des virgules dans l'adresse) ; tri A→Z / complétude en `UiSelect boxed` ; « Réinitialiser » seulement si un filtre est actif. Leur recherche porte aussi sur le nom des auteurs (pas de champ « Auteur »).
+- Les œuvres ont en plus `admin/Filters` : type, format, statut en `UiMultiSelect` (bouton à cadre, cases à cocher, OU dans un filtre, valeurs en liste séparée par des virgules dans l'adresse) ; tri A→Z / moins ou plus complètes d'abord (nombre de champs qui manquent pour publier) en `UiSelect boxed` ; « Réinitialiser » seulement si un filtre est actif. Leur recherche porte aussi sur le nom des auteurs (pas de champ « Auteur »).
 - Barre `admin/Nav`, onglets soulignés (`UiTabs underline` : Œuvres, Personnes, Éditeurs et plateformes, Archives avec leur nombre pour le type en cours).
-- Tableau `admin/ResourceRows` : type · format, auteur, statut, complétude, « Modifier » ou « Restaurer ». Archiver se fait depuis la fiche (bouton `danger`, enregistrer en `success`). Jusqu'à 1023 px (téléphone et tablette) le tableau devient des cartes et les filtres passent dans une feuille. La feuille « ⋮ » est `admin/RowMenu` (`v-model`, émet `restore`, `archive` et `remove` ; la confirmation reste dans `ResourceRows`).
+- Tableau `admin/ResourceRows` : type · format, auteur, statut, publication (brouillon : « Prête » ou « Manque : format, auteur, éditeur, synopsis » en rouge `--color-crimson`, selon ce qui manque ; fiche publiée : « Publiée le 12 mars 2026 », avec la pastille « Publiée » (`UiStateBadge`) à côté du titre, comme « Brouillon » ; la colonne n'existe que si la liste contient un brouillon, donc ni dans les Archives ni avec l'état « Publiées »), « Modifier » ou « Restaurer ». Archiver se fait depuis la fiche (bouton `danger`, enregistrer en `success`). Jusqu'à 1023 px (téléphone et tablette) le tableau devient des cartes et les filtres passent dans une feuille. La feuille « ⋮ » est `admin/RowMenu` (`v-model`, émet `restore`, `archive` et `remove` ; la confirmation reste dans `ResourceRows`).
 - `admin/FilterGroup` (cases sans compteurs, feuille de filtres mobile) reste distinct de `search/FilterGroup` (facettes, compteurs, recherche, « Voir les N autres »).
 - Pastille ADMIN dans l'en-tête.
 
 ## Écarts avec la maquette
-Pas de filtre « À compléter » (le tri par complétude le remplace) ni de couvertures (#27) ; les filtres et les menus de rôle ou de relation gardent le `UiSelect` du site.
+Pas de filtre « À compléter » (le tri « moins complètes d'abord » et la colonne Publication le remplacent) ni de couvertures (#27) ; les filtres et les menus de rôle ou de relation gardent le `UiSelect` du site.
 
 ## Version de la fiche
 `GET /admin/{ressource}/{id}` donne `updatedAt`, gardé dans l'état du formulaire (`WorkFormValues`, `PersonFormValues`, `PublisherFormValues`) et renvoyé au `PUT` ; si quelqu'un a enregistré entre-temps, `STALE_RECORD` (409) s'affiche sans quitter la fiche.

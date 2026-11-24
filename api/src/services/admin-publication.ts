@@ -1,9 +1,6 @@
 /** The single rule of what a work needs to be published, served to the web and enforced on publication. */
+import { PUBLICATION_GAPS, type PublicationGap } from '../domain/catalogue-enums.js';
 import type { AdminWorkCreateInput } from '../repositories/admin-work.repository.js';
-
-/** Names of the fields (as the API calls them) a work can lack to be published. */
-export const PUBLICATION_GAPS = ['genres', 'credits', 'publisherIds', 'synopses'] as const;
-export type PublicationGap = (typeof PUBLICATION_GAPS)[number];
 
 /**
  * Fields a published work cannot do without: a format, an author, a publisher and a synopsis in

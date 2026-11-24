@@ -627,7 +627,7 @@
       "typeFormat": "Type · format",
       "author": "Author",
       "status": "Status",
-      "completeness": "Completeness",
+      "publication": "Publication",
       "name": "Name",
       "kindLabel": "Kind",
       "works": "Works"
@@ -635,7 +635,17 @@
     "row": {
       "updated": "Updated {age}",
       "archivedBy": "Archived {age} by {'@'}{handle}",
-      "completeness": "Completeness: {percent}%",
+      "publication": {
+        "ready": "Ready",
+        "publishedOn": "Published on {date}",
+        "missing": "Missing: {fields}",
+        "gap": {
+          "genres": "format",
+          "credits": "author",
+          "publisherIds": "publisher",
+          "synopses": "synopsis"
+        }
+      },
       "worksCount": "{count} work | {count} works",
       "actions": "Actions for {name}",
       "menu": { "edit": "Edit the record", "relations": "Relations and links" }
