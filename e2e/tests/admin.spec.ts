@@ -197,6 +197,31 @@ test('une ligne existante sans champ obligatoire est signalée dans son onglet',
   ).toBeVisible()
 })
 
+test('un onglet signalé caché au téléphone est annoncé par une pastille sur la flèche', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 })
+  await page.goto('/admin/catalogue/works/new')
+  await waitForHydration(page)
+  await page.locator('#work-title').fill(`${WORK} onglet caché`)
+  await page.getByTestId('pill-manga').click()
+  await page.getByRole('tab', { name: 'Liens' }).click()
+  await page.getByRole('button', { name: 'Ajouter un lien' }).click()
+  await page.getByTestId('admin-publish').click()
+  await expect(page.getByRole('tab', { name: 'Liens' }).getByRole('img')).toBeVisible()
+
+  const tablist = page.getByRole('tablist', { name: 'Sections de la fiche' })
+  await tablist.evaluate((element) => element.scrollTo({ left: 0, behavior: 'instant' }))
+  await expect(tablist.getByTestId('tabs-arrow-alert-end')).toBeVisible()
+
+  await tablist.evaluate((element) =>
+    element.scrollTo({ left: element.scrollWidth, behavior: 'instant' }),
+  )
+  // « Titres et synopsis », lui aussi signalé, est maintenant caché à gauche.
+  await expect(tablist.getByTestId('tabs-arrow-alert-start')).toBeVisible()
+  await expect(tablist.getByTestId('tabs-arrow-alert-end')).toHaveCount(0)
+})
+
 test('les filtres et le tri de la liste des œuvres se combinent', async ({ page }) => {
   const author = encodeURIComponent(PERSON)
   const rows = page.getByTestId('admin-row')

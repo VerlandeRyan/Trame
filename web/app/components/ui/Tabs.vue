@@ -23,15 +23,28 @@ const tablist = ref<HTMLElement | null>(null)
 // Chevrons of underlined tabs: they signal tabs hidden on either side.
 const hasHiddenBefore = ref(false)
 const hasHiddenAfter = ref(false)
+// A chevron also carries a dot when an alerted tab is hidden on its side.
+const hasAlertBefore = ref(false)
+const hasAlertAfter = ref(false)
 // Share of the visible width covered by a click on a chevron.
 const SCROLL_STEP_RATIO = 0.6
+// Mirrors the chevron's size and offset in the styles below (30 px + 2 px): change them together.
+const CHEVRON_COVER = 32
 
-/** Updates which sides have hidden tabs. */
+/** Updates which sides have hidden tabs, and whether an alert dot is hidden on one of them. */
 function updateHiddenTabs() {
   const element = tablist.value
   if (!element) return
   hasHiddenBefore.value = element.scrollLeft > 1
   hasHiddenAfter.value = element.scrollLeft + element.clientWidth < element.scrollWidth - 1
+  const bar = element.getBoundingClientRect()
+  const dots = [...element.querySelectorAll('.tabs__alert')].map((dot) =>
+    dot.getBoundingClientRect(),
+  )
+  hasAlertBefore.value =
+    hasHiddenBefore.value && dots.some((dot) => dot.left < bar.left + CHEVRON_COVER)
+  hasAlertAfter.value =
+    hasHiddenAfter.value && dots.some((dot) => dot.right > bar.right - CHEVRON_COVER)
 }
 
 /** Scrolls the tab list by a share of its visible width. */
@@ -57,6 +70,13 @@ onMounted(() => {
 })
 onBeforeUnmount(() => resizeObserver?.disconnect())
 watch(activeTabId, () => props.underline && nextTick(revealActiveTab))
+// An alert, a label or a count can change a tab's width without any scroll; `post` measures after
+// the DOM update. A string key, so that unrelated re-renders of the parent do not re-measure.
+watch(
+  () => props.tabs.map((tab) => `${tab.label}|${tab.count}|${tab.alert ? 1 : 0}`).join(),
+  () => props.underline && updateHiddenTabs(),
+  { flush: 'post' },
+)
 
 /** Index of the tab targeted by a navigation key; undefined if the key is not one. */
 function targetIndexFor(key: string, currentIndex: number): number | undefined {
@@ -110,6 +130,11 @@ function registerButton(element: unknown, index: number) {
         @click="scrollTabs(-1)"
       >
         <Icon name="tabler:chevron-left" size="16" />
+        <span
+          v-if="hasAlertBefore"
+          class="tabs__arrow-alert"
+          data-testid="tabs-arrow-alert-start"
+        />
       </button>
     </span>
     <button
@@ -151,6 +176,7 @@ function registerButton(element: unknown, index: number) {
         @click="scrollTabs(1)"
       >
         <Icon name="tabler:chevron-right" size="16" />
+        <span v-if="hasAlertAfter" class="tabs__arrow-alert" data-testid="tabs-arrow-alert-end" />
       </button>
     </span>
   </div>
@@ -284,6 +310,18 @@ function registerButton(element: unknown, index: number) {
   .tabs__edge--end & {
     right: 2px;
   }
+}
+
+// Same crimson as the tab's dot, ringed in the chevron's white so it stays readable on it.
+.tabs__arrow-alert {
+  position: absolute;
+  top: -6px;
+  right: -2px;
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-crimson);
 }
 
 .tabs__status-dot {
