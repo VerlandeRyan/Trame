@@ -64,10 +64,10 @@ describe('suggestions de recherche du header', () => {
 })
 
 describe('recherche du catalogue d’administration', () => {
-  it('prend sa propre rangée jusqu’à 1279 px, les filtres passent dessous', () => {
+  it('prend sa propre rangée jusqu’à 1535 px, les filtres passent dessous', () => {
     const search = ruleBody(readSource('pages/admin/catalogue/index.vue'), 'catalogue__search')
 
-    expect(search).toContain('(max-width: 1279px)')
+    expect(search).toContain('(max-width: 1535px)')
     expect(search).toContain('flex-basis: 100%')
   })
 })

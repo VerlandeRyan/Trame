@@ -354,9 +354,9 @@ const remove = (item: AdminListItem) =>
   min-width: 14rem;
   max-width: 28rem;
 
-  // Up to 1279 px the search takes the whole row and the filters go below: side by side,
-  // the sort fell alone onto a third row.
-  @media (max-width: 1279px) {
+  // Up to 1535 px the search takes the whole row and the filters go below: side by side,
+  // the filters and the sort do not fit, so the sort fell alone onto a second row.
+  @media (max-width: 1535px) {
     flex-basis: 100%;
     max-width: none;
   }
