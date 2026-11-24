@@ -2270,6 +2270,8 @@ export interface operations {
                 q?: string;
                 /** @description Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules. */
                 lifecycle?: "active" | "draft" | "published" | "archived";
+                /** @description Ordre : `drafts` (défaut) brouillons d’abord, les plus incomplets en tête (œuvres), puis fiches publiées, par titre ; `title` titre A→Z ; `title_desc` titre Z→A. */
+                sort?: "drafts" | "title" | "title_desc";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
@@ -2844,6 +2846,8 @@ export interface operations {
                 q?: string;
                 /** @description Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules. */
                 lifecycle?: "active" | "draft" | "published" | "archived";
+                /** @description Ordre : `drafts` (défaut) brouillons d’abord, les plus incomplets en tête (œuvres), puis fiches publiées, par titre ; `title` titre A→Z ; `title_desc` titre Z→A. */
+                sort?: "drafts" | "title" | "title_desc";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
@@ -3400,12 +3404,12 @@ export interface operations {
                 q?: string;
                 /** @description Cycle de vie : `active` (défaut) brouillons et fiches publiées, `draft` brouillons seuls, `published` fiches publiées non archivées, `archived` archives seules. */
                 lifecycle?: "active" | "draft" | "published" | "archived";
+                /** @description Ordre : `drafts` (défaut) brouillons d’abord, les plus incomplets en tête (œuvres), puis fiches publiées, par titre ; `title` titre A→Z ; `title_desc` titre Z→A. */
+                sort?: "drafts" | "title" | "title_desc";
                 /** @description Numéro de page. */
                 page?: number;
                 /** @description Éléments par page. */
                 pageSize?: number;
-                /** @description Ordre : titre A→Z ou Z→A, complétude croissante (les moins complètes d’abord) ou décroissante. */
-                sort?: "title" | "title_desc" | "completeness" | "completeness_desc";
                 /** @description Types d’œuvre (OU), séparés par des virgules. */
                 type?: string;
                 /** @description Statuts de publication (OU), séparés par des virgules. */
@@ -4078,9 +4082,11 @@ export const pathsApiV1UsersHandleGetParametersQueryLangValues: ReadonlyArray<Fl
 export const pathsApiV1UsersHandleEntriesGetParametersQueryLangValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}/entries"]["get"]["parameters"]["query"]["lang"]> = ["fr", "en"];
 export const pathsApiV1UsersHandleEntriesGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/users/{handle}/entries"]["get"]["parameters"]["query"]["sort"]> = ["updated", "title", "rating"];
 export const pathsApiV1AdminPeopleGetParametersQueryLifecycleValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/people"]["get"]["parameters"]["query"]["lifecycle"]> = ["active", "draft", "published", "archived"];
+export const pathsApiV1AdminPeopleGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/people"]["get"]["parameters"]["query"]["sort"]> = ["drafts", "title", "title_desc"];
 export const pathsApiV1AdminPublishersGetParametersQueryLifecycleValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/publishers"]["get"]["parameters"]["query"]["lifecycle"]> = ["active", "draft", "published", "archived"];
+export const pathsApiV1AdminPublishersGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/publishers"]["get"]["parameters"]["query"]["sort"]> = ["drafts", "title", "title_desc"];
 export const pathsApiV1AdminWorksGetParametersQueryLifecycleValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["lifecycle"]> = ["active", "draft", "published", "archived"];
-export const pathsApiV1AdminWorksGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["sort"]> = ["title", "title_desc", "completeness", "completeness_desc"];
+export const pathsApiV1AdminWorksGetParametersQuerySortValues: ReadonlyArray<FlattenedDeepRequired<paths>["/api/v1/admin/works"]["get"]["parameters"]["query"]["sort"]> = ["drafts", "title", "title_desc"];
 export const workTypeValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkType"]> = ["series", "oneshot", "anthology"];
 export const workStatusValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["WorkStatus"]> = ["upcoming", "ongoing", "completed", "hiatus", "abandoned"];
 export const creditRoleValues: ReadonlyArray<FlattenedDeepRequired<components>["schemas"]["CreditRole"]> = ["story", "art", "colors", "other"];

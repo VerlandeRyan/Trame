@@ -5,17 +5,18 @@ import {
   archiveColumns,
   countDraftRows,
   deleteRecordRow,
-  DRAFTS_FIRST,
   falseWhenCited,
   FILTERED_TOTAL,
   isVersion,
   lifecycleCondition,
   lifecycleOf,
   lockRow,
+  namedListOrder,
   nameContains,
   publishedAtOnUpdate,
   totalOf,
   versionOf,
+  type AdminSort,
   type Lifecycle,
   type LifecycleFilter,
 } from './admin-sql.js';
@@ -42,10 +43,11 @@ export interface AdminPublisherListItem extends Omit<AdminPublisherCreateInput, 
   archivedBy: string | null;
 }
 
-/** Search, lifecycle and page of a publisher list. */
+/** Search, lifecycle, sort and page of a publisher list. */
 export interface AdminPublisherListCriteria {
   q?: string;
   lifecycle: LifecycleFilter;
+  sort: AdminSort;
   limit: number;
   offset: number;
 }
@@ -133,8 +135,7 @@ export function createAdminPublisherRepository(db: Db): AdminPublisherRepository
     async list(criteria) {
       const rows = await selectSummaries(filtered(criteria))
         .select(FILTERED_TOTAL.as('total'))
-        .orderBy(DRAFTS_FIRST('publisher.published_at'))
-        .orderBy(sql`immutable_unaccent(publisher.name)`)
+        .orderBy(namedListOrder(criteria.sort, 'publisher'))
         .orderBy('publisher.id')
         .limit(criteria.limit)
         .offset(criteria.offset)

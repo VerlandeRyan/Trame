@@ -7,6 +7,8 @@ import {
   archiveImpact,
   adminErrorKey,
   digitsOnly,
+  effectiveSort,
+  sortsFor,
   formValuesToPersonBody,
   formValuesToPublisherBody,
   formValuesToWorkBody,
@@ -112,16 +114,35 @@ describe('liste du catalogue dans l’adresse', () => {
         type: 'oneshot',
         status: 'ongoing,completed',
         format: 'manga,webtoon',
-        sort: 'completeness',
+        sort: 'title_desc',
       }),
     ).toEqual(
       listOf({
         type: ['oneshot'],
         status: ['ongoing', 'completed'],
         format: ['manga', 'webtoon'],
-        sort: 'completeness',
+        sort: 'title_desc',
       }),
     )
+  })
+
+  it('« Brouillons d’abord » est le tri par défaut', () => {
+    expect(parseAdminListQuery({}).sort).toBe('drafts')
+    expect(toAdminRouteQuery(listOf({ sort: 'title' }))).toEqual({ sort: 'title' })
+  })
+
+  it('propose « Brouillons d’abord » seulement si la liste peut contenir des brouillons', () => {
+    expect(sortsFor('active')).toEqual(['drafts', 'title', 'title_desc'])
+    expect(sortsFor('draft')).toEqual(['drafts', 'title', 'title_desc'])
+    expect(sortsFor('published')).toEqual(['title', 'title_desc'])
+    expect(sortsFor('archived')).toEqual(['title', 'title_desc'])
+  })
+
+  it('applique le titre quand « Brouillons d’abord » n’a pas de sens', () => {
+    expect(effectiveSort({ lifecycle: 'active', sort: 'drafts' })).toBe('drafts')
+    expect(effectiveSort({ lifecycle: 'published', sort: 'drafts' })).toBe('title')
+    expect(effectiveSort({ lifecycle: 'archived', sort: 'drafts' })).toBe('title')
+    expect(effectiveSort({ lifecycle: 'published', sort: 'title_desc' })).toBe('title_desc')
   })
 
   it('écarte les valeurs de filtre inconnues, en double ou en trop', () => {
@@ -151,7 +172,7 @@ describe('liste du catalogue dans l’adresse', () => {
     })
   })
 
-  it('prépare la requête de l’API, filtres et tri pour les œuvres seulement', () => {
+  it('prépare la requête de l’API : le tri pour toutes les fiches, les filtres pour les œuvres', () => {
     expect(
       toAdminApiQuery(listOf({ lifecycle: 'draft', page: 2, format: ['manga', 'bd'] }), 20),
     ).toEqual({
@@ -159,7 +180,7 @@ describe('liste du catalogue dans l’adresse', () => {
       lifecycle: 'draft',
       page: 2,
       pageSize: 20,
-      sort: 'title',
+      sort: 'drafts',
       type: undefined,
       status: undefined,
       format: 'manga,bd',
@@ -167,8 +188,12 @@ describe('liste du catalogue dans l’adresse', () => {
     expect(toAdminApiQuery(listOf({ kind: 'people', format: ['manga'] }), 20)).toEqual({
       q: undefined,
       lifecycle: 'active',
+      sort: 'drafts',
       page: 1,
       pageSize: 20,
+    })
+    expect(toAdminApiQuery(listOf({ sort: 'title_desc' }), 20)).toMatchObject({
+      sort: 'title_desc',
     })
   })
 
@@ -198,7 +223,7 @@ describe('liste du catalogue dans l’adresse', () => {
 })
 
 describe('onglets du catalogue', () => {
-  const list = listOf({ kind: 'people', q: 'a', page: 3, type: ['series'], sort: 'completeness' })
+  const list = listOf({ kind: 'people', q: 'a', page: 3, type: ['series'], sort: 'title_desc' })
 
   it('reconnaît l’onglet affiché', () => {
     expect(tabOf(list)).toBe('people')
@@ -216,7 +241,7 @@ describe('onglets du catalogue', () => {
   it('chaque onglet repart d’une recherche, de filtres et d’un tri vides', () => {
     const next = queryForTab(list, 'publishers')
 
-    expect(next).toMatchObject({ q: '', type: [], sort: 'title', page: 1 })
+    expect(next).toMatchObject({ q: '', type: [], sort: 'drafts', page: 1 })
   })
 })
 

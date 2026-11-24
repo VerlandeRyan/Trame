@@ -182,7 +182,7 @@ describe('page Catalogue d’administration', () => {
 
   it('envoie les filtres et le tri des œuvres, et montre leur barre', async () => {
     const wrapper = await mountCatalogue(
-      '/admin/catalogue?type=oneshot&status=ongoing,completed&format=manga&sort=completeness',
+      '/admin/catalogue?type=oneshot&status=ongoing,completed&format=manga&sort=title_desc',
     )
 
     expect(requests[0]).toMatchObject({
@@ -191,7 +191,7 @@ describe('page Catalogue d’administration', () => {
         type: 'oneshot',
         status: 'ongoing,completed',
         format: 'manga',
-        sort: 'completeness',
+        sort: 'title_desc',
       },
     })
     expect(wrapper.find('[data-testid="admin-filters"]').exists()).toBe(true)
@@ -204,13 +204,20 @@ describe('page Catalogue d’administration', () => {
     expect(wrapper.find('[data-testid="filter-reset"]').exists()).toBe(false)
   })
 
-  it('n’a que le filtre d’état, ni filtres de type ni tri pour les personnes', async () => {
+  it('donne le tri et le filtre d’état aux personnes, sans les filtres de type', async () => {
     const wrapper = await mountCatalogue('/admin/catalogue?kind=people&type=oneshot')
 
     expect(requests[0]!.query).not.toHaveProperty('type')
-    expect(requests[0]!.query).not.toHaveProperty('sort')
+    expect(requests[0]!.query).toHaveProperty('sort', 'drafts')
     expect(wrapper.find('[data-testid="admin-state-filter"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="filter-sort"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="filter-type"]').exists()).toBe(false)
+  })
+
+  it('affiche « Titre A → Z » pour des fiches publiées, qui n’ont pas de brouillons', async () => {
+    const wrapper = await mountCatalogue('/admin/catalogue?lifecycle=published')
+
+    expect(wrapper.get('[data-testid="filter-sort"]').text()).toContain('Titre A → Z')
   })
 
   it('adapte la recherche et le bouton de création à l’onglet', async () => {

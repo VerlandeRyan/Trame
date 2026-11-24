@@ -975,34 +975,45 @@ describe('œuvres', () => {
       expect(await ids(admin, { sort: 'title_desc' })).toEqual([ongoing, complete, bare]);
     });
 
-    it('trie les brouillons par nombre de manques, les fiches publiées comptant pour complètes', async () => {
-      const admin = await newAdmin();
-      const ready = await createWork(admin, { title: `${PREFIX} A prête`, published: false });
-      const oneGap = await createWork(admin, {
-        title: `${PREFIX} B un manque`,
-        published: false,
-        synopses: [],
-      });
-      const twoGaps = await createWork(admin, {
-        title: `${PREFIX} C deux manques`,
-        published: false,
-        credits: [],
-        publisherIds: [],
-      });
-      const published = await createWork(admin, { title: `${PREFIX} D publiée` });
+    describe('brouillons et fiches publiées mélangés', () => {
+      async function seedMixedWorks(admin: Agent) {
+        const published = await createWork(admin, { title: `${PREFIX} A publiée` });
+        const ready = await createWork(admin, { title: `${PREFIX} B prête`, published: false });
+        const oneGap = await createWork(admin, {
+          title: `${PREFIX} C un manque`,
+          published: false,
+          synopses: [],
+        });
+        const twoGaps = await createWork(admin, {
+          title: `${PREFIX} D deux manques`,
+          published: false,
+          credits: [],
+          publisherIds: [],
+        });
+        return { published, ready, oneGap, twoGaps };
+      }
 
-      expect(await ids(admin, { sort: 'completeness' })).toEqual([
-        twoGaps,
-        oneGap,
-        ready,
-        published,
-      ]);
-      expect(await ids(admin, { sort: 'completeness_desc' })).toEqual([
-        ready,
-        oneGap,
-        twoGaps,
-        published,
-      ]);
+      it('par défaut : brouillons les plus incomplets d’abord, puis « Prête », puis les publiées', async () => {
+        const admin = await newAdmin();
+        const { published, ready, oneGap, twoGaps } = await seedMixedWorks(admin);
+
+        const expected = [twoGaps, oneGap, ready, published];
+        expect(await ids(admin, {})).toEqual(expected);
+        expect(await ids(admin, { sort: 'drafts' })).toEqual(expected);
+      });
+
+      it('le tri par titre s’applique aux brouillons comme aux fiches publiées', async () => {
+        const admin = await newAdmin();
+        const { published, ready, oneGap, twoGaps } = await seedMixedWorks(admin);
+
+        expect(await ids(admin, { sort: 'title' })).toEqual([published, ready, oneGap, twoGaps]);
+        expect(await ids(admin, { sort: 'title_desc' })).toEqual([
+          twoGaps,
+          oneGap,
+          ready,
+          published,
+        ]);
+      });
     });
 
     it('filtre par type, statut et format, filtres combinés en ET ; q cherche aussi l’auteur', async () => {
@@ -1487,6 +1498,32 @@ describe('brouillons', () => {
     expect(await names()).toEqual([`${PREFIX} Z brouillon`, `${PREFIX} A publiée`]);
     expect(await names('draft')).toEqual([`${PREFIX} Z brouillon`]);
     expect(await names('published')).toEqual([`${PREFIX} A publiée`]);
+  });
+
+  it.each([
+    ['people', 'person'],
+    ['publishers', 'publisher'],
+  ])('trie la liste des %s sur toute la liste, brouillons compris', async (path, kind) => {
+    const admin = await newAdmin();
+    await admin
+      .post(`${ADMIN}/${path}`)
+      .send({ name: `${PREFIX} A publiée`, kind, published: true });
+    await admin
+      .post(`${ADMIN}/${path}`)
+      .send({ name: `${PREFIX} B brouillon`, kind, published: false });
+    await admin
+      .post(`${ADMIN}/${path}`)
+      .send({ name: `${PREFIX} C publiée`, kind, published: true });
+    const names = async (sort?: string) =>
+      (await admin.get(`${ADMIN}/${path}`).query({ q: PREFIX, sort })).body.items.map(
+        (item: { name: string }) => item.name,
+      );
+    const [a, b, c] = ['A publiée', 'B brouillon', 'C publiée'].map((name) => `${PREFIX} ${name}`);
+
+    expect(await names()).toEqual([b, a, c]);
+    expect(await names('drafts')).toEqual([b, a, c]);
+    expect(await names('title')).toEqual([a, b, c]);
+    expect(await names('title_desc')).toEqual([c, b, a]);
   });
 
   it('donne le nombre de brouillons de chaque type en une requête', async () => {

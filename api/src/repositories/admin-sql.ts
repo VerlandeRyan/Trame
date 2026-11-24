@@ -12,6 +12,10 @@ export type Lifecycle = (typeof LIFECYCLES)[number];
 export const LIFECYCLE_FILTERS = ['active', ...LIFECYCLES] as const;
 export type LifecycleFilter = (typeof LIFECYCLE_FILTERS)[number];
 
+/** Sort orders of the administration lists: drafts first (default), title A→Z, title Z→A. */
+export const ADMIN_SORTS = ['drafts', 'title', 'title_desc'] as const;
+export type AdminSort = (typeof ADMIN_SORTS)[number];
+
 /** Lifecycle of a record read from its two dates (an archived record is always a published one). */
 export function lifecycleOf(row: {
   deleted_at: Date | null;
@@ -112,7 +116,39 @@ export async function countDraftRows(db: Db, table: CatalogueTable): Promise<num
 }
 
 /** Orders drafts before published records in a list. */
-export const DRAFTS_FIRST = (column: string) => sql`${sql.ref(column)} IS NOT NULL`;
+const DRAFTS_FIRST = (column: string) => sql`${sql.ref(column)} IS NOT NULL`;
+
+/**
+ * `ORDER BY` expression of a list for a sort: `drafts` puts drafts first (those missing the most
+ * fields first when `gapCount` is given), then published records, each by title. The caller adds the identifier.
+ */
+export function listOrder(
+  sort: AdminSort,
+  columns: { publishedAt: string; title: RawBuilder<unknown>; gapCount?: RawBuilder<number> },
+): RawBuilder<unknown> {
+  const { publishedAt, title, gapCount } = columns;
+  switch (sort) {
+    case 'title_desc':
+      return sql`${title} DESC`;
+    case 'title':
+      return title;
+    default:
+      return sql.join([
+        DRAFTS_FIRST(publishedAt),
+        ...(gapCount === undefined ? [] : [sql`${gapCount} DESC`]),
+        title,
+      ]);
+  }
+}
+
+/** `ORDER BY` of a list of named records (people, publishers) for a sort. */
+export const namedListOrder = (sort: AdminSort, table: 'person' | 'publisher') => {
+  const nameColumn = `${table}.name`;
+  return listOrder(sort, {
+    publishedAt: `${table}.published_at`,
+    title: sql`immutable_unaccent(${sql.ref(nameColumn)})`,
+  });
+};
 
 /** The name contains the text, ignoring case and accents. */
 export function nameContains(column: string, text: string): RawBuilder<boolean> {

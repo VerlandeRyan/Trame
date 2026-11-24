@@ -5,7 +5,7 @@ import type {
   AdminPublisherListItem,
   AdminPublisherRepository,
 } from '../repositories/admin-publisher.repository.js';
-import { pagination, type AdminListInput, type Page } from './admin-list.js';
+import { listCriteria, type AdminListInput, type Page } from './admin-list.js';
 import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
 import { refuseUpdate, type UpdateInput } from './admin-update.js';
 
@@ -41,11 +41,7 @@ export function createAdminPublisherService(
 
   return {
     async list(input) {
-      const { items, total } = await repository.list({
-        q: input.q,
-        lifecycle: input.lifecycle,
-        ...pagination(input),
-      });
+      const { items, total } = await repository.list(listCriteria(input));
       return { items, page: input.page, pageSize: input.pageSize, total };
     },
 

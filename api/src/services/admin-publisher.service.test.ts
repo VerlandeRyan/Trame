@@ -42,12 +42,14 @@ describe('liste', () => {
     const page = await createAdminPublisherService(repository).list({
       q: 'mai',
       lifecycle: 'archived',
+      sort: 'title',
       page: 2,
       pageSize: 10,
     });
     expect(repository.list).toHaveBeenCalledWith({
       q: 'mai',
       lifecycle: 'archived',
+      sort: 'title',
       limit: 10,
       offset: 10,
     });

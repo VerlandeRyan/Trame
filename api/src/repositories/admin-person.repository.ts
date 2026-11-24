@@ -5,17 +5,18 @@ import {
   archiveColumns,
   countDraftRows,
   deleteRecordRow,
-  DRAFTS_FIRST,
   falseWhenCited,
   FILTERED_TOTAL,
   isVersion,
   lifecycleCondition,
   lifecycleOf,
   lockRow,
+  namedListOrder,
   nameContains,
   publishedAtOnUpdate,
   totalOf,
   versionOf,
+  type AdminSort,
   type Lifecycle,
   type LifecycleFilter,
 } from './admin-sql.js';
@@ -50,10 +51,11 @@ export interface AdminPersonDetail extends AdminPersonListItem {
   links: ExternalLinkRecord[];
 }
 
-/** Search, lifecycle and page of a people list. */
+/** Search, lifecycle, sort and page of a people list. */
 export interface AdminPersonListCriteria {
   q?: string;
   lifecycle: LifecycleFilter;
+  sort: AdminSort;
   limit: number;
   offset: number;
 }
@@ -137,8 +139,7 @@ export function createAdminPersonRepository(db: Db): AdminPersonRepository {
         .select(ACTIVE_WORKS_OF_PERSON.as('activeWorkCount'))
         .select(versionOf('person').as('version'))
         .select(FILTERED_TOTAL.as('total'))
-        .orderBy(DRAFTS_FIRST('person.published_at'))
-        .orderBy(sql`immutable_unaccent(person.name)`)
+        .orderBy(namedListOrder(criteria.sort, 'person'))
         .orderBy('person.id')
         .limit(criteria.limit)
         .offset(criteria.offset)

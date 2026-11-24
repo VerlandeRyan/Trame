@@ -10,7 +10,7 @@ import type {
   MissingReferences,
   ReferenceReader,
 } from '../repositories/admin-work.repository.js';
-import { pagination, type AdminListInput, type Page } from './admin-list.js';
+import { listCriteria, type AdminListInput, type Page } from './admin-list.js';
 import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
 import { refuseUpdate, type UpdateInput } from './admin-update.js';
 import { publicationGaps } from './admin-publication.js';
@@ -25,18 +25,8 @@ export type AdminWorkDetail = Omit<AdminWorkRaw, 'hasFormat'> & {
 /** Data sent to update a work (full replacement: every field is sent, `PUT`). */
 export type AdminWorkUpdateInput = UpdateInput<AdminWorkCreateInput>;
 
-/** Sort orders of the work list. */
-export const ADMIN_WORK_SORTS = [
-  'title',
-  'title_desc',
-  'completeness',
-  'completeness_desc',
-] as const;
-export type AdminWorkSort = (typeof ADMIN_WORK_SORTS)[number];
-
-/** Work list: sort and filters (one value of a filter is enough; all filters apply). */
+/** Work list: filters (one value of a filter is enough; all filters apply). */
 export interface AdminWorkListInput extends AdminListInput {
-  sort: AdminWorkSort;
   type?: WorkType[];
   status?: WorkStatus[];
   /** Format codes. */
@@ -125,13 +115,10 @@ export function createAdminWorkService(repository: AdminWorkRepository): AdminWo
   return {
     async list(input) {
       const { items, total } = await repository.list({
-        q: input.q,
-        lifecycle: input.lifecycle,
-        sort: input.sort,
+        ...listCriteria(input),
         types: input.type,
         statuses: input.status,
         formats: input.format,
-        ...pagination(input),
       });
       return { items, page: input.page, pageSize: input.pageSize, total };
     },

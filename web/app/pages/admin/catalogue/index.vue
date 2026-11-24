@@ -103,7 +103,7 @@ const filters = computed<AdminWorkFilters>(() => ({
 /** Applies new filters and goes back to the first page. */
 const changeFilters = (filters: AdminWorkFilters) => go({ ...query.value, ...filters, page: 1 })
 /** Applies a new sort and goes back to the first page. */
-const changeSort = (sort: AdminWorkSort) => go({ ...query.value, sort, page: 1 })
+const changeSort = (sort: AdminSort) => go({ ...query.value, sort, page: 1 })
 /** Address of a page of the list. */
 const linkFor = (target: number): RouteLocationRaw => ({
   query: toAdminRouteQuery({ ...query.value, page: target }),
@@ -251,7 +251,7 @@ const remove = (item: AdminListItem) =>
         :kind="query.kind"
         :filters="filters"
         :lifecycle="query.lifecycle"
-        :sort="query.sort"
+        :sort="effectiveSort(query)"
         :formats="formatCodes"
         :total="page?.total ?? 0"
         @change="changeFilters"

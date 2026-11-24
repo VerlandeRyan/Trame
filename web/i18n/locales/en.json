@@ -570,10 +570,9 @@
     },
     "sort": {
       "label": "Sort by",
+      "drafts": "Drafts first",
       "title": "Title A → Z",
-      "title_desc": "Title Z → A",
-      "completeness": "Least complete first",
-      "completeness_desc": "Most complete first"
+      "title_desc": "Title Z → A"
     },
     "empty": "No records",
     "emptyHint": "Add a record with the “{action}” button at the top of the page.",

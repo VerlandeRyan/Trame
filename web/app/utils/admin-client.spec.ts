@@ -21,7 +21,7 @@ describe('client d’administration', () => {
       parseAdminListQuery({ kind: 'people', lifecycle: 'archived', q: 'léa', page: '2' }),
     )
     expect(request).toHaveBeenCalledWith('/admin/people', {
-      query: { q: 'léa', lifecycle: 'archived', page: 2, pageSize: 20 },
+      query: { q: 'léa', lifecycle: 'archived', sort: 'drafts', page: 2, pageSize: 20 },
     })
   })
 
