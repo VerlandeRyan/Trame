@@ -3,7 +3,9 @@ import type { RequestHandler } from 'express';
 import type { z } from 'zod';
 import { currentUser } from '../middleware/auth.js';
 import { validated } from '../middleware/validate.js';
+import { namesakesQuery } from '../schemas/admin-catalogue.js';
 import { idParams } from '../schemas/common.js';
+import type { Namesakes } from '../repositories/admin-sql.js';
 import type { AdminListInput, Page } from '../services/admin-list.js';
 
 /** What the controller expects from a catalogue service. */
@@ -21,10 +23,12 @@ export interface AdminResourceService<
   archive(id: number, adminId: number): Promise<Full>;
   restore(id: number, adminId: number): Promise<Full>;
   delete(id: number): Promise<void>;
+  findNamesakes(name: string, excludeId?: number): Promise<Namesakes>;
 }
 
 /** The request handlers exposed for one administered resource. */
 export interface AdminResourceController {
+  namesakes: RequestHandler;
   list: RequestHandler;
   get: RequestHandler;
   create: RequestHandler;
@@ -53,6 +57,11 @@ export function createAdminResourceController<
   schemas: AdminResourceSchemas<CreateInput, UpdateInput, ListInput>,
 ): AdminResourceController {
   return {
+    async namesakes(req, res) {
+      const { name, excludeId } = validated(namesakesQuery, req.query);
+      res.json(await service.findNamesakes(name, excludeId));
+    },
+
     async list(req, res) {
       res.json(await service.list(validated(schemas.listQuery, req.query)));
     },

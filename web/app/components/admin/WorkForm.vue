@@ -14,6 +14,7 @@ import type {
  * Work form in sections: all stay in the form, only one is visible, so that a save takes
  * everything. A covers section will come with image upload.
  */
+// eslint-disable-next-line vue/max-props -- each prop is one independent input of a single form
 const props = defineProps<{
   genres: { code: string; category: string }[]
   search: (kind: AdminKind, text: string) => Promise<RecordRef[]>
@@ -31,6 +32,8 @@ const props = defineProps<{
   }
   saving: boolean
   mode?: FormMode
+  /** Record being edited, left out of the namesake notice. */
+  recordId?: number
 }>()
 const form = defineModel<WorkFormValues>({ required: true })
 const emit = defineEmits<{ submit: []; publish: [] }>()
@@ -84,6 +87,7 @@ const tabs = computed(() =>
         :show-errors="isTitleOnly || showsGaps"
         :title-only="isTitleOnly"
         :server-gaps="serverGaps"
+        :record-id="recordId"
       />
     </section>
     <section v-show="section === 'texts'" role="tabpanel" class="form__section">

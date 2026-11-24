@@ -913,3 +913,37 @@ test('le refus de supprimer un brouillon cité s’affiche à l’écran, sans d
   await expect(refusal).toBeInViewport()
   await expect(page.getByTestId('toast')).toHaveCount(0)
 })
+
+test('un nom déjà porté par une fiche avertit sans bloquer, et la fiche modifiée ne se signale pas', async ({
+  page,
+  context,
+}) => {
+  const name = `Éditions Homonyme ${SUFFIX}`
+  const created = await context.request.post('/api/v1/admin/publishers', {
+    data: { name, kind: 'publisher' },
+  })
+  const existing = (await created.json()) as { id: number }
+
+  // Création : le même nom, sans casse ni accents, avertit avec un lien vers la fiche.
+  await page.goto('/admin/catalogue/publishers/new')
+  await waitForHydration(page)
+  await page.locator('#publisher-name').fill(`editions homonyme ${SUFFIX}`)
+  const notice = page.getByTestId('namesake-notice')
+  await expect(notice).toContainText('Une fiche porte déjà ce nom')
+  await expect(notice.getByRole('link', { name })).toHaveAttribute(
+    'href',
+    `/admin/catalogue/publishers/${existing.id}`,
+  )
+  await expect(notice).toContainText('Publiée')
+
+  // L'avertissement ne bloque pas : un nom différent le retire, l'enregistrement reste possible.
+  await page.locator('#publisher-name').fill(`${name} bis`)
+  await expect(notice).toBeHidden()
+  await saveDraftAndWaitForList(page)
+
+  // Modification : la fiche ouverte n'est pas son propre homonyme.
+  await page.goto(`/admin/catalogue/publishers/${existing.id}`)
+  await waitForHydration(page)
+  await expect(page.locator('#publisher-name')).toHaveValue(name)
+  await expect(notice).toBeHidden()
+})

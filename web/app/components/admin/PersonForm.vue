@@ -14,6 +14,8 @@ const props = defineProps<{
   showErrors?: boolean
   saving: boolean
   mode?: FormMode
+  /** Record being edited, left out of the namesake notice. */
+  recordId?: number
 }>()
 const form = defineModel<PersonFormValues>({ required: true })
 const emit = defineEmits<{ submit: []; publish: [] }>()
@@ -25,13 +27,15 @@ const isNameMissing = computed(() => props.showErrors === true && isBlank(form.v
 <template>
   <form class="form" data-testid="person-form" novalidate @submit.prevent="emit('submit')">
     <UiRequiredLegend />
-    <UiField
-      id="person-name"
-      v-model="form.name"
-      :label="t('admin.person.name')"
-      :error="isNameMissing ? t('admin.error.required') : undefined"
-      :input-attributes="{ maxlength: 200, required: true }"
-    />
+    <AdminNamesakeNotice kind="people" :name="form.name" :record-id="recordId">
+      <UiField
+        id="person-name"
+        v-model="form.name"
+        :label="t('admin.person.name')"
+        :error="isNameMissing ? t('admin.error.required') : undefined"
+        :input-attributes="{ maxlength: 200, required: true }"
+      />
+    </AdminNamesakeNotice>
     <AdminPillGroup
       v-model="form.kind"
       :options="kindOptions"

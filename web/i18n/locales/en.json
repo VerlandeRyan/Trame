@@ -165,6 +165,7 @@
     "buttons": "Buttons and statuses",
     "tabsAndCounters": "Tabs, counters and fields",
     "relatedWorks": "Related works",
+    "namesakes": "Namesake notice (administration)",
     "home": "Home",
     "tabAll": "All",
     "emptyTitle": "Nothing to show yet",
@@ -604,6 +605,13 @@
       "title": "Delete this record permanently?",
       "text": "This can't be undone: the record is erased and, for a work, so are the reading-list entries of the members who follow it. To only hide it, leave it archived.",
       "cancel": "Keep"
+    },
+    "namesake": {
+      "one": "A record already has this {field}:",
+      "many": "Records already have this {field}:",
+      "more": "Other records also have this {field}.",
+      "name": "name",
+      "title": "title"
     },
     "draftBanner": "This record is a draft: it isn't visible to the public. To publish it, the minimum required fields (marked with an asterisk) must be filled in.",
     "state": {

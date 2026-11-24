@@ -13,6 +13,8 @@ const { t } = useI18n()
 const target = parseAdminEditRoute(route.params) ?? { kind: 'works' as const, id: 'new' as const }
 const { kind, id } = target
 const editor = useAdminEditor(kind, id)
+/** Identifier of the edited record; none for a new one. */
+const recordId = id === 'new' ? undefined : id
 const { record, errorKey, errorScope, serverGaps, draftReferences, saving } = editor
 /** Whether a refused save asks the person and publisher forms to flag their gaps. */
 const showErrors = computed(() => errorScope.value !== 'none')
@@ -217,6 +219,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :flagged="flagged"
       :saving="saving"
       :mode="formMode"
+      :record-id="recordId"
       @submit="submit"
       @publish="askPublish"
     />
@@ -227,6 +230,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :show-errors="showErrors"
       :saving="saving"
       :mode="formMode"
+      :record-id="recordId"
       @submit="submit"
       @publish="askPublish"
     />
@@ -237,6 +241,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', warnBeforeUnloa
       :show-errors="showErrors"
       :saving="saving"
       :mode="formMode"
+      :record-id="recordId"
       @submit="submit"
       @publish="askPublish"
     />

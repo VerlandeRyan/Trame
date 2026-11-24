@@ -91,7 +91,7 @@ La déconnexion et l'abandon d'une inscription suppriment la ligne ; une session
 | published_at | timestamptz | nullable, défaut `now()` — NULL = brouillon (créé dans l'administration, ou à l'acceptation d'une soumission), invisible du public ; distinct de `deleted_at` |
 | deleted_at / deleted_by | timestamptz / bigint FK `app_user` | nullable — archivage |
 
-Index : GIN trigram sur `title` (`pg_trgm` + `unaccent`) ; index sur `type`, `status`, `deleted_at`.
+Index : GIN trigram sur `title` (`pg_trgm` + `unaccent`) ; index sur `type`, `status`, `deleted_at` ; index d'égalité sur le titre normalisé (sans casse ni accents, suites d'espaces ramenées à une seule ; recherche des homonymes de l'administration ; même index sur `person.name` et `publisher.name`).
 
 ### `work_title`
 | Colonne | Type | Règle |

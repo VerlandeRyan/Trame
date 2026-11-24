@@ -27,6 +27,19 @@ const INDEXED_COLUMNS = [
   { table: 'publisher', column: 'name', index: 'publisher_name_trgm_idx' },
 ];
 
+describe.each([
+  { table: 'work', column: 'title', index: 'work_title_namesake_idx' },
+  { table: 'person', column: 'name', index: 'person_name_namesake_idx' },
+  { table: 'publisher', column: 'name', index: 'publisher_name_namesake_idx' },
+])('index des homonymes $index', ({ table, column, index }) => {
+  it('sert l’égalité sur le nom normalisé', async () => {
+    const result = await plan(
+      `SELECT 1 FROM ${table} WHERE lower(btrim(regexp_replace(translate(immutable_unaccent(${column}), chr(160), ' '), '[[:space:]]+', ' ', 'g'))) = lower(btrim(regexp_replace(translate(immutable_unaccent('Éclipse'), chr(160), ' '), '[[:space:]]+', ' ', 'g')))`,
+    );
+    expect(result).toContain(index);
+  });
+});
+
 describe.each(INDEXED_COLUMNS)('index de recherche $index', ({ table, column, index }) => {
   it('sert la comparaison ILIKE insensible aux accents', async () => {
     const result = await plan(

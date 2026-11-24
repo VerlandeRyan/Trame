@@ -95,6 +95,18 @@ export const adminListQuery = z.object({
   ...pageQuery('Éléments'),
 }) satisfies z.ZodType<AdminListInput>;
 
+/** Query of the namesake lookup: the name typed, and the record being renamed (not its own namesake). */
+export const namesakesQuery = z.object({
+  name: name.describe('Nom ou titre saisi, comparé sans tenir compte de la casse ni des accents.'),
+  excludeId: z.coerce
+    .number()
+    .int()
+    .min(1)
+    .max(Number.MAX_SAFE_INTEGER)
+    .describe('Fiche en cours de modification, écartée du résultat.')
+    .optional(),
+});
+
 /** Work list: same parameters plus filters (values of one filter: OR; filters together: AND). */
 export const adminWorkListQuery = adminListQuery.extend({
   type: commaSeparatedList(z.enum(WORK_TYPES))

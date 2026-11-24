@@ -157,6 +157,56 @@ export function nameContains(column: string, text: string): RawBuilder<boolean> 
   return sql<boolean>`immutable_unaccent(${sql.ref(column)}) ILIKE immutable_unaccent(${pattern})`;
 }
 
+/** Most namesakes returned: enough to warn, without listing a whole homonymous family. */
+const NAMESAKE_LIMIT = 5;
+
+/** A record that already bears a given name. */
+export interface Namesake {
+  id: number;
+  name: string;
+  lifecycle: Lifecycle;
+}
+
+/** The first namesakes found, and whether more exist beyond the cap. */
+export interface Namesakes {
+  items: Namesake[];
+  hasMore: boolean;
+}
+
+/** Records of a table whose name equals `name`, ignoring case, accents and outer spaces; archives included. */
+export async function findNamesakes(
+  db: Db,
+  table: CatalogueTable,
+  nameColumn: 'name' | 'title',
+  name: string,
+  excludeId?: number,
+): Promise<Namesakes> {
+  // Must stay identical to the namesake indexes (migration `homonymes_index`), or they go unused.
+  /** Comparison form of a name: no accents, no case, runs of spaces (non-breaking too) as one, none at the ends. */
+  const normalized = (value: RawBuilder<unknown> | string) =>
+    sql`lower(btrim(regexp_replace(translate(immutable_unaccent(${value}), chr(160), ' '), '[[:space:]]+', ' ', 'g')))`;
+  const id = sql.ref(`${table}.id`);
+  const result = await sql<{
+    id: number;
+    name: string;
+    deleted_at: Date | null;
+    published_at: Date | null;
+  }>`
+    SELECT ${id} AS id, ${sql.ref(`${table}.${nameColumn}`)} AS name, deleted_at, published_at
+    FROM ${sql.table(table)}
+    WHERE ${normalized(sql.ref(`${table}.${nameColumn}`))} = ${normalized(name)}
+      ${excludeId === undefined ? sql`` : sql`AND ${id} <> ${excludeId}`}
+    ORDER BY ${id}
+    LIMIT ${NAMESAKE_LIMIT + 1}`.execute(db);
+  // One row more than the cap tells that others exist, without a second query.
+  const items = result.rows.slice(0, NAMESAKE_LIMIT).map((row) => ({
+    id: row.id,
+    name: row.name,
+    lifecycle: lifecycleOf(row),
+  }));
+  return { items, hasMore: result.rows.length > NAMESAKE_LIMIT };
+}
+
 /** Author shown for a work: the most important role, then alphabetical order. */
 export const MAIN_AUTHOR_NAME = sql<string | null>`(
   SELECT p.name FROM work_credit wc JOIN person p ON p.id = wc.person_id

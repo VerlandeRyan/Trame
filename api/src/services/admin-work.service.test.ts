@@ -69,6 +69,7 @@ function fakeRepository(
     setArchived: vi.fn(async () => true),
     deleteRecord: vi.fn(async () => true),
     countDrafts: vi.fn(async () => 3),
+    findNamesakes: vi.fn(async () => ({ items: [], hasMore: false })),
   };
 }
 

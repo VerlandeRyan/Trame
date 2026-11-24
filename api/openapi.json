@@ -1726,6 +1726,96 @@
         }
       }
     },
+    "/api/v1/admin/people/namesakes": {
+      "get": {
+        "summary": "Chercher les homonymes : People",
+        "operationId": "listAdminPeopleNamesakes",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "Nom ou titre saisi, comparé sans tenir compte de la casse ni des accents.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "excludeId",
+            "in": "query",
+            "required": false,
+            "description": "Fiche en cours de modification, écartée du résultat.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiches de même nom (liste plafonnée, `hasMore` signale la suite), brouillons et archives compris.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminNamesakes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres invalides. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/people": {
       "get": {
         "summary": "Lister : People",
@@ -2568,6 +2658,96 @@
         }
       }
     },
+    "/api/v1/admin/publishers/namesakes": {
+      "get": {
+        "summary": "Chercher les homonymes : Publishers",
+        "operationId": "listAdminPublishersNamesakes",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "Nom ou titre saisi, comparé sans tenir compte de la casse ni des accents.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "excludeId",
+            "in": "query",
+            "required": false,
+            "description": "Fiche en cours de modification, écartée du résultat.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiches de même nom (liste plafonnée, `hasMore` signale la suite), brouillons et archives compris.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminNamesakes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres invalides. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/publishers": {
       "get": {
         "summary": "Lister : Publishers",
@@ -3341,6 +3521,96 @@
           },
           "429": {
             "description": "Trop de requêtes depuis cette adresse ; réessayer après le délai de `Retry-After`. Code : `RATE_LIMITED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/works/namesakes": {
+      "get": {
+        "summary": "Chercher les homonymes : Works",
+        "operationId": "listAdminWorksNamesakes",
+        "tags": [
+          "admin"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "required": true,
+            "description": "Nom ou titre saisi, comparé sans tenir compte de la casse ni des accents.",
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "excludeId",
+            "in": "query",
+            "required": false,
+            "description": "Fiche en cours de modification, écartée du résultat.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Fiches de même nom (liste plafonnée, `hasMore` signale la suite), brouillons et archives compris.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminNamesakes"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Paramètres invalides. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Rôle administrateur requis (ou `FORBIDDEN_ORIGIN` pour une origine refusée). Code : `ADMIN_REQUIRED`.",
             "content": {
               "application/json": {
                 "schema": {
@@ -4852,6 +5122,51 @@
           "works",
           "people",
           "publishers"
+        ],
+        "additionalProperties": false
+      },
+      "AdminNamesakes": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "minimum": -9007199254740991,
+                  "maximum": 9007199254740991
+                },
+                "name": {
+                  "type": "string"
+                },
+                "lifecycle": {
+                  "type": "string",
+                  "enum": [
+                    "draft",
+                    "published",
+                    "archived"
+                  ],
+                  "description": "Cycle de vie : brouillon (visible seulement dans l’administration), publiée ou archivée."
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "lifecycle"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "hasMore": {
+            "type": "boolean",
+            "description": "Vrai si d’autres fiches de même nom existent au-delà de celles listées."
+          }
+        },
+        "required": [
+          "items",
+          "hasMore"
         ],
         "additionalProperties": false
       },
