@@ -1,6 +1,7 @@
 /** SQL fragments shared by the administration repositories: search, lifecycle, totals and derived columns. */
 import { sql, type RawBuilder } from 'kysely';
 import { CREDIT_ROLE_RANK, type Db } from '../db/database.js';
+import { PUBLICATION_GAPS, type PublicationGap } from '../domain/catalogue-enums.js';
 import { FOREIGN_KEY_VIOLATION, isPgError } from '../db/pg-errors.js';
 
 /** The three exclusive states of a record, derived from `published_at` and `deleted_at`. */
@@ -138,13 +139,28 @@ export const FORMAT_CODES = sql<string[]>`(
   WHERE wg.work_id = work.id AND g.category = 'format'
 )`;
 
-/** Share of the record that is filled in, by quarters: synopsis, publisher, link, cover (with consent). */
-export const COMPLETENESS_PERCENT = sql<number>`(
-  (CASE WHEN EXISTS (SELECT 1 FROM work_synopsis s WHERE s.work_id = work.id) THEN 25 ELSE 0 END)
-  + (CASE WHEN EXISTS (SELECT 1 FROM work_publisher p WHERE p.work_id = work.id) THEN 25 ELSE 0 END)
-  + (CASE WHEN EXISTS (SELECT 1 FROM external_link l WHERE l.work_id = work.id) THEN 25 ELSE 0 END)
-  + (CASE WHEN work.cover_path IS NOT NULL AND work.cover_consent THEN 25 ELSE 0 END)
-)::int`;
+/** SQL form of the publication rule (`publicationGaps`, services): when a work lacks each field. */
+const IS_MISSING: Record<PublicationGap, RawBuilder<boolean>> = {
+  genres: sql<boolean>`NOT EXISTS (
+    SELECT 1 FROM work_genre wg JOIN genre g ON g.id = wg.genre_id
+    WHERE wg.work_id = work.id AND g.category = 'format'
+  )`,
+  credits: sql<boolean>`NOT EXISTS (SELECT 1 FROM work_credit wc WHERE wc.work_id = work.id)`,
+  publisherIds: sql<boolean>`NOT EXISTS (SELECT 1 FROM work_publisher wp WHERE wp.work_id = work.id)`,
+  synopses: sql<boolean>`NOT EXISTS (
+    SELECT 1 FROM work_synopsis s WHERE s.work_id = work.id AND s.language = work.original_language
+  )`,
+};
+
+/** What a draft still lacks to be published, in `PUBLICATION_GAPS` order; empty for any other work. */
+export const DRAFT_PUBLICATION_GAPS = sql<PublicationGap[]>`(
+  CASE WHEN work.published_at IS NULL THEN array_remove(ARRAY[${sql.join(
+    PUBLICATION_GAPS.map((gap) => sql`CASE WHEN ${IS_MISSING[gap]} THEN ${gap}::text END`),
+  )}]::text[], NULL) ELSE '{}'::text[] END
+)`;
+
+/** Number of fields a draft lacks: 0 for a draft ready to publish and for every other work. */
+export const DRAFT_GAP_COUNT = sql<number>`cardinality(${DRAFT_PUBLICATION_GAPS})`;
 
 /** Number of filtered records, read with each row of the page (before `LIMIT`). */
 export const FILTERED_TOTAL = sql<number>`count(*) OVER()`;

@@ -4,6 +4,7 @@ import {
   CREDIT_ROLES,
   EXTERNAL_LINK_KINDS,
   PERSON_KINDS,
+  PUBLICATION_GAPS,
   PUBLISHER_KINDS,
   RELATION_KINDS,
   SYNOPSIS_SOURCES,
@@ -20,7 +21,6 @@ import type { AdminPublisherListItem } from '../repositories/admin-publisher.rep
 import { LIFECYCLES } from '../repositories/admin-sql.js';
 import type { DraftCounts } from '../controllers/admin-draft-counts.controller.js';
 import type { Page } from '../services/admin-list.js';
-import { PUBLICATION_GAPS } from '../services/admin-publication.js';
 import type { AdminWorkDetail } from '../services/admin-work.service.js';
 
 /** Lifecycle of a record: a draft is only visible in the administration. */
@@ -149,12 +149,14 @@ const workListItem = workSummary.extend({
   formats: z.array(z.string()).describe('Codes de format, triés.'),
   mainAuthor: z.string().nullable(),
   updatedAt: z.iso.datetime().describe('Dernière modification.'),
+  publishedAt: z.iso.datetime().nullable().describe('Publication ; nul pour un brouillon.'),
   archivedAt: z.iso.datetime().nullable(),
   archivedBy: archivedByHandle,
-  completeness: z
-    .number()
-    .int()
-    .describe('0 à 100, par quarts : synopsis, éditeur, lien, couverture.'),
+  publicationGaps: z
+    .array(z.enum(PUBLICATION_GAPS))
+    .describe(
+      'Champs qui manquent à un brouillon pour être publié (noms des champs de l’API) ; vide pour une œuvre publiée ou archivée.',
+    ),
 }) satisfies z.ZodType<AdminWorkListItem>;
 
 /** Number of drafts of each administered resource. */

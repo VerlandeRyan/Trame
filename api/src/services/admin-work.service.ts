@@ -1,5 +1,5 @@
 /** Business rules for administering works: reference checks, versioned updates and archiving. */
-import type { WorkStatus, WorkType } from '../domain/catalogue-enums.js';
+import type { PublicationGap, WorkStatus, WorkType } from '../domain/catalogue-enums.js';
 import { AppError } from '../errors.js';
 import type {
   AdminWorkCreateInput,
@@ -13,7 +13,7 @@ import type {
 import { pagination, type AdminListInput, type Page } from './admin-list.js';
 import { assertNotDraft, deleteRecord } from './admin-lifecycle.js';
 import { refuseUpdate, type UpdateInput } from './admin-update.js';
-import { publicationGaps, type PublicationGap } from './admin-publication.js';
+import { publicationGaps } from './admin-publication.js';
 
 export type { AdminWorkCreateInput };
 

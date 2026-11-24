@@ -570,6 +570,10 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
   await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&lifecycle=draft`)
   await waitForHydration(page)
   await expect(page.getByTestId('admin-row').getByTestId('admin-draft')).toHaveText('Brouillon')
+  // La colonne Publication nomme tout ce qui lui manque.
+  await expect(page.getByTestId('admin-row-publication')).toHaveText(
+    'Manque : format, auteur, éditeur, synopsis',
+  )
 
   // Un auteur, un éditeur et un synopsis sont déjà saisis (par l'API, pour aller à l'essentiel).
   const first = async (path: string, name: string) =>
@@ -601,6 +605,7 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
   // Publier sans format est refusé ; avec un format et après confirmation, la fiche devient publique.
   await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&lifecycle=draft`)
   await waitForHydration(page)
+  await expect(page.getByTestId('admin-row-publication')).toHaveText('Manque : format')
   await clickRowAction(page, 'edit')
   await waitForHydration(page)
   await expect(page.getByTestId('draft-banner')).toBeVisible()
@@ -620,6 +625,39 @@ test('un brouillon n’exige que son titre, reste invisible du public puis se pu
   // Publishing is part of the single replacement: one write, no separate publish request.
   expect(writes).toEqual([`PUT /api/v1/admin/works/${work!.id}`])
   expect((await context.request.get(`/api/v1/works/${work!.id}`)).status()).toBe(200)
+
+  // Une fois publiée, la fiche porte la pastille « Publiée » ; sans brouillon dans la liste, pas de colonne.
+  await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}&lifecycle=published`)
+  await waitForHydration(page)
+  await expect(page.getByTestId('admin-published')).toHaveText('Publiée')
+  await expect(page.getByTestId('admin-row-publication')).toHaveCount(0)
+
+  // Avec un brouillon dans la liste, la colonne donne la date de publication des fiches publiées.
+  const mixed = await context.request.post('/api/v1/admin/works', {
+    data: {
+      title: `${DRAFT} liste mixte`,
+      originalLanguage: 'fr',
+      type: 'oneshot',
+      status: 'completed',
+      chapters: null,
+      volumes: 1,
+      startedOn: null,
+      endedOn: null,
+      genres: [],
+      synopses: [],
+      credits: [],
+      publisherIds: [],
+      published: false,
+    },
+  })
+  expect(mixed.status()).toBe(201)
+  await page.goto(`/admin/catalogue?q=${encodeURIComponent(DRAFT)}`)
+  await waitForHydration(page)
+  const publication = page.getByTestId('admin-row-publication')
+  await expect(publication.filter({ hasText: 'Publiée le' })).toHaveCount(1)
+  await expect(
+    publication.filter({ hasText: 'Manque : format, auteur, éditeur, synopsis' }),
+  ).toHaveCount(1)
 })
 
 test('une publication refusée nomme la fiche en brouillon citée, puis aboutit une fois publiée', async ({

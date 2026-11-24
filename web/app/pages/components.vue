@@ -129,6 +129,12 @@ const tabs = computed(() => [
       <h2>{{ t('gallery.buttons') }}</h2>
       <div class="gallery__row">
         <UiDraftBadge data-testid="gallery-draft-badge">{{ t('admin.draft') }}</UiDraftBadge>
+        <UiStateBadge state="published" data-testid="gallery-published-badge">{{
+          t('admin.published')
+        }}</UiStateBadge>
+        <UiStateBadge state="archived" data-testid="gallery-archived-badge">{{
+          t('admin.archived')
+        }}</UiStateBadge>
         <UiButton variant="primary">{{ t('action.addToList') }} +</UiButton>
         <UiButton variant="secondary" @click="isModalOpen = true">{{ t('action.add') }} +</UiButton>
         <UiButton v-for="status in readingStatuses" :key="status" :status="status">

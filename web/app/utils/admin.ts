@@ -64,9 +64,12 @@ export interface AdminListItem {
   formats?: string[]
   mainAuthor?: string | null
   updatedAt?: string
+  /** Null for a draft. */
+  publishedAt?: string | null
   archivedAt?: string | null
   archivedBy?: string | null
-  completeness?: number
+  /** What a draft work still lacks to be published; empty once ready, and for any other work. */
+  publicationGaps?: PublicationGap[]
   activeWorkCount?: number
 }
 

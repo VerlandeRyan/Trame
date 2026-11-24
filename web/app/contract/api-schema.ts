@@ -783,11 +783,13 @@ export interface components {
                  * @description Dernière modification.
                  */
                 updatedAt: string;
+                /** @description Publication ; nul pour un brouillon. */
+                publishedAt: string | null;
                 archivedAt: string | null;
                 /** @description Pseudo de l’administrateur qui a archivé. */
                 archivedBy: string | null;
-                /** @description 0 à 100, par quarts : synopsis, éditeur, lien, couverture. */
-                completeness: number;
+                /** @description Champs qui manquent à un brouillon pour être publié (noms des champs de l’API) ; vide pour une œuvre publiée ou archivée. */
+                publicationGaps: components["schemas"]["PublicationGap"][];
             }[];
             page: number;
             pageSize: number;

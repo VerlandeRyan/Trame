@@ -26,28 +26,53 @@ const emit = defineEmits<{
   archive: [item: AdminListItem]
   remove: [item: AdminListItem]
 }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const localePath = useLocalePath()
 
 const isWorks = computed(() => props.kind === 'works')
-/** Column headings of the table for the kind. */
-const columns = computed(() =>
-  isWorks.value
-    ? ['work', 'typeFormat', 'author', 'status', 'completeness']
-    : ['name', 'kindLabel', 'works'],
+/** Whether the row is an archive. */
+const isArchived = (item: AdminListItem) => item.lifecycle === 'archived'
+/** The Publication column is about drafts (what they lack) : a list without one drops it. */
+const hasPublicationColumn = computed(
+  () => isWorks.value && props.items.some((item) => item.lifecycle === 'draft'),
 )
+/** Column headings of the table for the kind. */
+const columns = computed(() => {
+  if (!isWorks.value) return ['name', 'kindLabel', 'works']
+  const base = ['work', 'typeFormat', 'author', 'status']
+  return hasPublicationColumn.value ? [...base, 'publication'] : base
+})
 
 const ACTION_COLUMN = '7.5rem'
 const MORE_COLUMN = '2.5rem'
-/** Whether the row is an archive. */
-const isArchived = (item: AdminListItem) => item.lifecycle === 'archived'
 /** CSS grid columns of a row; an archive adds the "⋮" column. */
 const gridColumns = computed(() => {
   const action = props.items.some(isArchived) ? `${ACTION_COLUMN} ${MORE_COLUMN}` : ACTION_COLUMN
-  return isWorks.value
-    ? `minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.4fr) ${action}`
-    : `minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) ${action}`
+  if (!isWorks.value) return `minmax(0, 3fr) minmax(0, 1fr) minmax(0, 1fr) ${action}`
+  const publication = hasPublicationColumn.value ? ' minmax(0, 1.8fr)' : ''
+  return `minmax(0, 3fr) minmax(0, 1.4fr) minmax(0, 1.2fr) minmax(0, 1fr)${publication} ${action}`
 })
+
+/** What the Publication column says about a work: ready, the fields it lacks, or when it was published. */
+function publicationState(item: AdminListItem): 'ready' | 'missing' | 'published' | null {
+  if (item.lifecycle === 'published') return item.publishedAt ? 'published' : null
+  if (item.lifecycle !== 'draft') return null
+  return item.publicationGaps?.length ? 'missing' : 'ready'
+}
+
+/** "Published on 12 March 2026": the publication date of a published work. */
+function publishedOnLabel(item: AdminListItem): string {
+  const date = new Intl.DateTimeFormat(locale.value, { dateStyle: 'long' }).format(
+    new Date(item.publishedAt ?? ''),
+  )
+  return t('admin.row.publication.publishedOn', { date })
+}
+
+/** Translated names of the fields a draft lacks, as one sentence ("Manque : auteur, synopsis"). */
+function missingFields(item: AdminListItem): string {
+  const fields = (item.publicationGaps ?? []).map((gap) => t(`admin.row.publication.gap.${gap}`))
+  return t('admin.row.publication.missing', { fields: fields.join(', ') })
+}
 
 /** Lowercase relative age of a date ("3 days"), empty without a date. */
 const ageLabel = (iso: string | null | undefined) => {
@@ -173,6 +198,12 @@ function removeMenuItem() {
               <UiDraftBadge v-if="item.lifecycle === 'draft'" data-testid="admin-draft">{{
                 t('admin.draft')
               }}</UiDraftBadge>
+              <UiStateBadge
+                v-else-if="item.lifecycle === 'published'"
+                state="published"
+                data-testid="admin-published"
+                >{{ t('admin.published') }}</UiStateBadge
+              >
             </span>
             <span
               v-if="subtitle(item)"
@@ -195,14 +226,33 @@ function removeMenuItem() {
               {{ t(`admin.option.workStatus.${item.status}`) }}
             </span>
           </span>
-          <span class="rows__cell rows__meter-cell" :data-label="t('admin.col.completeness')">
-            <span class="rows__meter" aria-hidden="true">
-              <span class="rows__meter-fill" :style="{ width: `${item.completeness ?? 0}%` }" />
+          <span
+            v-if="hasPublicationColumn"
+            class="rows__cell rows__publication-cell"
+            :data-label="t('admin.col.publication')"
+          >
+            <span
+              v-if="publicationState(item) === 'missing'"
+              class="rows__missing"
+              data-testid="admin-row-publication"
+            >
+              <Icon name="tabler:alert-circle" size="14" aria-hidden="true" />
+              <span>{{ missingFields(item) }}</span>
             </span>
-            <span class="rows__percent" aria-hidden="true">{{ item.completeness ?? 0 }} %</span>
-            <span class="sr-only" data-testid="admin-row-completeness">{{
-              t('admin.row.completeness', { percent: item.completeness ?? 0 })
-            }}</span>
+            <span
+              v-else-if="publicationState(item) === 'ready'"
+              class="rows__ready"
+              data-testid="admin-row-publication"
+            >
+              <Icon name="tabler:check" size="14" aria-hidden="true" />{{
+                t('admin.row.publication.ready')
+              }}
+            </span>
+            <span
+              v-else-if="publicationState(item) === 'published'"
+              data-testid="admin-row-publication"
+              >{{ publishedOnLabel(item) }}</span
+            >
           </span>
         </template>
         <template v-else>
@@ -368,30 +418,37 @@ function removeMenuItem() {
   font-weight: 800;
 }
 
-.rows__meter-cell {
+.rows__publication-cell {
   display: flex;
-  gap: var(--space-2);
   align-items: center;
 }
 
-.rows__meter {
-  flex: 1;
-  height: 10px;
-  overflow: hidden;
+// A draft ready to publish: a chip like the status one, with a tick.
+.rows__ready {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  padding: 1px 9px;
   border: var(--border);
-  border-radius: 999px;
-  background: var(--color-surface);
-}
-
-.rows__meter-fill {
-  display: block;
-  height: 100%;
-  background: var(--color-blue);
-}
-
-.rows__percent {
+  border-radius: var(--radius);
+  background: var(--color-field-soft);
   font-size: 0.75rem;
   font-weight: 800;
+}
+
+// Missing fields: crimson, the colour of what is required.
+.rows__missing {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  color: var(--color-crimson);
+  font-size: 0.8125rem;
+  font-weight: 800;
+
+  .iconify {
+    flex: none;
+    margin-top: 2px;
+  }
 }
 
 .rows__action {
@@ -422,11 +479,11 @@ function removeMenuItem() {
   cursor: pointer;
 }
 
-// Mobile: title, one information line and the completeness; "⋮" opens the actions.
+// Mobile: title, one information line and the publication state; "⋮" opens the actions.
 @media (max-width: 1023px) {
   .rows__head,
   .rows__action,
-  .rows__cell:not(.rows__meter-cell),
+  .rows__cell:not(.rows__publication-cell),
   .rows__sub--active {
     display: none;
   }
@@ -437,7 +494,7 @@ function removeMenuItem() {
     align-items: start;
   }
 
-  // Cover, title, information and completeness become cells of one grid: the
+  // Cover, title, information and publication state become cells of one grid: the
   // cover spans the three text lines.
   .rows__main {
     display: contents;
@@ -470,7 +527,7 @@ function removeMenuItem() {
   }
 
   .rows__summary,
-  .rows__meter-cell {
+  .rows__publication-cell {
     display: flex;
     grid-column: 1 / -1;
     color: var(--color-ink-soft);
@@ -478,11 +535,11 @@ function removeMenuItem() {
   }
 
   .rows__row--works .rows__summary,
-  .rows__row--works .rows__meter-cell {
+  .rows__row--works .rows__publication-cell {
     grid-column: 2 / -1;
   }
 
-  .rows__meter-cell::before {
+  .rows__publication-cell::before {
     display: none;
   }
 }

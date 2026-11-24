@@ -56,3 +56,7 @@ export type TitleKind = (typeof TITLE_KINDS)[number];
 /** Origin of a synopsis: `official` (publisher, author) > `human` (contributor) > `machine` (automatic translation). */
 export const SYNOPSIS_SOURCES = ['official', 'human', 'machine'] as const;
 export type SynopsisSource = (typeof SYNOPSIS_SOURCES)[number];
+
+/** Names of the fields (as the API calls them) a work can lack to be published. */
+export const PUBLICATION_GAPS = ['genres', 'credits', 'publisherIds', 'synopses'] as const;
+export type PublicationGap = (typeof PUBLICATION_GAPS)[number];

@@ -967,14 +967,42 @@ describe('œuvres', () => {
       return res.body.items.map((work: { id: number }) => work.id);
     };
 
-    it('trie de A à Z, de Z à A, et par complétude', async () => {
+    it('trie de A à Z et de Z à A', async () => {
       const admin = await newAdmin();
       const { complete, bare, ongoing } = await seedWorks(admin);
 
       expect(await ids(admin, {})).toEqual([bare, complete, ongoing]);
       expect(await ids(admin, { sort: 'title_desc' })).toEqual([ongoing, complete, bare]);
-      expect((await ids(admin, { sort: 'completeness_desc' }))[0]).toBe(complete);
-      expect((await ids(admin, { sort: 'completeness' })).at(-1)).toBe(complete);
+    });
+
+    it('trie les brouillons par nombre de manques, les fiches publiées comptant pour complètes', async () => {
+      const admin = await newAdmin();
+      const ready = await createWork(admin, { title: `${PREFIX} A prête`, published: false });
+      const oneGap = await createWork(admin, {
+        title: `${PREFIX} B un manque`,
+        published: false,
+        synopses: [],
+      });
+      const twoGaps = await createWork(admin, {
+        title: `${PREFIX} C deux manques`,
+        published: false,
+        credits: [],
+        publisherIds: [],
+      });
+      const published = await createWork(admin, { title: `${PREFIX} D publiée` });
+
+      expect(await ids(admin, { sort: 'completeness' })).toEqual([
+        twoGaps,
+        oneGap,
+        ready,
+        published,
+      ]);
+      expect(await ids(admin, { sort: 'completeness_desc' })).toEqual([
+        ready,
+        oneGap,
+        twoGaps,
+        published,
+      ]);
     });
 
     it('filtre par type, statut et format, filtres combinés en ET ; q cherche aussi l’auteur', async () => {
@@ -1005,7 +1033,54 @@ describe('œuvres', () => {
     });
   });
 
-  it('résume chaque ligne : format, auteur, complétude, et qui a archivé', async () => {
+  it('donne à chaque brouillon de la liste les mêmes manques que sa fiche, et aucun aux autres', async () => {
+    const admin = await newAdmin();
+    const gapCases: Record<string, unknown>[] = [
+      {},
+      { genres: [] },
+      // A theme is not a format.
+      { genres: ['fantasy'] },
+      { credits: [] },
+      { publisherIds: [] },
+      { synopses: [] },
+      // A synopsis in another language than the original one does not count.
+      { synopses: [{ language: 'en', text: 'Summary.', source: 'official' }] },
+      { genres: [], credits: [], publisherIds: [], synopses: [] },
+    ];
+    const gapsByDraft = new Map<number, string[]>();
+    for (const [index, overrides] of gapCases.entries()) {
+      const id = await createWork(admin, {
+        title: `${PREFIX} Cas ${index}`,
+        published: false,
+        ...overrides,
+      });
+      gapsByDraft.set(id, (await admin.get(`${ADMIN}/works/${id}`)).body.publicationGaps);
+    }
+    const published = await createWork(admin, { title: `${PREFIX} Publiée` });
+    const archived = await createWork(admin, { title: `${PREFIX} Archivée` });
+    await admin.post(`${ADMIN}/works/${archived}/archive`);
+
+    type Row = { id: number; publicationGaps: string[]; publishedAt: string | null };
+    const rows = new Map<number, Row>(
+      (await admin.get(`${ADMIN}/works`).query({ q: PREFIX, lifecycle: 'draft' })).body.items.map(
+        (row: Row) => [row.id, row],
+      ),
+    );
+    for (const [id, gaps] of gapsByDraft) expect(rows.get(id)?.publicationGaps).toEqual(gaps);
+    // A draft has no publication date.
+    expect([...rows.values()].map((row) => row.publishedAt)).toEqual(gapCases.map(() => null));
+    expect([...gapsByDraft.values()].some((gaps) => gaps.length > 0)).toBe(true);
+
+    const others = (await admin.get(`${ADMIN}/works`).query({ q: PREFIX, lifecycle: 'published' }))
+      .body.items;
+    expect(others.map((row: { id: number }) => row.id)).toEqual([published]);
+    expect(others[0].publicationGaps).toEqual([]);
+    const archives = (await admin.get(`${ADMIN}/works`).query({ q: PREFIX, lifecycle: 'archived' }))
+      .body.items;
+    expect(archives[0].publicationGaps).toEqual([]);
+  });
+
+  it('résume chaque ligne : format, auteur, manques, et qui a archivé', async () => {
     const admin = await newAdmin();
     const personId = await createPerson(admin);
     const id = await createWork(admin, {
@@ -1021,8 +1096,8 @@ describe('œuvres', () => {
       id,
       formats: ['manga'],
       mainAuthor: `${PREFIX} Personne`,
-      // Synopsis, publisher and link; no cover.
-      completeness: 75,
+      publicationGaps: [],
+      publishedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
       archivedAt: null,
       archivedBy: null,
     });

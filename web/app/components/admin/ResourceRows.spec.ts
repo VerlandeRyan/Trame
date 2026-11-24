@@ -14,7 +14,8 @@ const WORKS: AdminListItem[] = [
     formats: ['manga'],
     mainAuthor: 'Léa Auteure',
     updatedAt: new Date().toISOString(),
-    completeness: 75,
+    publishedAt: '2026-03-12T10:00:00.000Z',
+    publicationGaps: [],
   },
   {
     id: 5,
@@ -26,7 +27,17 @@ const WORKS: AdminListItem[] = [
     mainAuthor: null,
     archivedAt: new Date().toISOString(),
     archivedBy: 'ryan',
-    completeness: 0,
+    publicationGaps: [],
+  },
+]
+
+const DRAFTS: AdminListItem[] = [
+  { id: 6, lifecycle: 'draft', title: 'Cendres', publicationGaps: [] },
+  {
+    id: 7,
+    lifecycle: 'draft',
+    title: 'Marées',
+    publicationGaps: ['genres', 'credits', 'publisherIds', 'synopses'],
   },
 ]
 
@@ -45,17 +56,52 @@ const mountRows = (kind: AdminKind = 'works', items = WORKS) =>
   mountSuspended(AdminResourceRows, { props: { kind, items } })
 
 describe('AdminResourceRows', () => {
-  it('décrit une œuvre : type et format, auteur, statut, complétude', async () => {
-    const wrapper = await mountRows()
-    const [first] = wrapper.findAll('[data-testid="admin-row"]')
+  it('décrit une œuvre : type et format, auteur, statut, pastille et date de publication', async () => {
+    const wrapper = await mountRows('works', [...DRAFTS, ...WORKS])
+    const [, , first] = wrapper.findAll('[data-testid="admin-row"]')
 
     expect(first!.get('a').attributes('href')).toBe('/admin/catalogue/works/4')
     expect(first!.text()).toContain('Série · Manga')
     expect(first!.text()).toContain('Léa Auteure')
     expect(first!.text()).toContain('En cours')
     expect(first!.text()).toContain('Modifiée aujourd')
-    expect(first!.text()).toContain('75 %')
-    expect(first!.get('[data-testid="admin-row-completeness"]').text()).toBe('Complétude : 75 %')
+    expect(first!.get('[data-testid="admin-published"]').text()).toBe('Publiée')
+    expect(first!.get('[data-testid="admin-row-publication"]').text()).toBe(
+      'Publiée le 12 mars 2026',
+    )
+  })
+
+  it('dit « Prête » pour un brouillon complet et nomme les champs qui manquent aux autres', async () => {
+    const wrapper = await mountRows('works', DRAFTS)
+    const [ready, incomplete] = wrapper.findAll('[data-testid="admin-row-publication"]')
+
+    expect(ready!.text()).toBe('Prête')
+    expect(incomplete!.text()).toBe('Manque : format, auteur, éditeur, synopsis')
+    expect(wrapper.find('[data-testid="admin-published"]').exists()).toBe(false)
+  })
+
+  it('laisse vide la cellule Publication d’une archive, sans pastille « Publiée »', async () => {
+    const wrapper = await mountRows('works', [...DRAFTS, ...WORKS])
+    const archived = wrapper.findAll('[data-testid="admin-row"]')[3]!
+
+    expect(archived.find('[data-testid="admin-row-publication"]').exists()).toBe(false)
+    expect(archived.find('[data-testid="admin-published"]').exists()).toBe(false)
+  })
+
+  it.each<[string, AdminListItem[]]>([
+    ['que des archives', [WORKS[1]!]],
+    ['que des fiches publiées', [WORKS[0]!]],
+  ])('retire la colonne Publication quand la liste ne contient %s', async (_, items) => {
+    const wrapper = await mountRows('works', items)
+
+    expect(wrapper.find('[data-testid="admin-row-publication"]').exists()).toBe(false)
+    expect(wrapper.get('.rows__head').text()).not.toContain('Publication')
+  })
+
+  it('garde la colonne Publication dès que la liste contient un brouillon', async () => {
+    const wrapper = await mountRows('works', [...DRAFTS, ...WORKS])
+
+    expect(wrapper.get('.rows__head').text()).toContain('Publication')
   })
 
   it.each<AdminKind>(['people', 'publishers'])(
