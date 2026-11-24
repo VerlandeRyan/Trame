@@ -214,16 +214,16 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
           </p>
 
           <ul v-if="chips.length > 0" class="search-page__filterbar">
-            <li v-for="chip in chips" :key="`${chip.key}-${chip.code}`">
+            <li v-for="chip in chips" :key="`${chip.key}-${chip.code}`" class="search-page__chip">
+              <span class="search-page__chip-label">{{ labelOf(chip.key, chip.code) }}</span>
               <button
                 type="button"
-                class="search-page__chip"
+                class="search-page__chip-remove"
                 :aria-label="t('search.removeFilter', { label: labelOf(chip.key, chip.code) })"
                 @click="
                   navigateToSearch(toggleFilter(state, chip.key, chip.code), { replace: true })
                 "
               >
-                {{ labelOf(chip.key, chip.code) }}
                 <Icon name="tabler:x" size="12" aria-hidden="true" />
               </button>
             </li>
@@ -339,6 +339,8 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .search-page {
   display: grid;
   gap: var(--space-4);
@@ -452,24 +454,33 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
 
 // 44 px touch area through the pseudo-element.
 .search-page__chip {
-  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 9px;
+  gap: 2px;
+  padding: 3px 3px 3px 9px;
   border: var(--border);
   border-radius: var(--radius);
   background: var(--color-chip);
   color: var(--color-ink);
   font-size: 0.8125rem;
   font-weight: 700;
-  cursor: pointer;
+  line-height: 1.5;
+}
 
-  &::after {
-    content: '';
-    position: absolute;
-    inset: -11px -4px;
-  }
+// Trimmed to the capital height, so the label is centred on the cross whatever the font
+// (browsers without `text-box` keep the usual placement).
+.search-page__chip-label {
+  text-box: trim-both cap alphabetic;
+}
+
+// Only the cross is a button; its gesture area reaches 44 px with a finger only.
+.search-page__chip-remove {
+  @include dismiss-button;
+  @include finger-reach(12px);
+
+  width: 20px;
+  height: 20px;
+  padding: 0;
 }
 
 .search-page__list {

@@ -238,6 +238,38 @@ $tilt-tiers: (
   }
 }
 
+// Invisible gesture area that grows a small button to 44 px with a finger only, so it never
+// covers a neighbour with a mouse. `$reach`: how far it extends past the box on every side.
+@mixin finger-reach($reach) {
+  position: relative;
+
+  @media (pointer: coarse) {
+    &::after {
+      content: '';
+      position: absolute;
+      inset: -$reach;
+    }
+  }
+}
+
+// Cross inside a frame (field, chosen record): a 30 px square, 4 px from the frame like the
+// toast cross.
+@mixin frame-dismiss-button {
+  @include dismiss-button;
+  @include finger-reach(7px);
+
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  // Pulls the box 4 px from the frame edge (the frame has a 12 px inner padding).
+  margin-right: -8px;
+  color: var(--color-ink-soft);
+
+  &:focus-visible {
+    color: var(--color-ink);
+  }
+}
+
 // Screentone: round dots fading out.
 // Include in a `::before` pseudo-element of a `position: relative` parent.
 // $angle: direction from which the screentone is densest (270deg = from the right).

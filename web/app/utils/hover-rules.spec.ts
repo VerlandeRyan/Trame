@@ -82,6 +82,35 @@ describe('liens soulignés au repos', () => {
   })
 })
 
+// Garde-fou de #276 : toute croix qui efface ou retire a le survol et l'appui de celle des toasts
+// (`dismiss-button`) ; dans un cadre, la boîte carrée détachée du bord (`frame-dismiss-button`).
+describe('croix de retrait', () => {
+  const mixins = readFileSync(join(appDirectory, 'assets/styles/_mixins.scss'), 'utf8')
+  const guards: [string, string][] = [
+    ['components/admin/RecordPicker.vue', '@include frame-dismiss-button'],
+    // The header cross keeps its frame: same veil, written over the surface colour.
+    [
+      'components/layout/Header.vue',
+      '.layout-header__search-close {\n  @media (prefers-reduced-motion: no-preference) {\n    transition: background-color 0.15s;\n  }\n\n  @include on-hover {\n    background: color-mix(in srgb, currentcolor 25%, var(--color-surface));',
+    ],
+    ['components/ui/SearchField.vue', '@include frame-dismiss-button'],
+    ['components/layout/SearchBox.vue', '@include frame-dismiss-button'],
+    ['pages/search.vue', '@include dismiss-button'],
+  ]
+
+  it('la croix dans un cadre reprend le voile de la croix des toasts', () => {
+    expect(mixins).toMatch(/@mixin frame-dismiss-button \{[^}]*@include dismiss-button;/)
+  })
+
+  // Whitespace collapsed: the files may use Windows line endings.
+  const squashed = (text: string) => text.replaceAll(/\s+/g, ' ')
+
+  it.each(guards)('%s utilise `%s`', (file, include) => {
+    const source = readFileSync(join(appDirectory, file), 'utf8')
+    expect(squashed(source)).toContain(squashed(include))
+  })
+})
+
 // Garde-fou de #165 : le survol et l'appui ne changent pas le choix courant d'un menu ou d'un groupe
 // de pastilles (règle « Sélectionné » des conventions).
 describe('survol du choix courant', () => {

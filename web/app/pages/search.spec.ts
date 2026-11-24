@@ -162,9 +162,19 @@ describe('page de résultats', () => {
   it('retire un filtre depuis sa pastille', async () => {
     const wrapper = await mountSuspended(SearchPage, { route: '/search?q=tit&type=series' })
 
-    await wrapper.get('.search-page__chip').trigger('click')
+    await wrapper.get('.search-page__chip-remove').trigger('click')
 
     await vi.waitFor(() => expect(useRoute().query).toEqual({ q: 'tit' }))
+  })
+
+  it('ne rend cliquable que la croix de la pastille, pas son libellé', async () => {
+    const wrapper = await mountSuspended(SearchPage, { route: '/search?q=tit&type=series' })
+
+    const chip = wrapper.get('.search-page__chip')
+    expect(chip.element.tagName).not.toBe('BUTTON')
+    const remove = chip.get('button.search-page__chip-remove')
+    expect(remove.attributes('aria-label')).toBe('Retirer le filtre Série')
+    expect(chip.findAll('button')).toHaveLength(1)
   })
 
   it('propose les trois tris, envoie le choix à la liste et revient à la page 1', async () => {
