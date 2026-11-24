@@ -3,13 +3,15 @@
  * Search field with a magnifier. `class` and `style` go to the frame (the caller places it); the
  * other native attributes (placeholder, maxlength, test id, listeners…) go to the input. `label`
  * is the hidden accessible name; without it, the caller links its own visible label by `id`.
- * `small`: low field on desktop (filters of the search page).
+ * `small`: low field on desktop (filters of the search page). A cross empties the filled field
+ * through a native `input` event, so callers react as to a keystroke.
  */
 import type { StyleValue } from 'vue'
 
 defineOptions({ inheritAttrs: false })
 defineProps<{ label?: string; small?: boolean }>()
 const attrs = useAttrs()
+const { t } = useI18n()
 /** Native attributes for the input (everything but class and style). */
 const inputAttributes = computed(() => {
   const native = { ...attrs }
@@ -28,6 +30,15 @@ const input = ref<HTMLInputElement | null>(null)
 function onInput(event: Event) {
   model.value = (event.target as HTMLInputElement).value
   emit('input', event)
+}
+
+/** Empties the field through a native `input` event, so every listener reacts as to a keystroke. */
+function clear() {
+  const field = input.value
+  if (!field) return
+  field.value = ''
+  field.dispatchEvent(new Event('input', { bubbles: true }))
+  field.focus()
 }
 
 defineExpose({
@@ -54,10 +65,22 @@ defineExpose({
       :aria-label="label"
       @input="onInput"
     />
+    <button
+      v-if="model !== ''"
+      type="button"
+      class="search__clear"
+      :aria-label="t('action.clearField')"
+      data-testid="search-clear"
+      @click="clear"
+    >
+      <Icon name="tabler:x" aria-hidden="true" />
+    </button>
   </div>
 </template>
 
 <style scoped lang="scss">
+@use '~/assets/styles/mixins' as *;
+
 .search {
   display: flex;
   align-items: center;
@@ -92,6 +115,26 @@ defineExpose({
       font-size: 14px;
     }
   }
+}
+
+// The cross is ours: the browser's own one cannot be styled like the other crosses.
+.search__clear {
+  @include frame-dismiss-button;
+
+  font-size: 16px;
+
+  .search--small & {
+    @media (min-width: 768px) {
+      width: 20px;
+      height: 20px;
+      margin-right: -6px;
+      font-size: 14px;
+    }
+  }
+}
+
+.search__input::-webkit-search-cancel-button {
+  display: none;
 }
 
 .search__input {

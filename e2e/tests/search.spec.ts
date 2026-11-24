@@ -41,6 +41,24 @@ test.describe('suggestions', () => {
     await expect(menu).toBeVisible()
   })
 
+  test('la croix du champ efface la saisie, ferme les suggestions et rend le focus', async ({
+    page,
+  }) => {
+    await page.goto('/')
+    await waitForHydration(page)
+    const input = page.getByTestId('search-input').first()
+    await expect(page.getByTestId('search-clear').first()).toBeHidden()
+
+    await input.fill('lanternes')
+    await expect(page.getByTestId('search-suggestions').first()).toBeVisible()
+    await page.getByTestId('search-clear').first().click()
+
+    await expect(input).toHaveValue('')
+    await expect(input).toBeFocused()
+    await expect(page.getByTestId('search-suggestions').first()).toBeHidden()
+    await expect(page.getByTestId('search-clear').first()).toBeHidden()
+  })
+
   test('se ferment avec Échap et Entrée ouvre la page de résultats', async ({ page }) => {
     await page.goto('/')
     await waitForHydration(page)
@@ -58,6 +76,19 @@ test.describe('suggestions', () => {
 })
 
 test.describe('page de résultats', () => {
+  test('seule la croix d’une pastille retire son filtre', async ({ page }) => {
+    await page.goto('/search?q=basalte&type=series')
+    await waitForHydration(page)
+    await expect(page.getByTestId('search-result')).toHaveCount(1)
+
+    await page.locator('.search-page__chip').getByText('Série').click()
+    await expect(page).toHaveURL(/type=series/)
+
+    await page.getByRole('button', { name: 'Retirer le filtre Série' }).click()
+    await expect(page).not.toHaveURL(/type=/)
+    await expect(page.getByTestId('search-result')).toHaveCount(3)
+  })
+
   test('liste les résultats, filtre par type et retire le filtre', async ({ page }) => {
     await page.goto('/search?q=basalte')
     // Hydratation terminée : sinon la case cochée trop tôt n'est pas prise en compte.

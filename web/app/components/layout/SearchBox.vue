@@ -155,6 +155,13 @@ function onPointerDown(event: PointerEvent) {
 
 const input = ref<HTMLInputElement | null>(null)
 
+/** Empties the field, drops the suggestions and gives the focus back to the field. */
+function clear() {
+  query.value = ''
+  onInput()
+  input.value?.focus()
+}
+
 // `submit`: the home "Search" button, placed outside the field, runs the same search.
 defineExpose({ focus: () => input.value?.focus(), submit })
 
@@ -183,7 +190,7 @@ watch(
         v-model="query"
         type="search"
         class="search-box__input"
-        :class="{ 'search-box__input--open': expanded }"
+        :class="{ 'search-box__input--open': expanded, 'search-box__input--filled': query !== '' }"
         role="combobox"
         autocomplete="off"
         enterkeyhint="search"
@@ -201,6 +208,16 @@ watch(
         @keydown.up.prevent="move(-1)"
         @keydown.esc="onEscape"
       />
+      <button
+        v-if="query !== ''"
+        type="button"
+        class="search-box__clear"
+        :aria-label="t('action.clearField')"
+        data-testid="search-clear"
+        @click="clear"
+      >
+        <Icon name="tabler:x" aria-hidden="true" />
+      </button>
     </form>
 
     <ul
@@ -280,6 +297,22 @@ watch(
   white-space: nowrap;
 }
 
+// The cross is ours: the browser's own one cannot be styled like the other crosses. It sits 4 px
+// inside the frame (3 px border), centred on the field.
+.search-box__clear {
+  @include frame-dismiss-button;
+
+  position: absolute;
+  inset-block: 0;
+  right: 7px;
+  margin: auto 0;
+  font-size: 16px;
+}
+
+.search-box__input::-webkit-search-cancel-button {
+  display: none;
+}
+
 // 16 px on mobile: below that, Safari iOS zooms on focus.
 .search-box__input {
   width: 100%;
@@ -312,6 +345,28 @@ watch(
 
     @media (min-width: 768px) {
       font-size: 0.875rem;
+    }
+  }
+}
+
+// Room for the cross, only while it is shown (the placeholder keeps its full width otherwise).
+.search-box__input--filled {
+  padding-right: 44px;
+}
+
+.search-box--hero .search-box__input--filled {
+  padding-right: 46px;
+}
+
+// Mobile header: the close button next to the field already ends the search, so no second cross.
+.search-box--header {
+  @media (max-width: 767px) {
+    .search-box__clear {
+      display: none;
+    }
+
+    .search-box__input--filled {
+      padding-right: 12px;
     }
   }
 }

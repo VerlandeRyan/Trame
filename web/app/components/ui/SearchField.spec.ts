@@ -59,6 +59,30 @@ describe('UiSearchField', () => {
     expect((wrapper.get('input').element as HTMLInputElement).value).toBe('lanternes')
   })
 
+  it('ne montre la croix que si le champ est rempli', async () => {
+    const empty = await mountField()
+    const filled = await mountField({ modelValue: 'lanternes' })
+
+    expect(empty.find('[data-testid="search-clear"]').exists()).toBe(false)
+    const clear = filled.get('[data-testid="search-clear"]')
+    expect(clear.attributes('type')).toBe('button')
+    expect(clear.attributes('aria-label')).toBe('Effacer le champ')
+  })
+
+  it('efface le champ, prévient comme une saisie et rend le focus au champ', async () => {
+    const wrapper = await mountSuspended(UiSearchField, {
+      props: { label: 'Rechercher', modelValue: 'lanternes' },
+      attachTo: document.body,
+    })
+
+    await wrapper.get('[data-testid="search-clear"]').trigger('click')
+
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual([''])
+    expect(wrapper.emitted('input')).toHaveLength(1)
+    expect(document.activeElement).toBe(wrapper.get('input').element)
+    wrapper.unmount()
+  })
+
   it('a une variante petite', async () => {
     const wrapper = await mountField({ small: true })
 

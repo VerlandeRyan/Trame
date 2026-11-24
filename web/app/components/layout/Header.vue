@@ -226,6 +226,22 @@ watch(
   margin-left: auto;
 }
 
+// Keeps its frame (twin of the magnifier); the hover is the veil of the toast cross, over the
+// surface colour so the frame stays opaque.
+.layout-header__search-close {
+  @media (prefers-reduced-motion: no-preference) {
+    transition: background-color 0.15s;
+  }
+
+  @include on-hover {
+    background: color-mix(in srgb, currentcolor 25%, var(--color-surface));
+  }
+
+  &:active {
+    background: color-mix(in srgb, currentcolor 25%, var(--color-surface));
+  }
+}
+
 .layout-header__sign-in {
   white-space: nowrap;
 }

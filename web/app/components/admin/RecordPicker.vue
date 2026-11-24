@@ -207,22 +207,7 @@ onBeforeUnmount(() => clearTimeout(timer))
 
 // Change the choice: a plain icon inside the frame, so it is not mistaken for removing the row.
 .picker__clear {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: var(--touch);
-  // Inside the frame: the box keeps the height of the search field (like `UiField`).
-  height: calc(var(--touch) - 6px);
-  margin-right: calc(var(--space-3) * -1);
-  border: 0;
-  background: transparent;
-  color: var(--color-ink-soft);
-  cursor: pointer;
-
-  &:hover,
-  &:focus-visible {
-    color: var(--color-ink);
-  }
+  @include frame-dismiss-button;
 }
 
 // Overlaid on the fields below: the card keeps its height while searching.

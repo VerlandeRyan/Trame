@@ -65,6 +65,23 @@ describe('LayoutSearchBox', () => {
     expect(options[2]).toBe('Voir les 34 résultats')
   })
 
+  it('la croix efface la saisie, referme les suggestions et rend le focus au champ', async () => {
+    const wrapper = await mountSuspended(LayoutSearchBox, { attachTo: document.body })
+    expect(wrapper.find('[data-testid="search-clear"]').exists()).toBe(false)
+
+    await typeInto(wrapper, 'étoile')
+    await vi.waitFor(() => expect(wrapper.findAll('[role="option"]')).toHaveLength(3))
+    const clear = wrapper.get('[data-testid="search-clear"]')
+    expect(clear.attributes('aria-label')).toBe('Effacer le champ')
+    await clear.trigger('click')
+
+    expect((wrapper.get('input').element as HTMLInputElement).value).toBe('')
+    expect(wrapper.get('input').attributes('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(wrapper.get('input').element)
+    expect(wrapper.find('[data-testid="search-clear"]').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
   it('navigue au clavier et ouvre la fiche de la suggestion active avec Entrée', async () => {
     const wrapper = await mountSuspended(LayoutSearchBox)
     await typeInto(wrapper, 'étoile')
