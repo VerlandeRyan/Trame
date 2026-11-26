@@ -21,6 +21,12 @@ export default defineNuxtConfig({
     },
   },
 
+  // Linked stylesheets, not inlined ones: the server inlines component styles in render order
+  // (page first) while the browser loads them dependencies first, so two rules of the same
+  // specificity (`.panel` and a page class) would win differently after hydration and the page
+  // would jump.
+  features: { inlineStyles: false },
+
   // Base headers on every response, API relay included. A CSP will come separately (nonce).
   routeRules: {
     '/**': {
