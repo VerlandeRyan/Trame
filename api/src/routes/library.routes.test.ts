@@ -127,6 +127,96 @@ describe('GET /works/:id/entry', () => {
   });
 });
 
+describe('GET /me/entries/listed', () => {
+  const listedUrl = '/api/v1/me/entries/listed';
+
+  /** Ids of published works other than `workId`. */
+  async function otherWorkIds(count: number): Promise<number[]> {
+    const res = await client.query(
+      `SELECT id FROM work WHERE id <> $1 AND deleted_at IS NULL AND published_at IS NOT NULL
+       ORDER BY id LIMIT $2`,
+      [workId, count],
+    );
+    return res.rows.map((row) => Number(row.id));
+  }
+
+  it('refuse un visiteur', async () => {
+    const res = await request(app)
+      .get(listedUrl)
+      .query({ ids: String(workId) });
+    expect(res.status).toBe(401);
+    expect(res.body.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('renvoie les seules œuvres de ma liste', async () => {
+    const agent = await newReader('lectrice');
+    const [other] = await otherWorkIds(1);
+    await agent.put(entryUrl(workId)).send({ status: 'reading' });
+
+    const res = await agent.get(listedUrl).query({ ids: `${workId},${other}` });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ workIds: [workId] });
+  });
+
+  it('ignore les doublons et les œuvres inconnues', async () => {
+    const agent = await newReader('lectrice');
+    await agent.put(entryUrl(workId)).send({ status: 'plan_to_read' });
+
+    const res = await agent.get(listedUrl).query({ ids: `${workId},${workId},999999` });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ workIds: [workId] });
+  });
+
+  it('ne montre pas la liste des autres lecteurs', async () => {
+    const owner = await newReader('proprietaire');
+    const other = await newReader('curieuse');
+    await owner.put(entryUrl(workId)).send({ status: 'completed' });
+
+    const res = await other.get(listedUrl).query({ ids: String(workId) });
+    expect(res.body).toEqual({ workIds: [] });
+  });
+
+  it('laisse de côté une œuvre archivée dont l’entrée est gardée', async () => {
+    const agent = await newReader('lectrice');
+    await agent.put(entryUrl(workId)).send({ status: 'reading' });
+    await client.query('UPDATE work SET deleted_at = now() WHERE id = $1', [workId]);
+    try {
+      const res = await agent.get(listedUrl).query({ ids: String(workId) });
+      expect(res.body).toEqual({ workIds: [] });
+    } finally {
+      await client.query('UPDATE work SET deleted_at = NULL WHERE id = $1', [workId]);
+    }
+  });
+
+  it('répond sans erreur pour un identifiant plus grand que ceux de la base', async () => {
+    const agent = await newReader('lectrice');
+    const res = await agent.get(listedUrl).query({ ids: '999999999999999' });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ workIds: [] });
+  });
+
+  it('accepte jusqu’à 50 identifiants', async () => {
+    const agent = await newReader('lectrice');
+    const ids = Array.from({ length: 50 }, (_, index) => index + 1).join(',');
+    const res = await agent.get(listedUrl).query({ ids });
+    expect(res.status).toBe(200);
+  });
+
+  it.each([
+    ['absent', {}],
+    ['vide', { ids: '' }],
+    ['non numérique', { ids: 'abc' }],
+    ['nul', { ids: '0' }],
+    ['négatif', { ids: '-3' }],
+    ['trop long', { ids: Array.from({ length: 51 }, (_, index) => index + 1).join(',') }],
+  ])('refuse des identifiants %s', async (_label, query) => {
+    const agent = await newReader('lectrice');
+    const res = await agent.get(listedUrl).query(query);
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('VALIDATION_ERROR');
+  });
+});
+
 describe('PUT /works/:id/entry', () => {
   it('ajoute à la liste, puis relit la même entrée', async () => {
     const agent = await newReader('lectrice');

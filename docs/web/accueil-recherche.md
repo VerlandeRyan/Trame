@@ -15,7 +15,12 @@ Comportement côté front (Nuxt) des écrans `/`, `/search` et de la page d'erre
 - Au mobile, « Filtres (n) » est à gauche et le tri à droite, sur une ligne, comme au catalogue admin ; les pastilles des filtres actifs sont au-dessus (le libellé n'est pas cliquable : seule leur croix retire le filtre). Au bureau, le tri seul est à droite.
 - Tri par `ui/Select` (menu stylé, texte « Trier par Pertinence ▾ » au bureau, « Trier par ▾ » au mobile ; `relevance`, `title`, `recent`) : `sort` dans l'URL seulement s'il diffère de la pertinence, envoyé à la liste mais jamais aux compteurs ; le menu de suggestions se rouvre au clic ou au focus du champ.
 - Page en `noindex`.
-- Le bouton « Ajouter » des résultats et « Proposer cette œuvre » (US-09) sont visibles mais inactifs : l'ajout depuis la recherche reste à faire (#190 ; la fiche œuvre porte déjà `library/EntryCard`).
+- « Proposer cette œuvre » (US-09) est visible mais inactif.
+- **Ajout à la liste** : chaque ligne porte « Ajouter + » (le « + » seul sous 768 px).
+  - Œuvre absente de la liste : « Ajouter » l'ajoute en « À lire » et le confirme par un toast avec « Annuler ». Œuvre déjà dans la liste : plus aucun bouton (le statut se change sur la fiche ou dans Ma liste). Les étiquettes (« One-shot »…) ne passent jamais sur deux lignes.
+  - Les œuvres de la page déjà dans la liste sont lues en un appel (`GET /me/entries/listed`) avec les résultats, qui s'affichent ensemble (pas de clignotement d'une page à l'autre). Si cette lecture échoue, un connecté voit un emplacement vide et un toast « Réessayer », jamais un « Ajouter » qui écraserait le statut d'une œuvre déjà suivie.
+  - Visiteur : « Ajouter » ouvre la connexion ; au retour sur la recherche, l'œuvre choisie est ajoutée une seule fois (10 minutes), avec le même toast.
+  - Écriture à effet immédiat (`useResultLibrary`) ; un échec rétablit l'état d'avant et propose « Réessayer ».
 - Logique pure dans `utils/search.ts`.
 
 ## Explorer (#97)

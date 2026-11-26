@@ -236,6 +236,19 @@ export const libraryEntryResponseSchema = z
   entry: LibraryEntry | null;
 }>;
 
+/** Which of several works are in the signed-in user's list. */
+export const listedWorksResponseSchema = z
+  .strictObject({
+    workIds: z
+      .array(z.number().int())
+      .describe(
+        'Identifiants, parmi ceux demandés, des œuvres de ma liste (hors œuvres archivées).',
+      ),
+  })
+  .describe('Œuvres déjà dans la liste de l’utilisateur.') satisfies z.ZodType<{
+  workIds: number[];
+}>;
+
 /** A page of the reading list with its counts. */
 export const libraryPageSchema = z
   .strictObject({

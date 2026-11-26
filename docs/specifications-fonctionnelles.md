@@ -50,7 +50,8 @@ Rôles : **Visiteur** (non connecté), **Utilisateur** (connecté via Google), *
 
 ### Suivi
 **US-05 — Ajouter une œuvre à ma liste**
-- Depuis une fiche ou la recherche, choix du statut (En cours, Terminé, À lire, En pause, Abandonné).
+- Depuis une fiche, choix du statut (En cours, Terminé, À lire, En pause, Abandonné). Depuis la recherche, « Ajouter » met l'œuvre en « À lire » ; le statut se change ensuite sur la fiche ou dans Ma liste.
+- Un visiteur qui choisit « Ajouter » est invité à se connecter ; à son retour, l'œuvre est ajoutée une fois, avec un « Annuler » (détail : [accueil-recherche](web/accueil-recherche.md)).
 - Une seule entrée par couple (utilisateur, œuvre).
 - Chaque statut a une couleur propre, toujours accompagnée de son libellé.
 

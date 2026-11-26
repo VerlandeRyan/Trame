@@ -92,6 +92,8 @@ export interface LibraryRepository {
   /** True if the work exists and is not archived. */
   isWorkAvailable(workId: number): Promise<boolean>;
   find(userId: number, workId: number): Promise<LibraryEntry | null>;
+  /** The given works that are in the user's list; archived works are left out. */
+  findListedWorkIds(userId: number, workIds: number[]): Promise<number[]>;
   /**
    * Stores the entry and its journal in one transaction. Writes of one reader are serialised:
    * `decide` receives the up-to-date current entry, which keeps the journal exact even when two
@@ -219,6 +221,18 @@ export function createLibraryRepository(db: Db): LibraryRepository {
         .where('work_id', '=', workId)
         .executeTakeFirst();
       return row ? toEntry(row) : null;
+    },
+
+    async findListedWorkIds(userId, workIds) {
+      const rows = await db
+        .selectFrom('library_entry')
+        .innerJoin('work', 'work.id', 'library_entry.work_id')
+        .select('library_entry.work_id')
+        .where('library_entry.user_id', '=', userId)
+        .where('library_entry.work_id', 'in', workIds)
+        .where(visibleWork)
+        .execute();
+      return rows.map((row) => Number(row.work_id));
     },
 
     async save(userId, workId, decide) {

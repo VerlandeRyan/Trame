@@ -3,7 +3,7 @@ import type { Request, RequestHandler } from 'express';
 import { currentUser } from '../middleware/auth.js';
 import { validated } from '../middleware/validate.js';
 import { idParams } from '../schemas/common.js';
-import { entryBody, listEntriesQuery } from '../schemas/library.js';
+import { entryBody, listedWorksQuery, listEntriesQuery } from '../schemas/library.js';
 import type { LibraryService } from '../services/library.service.js';
 
 /** Reads the user and work ids of a request; the route has already checked the user and validated the id. */
@@ -18,8 +18,14 @@ export function createLibraryController(service: LibraryService): {
   save: RequestHandler;
   remove: RequestHandler;
   list: RequestHandler;
+  listed: RequestHandler;
 } {
   return {
+    async listed(req, res) {
+      const input = validated(listedWorksQuery, req.query);
+      res.json({ workIds: await service.listedWorkIds(currentUser(req).id, input) });
+    },
+
     async list(req, res) {
       const input = validated(listEntriesQuery, req.query);
       res.json(await service.listEntries(currentUser(req).id, input));

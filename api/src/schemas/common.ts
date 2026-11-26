@@ -7,12 +7,12 @@ export const lang = z
   .enum(SUPPORTED_LANGUAGES)
   .describe('Langue de l’application ; absente, titres et synopsis sont dans la langue originale.');
 
+/** Numeric identifier written as a string, as read from a URL or a query. */
+export const idString = z.string().regex(/^[1-9]\d{0,14}$/);
+
 /** Numeric identifier of a resource, read from the URL. */
 export const idParams = z.object({
-  id: z
-    .string()
-    .regex(/^[1-9]\d{0,14}$/)
-    .transform(Number),
+  id: idString.transform(Number),
 });
 
 /** Genre or format code: a lowercase slug. */
@@ -29,11 +29,14 @@ const MAX_FILTER_VALUES = 10;
 export const MULTI_VALUE = `Liste séparée par des virgules (${MAX_FILTER_VALUES} valeurs au plus, doublons ignorés).`;
 
 /** Comma-separated list (`status=ongoing,hiatus`), each value validated, duplicates removed. */
-export function commaSeparatedList<T extends z.ZodType<string, string>>(item: T) {
+export function commaSeparatedList<T extends z.ZodType<string, string>>(
+  item: T,
+  maxValues = MAX_FILTER_VALUES,
+) {
   return z
     .string()
     .transform((value) => [...new Set(value.split(',').map((part) => part.trim()))])
-    .pipe(z.array(item).min(1).max(MAX_FILTER_VALUES));
+    .pipe(z.array(item).min(1).max(maxValues));
 }
 
 /** `page` and `pageSize` of a list; `items` names what it holds (used in the documentation text). */

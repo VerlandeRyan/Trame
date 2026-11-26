@@ -977,6 +977,83 @@
         }
       }
     },
+    "/api/v1/me/entries/listed": {
+      "get": {
+        "summary": "Savoir lesquelles de ces œuvres sont dans ma liste",
+        "operationId": "findListedWorks",
+        "tags": [
+          "library"
+        ],
+        "security": [
+          {
+            "sessionCookie": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "ids",
+            "in": "query",
+            "required": true,
+            "description": "Identifiants d’œuvres séparés par des virgules (50 au plus, doublons ignorés).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Identifiants des œuvres demandées qui sont dans ma liste.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListedWorksResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Identifiants invalides. Code : `VALIDATION_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Connexion requise. Code : `UNAUTHENTICATED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inscription en attente du choix du handle. Code : `HANDLE_REQUIRED`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/me/profile": {
       "patch": {
         "summary": "Régler la visibilité de mon profil",
@@ -6331,6 +6408,25 @@
         ],
         "additionalProperties": false,
         "description": "Suivi d’une œuvre par l’utilisateur connecté."
+      },
+      "ListedWorksResponse": {
+        "type": "object",
+        "properties": {
+          "workIds": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": -9007199254740991,
+              "maximum": 9007199254740991
+            },
+            "description": "Identifiants, parmi ceux demandés, des œuvres de ma liste (hors œuvres archivées)."
+          }
+        },
+        "required": [
+          "workIds"
+        ],
+        "additionalProperties": false,
+        "description": "Œuvres déjà dans la liste de l’utilisateur."
       },
       "LibraryPage": {
         "type": "object",

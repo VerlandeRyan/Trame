@@ -6,7 +6,7 @@ import { requireUser } from '../middleware/auth.js';
 import { rateLimitOptions, type RateLimitSettings } from '../middleware/rate-limit.js';
 import { validate } from '../middleware/validate.js';
 import { idParams } from '../schemas/common.js';
-import { entryBody, listEntriesQuery } from '../schemas/library.js';
+import { entryBody, listedWorksQuery, listEntriesQuery } from '../schemas/library.js';
 import type { LibraryService } from '../services/library.service.js';
 
 /** Mounted under the current-user prefix: the signed-in user's whole list. */
@@ -14,6 +14,12 @@ export function createMyLibraryRouter(service: LibraryService): Router {
   const controller = createLibraryController(service);
   const router = Router();
   router.get('/entries', requireUser, validate('query', listEntriesQuery), controller.list);
+  router.get(
+    '/entries/listed',
+    requireUser,
+    validate('query', listedWorksQuery),
+    controller.listed,
+  );
   return router;
 }
 

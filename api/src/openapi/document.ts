@@ -30,7 +30,7 @@ import {
 } from '../schemas/admin-catalogue.js';
 import { handleBody, loginQuery } from '../schemas/auth.js';
 import { idParams } from '../schemas/common.js';
-import { entryBody, listEntriesQuery } from '../schemas/library.js';
+import { entryBody, listedWorksQuery, listEntriesQuery } from '../schemas/library.js';
 import { profileParams, profileQuery, visibilityBody } from '../schemas/profile.js';
 import { facetsQuery, listWorksQuery, workQuery } from '../schemas/work.js';
 import { sessionCookieName } from '../session/middleware.js';
@@ -50,6 +50,7 @@ import {
   featuredListSchema,
   genreListSchema,
   healthSchema,
+  listedWorksResponseSchema,
   libraryEntryResponseSchema,
   libraryPageSchema,
   profileSchema,
@@ -553,6 +554,25 @@ export function buildOpenApiDocument() {
           },
         },
       },
+      [`${API_PREFIX}/me/entries/listed`]: {
+        get: {
+          summary: 'Savoir lesquelles de ces œuvres sont dans ma liste',
+          operationId: 'findListedWorks',
+          tags: ['library'],
+          security: [{ sessionCookie: [] }],
+          parameters: toParameters(listedWorksQuery, 'query'),
+          responses: {
+            '200': jsonResponse(
+              'ListedWorksResponse',
+              'Identifiants des œuvres demandées qui sont dans ma liste.',
+            ),
+            '400': errorResponse('VALIDATION_ERROR', 'Identifiants invalides.'),
+            '401': errorResponse('UNAUTHENTICATED', 'Connexion requise.'),
+            '403': errorResponse('HANDLE_REQUIRED', 'Inscription en attente du choix du handle.'),
+            '500': internalError,
+          },
+        },
+      },
       [`${API_PREFIX}/me/profile`]: {
         patch: {
           summary: 'Régler la visibilité de mon profil',
@@ -750,6 +770,7 @@ export function buildOpenApiDocument() {
         TopRatedList: toJsonSchema(topRatedListSchema, 'output'),
         GenreList: toJsonSchema(genreListSchema, 'output'),
         LibraryEntryResponse: toJsonSchema(libraryEntryResponseSchema, 'output'),
+        ListedWorksResponse: toJsonSchema(listedWorksResponseSchema, 'output'),
         LibraryPage: toJsonSchema(libraryPageSchema, 'output'),
         Profile: toJsonSchema(profileSchema, 'output'),
         ProfileVisibility: toJsonSchema(profileVisibilitySchema, 'output'),

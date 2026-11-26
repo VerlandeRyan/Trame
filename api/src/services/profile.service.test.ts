@@ -107,6 +107,7 @@ function fakeLibrary(): LibraryService & { listedFor: number[] } {
     getEntry: () => Promise.resolve(null),
     saveEntry: () => Promise.reject(new Error('non utilisé')),
     removeEntry: () => Promise.resolve(),
+    listedWorkIds: () => Promise.resolve([]),
     listEntries: (userId) => {
       listedFor.push(userId);
       return Promise.resolve(page);

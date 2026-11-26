@@ -1,8 +1,12 @@
 /** Input schemas of the reading list. */
 import { z } from 'zod';
 import { LIBRARY_STATUSES } from '../domain/user-enums.js';
-import type { EntryInput, ListEntriesInput } from '../services/library.service.js';
-import { commaSeparatedList, lang, MULTI_VALUE, pageQuery } from './common.js';
+import type {
+  EntryInput,
+  ListedWorksInput,
+  ListEntriesInput,
+} from '../services/library.service.js';
+import { commaSeparatedList, idString, lang, MULTI_VALUE, pageQuery } from './common.js';
 
 /** More chapters than any work has: bounds the input, not a business rule. */
 const MAX_COUNT = 99_999;
@@ -48,6 +52,18 @@ export const entryBody = z.strictObject({
     )
     .optional(),
 }) satisfies z.ZodType<EntryInput>;
+
+/** Most works asked about at once: the largest page of any list. */
+const MAX_LISTED_IDS = 50;
+
+/** Query of which of several works are in the signed-in user's list. */
+export const listedWorksQuery = z.object({
+  ids: commaSeparatedList(idString, MAX_LISTED_IDS)
+    .transform((ids) => ids.map(Number))
+    .describe(
+      `Identifiants d’œuvres séparés par des virgules (${MAX_LISTED_IDS} au plus, doublons ignorés).`,
+    ),
+}) satisfies z.ZodType<ListedWorksInput>;
 
 /** Query of a reading list: search, status filter, sort and pagination. */
 export const listEntriesQuery = z.object({

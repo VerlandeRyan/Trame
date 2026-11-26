@@ -2,8 +2,19 @@
 import { originalLine, translatedCode, type WorkSummary } from '~/utils/search'
 import { coverUrl, workSlug } from '~/utils/work'
 
-/** One result of the search page: cover, title, tags and author line. */
-const props = defineProps<{ work: WorkSummary }>()
+/**
+ * One result of the search page: cover, title, tags and author line, and the button that adds the
+ * work to the reader's list (no button once the work is in the list).
+ */
+const props = defineProps<{
+  work: WorkSummary
+  isSignedIn: boolean
+  /** The work is already in the reader's list. */
+  isListed: boolean
+  /** False until the list is read for the page. */
+  isListLoaded: boolean
+}>()
+const emit = defineEmits<{ add: [] }>()
 const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
 
@@ -42,16 +53,24 @@ const authorLine = computed(() =>
       </ul>
       <p class="result__meta">{{ authorLine }}</p>
     </div>
-    <!-- Inactive until 'Add to my list' exists. -->
     <div class="result__action">
+      <!-- List not read yet: no 'Add', so a work already in the list is never offered for adding. -->
+      <div
+        v-if="isSignedIn && !isListLoaded"
+        class="result__loading"
+        aria-busy="true"
+        data-testid="result-loading"
+      />
       <UiButton
+        v-else-if="!isListed"
         variant="primary"
         size="small"
-        disabled
         class="result__add"
         :aria-label="t('search.addTo', { title: work.title })"
+        data-testid="result-add"
+        @click="emit('add')"
       >
-        <span class="result__add-label">{{ t('search.add') }}</span>
+        <span class="result__label">{{ t('search.add') }}</span>
         <Icon name="tabler:plus" size="14" aria-hidden="true" />
       </UiButton>
     </div>
@@ -118,6 +137,7 @@ const authorLine = computed(() =>
 
 .result__tags .result__tag {
   padding: 0 8px;
+  white-space: nowrap;
   font-size: 0.8125rem;
 }
 
@@ -135,18 +155,33 @@ const authorLine = computed(() =>
   min-height: 36px;
   padding: 0 10px;
   font-size: 0.875rem;
+  white-space: nowrap;
 
   @media (pointer: coarse) {
     min-height: var(--touch);
   }
+}
+
+// Same footprint as the button, so the row does not shift when the status arrives.
+.result__loading {
+  width: 44px;
 
   @media (min-width: 768px) {
-    padding: 0 10px;
+    width: 92px;
+  }
+
+  min-height: 36px;
+  border: var(--border);
+  border-radius: var(--radius);
+  background: var(--color-field-soft);
+
+  @media (pointer: coarse) {
+    min-height: var(--touch);
   }
 }
 
 // Mobile: '+' alone, the label stays in `aria-label`.
-.result__add-label {
+.result__label {
   display: none;
 
   @media (min-width: 768px) {
