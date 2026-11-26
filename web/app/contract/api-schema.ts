@@ -225,6 +225,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/me/entries/listed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Savoir lesquelles de ces œuvres sont dans ma liste */
+        get: operations["findListedWorks"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/me/profile": {
         parameters: {
             query?: never;
@@ -941,6 +958,11 @@ export interface components {
                 /** @description Date `YYYY-MM-DD`. */
                 finishedOn: string | null;
             } | null;
+        };
+        /** @description Œuvres déjà dans la liste de l’utilisateur. */
+        ListedWorksResponse: {
+            /** @description Identifiants, parmi ceux demandés, des œuvres de ma liste (hors œuvres archivées). */
+            workIds: number[];
         };
         /** @description Une page de la liste de lecture de l’utilisateur connecté. */
         LibraryPage: {
@@ -1781,6 +1803,65 @@ export interface operations {
                 };
             };
             /** @description Paramètres invalides. Code : `VALIDATION_ERROR`. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Connexion requise. Code : `UNAUTHENTICATED`. */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Inscription en attente du choix du handle. Code : `HANDLE_REQUIRED`. */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+            /** @description Erreur inattendue, sans détail. Code : `INTERNAL_ERROR`. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Error"];
+                };
+            };
+        };
+    };
+    findListedWorks: {
+        parameters: {
+            query: {
+                /** @description Identifiants d’œuvres séparés par des virgules (50 au plus, doublons ignorés). */
+                ids: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Identifiants des œuvres demandées qui sont dans ma liste. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ListedWorksResponse"];
+                };
+            };
+            /** @description Identifiants invalides. Code : `VALIDATION_ERROR`. */
             400: {
                 headers: {
                     [name: string]: unknown;

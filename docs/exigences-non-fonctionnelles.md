@@ -35,6 +35,7 @@
 ## 5. Données personnelles (RGPD) et juridique
 - Données collectées : e-mail, identifiant Google, handle, nom affiché, liste de lecture, notes. Rien d'autre.
 - Base légale : exécution du service (compte) ; consentement pour tout traceur non essentiel ; mesure d'audience respectueuse de la vie privée, sans cookie, si utilisée.
+- Stockage dans le navigateur : hors le cookie de session, seul le `sessionStorage` de l'onglet retient l'œuvre qu'un visiteur veut ajouter avant de se connecter (identifiant d'œuvre et heure, 10 minutes, jamais envoyé au serveur, effacé à la fermeture de l'onglet). Il est fonctionnel, demandé par le visiteur lui-même : pas de consentement ; tout autre `localStorage`, `sessionStorage` ou cookie se justifie de la même façon, ou demande le consentement (#110).
 - Droits : accès, rectification, **suppression du compte** (US-12), export des données sur demande.
 - Pages obligatoires : mentions légales, politique de confidentialité, conditions d'utilisation, page de contact/retrait de contenu.
 - Hébergement des données : à choisir en tenant compte de la localisation (UE de préférence).

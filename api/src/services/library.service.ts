@@ -30,6 +30,13 @@ export interface LibraryService {
   /** No effect if the work is not in the list. */
   removeEntry(userId: number, workId: number): Promise<void>;
   listEntries(userId: number, input: ListEntriesInput): Promise<LibraryPage>;
+  /** The given works that are in the user's list (archived works are left out). */
+  listedWorkIds(userId: number, input: ListedWorksInput): Promise<number[]>;
+}
+
+/** Works asked about: which of them are in the user's list. */
+export interface ListedWorksInput {
+  ids: number[];
 }
 
 /** Search, filter, sort and page of a reading-list read. */
@@ -157,6 +164,10 @@ export function createLibraryService(
       const counted = status ?? (Object.keys(list.statusCounts) as LibraryStatus[]);
       const total = counted.reduce((sum, each) => sum + list.statusCounts[each], 0);
       return { ...list, page, pageSize, total };
+    },
+
+    async listedWorkIds(userId, { ids }) {
+      return repository.findListedWorkIds(userId, ids);
     },
   };
 }

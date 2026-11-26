@@ -24,6 +24,7 @@ const route = useRoute()
 const { t, te, locale } = useI18n()
 const localePath = useLocalePath()
 const api = useApi()
+const { state: auth } = useAuth()
 
 const state = computed(() => parseSearchQuery(route.query))
 // Without text (or under 2 characters), the page lists the catalogue.
@@ -33,6 +34,8 @@ const query = computed(() => activeQuery(state.value))
 interface SearchData {
   works: WorkPage
   facets: WorkFacets
+  /** Reader's status of these works, read with them so both appear together; `null` if that failed. */
+  listed: number[] | null
   /** Text of these results (the heading follows the displayed list). */
   query: string
 }
@@ -40,7 +43,16 @@ interface SearchData {
 /** Identifier of the current search: address and language. */
 const searchKey = () => `${locale.value}|${route.fullPath}`
 
-/** Loads the results and the facet counts, starting over if the search changed meanwhile. */
+/** Reads which works of a page of results are in the reader's list (none for a visitor). */
+const loadListed = (works: WorkPage) =>
+  auth.value.status === 'authenticated'
+    ? fetchListedWorkIds(
+        api,
+        works.items.map((work) => work.id),
+      )
+    : Promise.resolve<number[]>([])
+
+/** Loads the results, which of them are in the list, and the facet counts, starting over if the search changed meanwhile. */
 async function loadSearch(): Promise<SearchData> {
   const requested = searchKey()
   const current = state.value
@@ -54,13 +66,17 @@ async function loadSearch(): Promise<SearchData> {
   ])
   // Search changed during the call (fast typing): start over for the latest one.
   if (searchKey() !== requested) return loadSearch()
-  if (!works.approximate) return { works, facets, query: activeQuery(current) }
   // Approximate list: the counts follow it.
-  const approximateFacets = await api.request<WorkFacets>('/works/facets', {
-    query: { ...toApiQuery(current, { lang: locale.value }), match: 'any' },
-  })
+  const [finalFacets, listed] = await Promise.all([
+    works.approximate
+      ? api.request<WorkFacets>('/works/facets', {
+          query: { ...toApiQuery(current, { lang: locale.value }), match: 'any' },
+        })
+      : facets,
+    loadListed(works),
+  ])
   if (searchKey() !== requested) return loadSearch()
-  return { works, facets: approximateFacets, query: activeQuery(current) }
+  return { works, facets: finalFacets, listed, query: activeQuery(current) }
 }
 
 // The language is in the key and in the sources: changing language recreates the page, whereas
@@ -70,6 +86,12 @@ const { data, error, status, refresh } = await useAsyncData<SearchData>(
   loadSearch,
   { watch: [() => route.fullPath, locale] },
 )
+
+const { listed, isSignedIn, isListLoaded, add } = useResultLibrary({
+  loaded: () => data.value?.listed,
+  workIds: () => data.value?.works.items.map((work) => work.id) ?? [],
+  reload: () => void refresh(),
+})
 
 // noindex: a results page has no content of its own; search engines index the work pages.
 useSeoMeta({
@@ -275,7 +297,13 @@ const hasFilterColumn = computed(() => total.value > 0 || chips.value.length > 0
           <UiPanel v-else class="search-page__list">
             <ul class="search-page__items">
               <li v-for="work in data.works.items" :key="work.id">
-                <SearchResultItem :work="work" />
+                <SearchResultItem
+                  :work="work"
+                  :is-signed-in="isSignedIn"
+                  :is-listed="isSignedIn && listed.has(work.id)"
+                  :is-list-loaded="isListLoaded"
+                  @add="add(work.id)"
+                />
               </li>
             </ul>
           </UiPanel>

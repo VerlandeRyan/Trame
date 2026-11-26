@@ -31,6 +31,9 @@ function fakeRepository(initial: LibraryEntry | null = null, isWorkAvailable = t
       state.events.push(...change.events);
       return change.entry;
     },
+    async findListedWorkIds(_userId, workIds) {
+      return state.entry ? workIds : [];
+    },
     async remove() {
       state.entry = null;
     },
@@ -261,5 +264,17 @@ describe('listEntries', () => {
     const { service, state } = serviceWith();
     await service.listEntries(7, { ...input, q: '   ' });
     expect(state.listCriteria?.q).toBeUndefined();
+  });
+});
+
+describe('listedWorkIds', () => {
+  it('renvoie les œuvres demandées qui sont dans la liste', async () => {
+    const { service } = serviceWith(entry());
+    expect(await service.listedWorkIds(7, { ids: [4, 9] })).toEqual([4, 9]);
+  });
+
+  it('renvoie une liste vide quand aucune n’y est', async () => {
+    const { service } = serviceWith();
+    expect(await service.listedWorkIds(7, { ids: [4] })).toEqual([]);
   });
 });
