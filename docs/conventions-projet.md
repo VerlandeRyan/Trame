@@ -192,6 +192,7 @@ Règles de conception communes à tous les écrans (comportement écran par écr
 - **Jetons d'abord** : couleurs, ombres, espacements viennent de `app/assets/styles/_tokens.scss` (variables CSS). Jamais de valeur de couleur en dur dans un composant.
 - **Contour** : `--border` (3 px d'encre, relevé des 2 px des maquettes qui paraissaient trop fins à l'écran) pour tous les cadres, champs, boutons et séparateurs : ne jamais écrire une épaisseur en dur.
 - **Icônes** : `<Icon name="tabler:…" />` uniquement ; aucune police d'icônes ni CDN.
+- **Feuilles de style liées, pas inlinées** (`features.inlineStyles: false`) : le serveur inline les styles dans l'ordre de rendu (page d'abord), le navigateur les charge dépendances d'abord ; deux règles de même spécificité (`.panel` et une classe de page) l'emporteraient donc différemment après l'hydratation et la page sauterait. `e2e/tests/hydration-layout.spec.ts` compare la mise en page sans et avec JavaScript.
 - **Listes** : `ul`/`ol` sans puces ni retrait par défaut (`main.scss`).
 - **Pas de pied de page** tant qu'il n'est pas maquetté ; à définir en temps voulu (mentions légales : #35).
 - **Lisibilité** : noms explicites (pas d'abréviations d'une lettre), classes BEM par composant (`counter__button`), pas de ternaires imbriqués, un fichier = une responsabilité.
